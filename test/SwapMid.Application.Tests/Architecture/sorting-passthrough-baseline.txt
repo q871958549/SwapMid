@@ -1,0 +1,5 @@
+# SwapMid Sorting 白名单豁免基线
+SwapMid.Application/ApiManagement/ApiRouteAppService.cs::GetListAsync
+SwapMid.Application/DataIntegration/DataPipelineAppService.cs::GetListAsync
+SwapMid.Application/DataIntegration/PipelineExecutionAppService.cs::GetListAsync
+SwapMid.Application/MessageBus/MessageRecordAppService.cs::GetListAsync

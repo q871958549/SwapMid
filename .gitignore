@@ -1,0 +1,72 @@
+# Build outputs & caches
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+[Ll]og/
+[Ll]ogs/
+[Tt]est[Rr]esult*/
+artifacts/
+publish/
+!web/src/app/**/publish/
+
+# Frontend build & runtime
+node_modules/
+/.pnpm-store/
+web/.next/
+web/out/
+web/build/
+web/.env*
+!web/.env.example
+web/*.tsbuildinfo
+web/next-env.d.ts
+web/playwright-report/
+web/test-results/
+web/blob-report/
+
+# IDE & user files
+.vs/
+.vscode/*
+!.vscode/extensions.json
+**/.idea/
+**/.abpstudio/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+/SwapMid.sln
+
+# AI local state
+.claude/settings.local.json
+.claude/hooks/state/
+.codex-run/
+
+# Secrets & local environment overrides
+**/appsettings.Development.json
+**/appsettings.Production.json
+**/appsettings.secrets.json
+**/openiddict.pfx
+*.pfx
+tempkey.rsa
+tempkey.jwk
+docker/.env
+docker/.env.local
+docker/.env.prod
+docker/certs/
+docker/openiddict/
+docker/backups/
+
+# Generated offline bundle & vendor assets
+docs/api/openapi.html
+**/wwwroot/libs/*
+**/protected-uploads/
+**/wwwroot/upload/
+
+# OS & temporary files
+*.log
+*.tmp
+~$*
+*~
+.DS_Store
+Thumbs.db

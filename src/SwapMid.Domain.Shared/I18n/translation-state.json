@@ -1,0 +1,685 @@
+{
+  "version": 1,
+  "generatorVersion": 1,
+  "promptVersion": 1,
+  "entries": {
+    "AppName": {
+      "sourceHash": "a29772644cc72bd1fb76b7a8",
+      "englishHash": "3a876341ee212a6fff122517",
+      "traditionalSourceHash": "b6956c63014b9099c744228b",
+      "traditionalHash": "3a876341ee212a6fff122517"
+    },
+    "Menu:Home": {
+      "sourceHash": "2be4ba208dfc001d42cefd07",
+      "englishHash": "3a78695388b38b5cceefaf67",
+      "traditionalSourceHash": "b289790d58e12b61006a8d2c",
+      "traditionalHash": "a782f2754c833394b95d20ed"
+    },
+    "Welcome": {
+      "sourceHash": "1471d6534919e393306d4542",
+      "englishHash": "0e2226b5235f0ff94a276eb4",
+      "traditionalSourceHash": "09380e37065e8b87050e4465",
+      "traditionalHash": "19df0afcfa52a1e26cf17587"
+    },
+    "LongWelcomeMessage": {
+      "sourceHash": "ea8a7240418e20ceeb0df31c",
+      "englishHash": "c929f17c197859755d96a65d",
+      "traditionalSourceHash": "3ed85d5c6966847def66ba14",
+      "traditionalHash": "0eade261dbb489de88c4af72"
+    },
+    "Permission:EmployeeSelfService": {
+      "sourceHash": "e8cbff6d63758cad5b750342",
+      "englishHash": "536a694d5582ab1c676a0cc7",
+      "traditionalSourceHash": "2cd7e4dc8ff78f1101cbbe57",
+      "traditionalHash": "7da2d21ef45eef9e44960152"
+    },
+    "Permission:Create": {
+      "sourceHash": "c025c79cbd6556d93a53cb29",
+      "englishHash": "4759498ac2a719c619e2c8cf",
+      "traditionalSourceHash": "d32cd4e977ab7a593ded0027",
+      "traditionalHash": "0006d696d8e1ec28a134667a"
+    },
+    "Permission:Update": {
+      "sourceHash": "4cbc9f43f039ef2c90c9fd84",
+      "englishHash": "464c4ffd019e1e9691dcf053",
+      "traditionalSourceHash": "710a7d68b1040e8076b28079",
+      "traditionalHash": "e0d4485966bd1349dc56cd71"
+    },
+    "Permission:Delete": {
+      "sourceHash": "9bd14991c243896b2c23f844",
+      "englishHash": "e2d0a54968ead24efc0dffa6",
+      "traditionalSourceHash": "e5bf7f7369cd7274ae521960",
+      "traditionalHash": "3c8f5b363ab3ab0b8d12844c"
+    },
+    "Permission:Manage": {
+      "sourceHash": "62d0b9b85918dbe74bc80a54",
+      "englishHash": "5a23444828db654a0eaef5f8",
+      "traditionalSourceHash": "dd38c13886835762ccf77d90",
+      "traditionalHash": "bb6d995724f49a72e190cd17"
+    },
+    "Permission:Export": {
+      "sourceHash": "c380e1e38e4123086b045feb",
+      "englishHash": "3664895579f0a7e68c4aa09c",
+      "traditionalSourceHash": "06be2f0f18cc41e74ea7024e",
+      "traditionalHash": "c631952bb11403b61a682499"
+    },
+    "Permission:Import": {
+      "sourceHash": "cddc1fa6c48b0f325e58d6e2",
+      "englishHash": "2cff9baabf56ca002610e113",
+      "traditionalSourceHash": "8116fbd2422a75bffbacc12d",
+      "traditionalHash": "20809c5d8596b07c5f77e031"
+    },
+    "Permission:Publish": {
+      "sourceHash": "bb9bdfce6ccf7be2f1567f99",
+      "englishHash": "859390eb495b2ead7f05f0f7",
+      "traditionalSourceHash": "b61e67a504a5cdffb96f83e5",
+      "traditionalHash": "eeb509bfc0ddb029a22670c6"
+    },
+    "Permission:Replay": {
+      "sourceHash": "beb2bf98bb81902ddc5edd6e",
+      "englishHash": "205140b7c26bcc24431fe732",
+      "traditionalSourceHash": "2d89762cdcf958e4ec31552c",
+      "traditionalHash": "6b7655c81f25c1fd70d448dc"
+    },
+    "Permission:Execute": {
+      "sourceHash": "5a2700f3de6246743e9acd44",
+      "englishHash": "e3a67d9540e9a204f7dc4aa9",
+      "traditionalSourceHash": "f920dac380252f53b31bde1f",
+      "traditionalHash": "4a9042df9bf94256c5a250f3"
+    },
+    "Permission:ResolveOutcome": {
+      "sourceHash": "4b4df7b426fe412e2c3ca9df",
+      "englishHash": "c4b30a5a71b8913c2ebad1ec",
+      "traditionalSourceHash": "3be650839850b0c0afd13e1f",
+      "traditionalHash": "938900f13d8349d0a47d71cb"
+    },
+    "Permission:RecoverRunning": {
+      "sourceHash": "0e7da8cd2a3d296fdf71f1fe",
+      "englishHash": "a95e4e1d23cf3013ec593172",
+      "traditionalSourceHash": "a31ea6cfb1c5f9cca84b71dc",
+      "traditionalHash": "d8ce07bee47f00d1b694fe2e"
+    },
+    "Permission:VerifyTargetReceipt": {
+      "sourceHash": "20627c053c3313aa0692614b",
+      "englishHash": "bf1f9af21d0f80bb5e368957",
+      "traditionalSourceHash": "6826d8a02576987d87b54ff3",
+      "traditionalHash": "3cb18cf70e741d86bd37d71b"
+    },
+    "Permission:Group:EnterpriseManagement": {
+      "sourceHash": "1a05ac311f1a20f62b224234",
+      "englishHash": "52c731aec55e4ff9c8e1d261",
+      "traditionalSourceHash": "034d94f9e79c266eea21161e",
+      "traditionalHash": "1e7effd37a4445e0203e3a68"
+    },
+    "Permission:EnterpriseManagement:Enterprises": {
+      "sourceHash": "469de881f0d84ea817430891",
+      "englishHash": "2730183d6b776b400ed491c9",
+      "traditionalSourceHash": "decfd9d3276e4df5caceda4a",
+      "traditionalHash": "1dc95f08760ac8110b5136a6"
+    },
+    "Permission:EnterpriseManagement:Departments": {
+      "sourceHash": "cc597dc0f63acdaa883dc0ce",
+      "englishHash": "5f9494c4d2179e6b024d5238",
+      "traditionalSourceHash": "1dbcbd11fd41e7ccca53fb11",
+      "traditionalHash": "738b77c320d8a86229b1a4b7"
+    },
+    "Permission:EnterpriseManagement:Employees": {
+      "sourceHash": "060a1ab62fa5c17e008599e3",
+      "englishHash": "c98270317b51cbb34dd7db32",
+      "traditionalSourceHash": "dcfcd30f40f3e51524d4b806",
+      "traditionalHash": "ff3ac641d1835bc8db248aac"
+    },
+    "Permission:EnterpriseManagement:Positions": {
+      "sourceHash": "d7e13278336a83bdf3458f16",
+      "englishHash": "fa18433b80e023b99bab6ee0",
+      "traditionalSourceHash": "4cee5332ec8863b69601f445",
+      "traditionalHash": "85d558cbeb8814cce4a1e3b5"
+    },
+    "Permission:Group:AccountManagement": {
+      "sourceHash": "11759ef416b95365a0c3b78e",
+      "englishHash": "200478d665f35bcdf8b5962b",
+      "traditionalSourceHash": "70dc1bbe32573ebc8f22f908",
+      "traditionalHash": "4f7edea6b1bef2f05d635121"
+    },
+    "Permission:AccountManagement:Users": {
+      "sourceHash": "12e2d7983affeb03a9387f9c",
+      "englishHash": "6b0cc904d081a8c11cfdaec6",
+      "traditionalSourceHash": "26c50504befc63578dd97573",
+      "traditionalHash": "9cfcd840dc5f2ae1905a3b0b"
+    },
+    "Permission:AccountManagement:Users:Impersonate": {
+      "sourceHash": "e5348dd6cf563861dfcfe101",
+      "englishHash": "837b9f2a2596f0bfe8e41c5d",
+      "traditionalSourceHash": "7e797b9c322506defee184f5",
+      "traditionalHash": "959c6183e9c22b21864f5c2b"
+    },
+    "Permission:AccountManagement:Roles": {
+      "sourceHash": "94a223ea9171ef38e7115fb8",
+      "englishHash": "1fa0387819c514f8e62e8d3b",
+      "traditionalSourceHash": "1324cd512bb8c89c8e907dea",
+      "traditionalHash": "562250c8789c4aabac9ef578"
+    },
+    "Permission:Group:MessageBus": {
+      "sourceHash": "a519812cf928e102d0ad9870",
+      "englishHash": "78226049923aeee859e475b5",
+      "traditionalSourceHash": "9091ab388aaf1f77a282c69c",
+      "traditionalHash": "da2aab0d8f0d4bd04654479e"
+    },
+    "Permission:MessageBus:Topics": {
+      "sourceHash": "3ce5f907bad32a750bfd354f",
+      "englishHash": "e22820fcf5cd90e3fdd99a75",
+      "traditionalSourceHash": "0daf6149c2c579c89ca5f6c8",
+      "traditionalHash": "6a5679595393938166e9ad6e"
+    },
+    "Permission:MessageBus:Subscriptions": {
+      "sourceHash": "b73c3e4c5150a43a14d44404",
+      "englishHash": "a151f2e912fe8d5b31e07dae",
+      "traditionalSourceHash": "46bd1e3ca37405ee86c18b50",
+      "traditionalHash": "8bf3f48ae438c39cee8aaa6d"
+    },
+    "Permission:MessageBus:Records": {
+      "sourceHash": "10ed579f6e47d9a761643b4e",
+      "englishHash": "bf727bafcfac2b49b3f2a30d",
+      "traditionalSourceHash": "62dee8a4f2befd1d5a096df4",
+      "traditionalHash": "6ee590d000a0325cb056ebaf"
+    },
+    "Permission:Group:DataIntegration": {
+      "sourceHash": "7cca72b362f7b8666e43f3a6",
+      "englishHash": "e1d694cb0883d789b2907aa7",
+      "traditionalSourceHash": "91995a4cf9cb2a1bec239303",
+      "traditionalHash": "06464645a9b0c5b823c316bc"
+    },
+    "Permission:DataIntegration:DataSources": {
+      "sourceHash": "97b46dde4bc6c1d9cda5d263",
+      "englishHash": "fee47c958ac2dade130911d3",
+      "traditionalSourceHash": "c049bee066d0b5768488b864",
+      "traditionalHash": "bcde23f8d66950820e50eb8a"
+    },
+    "Permission:DataIntegration:DataPipelines": {
+      "sourceHash": "c66f961a45f9d055f70f153c",
+      "englishHash": "ea35a27f89deb74c4fec077f",
+      "traditionalSourceHash": "ede6bf7a7d428679cb9bab00",
+      "traditionalHash": "083e9d923482eae3d330fc79"
+    },
+    "Permission:DataIntegration:PipelineExecutions": {
+      "sourceHash": "3be49464cdf2ce03f3437bd1",
+      "englishHash": "cffa69b03ae0badfc5eed991",
+      "traditionalSourceHash": "e6d9c491941fe27785093722",
+      "traditionalHash": "8edc68b421e781b1db40a71a"
+    },
+    "Permission:Group:ApiManagement": {
+      "sourceHash": "b6c4aa0b2594951c84770589",
+      "englishHash": "c30ce1af7a4e154be919aed2",
+      "traditionalSourceHash": "2677b9f61e8d78191dbc6958",
+      "traditionalHash": "1c6f0a9390dea702c5f92ff7"
+    },
+    "Permission:ApiManagement:ApiRoutes": {
+      "sourceHash": "04b112f928c21ce01b31538d",
+      "englishHash": "c8250bcdc25f272c0f4c14f0",
+      "traditionalSourceHash": "7be868b97ad8184bbac32650",
+      "traditionalHash": "b5b488d6f3b601f63a7187ce"
+    },
+    "Permission:ApiManagement:ApiGroups": {
+      "sourceHash": "5861d4be4e201ddc965dc13e",
+      "englishHash": "461dcfea13869d485aa6eee6",
+      "traditionalSourceHash": "6d8939d4dd836fd4948c7f69",
+      "traditionalHash": "31e398caf44e6d626be44164"
+    },
+    "Permission:ApiManagement:TestConsole": {
+      "sourceHash": "781cae2f453303705e62fc1d",
+      "englishHash": "db680afee32e38568fa7b2bd",
+      "traditionalSourceHash": "8005d6bf01361c1fc1dd78cd",
+      "traditionalHash": "289bbe4552a9df68ac40ac8c"
+    },
+    "Permission:ApiManagement:ThirdPartyClients": {
+      "sourceHash": "5521e3f703e7e26e577e0524",
+      "englishHash": "7ca24bfcb923df2a2748f429",
+      "traditionalSourceHash": "7a7af6c9b601c4b3c423a09c",
+      "traditionalHash": "4460312bd13afd4b3f1532d4"
+    },
+    "Permission:Group:SystemManagement": {
+      "sourceHash": "77a376f81fb04a2ebc0d63c5",
+      "englishHash": "3ca83a7c39507359c938f4f0",
+      "traditionalSourceHash": "f0d3b5a76655290ac63cf908",
+      "traditionalHash": "61b1d2a2a7637eff53fad254"
+    },
+    "Permission:SystemManagement:CodeRules": {
+      "sourceHash": "c3a8d2fe8f9487ed81061c7f",
+      "englishHash": "af2f0d634678733866298359",
+      "traditionalSourceHash": "877a335291f1fbe62fcaed47",
+      "traditionalHash": "60b008b515e3b51c8119fc35"
+    },
+    "Permission:SystemManagement:DataDictionaries": {
+      "sourceHash": "7c33bc72b69cc7aecb795959",
+      "englishHash": "293a360e38f1966080717c58",
+      "traditionalSourceHash": "4d424bcd046e2db8f7c00bde",
+      "traditionalHash": "7eb8e91f5d3639305b72d399"
+    },
+    "Permission:SystemManagement:HangfireDashboard": {
+      "sourceHash": "e36d208362f27220ca1fc0e7",
+      "englishHash": "968356ba9feeaa182a1c580f",
+      "traditionalSourceHash": "dc1bbf9c3cd36a9e2c31ce34",
+      "traditionalHash": "35cf2f3a05effe0988337c89"
+    },
+    "Permission:SystemManagement:ScheduledJobs": {
+      "sourceHash": "94e5c3c77afa7b45109ebc8e",
+      "englishHash": "63df3f1df2c1666005a2442a",
+      "traditionalSourceHash": "14d8e89241a4d2238650728c",
+      "traditionalHash": "58b1f5a3fc2c459a79f6a5c0"
+    },
+    "Permission:SystemManagement:AuditLogs": {
+      "sourceHash": "c8d3f5d267376ef2cecf3d91",
+      "englishHash": "5428d7fe5929f80270649fc5",
+      "traditionalSourceHash": "f0ee5f84b614db3d02fd7315",
+      "traditionalHash": "dd576174e6784449632920c0"
+    },
+    "Permission:SystemManagement:SystemHealth": {
+      "sourceHash": "938150582578ef2ebee1cc70",
+      "englishHash": "c3d66242c5918adef05e246b",
+      "traditionalSourceHash": "00420267fdc122fd659296d7",
+      "traditionalHash": "408500aae740bde84753cc24"
+    },
+    "Permission:Group:DeveloperDocs": {
+      "sourceHash": "e0a58d795c2ceef5ced6e4f1",
+      "englishHash": "e2c516b5b69ddb5583876a0f",
+      "traditionalSourceHash": "4d3daf35b75fcd79154e87a5",
+      "traditionalHash": "b9f8f67bf5e1e88e142bf39d"
+    },
+    "Permission:DeveloperDocs:ApiReference": {
+      "sourceHash": "51225cb17dc83f5cfaa17ccb",
+      "englishHash": "0b40234a6136f15dedcace3b",
+      "traditionalSourceHash": "b6961369a457bce9bd1a10c9",
+      "traditionalHash": "171c8b7e617495abfcbc1f14"
+    },
+    "Permission:DeveloperDocs:DbDictionary": {
+      "sourceHash": "7a2cdeeed33fa47ce4d5ed55",
+      "englishHash": "6749787cae711f7d5f1b7735",
+      "traditionalSourceHash": "e4c62b72b18ff1718a880d35",
+      "traditionalHash": "ec7e2f1532badc8a777c82f8"
+    },
+    "Permission:Group:NotificationCenter": {
+      "sourceHash": "23eca90d6d9c658a365d4f0a",
+      "englishHash": "7a0e40785283828a146bbbbc",
+      "traditionalSourceHash": "6bae9aa351d5a935c9316d51",
+      "traditionalHash": "b41f4fa6f5efb208e7218d9c"
+    },
+    "Permission:NotificationCenter:Settings": {
+      "sourceHash": "2bb9801537e9b02a1dc6c5e5",
+      "englishHash": "57d5ff2ea8d58927af9acff3",
+      "traditionalSourceHash": "0bce42ed948e7273b62d9e01",
+      "traditionalHash": "ac74a307081e67ca37f358ee"
+    },
+    "SwapMid:ACC:001": {
+      "sourceHash": "f4692dd2af1308870998fe0f",
+      "englishHash": "3e1fb37dd5fec14021b7282b",
+      "traditionalSourceHash": "f052dcc31944734d2a0c7f19",
+      "traditionalHash": "8c3224135f10e371aa031ac7"
+    },
+    "SwapMid:ACC:002": {
+      "sourceHash": "45899e70688cd01968d4380c",
+      "englishHash": "fe69aa8781844bd6bf0cdc78",
+      "traditionalSourceHash": "7f15c8a737b081a259dc9240",
+      "traditionalHash": "443acce608c7d00cfe52980a"
+    },
+    "SwapMid:ACC:003": {
+      "sourceHash": "354618749c5d5a1cb1c764fd",
+      "englishHash": "9427e287e1e625d47e140d89",
+      "traditionalSourceHash": "4ba79c12515c06e389b0fe5d",
+      "traditionalHash": "bfc0aaa76983be955554ce38"
+    },
+    "SwapMid:API:001": {
+      "sourceHash": "b8fbb0980bac14871c3ca3e4",
+      "englishHash": "4cb2db7c0b7ecbcba39d45cc",
+      "traditionalSourceHash": "7728a0383aab655e04f62627",
+      "traditionalHash": "7d32ec9f9f43d2b66568d532"
+    },
+    "SwapMid:API:002": {
+      "sourceHash": "22209f66026e015ad5ae1c93",
+      "englishHash": "6641b4d689082b1e98ac9af3",
+      "traditionalSourceHash": "370d62fba029488b200fa75c",
+      "traditionalHash": "1a08eedeca013b2f0fbe2225"
+    },
+    "SwapMid:API:003": {
+      "sourceHash": "8a8b9031c3171c7cbedd6476",
+      "englishHash": "8674fb2681c383fd469c6459",
+      "traditionalSourceHash": "16607b73acf9114bc53dd364",
+      "traditionalHash": "1ed20b7712d63fa8a550401d"
+    },
+    "SwapMid:API:004": {
+      "sourceHash": "c3b09138ee92285ff47acbea",
+      "englishHash": "0d8abe5c79bd95aec92aa434",
+      "traditionalSourceHash": "6531b1ed0a5ddf61fc7f0e84",
+      "traditionalHash": "9c07a0434e4e9043c73426b3"
+    },
+    "SwapMid:API:005": {
+      "sourceHash": "1b8df6eb63f939ddc6c14eb3",
+      "englishHash": "6281b93b374d72a5a1b5173e",
+      "traditionalSourceHash": "9a4bf1dea0f5fe07272c1ac7",
+      "traditionalHash": "023669c65b370372ed0e6a49"
+    },
+    "SwapMid:ETL:001": {
+      "sourceHash": "e3d72b40c92f4e6ccccf1696",
+      "englishHash": "a8648874bc8bf7a2cffffeca",
+      "traditionalSourceHash": "f8789ca4acd1fcbdee109154",
+      "traditionalHash": "6e50f021c089d19a70b8fcd4"
+    },
+    "SwapMid:ETL:002": {
+      "sourceHash": "5d57977ce9226dd4407ce9a3",
+      "englishHash": "8a3dd12da8cfce9557e358ab",
+      "traditionalSourceHash": "3386373451578f8fcbeb4e45",
+      "traditionalHash": "2491d05d5f628e894ade626d"
+    },
+    "SwapMid:ETL:003": {
+      "sourceHash": "4c412baf160021fbc9076225",
+      "englishHash": "3279caf7cda5d55a77b4b79c",
+      "traditionalSourceHash": "4d04f07d6195cc08df98de70",
+      "traditionalHash": "a67c05df59d52eab14f9d16a"
+    },
+    "SwapMid:ETL:004": {
+      "sourceHash": "695acb41c8dec18fe0032a2a",
+      "englishHash": "8f245df751f1e70e6655ebfb",
+      "traditionalSourceHash": "f9cdd035b1298afa36d1bf63",
+      "traditionalHash": "f637197d7291e72a5d177616"
+    },
+    "SwapMid:ETL:005": {
+      "sourceHash": "c9059dc38dbd1b4de61ad6a2",
+      "englishHash": "612f849500b78706ed14bed9",
+      "traditionalSourceHash": "e8894c6729aeb7538544168c",
+      "traditionalHash": "4353eee3b7f5c37b4eda69bf"
+    },
+    "SwapMid:ETL:006": {
+      "sourceHash": "75ae853ed8195b0fca5eeb76",
+      "englishHash": "d84ac452d7e35f5d48743e54",
+      "traditionalSourceHash": "3cef29e258bdadc4c599d8de",
+      "traditionalHash": "0266a858961f9ca0335f258a"
+    },
+    "SwapMid:ETL:007": {
+      "sourceHash": "ab9131011cdc65f8c7d3384b",
+      "englishHash": "d6ad43160068d7240f3d6700",
+      "traditionalSourceHash": "ce72c49b8e6cdbd3b8d47cfb",
+      "traditionalHash": "e6a3bce85ec895808218411d"
+    },
+    "SwapMid:ETL:008": {
+      "sourceHash": "79489667067e39426a9c5815",
+      "englishHash": "753dba8684812871b7c1d13e",
+      "traditionalSourceHash": "899d1e2fb42970ca8b0ff6d8",
+      "traditionalHash": "5594d6d91df280b63bdf10c2"
+    },
+    "SwapMid:ETL:009": {
+      "sourceHash": "659a56099dcc42dc8cdc592a",
+      "englishHash": "fb8bacbb848517fb0e41ec18",
+      "traditionalSourceHash": "44c0729a1b0ec18bf3da2ede",
+      "traditionalHash": "acb125d87cab5412f6b8af4b"
+    },
+    "SwapMid:ETL:010": {
+      "sourceHash": "ba7c6e937164b898a7129e34",
+      "englishHash": "b0f3ab9274bdf7312962e46e",
+      "traditionalSourceHash": "3e17543d629eb918273d0275",
+      "traditionalHash": "7fd2a3b926d738207b8ecfce"
+    },
+    "SwapMid:ETL:011": {
+      "sourceHash": "667ee5c2205319ec8e083dd7",
+      "englishHash": "ad3d938d75ab073ea128e83e",
+      "traditionalSourceHash": "70d01b09564b8f2497387759",
+      "traditionalHash": "ac46bdb5e03e49c2e153b76e"
+    },
+    "SwapMid:ETL:012": {
+      "sourceHash": "2e5c33df626d628271208de7",
+      "englishHash": "73b5238e9e550fe87d9915f8",
+      "traditionalSourceHash": "b55db649de27e2dd644c381c",
+      "traditionalHash": "680e6c12a260aa6ac921b0b7"
+    },
+    "SwapMid:ETL:013": {
+      "sourceHash": "db2685b4002c146124cabbe0",
+      "englishHash": "76e8a1740945c7996f6a1a29",
+      "traditionalSourceHash": "455ea9fff13e718b485bd1c3",
+      "traditionalHash": "90901b10b3fcc23613ae041e"
+    },
+    "SwapMid:ETL:014": {
+      "sourceHash": "a3ac83d8375f0cf007557b95",
+      "englishHash": "2f7ccbdee8af7f1dacfb4701",
+      "traditionalSourceHash": "1863193af886824bb7cf6ed5",
+      "traditionalHash": "bcd2273ddc826379ebb702ca"
+    },
+    "SwapMid:ETL:015": {
+      "sourceHash": "be5068d2099c352cfb665349",
+      "englishHash": "bdd420797934c8a4b9879bbf",
+      "traditionalSourceHash": "b3367d9d065f10208b20cd27",
+      "traditionalHash": "fc95652e67e9d602912f4d76"
+    },
+    "SwapMid:ETL:016": {
+      "sourceHash": "0346b6e1c5e7e1accf7bf9e5",
+      "englishHash": "70258573260f4000bac32906",
+      "traditionalSourceHash": "05523d6930de8969d8bed69c",
+      "traditionalHash": "c9a49d0c2294f85e40c66497"
+    },
+    "SwapMid:ETL:017": {
+      "sourceHash": "247d0337ac5024b523d9f2b5",
+      "englishHash": "dc90e2d744b6559fac6f0183",
+      "traditionalSourceHash": "fba10890d2d4283126d81aaf",
+      "traditionalHash": "6240c1b1875033090883fefa"
+    },
+    "SwapMid:ETL:018": {
+      "sourceHash": "7f31b7575271bbbf650930f7",
+      "englishHash": "9d97db2b202604393cbcae19",
+      "traditionalSourceHash": "2c41167ba3f4ca0403a88c72",
+      "traditionalHash": "b3b43cc60b4ffa5170b357d6"
+    },
+    "SwapMid:ETL:019": {
+      "sourceHash": "dac25c0d04e1b52d96e04a6c",
+      "englishHash": "692aa93be0c47a269a590c16",
+      "traditionalSourceHash": "b3af44ced3c4a15c76543575",
+      "traditionalHash": "9a8b4873acd12895b8a458db"
+    },
+    "SwapMid:ETL:020": {
+      "sourceHash": "2afccb0dffd61c2bfbea90b4",
+      "englishHash": "bcb5a1160bcf087a9465c377",
+      "traditionalSourceHash": "430d2b6f3b3283daf633881a",
+      "traditionalHash": "d255732738baac13b03000ca"
+    },
+    "SwapMid:ETL:021": {
+      "sourceHash": "0d5c28156aee4ae47e705b6b",
+      "englishHash": "248026803ec262bdc31f300e",
+      "traditionalSourceHash": "17c980d6d8f4d9799a3dc798",
+      "traditionalHash": "272bdb7e977c48e2b022e734"
+    },
+    "SwapMid:ETL:022": {
+      "sourceHash": "5e2f4d59d253b1dad00e1f28",
+      "englishHash": "7b783386a0af2013bb28495d",
+      "traditionalSourceHash": "e50cadc54921b82b485b4d77",
+      "traditionalHash": "15f5a3a1bf09a96011f22566"
+    },
+    "SwapMid:ETL:023": {
+      "sourceHash": "35464ffb63c506fed514e631",
+      "englishHash": "65e6973d2e69370b5949b191",
+      "traditionalSourceHash": "0cf0c2d4192b255f388cfa5c",
+      "traditionalHash": "3788c63c73f31f8625718efa"
+    },
+    "SwapMid:ETL:024": {
+      "sourceHash": "cd3b7400d4e3e00a91dc13a7",
+      "englishHash": "4ecb4c2a65ceecc58bb0a82c",
+      "traditionalSourceHash": "a5aee64ec4b4878daa4d213a",
+      "traditionalHash": "1b43ca74408906d03e553e67"
+    },
+    "SwapMid:ETL:025": {
+      "sourceHash": "243023aa71b934666655f559",
+      "englishHash": "29e72746f0b47c81da3de70c",
+      "traditionalSourceHash": "ac9818b0cd03f6bfb7d8e32e",
+      "traditionalHash": "ee58a2f60d07e8b390cd2404"
+    },
+    "SwapMid:ETL:026": {
+      "sourceHash": "b227ecee7e51220e71f2e9c6",
+      "englishHash": "4444b780bf0eea5d76983f38",
+      "traditionalSourceHash": "3324d302b80d69a4af2d9ccb",
+      "traditionalHash": "1d2d4a0879ffdea448bd47b8"
+    },
+    "SwapMid:ETL:027": {
+      "sourceHash": "4ce0f1984d3ff82719ec0cb4",
+      "englishHash": "58cd6f1cd3792b03728d06fe",
+      "traditionalSourceHash": "953e216bf7e68313a01393a0",
+      "traditionalHash": "df373a83b97079b71caca3a2"
+    },
+    "SwapMid:ETL:028": {
+      "sourceHash": "f883176df89d0c95de3ce258",
+      "englishHash": "fbc7f118ab27215db4d43afb",
+      "traditionalSourceHash": "f05282e51e025c3a7e4db644",
+      "traditionalHash": "18b77c5209d5e6ecbde5d475"
+    },
+    "SwapMid:ETL:029": {
+      "sourceHash": "be0ea75a28e9a7bdc0ad4c52",
+      "englishHash": "122258b897c7d14b774ffe3c",
+      "traditionalSourceHash": "b7adab821f96fbf11738f9ee",
+      "traditionalHash": "0f23e351623400541512afc6"
+    },
+    "SwapMid:ENT:001": {
+      "sourceHash": "04e0279cd91c2bb0bb034ce5",
+      "englishHash": "e06a8fd935e1c3abb74d7f43",
+      "traditionalSourceHash": "ed987df14a6dae32e59dc1b8",
+      "traditionalHash": "e1933349d9a5e5bce24c8c5a"
+    },
+    "SwapMid:ENT:002": {
+      "sourceHash": "83b07f7431f86f00eaa5d75b",
+      "englishHash": "fb7af39b56004ef33b75e2ac",
+      "traditionalSourceHash": "c72fed8a90942ab1ff270469",
+      "traditionalHash": "285d57782f68717b567b2cd0"
+    },
+    "SwapMid:ENT:003": {
+      "sourceHash": "dc5f5ca1131e95f24e03cfac",
+      "englishHash": "2bffc5fca9bb0ae121b949da",
+      "traditionalSourceHash": "66c1b0cdda8a76cb81c1f125",
+      "traditionalHash": "d31410079a8679fbde9803ef"
+    },
+    "SwapMid:ENT:004": {
+      "sourceHash": "dbc9c3bc6ec8befb0612374e",
+      "englishHash": "a462a8485d8e5893a01f5c62",
+      "traditionalSourceHash": "902764603e340b65894d341a",
+      "traditionalHash": "c35bd34fea9f5a5fcb1054c6"
+    },
+    "SwapMid:ENT:005": {
+      "sourceHash": "c1ffa27368297b430ae80b4b",
+      "englishHash": "4b73ffee2d0a6244dbd827eb",
+      "traditionalSourceHash": "b0bf3a42468cc1bf062bcb28",
+      "traditionalHash": "b7d178bb54e0889bbb2579ab"
+    },
+    "SwapMid:ENT:006": {
+      "sourceHash": "115bf9a41a176634e04aa7a9",
+      "englishHash": "a138cbd426439a7f62c678b6",
+      "traditionalSourceHash": "a37b524d1c216afb40642ac8",
+      "traditionalHash": "dd9cb2543368d24bf40e1373"
+    },
+    "SwapMid:ENT:007": {
+      "sourceHash": "815b80e5718b669c35f1b5ed",
+      "englishHash": "fd85fcb88868c135b84a038b",
+      "traditionalSourceHash": "626ab2575678e76bd77cdb07",
+      "traditionalHash": "e519812ee0f7329fbc86e540"
+    },
+    "SwapMid:ENT:008": {
+      "sourceHash": "f1d54ca1b3f0872239f841a7",
+      "englishHash": "a7a0904fc5f9b754df949920",
+      "traditionalSourceHash": "3c3030b2613f0b553d76e184",
+      "traditionalHash": "45abdc20f7aa4f8e8df97a7d"
+    },
+    "SwapMid:LAY:001": {
+      "sourceHash": "434867d5393471b93f793079",
+      "englishHash": "c190112acb5733eeac429a08",
+      "traditionalSourceHash": "66cdd0dd77a0b1aba22853de",
+      "traditionalHash": "771f9913c24148805c54d815"
+    },
+    "SwapMid:LAY:002": {
+      "sourceHash": "fa26ab39b151e8c7cdd889b5",
+      "englishHash": "0bf6fa2cdd00900d254b8700",
+      "traditionalSourceHash": "9eccb64bab312a114b9dc405",
+      "traditionalHash": "2b772ad5eae0dd7cec87bae1"
+    },
+    "SwapMid:MQ:001": {
+      "sourceHash": "8a425d4f43f0049e5e61d540",
+      "englishHash": "52135ad6adff99f7cef057f9",
+      "traditionalSourceHash": "b8dac380862862563df98986",
+      "traditionalHash": "3e35f9e3bd119e612cabd9ad"
+    },
+    "SwapMid:MQ:002": {
+      "sourceHash": "51b84da727a1d578daff1bbd",
+      "englishHash": "1b710a4f71b416d9909770e1",
+      "traditionalSourceHash": "adc1ecab3e993424f8dd5786",
+      "traditionalHash": "7647f034ecd75a96bd20b2da"
+    },
+    "SwapMid:MQ:003": {
+      "sourceHash": "20b46cbd7eef235212b4e7f3",
+      "englishHash": "477dda621f8300617315a400",
+      "traditionalSourceHash": "f1eb7126de70adba01c9cedc",
+      "traditionalHash": "e7ea7d5c2b420079118b2131"
+    },
+    "SwapMid:MQ:004": {
+      "sourceHash": "4be874c8e582833500b66841",
+      "englishHash": "7599484beb413e2096700ae5",
+      "traditionalSourceHash": "d4d73232e2d69414738a7215",
+      "traditionalHash": "026b348aaf31c9c6b6784ab8"
+    },
+    "SwapMid:NC:001": {
+      "sourceHash": "4c91598f0ed3f65c7532b329",
+      "englishHash": "d127c83922cf04faf291a56e",
+      "traditionalSourceHash": "3e3ea44d8db8fa65d46399b6",
+      "traditionalHash": "186dd4df83671608ce3f2803"
+    },
+    "SwapMid:NC:002": {
+      "sourceHash": "6714f74ee520bd12253d8889",
+      "englishHash": "6214d81c527bd14b9e7d44ae",
+      "traditionalSourceHash": "892e8a5a9bb560b19a39ec0a",
+      "traditionalHash": "0c793e27e05b89e580b46793"
+    },
+    "SwapMid:NC:003": {
+      "sourceHash": "05f79ecb0305cbf88a3ffcf9",
+      "englishHash": "47aeabb32fe1a6d7a788375d",
+      "traditionalSourceHash": "5162ebdd0b310893ac4bc972",
+      "traditionalHash": "d1551dfa69ab92c59a3b77df"
+    },
+    "SwapMid:SCH:001": {
+      "sourceHash": "b5d8ff9fcabfd9e53335f976",
+      "englishHash": "d9f09d99d697be53eb6b31da",
+      "traditionalSourceHash": "5bf819222ad99fdfb2089493",
+      "traditionalHash": "3e384875b16c3d0ef7da6f08"
+    },
+    "SwapMid:SYS:006": {
+      "sourceHash": "10364d22054cc47a9aebd78a",
+      "englishHash": "4e9f1bfea1adc127f15a8360",
+      "traditionalSourceHash": "89e78b04080180dfd44105c6",
+      "traditionalHash": "0bedf775e6de3a9434e67e00"
+    },
+    "SwapMid:SYS:007": {
+      "sourceHash": "ab86a823b820e00a8a1a7c7b",
+      "englishHash": "0c19b9c358bf5bb6abc178d7",
+      "traditionalSourceHash": "10af7685c50fdc2a6a7ae0a2",
+      "traditionalHash": "63047a11f07b940bea19891e"
+    },
+    "SwapMid:System:DataDictionaryCodeExists": {
+      "sourceHash": "0bfd4124a4ebc8fea44848e3",
+      "englishHash": "eff300141fb0064547fd31d2",
+      "traditionalSourceHash": "a6e0aaf1c86164517672d459",
+      "traditionalHash": "a3db2713ce5da844fd728049"
+    },
+    "SwapMid:System:DataDictionaryItemValueExists": {
+      "sourceHash": "5c83d2f862c51d959cf2c40b",
+      "englishHash": "0e67fd61b9733a2e73b13852",
+      "traditionalSourceHash": "05e8f83e2d0638ee176f5bcd",
+      "traditionalHash": "4b5f5f8ee8e0651de3407ac5"
+    },
+    "SwapMid:System:DataDictionaryItemReorderMismatch": {
+      "sourceHash": "587cbea2338621e9faa63f26",
+      "englishHash": "49bd677e335973db9be81dc8",
+      "traditionalSourceHash": "7d2827ecb9d7bb361faf634f",
+      "traditionalHash": "a9780f975c15b505a37de208"
+    },
+    "SwapMid:System:CodeRuleEntityTypeExists": {
+      "sourceHash": "6f73d1624c4e8e7c114d81cb",
+      "englishHash": "4189c254097ffb8bc8173142",
+      "traditionalSourceHash": "7ebea68a909623d26a4a348f",
+      "traditionalHash": "af0bf6da71d21efab60e5fba"
+    },
+    "SwapMid:System:CodeRuleNotFound": {
+      "sourceHash": "226bd54fb3153081f39adbba",
+      "englishHash": "d7ad0bc49b61fe60db7907d5",
+      "traditionalSourceHash": "f3eecf5d1e7c7fa04faf6a20",
+      "traditionalHash": "b7a47a9379c2c0a5be94f295"
+    }
+  }
+}

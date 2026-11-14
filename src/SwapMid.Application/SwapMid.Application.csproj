@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\common.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <RootNamespace>SwapMid</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SwapMid.Domain\SwapMid.Domain.csproj" />
+    <ProjectReference Include="..\SwapMid.Application.Contracts\SwapMid.Application.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Cronos" Version="0.9.0" />
+    <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="MailKit" Version="4.17.0" /><!-- SMTP 通知渠道（MailKit ≥4.16.0 / MimeKit ≥4.15.1 安全基线） -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
+    <PackageReference Include="Microsoft.SqlServer.TransactSql.ScriptDom" Version="180.59.2" /><!-- ETL SQL Server sourceQuery AST 只读边界 -->
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.0.0" />
+    <PackageReference Include="MiniExcel" Version="1.45.0" /><!-- 开发者文档·数据库表字典 Excel 导出 -->
+    <PackageReference Include="MySqlConnector" Version="2.6.1" />
+    <PackageReference Include="Npgsql" Version="10.0.0" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.13" />
+    <PackageReference Include="prometheus-net" Version="8.2.1" />
+    <PackageReference Include="ToolGood.Words" Version="3.1.0.3" />
+    <PackageReference Include="Volo.Abp.RabbitMQ" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.PermissionManagement.Application" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.FeatureManagement.Application" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.SettingManagement.Application" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Account.Application" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.DistributedLocking" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Identity.Application" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.TenantManagement.Application" Version="10.5.0" />
+  </ItemGroup>
+
+</Project>

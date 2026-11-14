@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "node scripts/ui-health.mjs --write-baseline",
+  "limits": {
+    "headerTextButtons": 3,
+    "headerPrimary": 1,
+    "descriptionLength": 40,
+    "aboveTableBlocks": 2,
+    "footerPrimary": 1,
+    "unpinnedDialogFooters": 0,
+    "longButtonLabels": 0,
+    "variantToggles": 0,
+    "solidDestructive": 0,
+    "inferredNumericColumns": 0
+  },
+  "routes": {}
+}

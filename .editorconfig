@@ -1,0 +1,57 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{cs,csproj,props,targets}]
+indent_size = 4
+end_of_line = crlf
+
+[*.cs]
+resharper_sql_no_data_source_inspection_highlighting = none
+dotnet_diagnostic.MA0009.severity = error
+dotnet_diagnostic.MA0039.severity = error
+dotnet_diagnostic.MA0060.severity = error
+dotnet_diagnostic.MA0100.severity = error
+dotnet_diagnostic.MA0134.severity = error
+dotnet_diagnostic.MA0147.severity = error
+dotnet_diagnostic.MA0153.severity = error
+dotnet_diagnostic.MA0163.severity = error
+
+[*.{ts,tsx,js,mjs,cjs,json,yaml,yml}]
+indent_size = 2
+
+[*.csproj]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[src/SwapMid.EntityFrameworkCore/Migrations/*.Designer.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+
+[src/SwapMid.EntityFrameworkCore/Migrations/**/*.Designer.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+
+[src/SwapMid.EntityFrameworkCore/Migrations/*ModelSnapshot.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+
+[src/SwapMid.EntityFrameworkCore/Migrations/**/*ModelSnapshot.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+
+[*.generated.ts]
+generated_code = true
+
+[*.gen.ts]
+generated_code = true
+
+[web/src/lib/api/generated/**]
+generated_code = true

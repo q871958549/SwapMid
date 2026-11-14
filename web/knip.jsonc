@@ -1,0 +1,19 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // Next.js、Vitest 与 Playwright 插件会从各自配置自动发现入口；独立运维/集成脚本显式登记为入口。
+  "entry": [
+    "scripts/*.{mjs,ts}"
+  ],
+  // 生成契约、域级 DTO 类型桶与共享基础 UI 组件集保持完整公开导出面。
+  "ignore": [
+    "src/lib/api/generated/**",
+    "src/lib/api/types/**",
+    "src/components/ui/**",
+    "src/components/common/employee-person-chip.tsx"
+  ],
+  "ignoreDependencies": [
+    "@hey-api/client-fetch",
+    "tsx"
+  ],
+  "ignoreExportsUsedInFile": true
+}

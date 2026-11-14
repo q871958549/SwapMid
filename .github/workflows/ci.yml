@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (.NET 10)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore SwapMid.slnx
+
+      - name: Build (warnings as errors)
+        run: dotnet build SwapMid.slnx --no-restore -c Release --nologo
+
+      - name: Run test suites
+        run: dotnet test SwapMid.slnx --no-build -c Release --nologo --verbosity normal
+
+  frontend:
+    name: Frontend (Next.js 16)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript typecheck
+        run: npx tsc --noEmit
+
+      - name: Dependency & architecture boundaries (Knip + Dependency Cruiser)
+        run: pnpm check:deps
+
+      - name: Supply-chain security contracts
+        run: pnpm test:security-deps
+
+      - name: ESLint (zero warnings) & i18n contracts
+        run: pnpm lint
+
+      - name: UI governance health check
+        run: pnpm check:ui
+
+      - name: OpenAPI summary baseline check
+        run: pnpm check:api-summary
+
+      - name: Unit & contract tests (Vitest)
+        run: pnpm test:run
+
+      - name: Production standalone build
+        run: pnpm build
+
+  compose:
+    name: Docker Compose & Image Builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate docker-compose.yml
+        run: docker compose -f docker/docker-compose.yml --env-file docker/.env.example config --quiet
+
+      - name: Build production container images (migrator, api, web)
+        run: |
+          docker compose -f docker/docker-compose.yml --env-file docker/.env.example build migrator
+          docker compose -f docker/docker-compose.yml --env-file docker/.env.example build api
+          docker compose -f docker/docker-compose.yml --env-file docker/.env.example build web

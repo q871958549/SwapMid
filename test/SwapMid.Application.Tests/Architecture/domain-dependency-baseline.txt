@@ -1,0 +1,6 @@
+# SwapMid 域间依赖基线（源域 -> 目标域，按字典序排列）
+# 核心集成引擎仅依赖 SystemManagement 基础设施（如编码规则 / 字典），零业务域耦合。
+ApiManagement -> SystemManagement
+DataIntegration -> SystemManagement
+EnterpriseManagement -> SystemManagement
+MessageBus -> SystemManagement

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\common.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <RootNamespace>SwapMid</RootNamespace>
+    <!-- 单体应用内部契约程序集；对外契约以运行时 OpenAPI 为准，不发布 NuGet/承诺 CLR 二进制兼容。 -->
+    <IsPackable>false</IsPackable>
+    <!-- 生成 XML 文档,供 Swagger IncludeXmlComments 读取 DTO 字段中文注释(CS1591 已在 common.props NoWarn) -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SwapMid.Domain.Shared\SwapMid.Domain.Shared.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.PermissionManagement.Application.Contracts" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.FeatureManagement.Application.Contracts" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.SettingManagement.Application.Contracts" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Identity.Application.Contracts" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Account.Application.Contracts" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.TenantManagement.Application.Contracts" Version="10.5.0" />
+  </ItemGroup>
+
+</Project>

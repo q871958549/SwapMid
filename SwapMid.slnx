@@ -1,0 +1,24 @@
+<Solution>
+    <Configurations>
+        <Platform Name="Any CPU" />
+    </Configurations>
+    <Folder Name="/src/">
+        <Project Path="src/SwapMid.Domain.Shared/SwapMid.Domain.Shared.csproj" />
+        <Project Path="src/SwapMid.Domain/SwapMid.Domain.csproj" />
+        <Project Path="src/SwapMid.Application.Contracts/SwapMid.Application.Contracts.csproj" />
+        <Project Path="src/SwapMid.Application/SwapMid.Application.csproj" />
+        <Project Path="src/SwapMid.EntityFrameworkCore/SwapMid.EntityFrameworkCore.csproj" />
+        <Project Path="src/SwapMid.HttpApi/SwapMid.HttpApi.csproj" />
+        <Project Path="src/SwapMid.HttpApi.Client/SwapMid.HttpApi.Client.csproj" />
+        <Project Path="src/SwapMid.DbMigrator/SwapMid.DbMigrator.csproj" />
+        <Project Path="src/SwapMid.HttpApi.Host/SwapMid.HttpApi.Host.csproj" />
+    </Folder>
+    <Folder Name="/test/">
+        <Project Path="test/SwapMid.TestBase/SwapMid.TestBase.csproj" />
+        <Project Path="test/SwapMid.Domain.Tests/SwapMid.Domain.Tests.csproj" />
+        <Project Path="test/SwapMid.Application.Tests/SwapMid.Application.Tests.csproj" />
+        <Project Path="test/SwapMid.EntityFrameworkCore.Tests/SwapMid.EntityFrameworkCore.Tests.csproj" />
+        <Project Path="test/SwapMid.HttpApi.Tests/SwapMid.HttpApi.Tests.csproj" />
+        <Project Path="test/SwapMid.HttpApi.Client.ConsoleTestApp/SwapMid.HttpApi.Client.ConsoleTestApp.csproj" />
+    </Folder>
+</Solution>

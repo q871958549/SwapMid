@@ -1,0 +1,103 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <Import Project="..\..\common.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
+    <RootNamespace>SwapMid</RootNamespace>
+    <PreserveCompilationReferences>true</PreserveCompilationReferences>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'SwapMid.HttpApi.Host' " />
+
+  <ItemGroup>
+    <PackageReference Include="AspNetCore.HealthChecks.UI" Version="9.0.0" />
+    <PackageReference Include="KubernetesClient" Version="18.0.5" />
+    <PackageReference Include="IdentityModel" Version="7.0.0" />
+    <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
+    <PackageReference Include="AspNetCore.HealthChecks.UI.InMemory.Storage" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.10" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Enrichers.Span" Version="3.1.0" /><!-- D6：把 TraceId/SpanId 注入 Serilog 日志(Seq)，与既有 ABP CorrelationId 并存 -->
+    <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
+    <PackageReference Include="Serilog.Sinks.Seq" Version="8.0.0" />
+    <PackageReference Include="Volo.Abp.Caching.StackExchangeRedis" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.DistributedLocking" Version="10.5.0" />
+    <PackageReference Include="DistributedLock.Redis" Version="1.1.1" /><!-- capability/匿名配额/幂等临界区的真实 Redis 锁 provider；仅注入 IAbpDistributedLock 会退化为空锁 -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 应用指标 /metrics（Prometheus 抓取）：HTTP 请求延迟/错误率 + .NET runtime（GC/线程池/异常计数） -->
+    <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1" />
+    <PackageReference Include="prometheus-net.DotNetRuntime" Version="4.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 分布式追踪（M2.2 / ADR-0007）：OpenTelemetry SDK 自动埋点。由 OTel:Tracing:Enabled 门控、默认关。
+         导出器经 OTel:Tracing:Exporter 选择：console（P0/本地）| otlp（直连 Tempo:4317，P2 部署）。
+         整套 OTel 生态 1.16.0 已统一版本号（高于 ADR 占位的 1.15.x），net10 还原/编译通过。 -->
+    <PackageReference Include="OpenTelemetry" Version="1.16.0" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.16.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.16.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.16.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.16.0" />
+    <!-- P4 灰度：EFCore instrumentation（PG / ABP 业务库的 EF 查询 span）。仍 beta，由 OTel:Tracing:EnableEfCore 单独二级门控、默认关。
+         ⚠️ 1.13.0-beta.1 起 SQL 文本恒采(无公共开关)，但本包仅覆盖 EF Core 查询(Dapper 不经此包)、且 EF 查询为参数化(@占位符、值不入 trace)，
+         与既有 SqlClient 同口径、不引入新 PII。⚠️ 切勿再加 Npgsql 原生 ActivitySource，否则同一 PG 查询重复 span(contrib #1764)；当前未加。 -->
+    <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.16.0-beta.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.AspNetCore.MultiTenancy" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Autofac" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Serilog" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Swashbuckle" Version="10.5.0" />
+    <!-- 钉版修 NU1903 / CVE-2026-49451: 传递依赖 Microsoft.OpenApi 2.3.0 循环引用 DoS, 同 2.x 线升修复版 2.7.5 -->
+    <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.Account.Web.OpenIddict" Version="10.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.BackgroundJobs.Hangfire" Version="10.5.0" />
+    <PackageReference Include="Hangfire.PostgreSql" Version="1.21.1" />
+    <!-- Cronos 未随 Hangfire.Core 公开传递（新版 ILRepack 内部化避免类型冲突）：cron 校验/预览需显式引用 -->
+    <PackageReference Include="Cronos" Version="0.9.0" />
+    <!-- ISettingManager（cron 停用草稿写入）编译期类型来自 .Domain 包（同 SwapMid.Domain.csproj 的引用方式）；
+         运行期 DI 注册已经由 Application 层模块依赖链提供，这里只为让 Host 自身编译单元看到该类型 -->
+    <PackageReference Include="Volo.Abp.SettingManagement.Domain" Version="10.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite" Version="5.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SwapMid.Application\SwapMid.Application.csproj" />
+    <ProjectReference Include="..\SwapMid.HttpApi\SwapMid.HttpApi.csproj" />
+    <ProjectReference Include="..\SwapMid.EntityFrameworkCore\SwapMid.EntityFrameworkCore.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.Studio.Client.AspNetCore" Version="3.0.7" />
+    <!-- 安全钉版：MessagePack 经 ABP Studio Client → MagicOnion 7.0.6 传递引入，3.1.1 含高危漏洞
+         GHSA-hv8m-jj95-wg3x（LZ4 解压越界读 → DoS），3.1.7 起修复（同 3.1.x 补丁，兼容 MagicOnion）。
+         待上游 MagicOnion / ABP Studio Client 提升 MessagePack 版本后可移除此钉版。 -->
+    <PackageReference Include="MessagePack" Version="3.1.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Logs\**" />
+    <Content Remove="Logs\**" />
+    <EmbeddedResource Remove="Logs\**" />
+    <None Remove="Logs\**" />
+  </ItemGroup>
+
+</Project>

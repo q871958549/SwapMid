@@ -1,0 +1,179 @@
+name: swapmid
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-swapmid}
+      POSTGRES_USER: ${POSTGRES_USER:-swapmid}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - "${POSTGRES_PORT:-15432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-swapmid} -d $${POSTGRES_DB:-swapmid}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-16379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-swapmid}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD in .env}
+    ports:
+      - "${RABBITMQ_AMQP_PORT:-15672}:5672"
+      - "${RABBITMQ_MGMT_PORT:-25672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  seq:
+    image: datalust/seq:2024.3
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "True"
+    ports:
+      - "${SEQ_PORT:-15341}:80"
+    volumes:
+      - seq_data:/data
+
+  migrator:
+    build:
+      context: ..
+      dockerfile: src/SwapMid.DbMigrator/Dockerfile
+      args:
+        RELEASE_SHA: ${RELEASE_SHA:-local}
+    image: swapmid-migrator:${IMAGE_TAG:-local}
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      App__SelfUrl: "http://127.0.0.1:8080"
+      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-swapmid};Username=${POSTGRES_USER:-swapmid};Password=${POSTGRES_PASSWORD};SSL Mode=Disable;GSS Encryption Mode=Disable"
+      Redis__Configuration: "redis:6379"
+      StringEncryption__DefaultPassPhrase: "${STRING_ENCRYPTION_PASSPHRASE:?Set STRING_ENCRYPTION_PASSPHRASE in .env}"
+      OpenIddict__Applications__SwapMid_App__RootUrl: "${PUBLIC_WEB_URL:-http://localhost:13000}"
+      OpenIddict__Applications__SwapMid_Swagger__RootUrl: "${PUBLIC_API_URL:-http://localhost:18080}"
+
+  api:
+    build:
+      context: ..
+      dockerfile: src/SwapMid.HttpApi.Host/Dockerfile
+      args:
+        RELEASE_SHA: ${RELEASE_SHA:-local}
+        OPENIDDICT_PFX_PASS: ${OPENIDDICT_PFX_PASS:-changeit}
+    image: swapmid-api:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: "http://+:8080"
+      App__SelfUrl: "${PUBLIC_API_URL:-http://localhost:18080}"
+      App__FrontendUrl: "${PUBLIC_WEB_URL:-http://localhost:13000}"
+      App__CorsOrigins: "${PUBLIC_WEB_URL:-http://localhost:13000}"
+      App__RedirectAllowedUrls: "${PUBLIC_WEB_URL:-http://localhost:13000}"
+      ApiGateway__Enabled: "${API_GATEWAY_ENABLED:-false}"
+      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-swapmid};Username=${POSTGRES_USER:-swapmid};Password=${POSTGRES_PASSWORD};SSL Mode=Disable;GSS Encryption Mode=Disable"
+      Redis__Configuration: "redis:6379"
+      Redis__IsEnabled: "true"
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__Port: "5672"
+      RabbitMQ__UserName: "${RABBITMQ_USER:-swapmid}"
+      RabbitMQ__Password: "${RABBITMQ_PASSWORD}"
+      RabbitMQ__VirtualHost: "/"
+      AuthServer__Authority: "${PUBLIC_API_URL:-http://localhost:18080}"
+      AuthServer__RequireHttpsMetadata: "${REQUIRE_HTTPS_METADATA:-false}"
+      AuthServer__CertificatePassPhrase: "${OPENIDDICT_PFX_PASS:-changeit}"
+      StringEncryption__DefaultPassPhrase: "${STRING_ENCRYPTION_PASSPHRASE:?Set STRING_ENCRYPTION_PASSPHRASE in .env}"
+      Serilog__WriteTo__2__Args__serverUrl: "http://seq:5341"
+    ports:
+      - "${API_PORT:-18080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/health/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  web:
+    build:
+      context: ../web
+      dockerfile: Dockerfile
+      args:
+        RELEASE_SHA: ${RELEASE_SHA:-local}
+    image: swapmid-web:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    stop_grace_period: 25s
+    depends_on:
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      COOKIE_SECURE: "${COOKIE_SECURE:-false}"
+      SESSION_STORE_MODE: redis
+      REDIS_URL: "redis://redis:6379/0"
+      WEB_SINGLETON_LEASE_KEY: "swapmid:compose:web:singleton:v1"
+      WEB_SINGLETON_LEASE_TTL_MS: "30000"
+      INTERNAL_API_URL: "http://api:8080"
+      NEXT_PUBLIC_API_URL: "${PUBLIC_API_URL:-http://localhost:18080}"
+      SWAPMID_RELEASE: "${IMAGE_TAG:?Set IMAGE_TAG in .env}"
+      SWAPMID_API_READY_URL: "http://api:8080/health/ready"
+      SWAPMID_API_READY_FALLBACK_URL: "http://api:8080/health-status"
+      SWAPMID_API_READY_BUDGET_MS: "180000"
+      SWAPMID_NEXT_STATIC_ARCHIVE: /app/var/next-static-archive
+      SWAPMID_NEXT_STATIC_KEEP: "5"
+      NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:-}
+    ports:
+      - "${WEB_PORT:-13000}:3000"
+    volumes:
+      - web_next_static:/app/var/next-static-archive
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/build-meta >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 220s
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  seq_data:
+  web_next_static:

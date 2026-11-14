@@ -1,0 +1,16 @@
+**/wwwroot/libs/** linguist-vendored
+
+**/*.Designer.cs linguist-generated
+**/*ModelSnapshot.cs linguist-generated
+**/*.generated.ts linguist-generated
+**/*.gen.ts linguist-generated
+web/src/lib/api/generated/** linguist-generated
+**/api-doc-data.generated.ts linguist-generated
+docs/api/openapi.generated.json linguist-generated
+
+*.sh text eol=lf
+docker/Caddyfile text eol=lf
+Dockerfile text eol=lf
+Dockerfile.* text eol=lf
+docker-compose*.yml text eol=lf
+.dockerignore text eol=lf

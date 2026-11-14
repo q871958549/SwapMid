@@ -1,0 +1,650 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+html, body {
+  /* Android WebView 改 color-scheme 会丢合成层；根底色跟 token，避免闪出默认白页。 */
+  min-height: 100%;
+  background-color: var(--background);
+}
+
+:root {
+  /* 原生控件/滚动条/autofill 跟主题走；随 .dark class 瞬时翻转（color-scheme 不可插值，
+     也不该插值——theme-init 首屏靠它与 class 同帧生效，保持 FOUC 防护）。 */
+  color-scheme: light;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.141 0.005 285.823);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.141 0.005 285.823);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.141 0.005 285.823);
+  --primary: oklch(0.21 0.006 285.885);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.967 0.001 286.375);
+  --muted-foreground: oklch(0.552 0.016 285.938);
+  --accent: oklch(0.967 0.001 286.375);
+  --accent-foreground: oklch(0.21 0.006 285.885);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-soft: oklch(0.955 0.032 22);
+  /* 状态色：成功 / 警告 / 信息（在途·进行中）。强调色仍只有 primary；soft 是不透明浅底，给 Badge/StatusBadge 和 toast。 */
+  --success: oklch(0.475 0.135 162);
+  --success-foreground: oklch(0.979 0.021 166.113);
+  --success-soft: oklch(0.952 0.042 163);
+  --warning: oklch(0.515 0.152 52);
+  --warning-foreground: oklch(0.28 0.07 50);
+  --warning-soft: oklch(0.958 0.045 86);
+  --info: oklch(0.488 0.158 252);
+  --info-foreground: oklch(0.985 0.008 252);
+  --info-soft: oklch(0.954 0.032 250);
+  --border: oklch(0.92 0.004 286.32);
+  --input: oklch(0.92 0.004 286.32);
+  --ring: oklch(0.705 0.015 286.067);
+  /* 焦点环令牌：全站只有一个焦点环，宽度和颜色只从这里来。组件只决定环画在框外（默认）
+     还是框内（ring-inset），写法见 docs/ui-design-principles.md §8；eslint swapmid/focus-ring-token 拦自写。 */
+  --focus-ring-width: 3px;
+  --focus-ring-color: color-mix(in oklab, var(--ring) 50%, transparent);
+  --focus-ring-color-destructive: color-mix(in oklab, var(--destructive) 20%, transparent);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.141 0.005 285.823);
+  --sidebar-primary: oklch(0.21 0.006 285.885);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.967 0.001 286.375);
+  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
+  --sidebar-border: oklch(0.92 0.004 286.32);
+  --sidebar-ring: oklch(0.705 0.015 286.067);
+  /* 工作台最外圈（侧栏与主卡之间的 gutter）。浅色对齐原 bg-muted/40；
+     单独成 token 才能跟色板同拍，禁止再写 dark:bg-zinc-* 这类硬色。 */
+  --canvas: color-mix(in oklab, var(--muted) 40%, var(--background));
+}
+
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.141 0.005 285.823);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.21 0.006 285.885);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.21 0.006 285.885);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.92 0.004 286.32);
+  --primary-foreground: oklch(0.21 0.006 285.885);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.274 0.006 286.033);
+  --muted-foreground: oklch(0.705 0.015 286.067);
+  --accent: oklch(0.274 0.006 286.033);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-soft: oklch(0.285 0.052 24);
+  --success: oklch(0.765 0.177 163.223);
+  --success-foreground: oklch(0.26 0.05 163);
+  --success-soft: oklch(0.275 0.048 163);
+  --warning: oklch(0.828 0.189 84.429);
+  --warning-foreground: oklch(0.28 0.06 75);
+  --warning-soft: oklch(0.295 0.048 75);
+  --info: oklch(0.755 0.142 248);
+  --info-foreground: oklch(0.22 0.04 252);
+  --info-soft: oklch(0.278 0.046 252);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.552 0.016 285.938);
+  /* 深色底上红环加到 40% 才看得清。--focus-ring-color 跟 --ring 走，不必在这里重写。 */
+  --focus-ring-color-destructive: color-mix(in oklab, var(--destructive) 40%, transparent);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.21 0.006 285.885);
+  --sidebar-foreground: oklch(0.985 0 0);
+  /* shadcn 模板默认为高饱和蓝紫 oklch(0.488 0.243 264.376)，与平台中性灰系冲突
+     （暗黑下侧栏激活分组头显示为深蓝）；对齐 dark --primary 的近白 */
+  --sidebar-primary: oklch(0.92 0.004 286.32);
+  --sidebar-primary-foreground: oklch(0.21 0.006 285.885);
+  --sidebar-accent: oklch(0.274 0.006 286.033);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.552 0.016 285.938);
+  /* 对齐原 dark:bg-zinc-950/80：zinc-950 ≈ 本板 dark --background */
+  --canvas: oklch(0.141 0.005 285.823);
+}
+
+/* ---- 主题切换过渡（.theme-transitioning，短命类）----
+   根因：主题切换是 html.dark 的 class 硬切，色板 token 全量瞬变；而未注册的自定义属性
+   不参与插值（同 --scrollbar-thumb 长注释里 2026-07-29 的实证），所以哪怕给元素写
+   transition 也带不动 var() 的颜色。解法与滚动条同一手法：把全部 <color> token 用
+   @property 注册，变量本身可插值；仅在用户主动切主题 / system 模式下 OS 偏好变化时，
+   由 theme-provider 给 html 挂 .theme-transitioning（200ms 后卸掉），过渡只在这个窗口存在。
+
+   🔴 四条不变量：
+   · @property 必须 inherits: true——token 在 :root/.dark（即 html）上定义、全树消费，
+     写成 false 会让所有后代读到 initial-value，深色主题整站失效。
+   · 过渡只挂在 html 上：html 的 token 逐帧插值，后代继承的是插值中的值，全树自然同拍；
+     禁止改成 * { transition: background-color, ... } 的永久全站过渡（拖慢 hover、与
+     快档动效语汇打架）。
+   · 短命窗口内子孙 transition: none——侧栏 transition-all、表头 transition-colors
+     会再追一条 150ms，叠在 token 插值上就是「外壳先跳 / 表头慢半拍」。卸类后 hover 恢复。
+   · 首屏 theme-init 脚本与 hydration 不挂此类，保持瞬时上色（FOUC 防护不受影响）。
+   全页反相 ΔL≈220，用 200ms ease-in-out（快档 150ms ease-out 的例外），中间态才够用。
+
+   降级链干净：不支持 @property → 变量不插值 → 瞬变（等于旧行为）；reduced-motion 由
+   JS（不挂类）与下方 CSS 双重兜底。initial-value 取浅色值，仅作注册占位，真值始终来自
+   :root/.dark。 */
+@property --background { syntax: '<color>'; inherits: true; initial-value: oklch(1 0 0); }
+@property --foreground { syntax: '<color>'; inherits: true; initial-value: oklch(0.141 0.005 285.823); }
+@property --card { syntax: '<color>'; inherits: true; initial-value: oklch(1 0 0); }
+@property --card-foreground { syntax: '<color>'; inherits: true; initial-value: oklch(0.141 0.005 285.823); }
+@property --popover { syntax: '<color>'; inherits: true; initial-value: oklch(1 0 0); }
+@property --popover-foreground { syntax: '<color>'; inherits: true; initial-value: oklch(0.141 0.005 285.823); }
+@property --primary { syntax: '<color>'; inherits: true; initial-value: oklch(0.21 0.006 285.885); }
+@property --primary-foreground { syntax: '<color>'; inherits: true; initial-value: oklch(0.985 0 0); }
+@property --secondary { syntax: '<color>'; inherits: true; initial-value: oklch(0.967 0.001 286.375); }
+@property --secondary-foreground { syntax: '<color>'; inherits: true; initial-value: oklch(0.21 0.006 285.885); }
+@property --muted { syntax: '<color>'; inherits: true; initial-value: oklch(0.967 0.001 286.375); }
+@property --muted-foreground { syntax: '<color>'; inherits: true; initial-value: oklch(0.552 0.016 285.938); }
+@property --accent { syntax: '<color>'; inherits: true; initial-value: oklch(0.967 0.001 286.375); }
+@property --accent-foreground { syntax: '<color>'; inherits: true; initial-value: oklch(0.21 0.006 285.885); }
+@property --destructive { syntax: '<color>'; inherits: true; initial-value: oklch(0.577 0.245 27.325); }
+@property --destructive-soft { syntax: '<color>'; inherits: true; initial-value: oklch(0.955 0.032 22); }
+@property --success { syntax: '<color>'; inherits: true; initial-value: oklch(0.475 0.135 162); }
+@property --success-foreground { syntax: '<color>'; inherits: true; initial-value: oklch(0.979 0.021 166.113); }
+@property --success-soft { syntax: '<color>'; inherits: true; initial-value: oklch(0.952 0.042 163); }
+@property --warning { syntax: '<color>'; inherits: true; initial-value: oklch(0.515 0.152 52); }
+@property --warning-foreground { syntax: '<color>'; inherits: true; initial-value: oklch(0.28 0.07 50); }
+@property --warning-soft { syntax: '<color>'; inherits: true; initial-value: oklch(0.958 0.045 86); }
+@property --info { syntax: '<color>'; inherits: true; initial-value: oklch(0.488 0.158 252); }
+@property --info-foreground { syntax: '<color>'; inherits: true; initial-value: oklch(0.985 0.008 252); }
+@property --info-soft { syntax: '<color>'; inherits: true; initial-value: oklch(0.954 0.032 250); }
+@property --border { syntax: '<color>'; inherits: true; initial-value: oklch(0.92 0.004 286.32); }
+@property --input { syntax: '<color>'; inherits: true; initial-value: oklch(0.92 0.004 286.32); }
+@property --ring { syntax: '<color>'; inherits: true; initial-value: oklch(0.705 0.015 286.067); }
+@property --chart-1 { syntax: '<color>'; inherits: true; initial-value: oklch(0.646 0.222 41.116); }
+@property --chart-2 { syntax: '<color>'; inherits: true; initial-value: oklch(0.6 0.118 184.704); }
+@property --chart-3 { syntax: '<color>'; inherits: true; initial-value: oklch(0.398 0.07 227.392); }
+@property --chart-4 { syntax: '<color>'; inherits: true; initial-value: oklch(0.828 0.189 84.429); }
+@property --chart-5 { syntax: '<color>'; inherits: true; initial-value: oklch(0.769 0.188 70.08); }
+@property --sidebar { syntax: '<color>'; inherits: true; initial-value: oklch(0.985 0 0); }
+@property --sidebar-foreground { syntax: '<color>'; inherits: true; initial-value: oklch(0.141 0.005 285.823); }
+@property --sidebar-primary { syntax: '<color>'; inherits: true; initial-value: oklch(0.21 0.006 285.885); }
+@property --sidebar-primary-foreground { syntax: '<color>'; inherits: true; initial-value: oklch(0.985 0 0); }
+@property --sidebar-accent { syntax: '<color>'; inherits: true; initial-value: oklch(0.967 0.001 286.375); }
+@property --sidebar-accent-foreground { syntax: '<color>'; inherits: true; initial-value: oklch(0.21 0.006 285.885); }
+@property --sidebar-border { syntax: '<color>'; inherits: true; initial-value: oklch(0.92 0.004 286.32); }
+@property --sidebar-ring { syntax: '<color>'; inherits: true; initial-value: oklch(0.705 0.015 286.067); }
+@property --canvas { syntax: '<color>'; inherits: true; initial-value: oklch(0.987 0.0004 286.375); }
+
+html.theme-transitioning {
+  transition-property: --background, --foreground, --card, --card-foreground, --popover,
+    --popover-foreground, --primary, --primary-foreground, --secondary, --secondary-foreground,
+    --muted, --muted-foreground, --accent, --accent-foreground, --destructive, --destructive-soft,
+    --success, --success-foreground, --success-soft, --warning, --warning-foreground, --warning-soft,
+    --info, --info-foreground, --info-soft,
+    --border, --input,
+    --ring, --chart-1, --chart-2, --chart-3, --chart-4, --chart-5, --sidebar, --sidebar-foreground,
+    --sidebar-primary, --sidebar-primary-foreground, --sidebar-accent, --sidebar-accent-foreground,
+    --sidebar-border, --sidebar-ring, --canvas;
+  transition-duration: 200ms;
+  transition-timing-function: ease-in-out;
+}
+
+/* 短命窗口内掐掉子孙自带过渡，避免第二条时间轴。本规则未分层，压过 utilities。 */
+html.theme-transitioning * {
+  transition: none;
+}
+
+/* 登录页装饰层的同拍补偿：极光/暗角等用写死的 oklch 渐变 + mix-blend-mode + blur，
+   token 插值带不动（gradient 模板两态不同、blend-mode 不可插值），硬切会与卡片的平滑
+   过渡形成「一半过渡一半瞬变」混搭。解法：切换瞬间整个装饰容器从透明 200ms 淡入——
+   底下露出的正是在插值中的 --background，观感等于整层交叉淡化。类挂上时规则新匹配、
+   动画播一次；卸类时动画已结束，无残留。 */
+html.theme-transitioning .login-bg {
+  animation: swapmid-fade-in 200ms ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transitioning,
+  html.theme-transitioning * {
+    transition: none;
+  }
+  html.theme-transitioning .login-bg {
+    animation: none;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-soft: var(--info-soft);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-canvas: var(--canvas);
+  /* 筛选与表单行内控件宽度四档（docs/ui-governance-blueprint.md §8.2/§8.3）：
+     xs=112px（状态/年份短选）、sm=144px（日期/月份/部门）、md=192px（标准下拉/短搜索）、lg=256px（长名称/远程关联）。
+     替代手写 w-[120px] / w-[180px] 等任意像素值，统一页面排版节奏。 */
+  --width-field-xs: 7rem;
+  --width-field-sm: 9rem;
+  --width-field-md: 12rem;
+  --width-field-lg: 16rem;
+  --min-width-field-xs: 7rem;
+  --min-width-field-sm: 9rem;
+  --min-width-field-md: 12rem;
+  --min-width-field-lg: 16rem;
+  /* 动效时长三档（docs/ui-design-principles.md §6）：状态色 150ms、结构进出 200ms、强调上限 350ms。 */
+  --transition-duration-fast: 150ms;
+  --transition-duration-normal: 200ms;
+  --transition-duration-emphasis: 350ms;
+}
+
+/* 🔴 这条**必须**包在 `@layer base` 里，别把花括号拆掉（2026-08-07 修复）。
+   CSS Cascade Layers 规范：**未分层（unlayered）的样式优先级高于所有 @layer 内的样式**，与选择器
+   特异性无关。Tailwind v4 把所有 utility 放在 `@layer utilities` 里，所以这条通配规则一旦裸露在
+   顶层，就会**压制全站每一个 border 颜色类与 outline 颜色类**——实测 `border-amber-300` /
+   `border-destructive` / `border-primary` / `border-red-500` / `border-transparent` 的计算值全部
+   等于 `var(--border)`，即：写了等于没写，边框永远是那个灰。
+   这个坑极难发现，因为**产物 CSS 里那些规则都好端端存在**（`.border-destructive{...}` 一条不少），
+   只是在层叠里输掉了；`.claude/rules/frontend-controls.md` 里「`aria-invalid:border-destructive`
+   不是死类」那段平反，当时只验到了「规则存在」，没验「规则生效」——它实际上也一直被这条压着。 */
+@layer base {
+  * {
+    border-color: var(--border);
+    outline-color: var(--ring);
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== 登录页 · 动态极光背景 =====
+   浅色＝流动的现代白，深色＝深邃动态的深色。纯 CSS @keyframes（仅动 transform，
+   走 GPU 合成层、不占主线程），随 <html>.dark 自动切换配色；
+   prefers-reduced-motion 下停动、保留静态光晕。 */
+.login-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* 现代白：自顶向下极浅冷白渐变，避免纯白的单调死板 */
+  background: radial-gradient(130% 130% at 50% 8%, oklch(1 0 0) 38%, oklch(0.965 0.016 245) 100%);
+}
+.dark .login-bg {
+  /* 深邃：自顶向下的冷调蓝黑，越往下越沉 */
+  background: radial-gradient(
+    130% 130% at 50% 6%,
+    oklch(0.225 0.021 264) 0%,
+    oklch(0.142 0.015 262) 52%,
+    oklch(0.104 0.012 260) 100%
+  );
+}
+
+.login-aurora {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(72px);
+  opacity: 0.5;
+  will-change: transform;
+}
+.dark .login-aurora {
+  filter: blur(90px);
+  opacity: 0.5;
+  /* 深色下叠加发光，营造极光通透感 */
+  mix-blend-mode: screen;
+}
+
+.login-aurora-1 {
+  top: -14%;
+  left: -10%;
+  width: 40rem;
+  height: 40rem;
+  background: radial-gradient(circle, oklch(0.86 0.075 242) 0%, transparent 70%);
+  animation: login-aurora-a 24s ease-in-out infinite;
+}
+.dark .login-aurora-1 {
+  background: radial-gradient(circle, oklch(0.52 0.17 258) 0%, transparent 70%);
+}
+
+.login-aurora-2 {
+  top: 6%;
+  right: -14%;
+  width: 38rem;
+  height: 38rem;
+  background: radial-gradient(circle, oklch(0.89 0.062 192) 0%, transparent 70%);
+  animation: login-aurora-b 30s ease-in-out infinite;
+}
+.dark .login-aurora-2 {
+  background: radial-gradient(circle, oklch(0.57 0.12 200) 0%, transparent 70%);
+}
+
+.login-aurora-3 {
+  bottom: -20%;
+  left: 30%;
+  width: 44rem;
+  height: 44rem;
+  background: radial-gradient(circle, oklch(0.87 0.06 300) 0%, transparent 70%);
+  animation: login-aurora-c 27s ease-in-out infinite;
+}
+.dark .login-aurora-3 {
+  background: radial-gradient(circle, oklch(0.49 0.17 298) 0%, transparent 70%);
+}
+
+@keyframes login-aurora-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(12%, 10%, 0) scale(1.16); }
+}
+@keyframes login-aurora-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); }
+  50%      { transform: translate3d(-10%, 12%, 0) scale(0.9); }
+}
+@keyframes login-aurora-c {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(8%, -12%, 0) scale(1.14); }
+}
+
+/* ---- 视差容器：指针移动时各层按不同系数位移（远大近小＝纵深感）。
+       变量 --login-mx / --login-my 由 login/page.tsx 的指针监听写入（范围 -1~1）。 ---- */
+.login-parallax {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.login-parallax-far {
+  transform: translate3d(calc(var(--login-mx, 0) * 24px), calc(var(--login-my, 0) * 24px), 0);
+}
+.login-parallax-mid {
+  transform: translate3d(calc(var(--login-mx, 0) * 11px), calc(var(--login-my, 0) * 11px), 0);
+}
+
+/* ---- 中景结构层：极淡点阵 + radial 遮罩向四周渐隐（SaaS 现代签名，补足远↔近之间的中景）。
+       inset 外扩一圈，视差位移时边缘不露空。 ---- */
+.login-grid {
+  position: absolute;
+  inset: -8%;
+  background-image: radial-gradient(circle, oklch(0.45 0.03 255 / 0.10) 1px, transparent 1.6px);
+  background-size: 27px 27px;
+  -webkit-mask-image: radial-gradient(ellipse 78% 68% at 50% 42%, #000 28%, transparent 76%);
+  mask-image: radial-gradient(ellipse 78% 68% at 50% 42%, #000 28%, transparent 76%);
+}
+.dark .login-grid {
+  background-image: radial-gradient(circle, oklch(0.88 0.04 255 / 0.10) 1px, transparent 1.6px);
+}
+
+/* ---- 暗角聚焦：边缘收拢、视线漏斗到中央卡片。浅色极淡冷收，深色明显压暗。 ---- */
+.login-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 76% 74% at 50% 40%, transparent 54%, oklch(0.62 0.03 255 / 0.12) 100%);
+}
+.dark .login-vignette {
+  background: radial-gradient(ellipse 82% 80% at 50% 40%, transparent 42%, oklch(0.07 0.012 262 / 0.58) 100%);
+}
+
+/* ---- 噪点颗粒：消除大面积渐变的 banding 色带，叠一层胶片质感。soft-light/overlay 极低强度。 ---- */
+.login-noise {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+  opacity: 0.04;
+  mix-blend-mode: soft-light;
+}
+.dark .login-noise {
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-aurora {
+    animation: none !important;
+  }
+  .login-parallax {
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---- 全局滚动条主题 ----
+   基线：全站细滚动条 + token 化半透明配色，随深浅主题自适应（--muted-foreground 已是 oklch 变量）。
+   只用标准属性（scrollbar-width / scrollbar-color），不写 ::-webkit-scrollbar：Chromium 121+ 与
+   Firefox 均已支持标准属性，且两套并存时 Chromium 会直接禁用伪元素自定义、混写只会互相打架。
+   Safari 暂不支持标准属性 → 保持原生滚动条，无害降级。 */
+:root {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--muted-foreground) 35%, transparent) transparent;
+}
+
+/* ---- .scrollbar-fade：空闲虚化 ----
+   大面积主滚动区（表格体、弹框、侧栏、页面滚动壳）用它：空闲时滑块全透明、不参与视觉，
+   指针进入容器或容器内有焦点时淡入。
+
+   🔴 渐变必须跑在 @property 注册的 <color> 变量上，禁止直接 `transition: scrollbar-color`
+   （2026-07-29 查证 + A/B/F 三格实测定案）。Chromium 的滚动条部件绘制路径没有接入 CSS
+   动画管线——直接过渡 scrollbar-color 不是"过渡得不好"，而是**完全不执行**，显隐永远单帧
+   跳变（旁证：Chromium 对设了 scrollbar-color 的滚动条连内建 hover 高亮都没有，
+   csswg-drafts#10591）。注册过的自定义属性可以逐帧插值，scrollbar-color 每帧从变量重新
+   求值，于是拿到真的淡入淡出。
+
+   这同时治掉了"移入后滚动条先显示、再自己虚化一次"：Windows Chrome 自 M146 起强制启用
+   Fluent 滚动条（不可关），其部件有 minimal/full/hidden 三态与态间动画；滑块从 transparent
+   单帧跳成可见，对引擎等价于"滚动条刚出现"，于是走一遍出现序列。改成连续 alpha 爬升后，
+   那个瞬间被压进不可见区间。
+
+   <color> 插值按 CSS Color 4 预乘 alpha：从 transparent 出发只有 alpha 在爬，不会途经暗色。
+   进出场刻意不对称——进场快（写在 hover 态），退场慢且延迟一拍（写在基类），指针短暂掠出
+   容器（去点工具栏再回来）不会闪断。
+
+   降级链干净，不需要 @supports：不支持 @property → 变量不插值 → 瞬变，等于旧行为；
+   Safari 不支持 scrollbar-color → 原生滚动条。没有任何环境比改之前更差。
+
+   为什么不需要 JS 监听 scroll：滚轮滚动时指针必然悬停在容器内，:hover 已覆盖「滚动中」这一态；
+   键盘滚动由 :focus-within 覆盖；触屏无 hover 的盲区由下方 pointer:coarse 恒显兜住。三态齐了，
+   一套定时器换不来任何增量。 */
+@property --scrollbar-thumb {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+
+.scrollbar-fade {
+  --scrollbar-thumb: transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+  /* 基类的 transition 参数 = 退场（指针移出容器时生效） */
+  transition: --scrollbar-thumb 0.5s ease 0.2s;
+}
+.scrollbar-fade:hover,
+.scrollbar-fade:focus-within {
+  --scrollbar-thumb: color-mix(in oklch, var(--muted-foreground) 45%, transparent);
+  /* hover 态的 transition 参数 = 进场：快且无延迟 */
+  transition-duration: 0.2s;
+  transition-delay: 0s;
+}
+
+/* 触屏为主输入设备时没有 hover，不虚化——否则滑块永不可见（同排序图标的 pointer:coarse
+   降级哲学）。三个选择器一起覆盖，防混合设备（触屏本 + 鼠标）下 hover 规则抢权。 */
+@media (pointer: coarse) {
+  .scrollbar-fade,
+  .scrollbar-fade:hover,
+  .scrollbar-fade:focus-within {
+    --scrollbar-thumb: color-mix(in oklch, var(--muted-foreground) 35%, transparent);
+  }
+}
+
+/* 独立成块，勿并进上方那个 reduce 块——那块是登录页动画专用 */
+@media (prefers-reduced-motion: reduce) {
+  .scrollbar-fade {
+    transition: none;
+  }
+}
+
+/* ---- .animate-shake：表单校验失败的抖动提醒 ----
+   用于匿名 H5 面试登记表：提交时滚动定位到首个错误字段后抖一下，比页尾一行红字更容易被注意到。
+   motion-reduce 下由调用方或此处统一停用，尊重系统「减弱动效」偏好。 */
+@keyframes swapmid-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-4px); }
+}
+.animate-shake {
+  animation: swapmid-shake 0.4s ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-shake { animation: none; }
+}
+
+/* ---- .tab-corner：Chrome 式页签底部外翻凹角 ----
+   Chrome 激活页签的关键特征不是顶部圆角（那个我们本来就有），而是**底部两侧向外翻的凹圆角**——
+   它让页签的"裙摆"外展、与下方内容区连成一体；缺了它，页签就只是个圆角矩形贴在栏上，观感生硬。
+
+   实现：页签左右两侧各外接一个方块伪元素（在页签盒**外**，紧贴底部），把方块靠近页签的那个角挖掉
+   一个 1/4 圆。挖掉的部分透出页签栏底色（--muted），剩下的弯月与页签同色（--background），弯月的弧
+   正好从页签的下角切向基线，形成外翻过渡。
+
+   🔴 半径**必须跟 `--radius` 走，别写死 px**：页签用 `rounded-t-lg`，本仓 `--radius` 是 .625rem
+   ＝ **10px 而非 8px**（2026-08-06 真机 getComputedStyle 实测 borderTopLeftRadius=10px）。初版按
+   直觉写死 8px，上下弧不同径、接缝处会有一道察觉得到的错位。改用变量后主题调 radius 也自动跟随。
+
+   渐变里那道 1px 的环是**描边接续**：本仓页签保留三边描边（方案 4b），若凹角只填色不描边，
+   页签边框会在下角戛然而止、弧线一段有线一段没线。加这一环后轮廓连续：顶部圆角 → 侧边框 → 凹角弧
+   → 栏底基线。环起点比半径早 0.5px，留半像素过渡压锯齿。
+
+   🔴 **环色必须分主题，别直接用 `--border`**（2026-08-07 用户反馈「暗色下弧线有细白线」后修正）：
+   暗色 `--border` 是 `oklch(1 0 0 / 10%)`＝**半透明白**，呈现色随垫底而变——同一 token，垫在页签
+   `--background`(#09090b) 上的**直线**描边合成约 RGB34（与容器 --muted 的 39 仅差 5，近乎隐形），
+   而垫在容器 `--muted`(#27272a) 上的**凹角环**合成约 RGB61，亮了近一倍，于是成为整个凹角唯一显眼的
+   东西：一条凭空冒出的孤立亮弧。换句话说「与直线描边同色接续」这个收益，**其成立前提是 border 不
+   透明**，暗色下从未成立过（弧 61 vs 线 34 本就没接上），只剩副作用。故暗色直接关环——反正暗色直线
+   描边与 muted 只差 5 个灰阶，断口不可察；而凹角实心区(9) vs muted(39) 的面色差仍足以辨形。
+
+   ⚠️ 伪元素位于页签盒外 → **页签本体不能有 overflow-hidden**（裁切职责已下放给内层内容 wrapper，
+   见 tab-bar.tsx）。凹角只挂激活页签与拖拽中的页签，它们都不画分隔线，不与 before 分隔线抢伪元素。 */
+.tab-corner {
+  /* 浅色：--border 不透明，与直线描边严格同色，接续成立 */
+  --tab-corner-ring: var(--border);
+}
+.dark .tab-corner {
+  /* 暗色关环：置 transparent 后渐变自然退化成「透明 →（硬边）→ background」的无环形态，
+     不需要为暗色单写一份渐变规则。 */
+  --tab-corner-ring: transparent;
+}
+/* 凹角进场淡入：`.tab-corner` 类挂上时伪元素才新建，animation 自动播一次，**零结构改动**。
+   为什么必须有：同一次激活切换里底色走 150ms 渐变，凹角若 0ms 硬闪就是「部分过渡部分瞬变」的
+   混搭——那正是「过渡生硬」的来源（见动效语汇原则 1）。退场瞬消即可（注意力已在新页签上）。 */
+@keyframes tab-corner-in {
+  from { opacity: 0 }
+  to { opacity: 1 }
+}
+.tab-corner::before,
+.tab-corner::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: var(--radius);
+  height: var(--radius);
+  pointer-events: none;
+  animation: tab-corner-in 150ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab-corner::before,
+  .tab-corner::after { animation: none; }
+}
+.tab-corner::before {
+  left: calc(var(--radius) * -1);
+  background: radial-gradient(
+    circle at top left,
+    transparent calc(var(--radius) - 0.5px),
+    var(--tab-corner-ring) calc(var(--radius) - 0.5px),
+    var(--tab-corner-ring) var(--radius),
+    var(--background) var(--radius)
+  );
+}
+.tab-corner::after {
+  right: calc(var(--radius) * -1);
+  background: radial-gradient(
+    circle at top right,
+    transparent calc(var(--radius) - 0.5px),
+    var(--tab-corner-ring) calc(var(--radius) - 0.5px),
+    var(--tab-corner-ring) var(--radius),
+    var(--background) var(--radius)
+  );
+}
+
+/* ---- 页面级进场动效（2026-08-07「缺乏呼吸感」打磨）----
+   两个类各司其职，都带 reduced-motion 降级：
+
+   · .swapmid-skeleton-delay —— 骨架屏**延迟** 120ms 才开始淡入。防的是「暖缓存下骨架闪一下就没」：
+     next.config 的 staleTimes.dynamic=180 让绝大多数页签切换几十毫秒就完成，骨架一闪本身就是
+     割裂感来源。延迟后快导航压根看不到骨架，慢导航才温和显现。挂在 (dashboard)/loading.tsx 根。
+
+   · .swapmid-page-enter —— 路由内容 150ms 淡入。⚠️ 它挂在 `(dashboard)/template.tsx` 而不是 layout：
+     App Router 的 layout 在导航之间**不重新挂载**，动画无从重播；template 每次导航都重挂，
+     是官方给的这类需求的出口。时长与页签切换同为 150ms，保持同拍。 */
+@keyframes swapmid-fade-in {
+  from { opacity: 0 }
+  to { opacity: 1 }
+}
+.swapmid-skeleton-delay {
+  opacity: 0;
+  animation: swapmid-fade-in 150ms ease-out 120ms forwards;
+}
+.swapmid-page-enter {
+  animation: swapmid-fade-in 150ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .swapmid-skeleton-delay {
+    opacity: 1;
+    animation: none;
+  }
+  .swapmid-page-enter { animation: none; }
+}

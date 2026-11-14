@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\common.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <RootNamespace>SwapMid</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 与生产模块一致，在任何 Npgsql 初始化之前固定契约，避免迁移测试依赖执行顺序。 -->
+    <RuntimeHostConfigurationOption Include="Npgsql.EnableLegacyTimestampBehavior" Value="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SwapMid.EntityFrameworkCore\SwapMid.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\..\src\SwapMid.DbMigrator\SwapMid.DbMigrator.csproj" />
+    <ProjectReference Include="..\SwapMid.Application.Tests\SwapMid.Application.Tests.csproj" />
+  </ItemGroup>
+
+  <!--
+    并行度显式钉死为 4(2026-07-29)：本程序集的测试集合之间并行执行(集合之内仍串行)。
+    不用 xunit 默认值(= 逻辑核数)的原因：CI 是单台 12 vCPU / 24GB 虚机上跑 6 个 self-hosted
+    runner，按全机核数开线程会与并发的其它 job 二次超卖。同一纪律下后端 MSBuild 限 maxCpuCount 为 2、
+    前端 vitest 限 maxWorkers 为 2。改动前本程序集 825 个测试纯串行耗时 16m56s，独占 CI 关键路径。
+  -->
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Testcontainers.PostgreSql" Version="4.16.0" />
+    <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="10.5.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+  </ItemGroup>
+
+  <!--
+    安全修复：直接钉死传递依赖 SQLitePCLRaw.bundle_e_sqlite3 到 3.0.3，清除 NU1903 高危告警。
+    漏洞链：Volo.Abp.EntityFrameworkCore.Sqlite 10.1.0 → Microsoft.EntityFrameworkCore.Sqlite 10.0.2
+            → SQLitePCLRaw.bundle_e_sqlite3 2.1.11 → SQLitePCLRaw.lib.e_sqlite3 2.1.11（含漏洞的原生库）。
+    漏洞：GHSA-2m69-gcr7-jv3q / CVE-2025-6965 —— SQLite < 3.50.2 聚合项数值截断致内存损坏，高危。
+    修复原理：SQLitePCLRaw 3.0 把原生库包从 lib.e_sqlite3 改名为 SourceGear.sqlite3；bundle 3.0.3
+              改为依赖 SourceGear.sqlite3 (>= 3.50.4.5，即 SQLite 3.50.4，已含修复)，不再引入有漏洞的
+              lib.e_sqlite3。故升 bundle 即可从依赖图根除该传递漏洞。
+    范围：仅本测试工程（ABP 测试基座用内存 SQLite），不进生产运行时。
+  -->
+  <ItemGroup>
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+  </ItemGroup>
+
+</Project>

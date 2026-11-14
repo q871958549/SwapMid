@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "dynamicKeyAllowlist": [
+    {
+      "file": "lib/nav-utils.ts",
+      "functionName": "translateNavTitle",
+      "variable": "t",
+      "method": "plain",
+      "namespace": "Nav",
+      "expression": "item.titleKey",
+      "expectedOccurrences": 1,
+      "fullKeys": [
+        "Nav.domains.developer.title",
+        "Nav.domains.integration.title",
+        "Nav.domains.organization.title",
+        "Nav.domains.platform.title",
+        "Nav.domains.workbench.title",
+        "Nav.groups.account",
+        "Nav.groups.api",
+        "Nav.groups.data",
+        "Nav.groups.docs",
+        "Nav.groups.enterprise",
+        "Nav.groups.message",
+        "Nav.groups.system",
+        "Nav.items.account.permissions",
+        "Nav.items.account.roles",
+        "Nav.items.account.users",
+        "Nav.items.api.clients",
+        "Nav.items.api.groups",
+        "Nav.items.api.routes",
+        "Nav.items.api.testConsole",
+        "Nav.items.data.executions",
+        "Nav.items.data.pipelines",
+        "Nav.items.data.sources",
+        "Nav.items.docs.apiReference",
+        "Nav.items.docs.dbDictionary",
+        "Nav.items.enterprise.departments",
+        "Nav.items.enterprise.employees",
+        "Nav.items.enterprise.enterprises",
+        "Nav.items.enterprise.positions",
+        "Nav.items.message.records",
+        "Nav.items.message.subscriptions",
+        "Nav.items.message.topics",
+        "Nav.items.system.auditLogs",
+        "Nav.items.system.codeRules",
+        "Nav.items.system.dataDictionaries",
+        "Nav.items.system.health",
+        "Nav.items.system.notification",
+        "Nav.items.system.notificationLogs",
+        "Nav.items.system.notificationRecipients",
+        "Nav.items.system.scheduledJobs"
+      ],
+      "reason": "导航标题键由 nav-config 与 nav-groups 静态配置统一供给，辅助函数参数本身无法在单文件内还原具体条目"
+    },
+    {
+      "file": "lib/nav-utils.ts",
+      "functionName": "translateNavDescription",
+      "variable": "t",
+      "method": "plain",
+      "namespace": "Nav",
+      "expression": "domain.descriptionKey",
+      "expectedOccurrences": 1,
+      "fullKeys": [
+        "Nav.domains.developer.description",
+        "Nav.domains.integration.description",
+        "Nav.domains.organization.description",
+        "Nav.domains.platform.description",
+        "Nav.domains.workbench.description"
+      ],
+      "reason": "业务域描述键由 nav-config 静态配置统一供给，辅助函数参数本身无法在单文件内还原具体条目"
+    }
+  ],
+  "translatorBindingAllowlist": [
+    {
+      "id": "nav-utils-t",
+      "file": "lib/nav-utils.ts",
+      "variable": "t",
+      "namespace": "Nav",
+      "reason": "NavT 由各入口的 useTranslations/getTranslations(Nav) 传入，供跨端导航辅助函数复用"
+    },
+    {
+      "id": "data-table-columns-common-t",
+      "file": "components/data-table/data-table-columns.tsx",
+      "variable": "t",
+      "namespace": "Common",
+      "reason": "DataTable 编排组件把 Common translator 注入纯列辅助函数，避免普通函数调用 React hook"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+.env*
+*.tsbuildinfo
+Dockerfile
+.dockerignore
+# 测试与文档不参与 next build。仓库内仅有根上的 README.md / AGENTS.md / CLAUDE.md，
+# 构建脚本与页面都不读取它们；e2e 也没有被应用源码 import。
+e2e
+playwright-report
+test-results
+coverage
+*.md
+.git

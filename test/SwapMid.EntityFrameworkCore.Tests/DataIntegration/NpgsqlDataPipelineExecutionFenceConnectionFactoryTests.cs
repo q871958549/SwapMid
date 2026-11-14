@@ -14,7 +14,7 @@ public sealed class NpgsqlDataPipelineExecutionFenceConnectionFactoryTests
     public async Task 应解析主库并强制专用非池化会话参数()
     {
         const string rawConnectionString =
-            "Host=db.internal;Port=5544;Database=han;Username=han_user;" +
+            "Host=db.internal;Port=5544;Database=swapmid;Username=swapmid_user;" +
             "Password=test-only;SSL Mode=Require;Command Timeout=73;" +
             "Pooling=true;Enlist=true;Keepalive=17;Application Name=caller";
         var resolver = Substitute.For<IConnectionStringResolver>();
@@ -29,8 +29,8 @@ public sealed class NpgsqlDataPipelineExecutionFenceConnectionFactoryTests
         var builder = new NpgsqlConnectionStringBuilder(connection.ConnectionString);
         builder.Host.ShouldBe("db.internal");
         builder.Port.ShouldBe(5544);
-        builder.Database.ShouldBe("han");
-        builder.Username.ShouldBe("han_user");
+        builder.Database.ShouldBe("swapmid");
+        builder.Username.ShouldBe("swapmid_user");
         builder.SslMode.ShouldBe(SslMode.Require);
         builder.CommandTimeout.ShouldBe(73);
         builder.Pooling.ShouldBeFalse();

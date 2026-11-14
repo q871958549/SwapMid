@@ -63,7 +63,7 @@ export interface UseCrudResourceOptions<TRow> {
    * 交互列表单页上限，默认 {@link INTERACTIVE_LIST_MAX_PAGE_SIZE}（200）。
    * 写入 `tableProps.maxPageSize`，并钳制初始 `pageSize` 与 `setPageSize`。
    * 需要更宽的列表必须同时：本项 + `page.tsx` 的 `parseServerListPagination` 第四参
-   * （DataTable 若 spread `tableProps` 会自动拿到上限）。样品/扫码传 500。
+   * （DataTable 若 spread `tableProps` 会自动拿到上限）。宽分页场景可传 500。
    */
   pageSizeMax?: number
   /**

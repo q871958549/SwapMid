@@ -1106,7 +1106,7 @@ public sealed class DataPipelineExecutionPostgreSqlTransactionContractTests
             provider = "sqlserver",
             host,
             port = 1433,
-            database = "Han",
+            database = "SwapMid",
             username = "writer",
             targetResourceGroup,
         });

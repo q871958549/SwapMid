@@ -15,7 +15,7 @@ public class ConnectionStringTimeoutInjectorTests
     public void SqlServer串无关键字_追加后CommandTimeout生效()
     {
         var result = ConnectionStringTimeoutInjector.AppendSqlServerOrPostgresCommandTimeout(
-            "Server=127.0.0.1;Database=OA;User ID=sa;Password=x;", 45);
+            "Server=127.0.0.1;Database=ERP;User ID=sa;Password=x;", 45);
 
         new SqlConnectionStringBuilder(result).CommandTimeout.ShouldBe(45);
     }
@@ -23,7 +23,7 @@ public class ConnectionStringTimeoutInjectorTests
     [Fact]
     public void SqlServer串已含CommandTimeout_原样返回不覆盖显式配置()
     {
-        const string original = "Server=127.0.0.1;Database=OA;Command Timeout=99;";
+        const string original = "Server=127.0.0.1;Database=ERP;Command Timeout=99;";
         var result = ConnectionStringTimeoutInjector.AppendSqlServerOrPostgresCommandTimeout(original, 45);
 
         result.ShouldBe(original);

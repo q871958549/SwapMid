@@ -40,6 +40,7 @@ const HOST_DLL_NAME = 'SwapMid.HttpApi.Host.dll'
 const argv = process.argv.slice(2)
 const VERIFY = argv.includes('--verify')
 const NO_BUILD = argv.includes('--no-build')
+const IN_MEMORY = argv.includes('--in-memory')
 // 资源队列只运行本机计算；离线门户是派生物，可另在队列外按需下载/构建。
 const SKIP_PORTAL = argv.includes('--skip-portal')
 
@@ -253,18 +254,33 @@ function cleanedEnv() {
 async function main() {
   try {
     run('node --test scripts/openapi-stable-order.test.mjs')
-    let input = process.env.OPENAPI_INPUT
-    let ownerPid
-    if (input) {
-      log(`外接模式：使用已运行的后端 ${input}（不自起 Host；将校验其进程归属）。`)
-      log('注意：外接的 Host 必须已重启到最新代码，否则导出的是旧契约（stale 由 verify:api / CI 兜底）。')
+    if (IN_MEMORY) {
+      log(`${VERIFY ? '校验' : '导出'}内存契约宿主快照（RuntimeSwaggerContractTests，免外部数据库）…`)
+      const testProj = resolve(ROOT, 'test', 'SwapMid.HttpApi.Tests', 'SwapMid.HttpApi.Tests.csproj')
+      const testArgs = ['test', testProj, '--nologo', '--filter', 'FullyQualifiedName~RuntimeSwaggerContractTests']
+      if (NO_BUILD) testArgs.push('--no-build')
+      const env = { ...cleanedEnv() }
+      if (VERIFY) {
+        delete env.SWAPMID_UPDATE_OPENAPI_SNAPSHOT
+      } else {
+        env.SWAPMID_UPDATE_OPENAPI_SNAPSHOT = '1'
+      }
+      const r = spawnSync('dotnet', testArgs, { stdio: 'inherit', cwd: ROOT, env })
+      if (r.status !== 0) fail([`RuntimeSwaggerContractTests 失败（退出码 ${r.status}）。`])
     } else {
-      const started = await startLocalHost()
-      input = started.url
-      ownerPid = started.pid
+      let input = process.env.OPENAPI_INPUT
+      let ownerPid
+      if (input) {
+        log(`外接模式：使用已运行的后端 ${input}（不自起 Host；将校验其进程归属）。`)
+        log('注意：外接的 Host 必须已重启到最新代码，否则导出的是旧契约（stale 由 verify:api / CI 兜底）。')
+      } else {
+        const started = await startLocalHost()
+        input = started.url
+        ownerPid = started.pid
+      }
+      await exportOpenapi({ input, ownerPid })
+      stopHost() // 导出即用完 Host；后续 gen 链全部从快照离线生成
     }
-    await exportOpenapi({ input, ownerPid })
-    stopHost() // 导出即用完 Host；后续 gen 链全部从快照离线生成
     run('pnpm gen:api')
     run('pnpm gen:api-doc')
     if (VERIFY) {

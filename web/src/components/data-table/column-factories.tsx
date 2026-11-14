@@ -367,9 +367,9 @@ function BooleanBadgeCell<T>({
 interface NumberFormatOptions {
   /** 固定小数位（补零），金额用 2。不传则按 `maxFractionDigits` 截断、不补零。 */
   fractionDigits?: number
-  /** 最多小数位（不补零），默认 2。数量类原样保留精度时调大（K3 数量常到 4–8 位）。 */
+  /** 最多小数位（不补零），默认 2。数量类原样保留精度时调大（高精度计量常到 4–8 位）。 */
   maxFractionDigits?: number
-  /** 最少小数位（补零），与 `maxFractionDigits` 合用：金额至少两位、原样保留 K3 的高精度尾数。 */
+  /** 最少小数位（补零），与 `maxFractionDigits` 合用：金额至少两位、原样保留上游小数高精度尾数。 */
   minFractionDigits?: number
 }
 

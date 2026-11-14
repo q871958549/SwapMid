@@ -51,7 +51,7 @@ public class NotificationSendRequest
 /// <summary>通知附件（邮件渠道用）。</summary>
 public class NotificationAttachment
 {
-    /// <summary>文件名，含扩展名（如「材料超耗率-202606.xlsx」）。</summary>
+    /// <summary>文件名，含扩展名（如「数据对账摘要-202606.xlsx」）。</summary>
     public string FileName { get; set; } = string.Empty;
 
     /// <summary>文件字节内容。</summary>

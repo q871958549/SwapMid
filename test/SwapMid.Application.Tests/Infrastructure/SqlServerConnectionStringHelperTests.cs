@@ -18,10 +18,10 @@ public class SqlServerConnectionStringHelperTests
     {
         var config = BuildConfig(new Dictionary<string, string?>
         {
-            ["ConnectionStrings:OAQuery"] = "Server=127.0.0.1;Database=OA;User ID=sa;Password=x;",
+            ["ConnectionStrings:ErpQuery"] = "Server=127.0.0.1;Database=ERP;User ID=sa;Password=x;",
         });
 
-        var result = SqlServerConnectionStringHelper.GetConfiguredConnectionString(config, "OAQuery", "OA-query");
+        var result = SqlServerConnectionStringHelper.GetConfiguredConnectionString(config, "ErpQuery", "erp-query");
 
         result.ShouldNotBeNull();
         new SqlConnectionStringBuilder(result!).CommandTimeout.ShouldBe(30);
@@ -32,15 +32,15 @@ public class SqlServerConnectionStringHelperTests
     {
         var config = BuildConfig(new Dictionary<string, string?>
         {
-            ["ConnectionStrings:OAQuery"] = "jdbc:sqlserver://10.168.1.8:1433;databaseName=OA;username=sa;password=x;",
+            ["ConnectionStrings:ErpQuery"] = "jdbc:sqlserver://10.20.30.8:1433;databaseName=ERP;username=sa;password=x;",
         });
 
-        var result = SqlServerConnectionStringHelper.GetConfiguredConnectionString(config, "OAQuery", "OA-query");
+        var result = SqlServerConnectionStringHelper.GetConfiguredConnectionString(config, "ErpQuery", "erp-query");
 
         result.ShouldNotBeNull();
         var builder = new SqlConnectionStringBuilder(result!);
-        builder.DataSource.ShouldBe("10.168.1.8,1433");
-        builder.InitialCatalog.ShouldBe("OA");
+        builder.DataSource.ShouldBe("10.20.30.8,1433");
+        builder.InitialCatalog.ShouldBe("ERP");
         builder.CommandTimeout.ShouldBe(30);
     }
 
@@ -49,12 +49,12 @@ public class SqlServerConnectionStringHelperTests
     {
         var config = BuildConfig(new Dictionary<string, string?>
         {
-            ["OA-query:url"] = "jdbc:sqlserver://10.168.1.8:1433;databaseName=OA;",
-            ["OA-query:username"] = "sa",
-            ["OA-query:password"] = "x",
+            ["erp-query:url"] = "jdbc:sqlserver://10.20.30.8:1433;databaseName=ERP;",
+            ["erp-query:username"] = "sa",
+            ["erp-query:password"] = "x",
         });
 
-        var result = SqlServerConnectionStringHelper.GetConfiguredConnectionString(config, "OAQuery", "OA-query");
+        var result = SqlServerConnectionStringHelper.GetConfiguredConnectionString(config, "ErpQuery", "erp-query");
 
         result.ShouldNotBeNull();
         new SqlConnectionStringBuilder(result!).UserID.ShouldBe("sa");
@@ -65,10 +65,10 @@ public class SqlServerConnectionStringHelperTests
     {
         var config = BuildConfig(new Dictionary<string, string?>
         {
-            ["ExternalDataSources:OAQuery:url"] = "jdbc:sqlserver://10.168.1.8:1433;databaseName=OA;",
+            ["ExternalDataSources:ErpQuery:url"] = "jdbc:sqlserver://10.20.30.8:1433;databaseName=ERP;",
         });
 
-        var result = SqlServerConnectionStringHelper.GetConfiguredConnectionString(config, "OAQuery", "OA-query");
+        var result = SqlServerConnectionStringHelper.GetConfiguredConnectionString(config, "ErpQuery", "erp-query");
 
         result.ShouldNotBeNull();
     }
@@ -78,7 +78,7 @@ public class SqlServerConnectionStringHelperTests
     {
         var config = BuildConfig(new Dictionary<string, string?>());
 
-        var result = SqlServerConnectionStringHelper.GetConfiguredConnectionString(config, "OAQuery", "OA-query");
+        var result = SqlServerConnectionStringHelper.GetConfiguredConnectionString(config, "ErpQuery", "erp-query");
 
         result.ShouldBeNull();
     }
@@ -88,12 +88,12 @@ public class SqlServerConnectionStringHelperTests
     {
         var config = BuildConfig(new Dictionary<string, string?>
         {
-            ["ConnectionStrings:OAQuery"] = "Server=127.0.0.1;Database=OA;",
-            ["ExternalDataSources:OAQuery:CommandTimeoutSeconds"] = "8",
+            ["ConnectionStrings:ErpQuery"] = "Server=127.0.0.1;Database=ERP;",
+            ["ExternalDataSources:ErpQuery:CommandTimeoutSeconds"] = "8",
             ["ExternalDataSources:Defaults:CommandTimeoutSeconds"] = "60",
         });
 
-        var result = SqlServerConnectionStringHelper.GetConfiguredConnectionString(config, "OAQuery", "OA-query");
+        var result = SqlServerConnectionStringHelper.GetConfiguredConnectionString(config, "ErpQuery", "erp-query");
 
         new SqlConnectionStringBuilder(result!).CommandTimeout.ShouldBe(8);
     }

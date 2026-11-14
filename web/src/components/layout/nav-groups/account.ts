@@ -26,7 +26,7 @@ export const accountGroup: NavGroup = {
       titleKey: 'items.account.permissions',
       href: '/account-management/permissions',
       icon: KeySquare,
-      permission: 'SwapMid.AccountManagement.Permissions',
+      permission: 'SwapMid.AccountManagement.Roles.Update',
     },
   ],
 }

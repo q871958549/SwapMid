@@ -1390,32 +1390,32 @@
       "traditionalHash": "8be2377980836843644f6a97"
     },
     "Common.savedViews": {
-      "sourceHash": "4a878401c5554fdbe4b1a98a",
-      "englishHash": "687d8aa93b784662638c2f73",
+      "sourceHash": "05f38089c6dd0fdc93f132fe",
+      "englishHash": "81184cb517eda985e0ce08f8",
       "traditionalSourceHash": "4976989e63cc1cb37c3a3668",
       "traditionalHash": "73706d7e4111203f0ff99d63"
     },
     "Common.saveCurrentView": {
-      "sourceHash": "dad8e2c6c541bf5167316897",
-      "englishHash": "46cf21ac5ada985f55d6c462",
+      "sourceHash": "9a9f2e1a4f3b4c3e3367a966",
+      "englishHash": "2115387503f6d98d4dc6e984",
       "traditionalSourceHash": "3ae14b2dac3b320f21d1cd01",
       "traditionalHash": "21709036b6d241c6bb059b08"
     },
     "Common.savedViewsLimitHint": {
-      "sourceHash": "8ec827261c64703c1932e214",
-      "englishHash": "4029b30faa5f7855f716ef53",
+      "sourceHash": "44d38c4b46186ed2e127d490",
+      "englishHash": "50129e07c5d8a9cb620e1a09",
       "traditionalSourceHash": "3e8b71c3ce572dc43a5783ae",
       "traditionalHash": "7f2b38d85072186f38f02a3f"
     },
     "Common.savedViewNamePlaceholder": {
-      "sourceHash": "0129c53cc647527d130c0706",
-      "englishHash": "b9d55906aefc2010ec1b6144",
+      "sourceHash": "97ed4d325b709d34868f50c8",
+      "englishHash": "c6647731d6d7b7bf1ed114ba",
       "traditionalSourceHash": "da156a95581a4b5a358f9101",
       "traditionalHash": "b7a04bcd75a7c67e5e66597b"
     },
     "Common.deleteSavedView": {
-      "sourceHash": "7f418ff1fbbf90a73e4c0b85",
-      "englishHash": "f563a1f90e711f8294f07e7f",
+      "sourceHash": "28b1ad67d991d1df6724146b",
+      "englishHash": "e03102f27ecc47e1df39c8b0",
       "traditionalSourceHash": "f486cd68ac774ecded122b39",
       "traditionalHash": "83b500e5bede553741ad74f5"
     },
@@ -1900,20 +1900,20 @@
       "traditionalHash": "39a9046f9c8c993d39435343"
     },
     "Dashboard.visitViewSwitch": {
-      "sourceHash": "efb5c2ea4e61deff1ffa9490",
-      "englishHash": "c11c1693fcd419adf4dde071",
+      "sourceHash": "7895e98f8b62cab01dd2570d",
+      "englishHash": "98cd75972941729ff3fcdd45",
       "traditionalSourceHash": "29dcc4c9ba81f3ebd0fe8fe9",
       "traditionalHash": "c11c1693fcd419adf4dde071"
     },
     "Dashboard.recentTab": {
-      "sourceHash": "a2519510bfc7ee696eb450db",
-      "englishHash": "997a5e6e513f2a90797b2637",
+      "sourceHash": "fa27b08ccc02baa4eeee72a3",
+      "englishHash": "690dbe9dc0993c4256683738",
       "traditionalSourceHash": "b9a220621237943ad419882b",
       "traditionalHash": "997a5e6e513f2a90797b2637"
     },
     "Dashboard.frequentTab": {
-      "sourceHash": "436de4c33415992dd0cc800d",
-      "englishHash": "4563c57b5143deaa74ff4180",
+      "sourceHash": "52ea0e94a6211f1da9f9f061",
+      "englishHash": "d6f02fe6e4364f5261403016",
       "traditionalSourceHash": "532fba4dde24cd36f097ec10",
       "traditionalHash": "4563c57b5143deaa74ff4180"
     },
@@ -2206,20 +2206,20 @@
       "traditionalHash": "de5af0afa38fc3f71ace3e38"
     },
     "Sidebar.filterDomainItems": {
-      "sourceHash": "3631eb3c7ca4dc52c8ae6932",
-      "englishHash": "76555a083783d7fd0443f9ce",
+      "sourceHash": "a35192a9e4302f0ca6e671b5",
+      "englishHash": "091f2dd8a9866983cb8cef6e",
       "traditionalSourceHash": "d60b44df57c08f51263c2879",
       "traditionalHash": "907babc121567c653cd457bb"
     },
     "Sidebar.noItemMatch": {
-      "sourceHash": "977d8eb768d9aabb983430be",
-      "englishHash": "42de0320298c92c4c80ebc3f",
+      "sourceHash": "6ab8cb73f4f3090090cda002",
+      "englishHash": "3ee614edbf2a1d3a4d380567",
       "traditionalSourceHash": "1ebfef9340c5b552deaab532",
       "traditionalHash": "ad26f326fd5deb9ba1d3f915"
     },
     "Sidebar.domainFrequent": {
-      "sourceHash": "48fddf0ee6b706f34fe057c6",
-      "englishHash": "5d9a0156a7f6c4cd3f544a14",
+      "sourceHash": "6640a2b41d102fb2942c502f",
+      "englishHash": "5566f22d08befb7b1b44da53",
       "traditionalSourceHash": "d8416ae2ff91ce4874f12ab9",
       "traditionalHash": "5d9a0156a7f6c4cd3f544a14"
     },
@@ -2290,8 +2290,8 @@
       "traditionalHash": "02562330cd6ef75e94e95d00"
     },
     "Nav.domains.platform.description": {
-      "sourceHash": "33dd088e5e51d75470d11cc7",
-      "englishHash": "665dafecbc8cea3ea6d4ac9b",
+      "sourceHash": "b6e696e684234707046dbaa0",
+      "englishHash": "f8d2871dcea4542f95f7389d",
       "traditionalSourceHash": "d46a42ccd0cdf8d3981ef8f9",
       "traditionalHash": "1be02281e1a33f7fdabb3e29"
     },
@@ -3670,32 +3670,32 @@
       "traditionalHash": "f7ff3128572b99ba0496485b"
     },
     "Account.permission.loadFailedTitle": {
-      "sourceHash": "16bbb987d5ecdaadfd8494ab",
-      "englishHash": "6c6fb2b70938d6b1c38e404c",
+      "sourceHash": "48dbb287217f46c107e0ff2f",
+      "englishHash": "919389c04ce9bf2bd41a1ffd",
       "traditionalSourceHash": "8806103f94d585da643365fe",
       "traditionalHash": "114e653f97a1a503a1cb19b4"
     },
     "Account.permission.revokeDeleteButton": {
-      "sourceHash": "61c2c299c449e3ee58a1f154",
-      "englishHash": "beb48238f2152ed1c33c7947",
+      "sourceHash": "729c65164042c24fd1c25b18",
+      "englishHash": "f3fb195d5179e02999751eb2",
       "traditionalSourceHash": "2d482e76ff036f1e89d62d75",
       "traditionalHash": "23a751116dbddd00912fec2a"
     },
     "Account.permission.revokeDeleteTitle": {
-      "sourceHash": "1b7a96ec740d78e65bee8038",
-      "englishHash": "00814c000c3a367fb365058a",
+      "sourceHash": "5bd5edb5167c6a30a61935f2",
+      "englishHash": "bf7ebeb75a00c53fcd19517a",
       "traditionalSourceHash": "46ad07a6937400ed0dc55c01",
       "traditionalHash": "dca047423a6b39c196cda1df"
     },
     "Account.permission.revokeDeleteDescription": {
-      "sourceHash": "06c726bd5e50c86d686e6ae8",
-      "englishHash": "0391f0da73944071325c058a",
+      "sourceHash": "c58ede82479c03bcc9d6d43d",
+      "englishHash": "236b736e26a359f55a19a9da",
       "traditionalSourceHash": "ba76136eb30ef51c5b92c2a2",
       "traditionalHash": "3a7731b1da416ea44d26bd28"
     },
     "Account.permission.revokeDeleteConfirm": {
-      "sourceHash": "5394a9920191c0490186e021",
-      "englishHash": "35442c038db92743d7003fc2",
+      "sourceHash": "aa54d40d5d6d233b71d5df36",
+      "englishHash": "1fc68b877276f0492adaf274",
       "traditionalSourceHash": "ac35972077c7f2a3d463b1f3",
       "traditionalHash": "63055bd701d16bf83075e12f"
     },
@@ -3898,308 +3898,308 @@
       "traditionalHash": "b76231cfea0b7222461e4105"
     },
     "Account.permission.exportConfirm": {
-      "sourceHash": "760184e5eb686e5f3b210c63",
-      "englishHash": "98df8b41d1032ca7567f2b5c",
+      "sourceHash": "723bcd0f0fcb2b9cdb3f4ed4",
+      "englishHash": "3664895579f0a7e68c4aa09c",
       "traditionalSourceHash": "2d5998e5ec50e606f33b515a",
       "traditionalHash": "f76e5c797a05085f83e5fc3a"
     },
     "Account.permission.exportScopeHint": {
-      "sourceHash": "163a102467f017f65c6a3bd8",
-      "englishHash": "fb3e2d69874e3a3e9ec334d0",
+      "sourceHash": "b70ed88418f7d1b74f86fa30",
+      "englishHash": "283ea89bce63e5fc14c54603",
       "traditionalSourceHash": "8a081e63856dc77db9f5ab03",
       "traditionalHash": "ea3ad0ef452246f58c04989f"
     },
     "Account.permission.basePermissionHint": {
-      "sourceHash": "37736f619201f82008d46d57",
-      "englishHash": "2bb444576971896ecaa614ce",
+      "sourceHash": "97e3d3db3cc3431f3d3c2e68",
+      "englishHash": "2e52f07c99abddadb70dcdc2",
       "traditionalSourceHash": "1fdd0ab6ff7e6d6f3c02896d",
       "traditionalHash": "ad27609ca0830a1bcc441056"
     },
     "Account.permission.noChildActions": {
-      "sourceHash": "eb2fdf06c98dc6231597d9a9",
-      "englishHash": "6b7dc469d88c5ce97e3887f3",
+      "sourceHash": "a295bd5804f52440a024d9c9",
+      "englishHash": "a14b12a9cd28f5d06606c13e",
       "traditionalSourceHash": "d4d02588b5c220df3738f4c4",
       "traditionalHash": "efc29f631879bb2be48d61b3"
     },
     "Account.permission.roleLoadFailed": {
-      "sourceHash": "3b74d33dd91bd7e924c4f723",
-      "englishHash": "e394cbdefdc786ca81e2297d",
+      "sourceHash": "d75aea3b4ef8a2c0af633399",
+      "englishHash": "22ec3c83bfc4ade35b7d0654",
       "traditionalSourceHash": "bc1494123b0334fdbfb3f14f",
       "traditionalHash": "8056808872dc1aa935423b52"
     },
     "Account.permission.retry": {
-      "sourceHash": "0866943bed79edbf10a8a8aa",
-      "englishHash": "b8784c8dd5636ff231b12189",
+      "sourceHash": "84e52c5a74a2c5227f485363",
+      "englishHash": "942087cc2d41e01304b71955",
       "traditionalSourceHash": "437017c13f4b984fc43c010e",
       "traditionalHash": "7e59d0f162931a5dd57bd27f"
     },
     "Account.permission.reload": {
-      "sourceHash": "f703b4ffa35ebc7eb10fac72",
-      "englishHash": "7bdd5ce1e298a972b0c84183",
+      "sourceHash": "d169d2dacf26adcbd1b657d4",
+      "englishHash": "bdc090ec61e3fcfc65f46995",
       "traditionalSourceHash": "f2a32a1b12d5a0e44e0b0e68",
       "traditionalHash": "52ad99ff1cf3b32e761c130c"
     },
     "Account.permission.resetChanges": {
-      "sourceHash": "ea69bca7face2c8d13e72e5e",
-      "englishHash": "b5a929dae5ba9e62ada4cf96",
+      "sourceHash": "5886cb2240c0ef4904545c61",
+      "englishHash": "50d2a807150f48e735c44e67",
       "traditionalSourceHash": "e52f8ad8b7a6cfe6d51e4193",
       "traditionalHash": "9398ac48951b32cec80766f0"
     },
     "Account.permission.showIdentifiers": {
-      "sourceHash": "d5b32372df834c702c87e3a4",
-      "englishHash": "4b0cced65576e6ba0feeb8a0",
+      "sourceHash": "36a0e68203034e14e1ccc866",
+      "englishHash": "430120df0650aaa451fdb944",
       "traditionalSourceHash": "2b8a03eca77ddadf5e40cfd7",
       "traditionalHash": "3449f1cf10f0a1815d2e3ff1"
     },
     "Account.permission.changeCount": {
-      "sourceHash": "3a3ee4bbfdd899d17d274996",
-      "englishHash": "be1efb663658098b42d776f6",
+      "sourceHash": "6148c2ad32c05da831cd33fe",
+      "englishHash": "4a5e45237f0679acda770646",
       "traditionalSourceHash": "e67e86100767aba0a899e7dc",
       "traditionalHash": "2090abf17cdf9832a8abcbdc"
     },
     "Account.permission.filterLabel": {
-      "sourceHash": "a7569f5734882a2f90c869ff",
-      "englishHash": "3ca40a586103f6b7290786ea",
+      "sourceHash": "20750ae6a0af4fe7484ee5c3",
+      "englishHash": "895e0b83bc36537b8b1188b9",
       "traditionalSourceHash": "bea27e1a34b3cf62f3522402",
       "traditionalHash": "8b9cf81e6f7188f3bcd28896"
     },
     "Account.permission.filter.all": {
-      "sourceHash": "6b3a94b3f4fd1289a07e0315",
-      "englishHash": "5c55a67935af8f4508ba05d6",
+      "sourceHash": "2a76c1e376b37c406e0df7af",
+      "englishHash": "a52ace420f2175d08b1577a1",
       "traditionalSourceHash": "bf6164d2b63e2aed43bbcc18",
       "traditionalHash": "5c55a67935af8f4508ba05d6"
     },
     "Account.permission.filter.granted": {
-      "sourceHash": "c9d56c7a066518ac26ecc833",
-      "englishHash": "270b9b8e33f1cbc56eb6c979",
+      "sourceHash": "d4acb7e952992a812b82e7dd",
+      "englishHash": "62026a42b2390a87bf21a984",
       "traditionalSourceHash": "1eb34d23527ba5fb932903ea",
       "traditionalHash": "270b9b8e33f1cbc56eb6c979"
     },
     "Account.permission.filter.ungranted": {
-      "sourceHash": "a5c476c691675933dc5ecb82",
-      "englishHash": "260122b52b191a403d3285b1",
+      "sourceHash": "728c889ac71d62e67cfc59fc",
+      "englishHash": "352a5b4c1246d1bf84a4bc59",
       "traditionalSourceHash": "56ef723795a5c226b1f35db4",
       "traditionalHash": "260122b52b191a403d3285b1"
     },
     "Account.permission.filter.changed": {
-      "sourceHash": "2203e17d4527c8418d6ba87a",
-      "englishHash": "682d211b7142758a2655363b",
+      "sourceHash": "df8bf13a089f1466a407d928",
+      "englishHash": "e8ce5dcaf408935ff7674722",
       "traditionalSourceHash": "0af6e6c8b2bd0d81f8ba3352",
       "traditionalHash": "682d211b7142758a2655363b"
     },
     "Account.permission.scopeHint": {
-      "sourceHash": "67e1da520f801b8f304290e0",
-      "englishHash": "4b0383ee46605d291406e192",
+      "sourceHash": "a18d636c07ccbabf8e570772",
+      "englishHash": "a1fcef617e44ee1dd78ace25",
       "traditionalSourceHash": "278c61b0cbc35d6cd209becc",
       "traditionalHash": "f13c36e557942216bd9cc526"
     },
     "Account.permission.clearFilters": {
-      "sourceHash": "21e7c98e99dbd3cdc1c9291e",
-      "englishHash": "657d9cbf45ec9e6a87298c93",
+      "sourceHash": "7c117956d1f1b22b1097663f",
+      "englishHash": "7179ea0035fca783ec62b718",
       "traditionalSourceHash": "b2b0323b5186cb27a137084a",
       "traditionalHash": "050605e81eed06768a685592"
     },
     "Account.permission.emptyPermissions": {
-      "sourceHash": "b3c7fd0d4fc96f0b09d4787c",
-      "englishHash": "cf1098e306b30b7c9bdbbe7f",
+      "sourceHash": "4659f0f37ea79c68ce239a07",
+      "englishHash": "cf8a4b194d53945b7122e360",
       "traditionalSourceHash": "3e06956bb2d41b1ec35b74a8",
       "traditionalHash": "a91b5864c3948200aa7d230f"
     },
     "Account.permission.selectFilteredAria": {
-      "sourceHash": "5e9313b464a6a32eedafdfd8",
-      "englishHash": "137fb1c9ccee7fb9c0fcf173",
+      "sourceHash": "6d9844cc4bafea1f358e2a44",
+      "englishHash": "a7f596866d557a24270bd0dc",
       "traditionalSourceHash": "e49c55e5aafffd3db5ffcf84",
       "traditionalHash": "9a39c95c54130b267ec8b238"
     },
     "Account.permission.selectModuleAria": {
-      "sourceHash": "93e2c597640df793a31c8dd2",
-      "englishHash": "803b12674a17a3f322ee1773",
+      "sourceHash": "b83711e54e8479eeee770e60",
+      "englishHash": "8419a44b8c12f0a630b06558",
       "traditionalSourceHash": "ecff2ca88b2e92e9510985f7",
       "traditionalHash": "17875fbc14ad101fa841b500"
     },
     "Account.permission.selectResourceAria": {
-      "sourceHash": "bd3f53efb894b6de3045e874",
-      "englishHash": "8a7a4c76f34400b6a0d27016",
+      "sourceHash": "00f39ae3e376086fbbc00916",
+      "englishHash": "40c50fba12675d75b8f64142",
       "traditionalSourceHash": "8200448e36c0d5edb8902877",
       "traditionalHash": "80a9d5f647c21058080ee721"
     },
     "Account.permission.moduleCount": {
-      "sourceHash": "60c59905ec4c707c48adcf5e",
-      "englishHash": "4ca7569fa0da6ad3e336074d",
+      "sourceHash": "84425ad93a8bd42e825ff2df",
+      "englishHash": "f5cb0b9a3451a7d23c66fbc5",
       "traditionalSourceHash": "c9eb77109ad145580f9b50b8",
       "traditionalHash": "c7d1bacc9d6daed767cfb3a6"
     },
     "Account.permission.resourceCount": {
-      "sourceHash": "4765f636e50d88aa4162b8c9",
-      "englishHash": "774f1631826bbdf1c5ae17b3",
+      "sourceHash": "6b740ee4f51bdd4996870dd5",
+      "englishHash": "7b1b40c0746ec746446b5044",
       "traditionalSourceHash": "d7ab66dadeb9841434a2b61e",
       "traditionalHash": "61d4b6e67d46be3e84fd88ad"
     },
     "Account.permission.resourcesLabel": {
-      "sourceHash": "c5782a890f3a5597ae96e035",
-      "englishHash": "31e68d2cc919fa90ed9f44df",
+      "sourceHash": "899ab277cf98e7af00220671",
+      "englishHash": "ff0b88fd0c2933f7947a94cd",
       "traditionalSourceHash": "416c0acc7abbabb0ed50cb06",
       "traditionalHash": "d9fef17939c28e307ad59be4"
     },
     "Account.permission.actionsLabel": {
-      "sourceHash": "201d9622ed67eafc4b4d1deb",
-      "englishHash": "370b9d720de3d4fd031ffd1c",
+      "sourceHash": "041769bb58841c706d7406bc",
+      "englishHash": "0903b712b2a1888465949b5e",
       "traditionalSourceHash": "714f83e01536332ea3881331",
       "traditionalHash": "1b1633e3b5cf16176d97ee09"
     },
     "Account.permission.dependencyHint": {
-      "sourceHash": "9042910521f35a4728fb1fda",
-      "englishHash": "2a487e23151ab0c6ac089d2f",
+      "sourceHash": "a22ddf1d18ecce8bfb69988b",
+      "englishHash": "e972e38d6a7684813d6bef39",
       "traditionalSourceHash": "1400cd7e57949a5541e99de2",
       "traditionalHash": "6a572ebb3b73a3eb57371eff"
     },
     "Account.permission.discardTitle": {
-      "sourceHash": "932c7d582d73dde89294aee8",
-      "englishHash": "01aeaa37eedefb79426938b6",
+      "sourceHash": "1ca828ad623533202189d519",
+      "englishHash": "470e7ee2a5795561d924d543",
       "traditionalSourceHash": "2f909fc4e0d5f5d4a8a67a7d",
       "traditionalHash": "a66b7f0a8459201d19b8a27f"
     },
     "Account.permission.discardHint": {
-      "sourceHash": "960c39a9e97b0d31e6969a49",
-      "englishHash": "99e48faa255fc42f00c60247",
+      "sourceHash": "dcd21f3bb01bc6de91b97bba",
+      "englishHash": "9fd80dfec7cdec2feef547b8",
       "traditionalSourceHash": "6a4035ba92240f53b7bfde91",
       "traditionalHash": "d0cf049d699cf6ee1b044fa7"
     },
     "Account.permission.discardConfirm": {
-      "sourceHash": "7ba175e724640191ee9a214a",
-      "englishHash": "9b7824cefa1e8b160881b03e",
+      "sourceHash": "37e8ab5c5f1797ea84163b1c",
+      "englishHash": "eb1a70e39274bb762b5d7c1a",
       "traditionalSourceHash": "a76598a4be992f97a9690a50",
       "traditionalHash": "09ae4ba6e5e9b87c49edda68"
     },
     "Account.permission.reviewTitle": {
-      "sourceHash": "c3cb76271337d96bbe51ad85",
-      "englishHash": "c61c88d2a38de2cc08dd8a77",
+      "sourceHash": "8fa4822ea3ff1b528ead1b98",
+      "englishHash": "80b8e75e57716a94a58e32be",
       "traditionalSourceHash": "311b592b8c3727a9b5bbc238",
       "traditionalHash": "c83d5eafd261861da490a5d7"
     },
     "Account.permission.reviewHint": {
-      "sourceHash": "602e651d0a8e2713904090e5",
-      "englishHash": "b5611ed78cf25dead441944c",
+      "sourceHash": "dc3d4ac94d11d829a3dc2db8",
+      "englishHash": "cfee021a663f6dabaccd1dcd",
       "traditionalSourceHash": "3f99b2a428abad31ad1885fd",
       "traditionalHash": "c9e0f610af3b3c032067d2d0"
     },
     "Account.permission.grantChanges": {
-      "sourceHash": "f14f4ee0ff4c2b5335413f26",
-      "englishHash": "960862222c3bd75a8eb57112",
+      "sourceHash": "c0ddfbc6991c5bc14f740112",
+      "englishHash": "4224d9e7254ad7c411c0629a",
       "traditionalSourceHash": "2c2e35ba9d08685485ecc3d6",
       "traditionalHash": "5537aea74f0fc39f544897f9"
     },
     "Account.permission.revokeChanges": {
-      "sourceHash": "fd8b2b35298d76a59ffe8416",
-      "englishHash": "0852d78e72caca9164f2e05b",
+      "sourceHash": "9f36cf1a83473c389a1437d1",
+      "englishHash": "acdf15b4ffdc37a180f4b61a",
       "traditionalSourceHash": "6710b50ab1ff6e413746ef25",
       "traditionalHash": "6ede0784a38cd9a2284a58a1"
     },
     "Account.permission.noChangesInSection": {
-      "sourceHash": "239a4bdb5daa8549823164fc",
-      "englishHash": "484d55613910eb8c0917fe30",
+      "sourceHash": "e633e61f091a9d4f1bc27b6a",
+      "englishHash": "dc937b59892604f5a86ac969",
       "traditionalSourceHash": "dd0489ef17615470b4165ac6",
       "traditionalHash": "da5930e53d54d33e4a4f0b61"
     },
     "Account.permission.opsConfirmDescription": {
-      "sourceHash": "0f4a7fe213e9464a5d422c83",
-      "englishHash": "96e3dd6757ffbeb4d64a69b6",
+      "sourceHash": "6f5cdbcb82f4e30e263fbf49",
+      "englishHash": "c8308ab6e169b45f0ec9a10e",
       "traditionalSourceHash": "16162495af05176d8a899953",
       "traditionalHash": "e8d772592564b01f14ff3ab4"
     },
     "Account.permission.opsAcknowledge": {
-      "sourceHash": "3c011eec7b930a955dcf46a2",
-      "englishHash": "9a7117927a0f143fed9a5965",
+      "sourceHash": "eb95718633e7eebc5aabb7c5",
+      "englishHash": "ead3539da6e895b12dbb9583",
       "traditionalSourceHash": "f01050a891ad75ab6ffac26f",
       "traditionalHash": "28daa083e03f743b0b5e7dc2"
     },
     "Account.permission.continueEditing": {
-      "sourceHash": "12b73827de1302b5075143be",
-      "englishHash": "fd4b9e3b6c685bae8320db0d",
+      "sourceHash": "7270d4862ba7f3c35fb2d9c5",
+      "englishHash": "e76fd2add01005ae11754d75",
       "traditionalSourceHash": "f8775732a8453b8fc3477b47",
       "traditionalHash": "24a05e3c2c3bd8af4e76b7b7"
     },
     "Account.permission.confirmSave": {
-      "sourceHash": "cbce21f30af3718e665ca767",
-      "englishHash": "4a1edb18155e988ea88b3672",
+      "sourceHash": "45caa59437ed551acb48e38b",
+      "englishHash": "7599ee1a9440e74516f206bd",
       "traditionalSourceHash": "ec62f88c244f2b6153303322",
       "traditionalHash": "d23906fe208a8691a183067f"
     },
     "Account.permission.saving": {
-      "sourceHash": "dd590eac00c0e19dc28ba6b9",
-      "englishHash": "ff509c9ba052a21c008c88b3",
+      "sourceHash": "644f0dae4a45476d313b9ab9",
+      "englishHash": "23e39291d6135814ed7c936e",
       "traditionalSourceHash": "6b7c94d281c98211cc2a5d47",
       "traditionalHash": "00190ad393a3ee7d3ecdef49"
     },
     "Account.permission.concurrentChangeHint": {
-      "sourceHash": "e4de78913029a15a81fa0753",
-      "englishHash": "bcbf5dc82a9dee5d008125be",
+      "sourceHash": "4521173312ffb49dd3f13d37",
+      "englishHash": "43e2101745308418e4e7ac4d",
       "traditionalSourceHash": "c59518c44ba55a68525a926e",
       "traditionalHash": "330059d5a5e7334bc08e3301"
     },
     "Account.permission.compareSavedHint": {
-      "sourceHash": "6a6cd67933e479fa263995bf",
-      "englishHash": "859068d41d44c47ac0c2a5be",
+      "sourceHash": "7e1da87724f62aaa856d2702",
+      "englishHash": "31591f6e1804571692cf12d6",
       "traditionalSourceHash": "948776b37839de73ece2211e",
       "traditionalHash": "4cb73fdd17f6d6567a60dac8"
     },
     "Account.permission.compareUnsavedHint": {
-      "sourceHash": "0b9af069ba6827c02aa65578",
-      "englishHash": "50aeea8683944e9b37e657bc",
+      "sourceHash": "27b83412ce05e54163dd35cf",
+      "englishHash": "8571040904017262e45e75bb",
       "traditionalSourceHash": "b4bd78bb6932e7ac105b336a",
       "traditionalHash": "875cb23a62f38a9d55daee43"
     },
     "Account.permission.compareScope": {
-      "sourceHash": "379da002757f2b92b31209f3",
-      "englishHash": "a71d3d253f7c9922f4efcd9b",
+      "sourceHash": "a7c744ed50d7c01628a84250",
+      "englishHash": "48160dd08a30edc454843ae0",
       "traditionalSourceHash": "fa6d2c022fedf293bce0cf76",
       "traditionalHash": "47cd634fced97d5db98c9358"
     },
     "Account.permission.compareDifferences": {
-      "sourceHash": "312756b1274c7f7109a3d1c4",
-      "englishHash": "ae7b8d5856f29748e312d05e",
+      "sourceHash": "409667db8b0962ee80728ec7",
+      "englishHash": "200a0154a2afc6bd1459f8e5",
       "traditionalSourceHash": "fbeec9e644b2440bc7eab17e",
       "traditionalHash": "a0730750326ce0e585eda6e0"
     },
     "Account.permission.compareSearch": {
-      "sourceHash": "a5174afc5ee3489f1e629a31",
-      "englishHash": "d7ac48db8fea8763b077c5ec",
+      "sourceHash": "d1735eeb89ec695cd824a2e4",
+      "englishHash": "850fc743978d6e6e93b6a8e6",
       "traditionalSourceHash": "7db6f91ba9464cfcd9d8b858",
       "traditionalHash": "a56a42932557664c9aa5a7cf"
     },
     "Account.permission.compareEmpty": {
-      "sourceHash": "b783a5d9235f35a00279e281",
-      "englishHash": "cc2c61b0649a130618a18baf",
+      "sourceHash": "f834f9252f3e2ddcc14b67e6",
+      "englishHash": "42fccd9ec1e659013a016d43",
       "traditionalSourceHash": "38cb7a440309c1e2c24f5406",
       "traditionalHash": "a7c0e94cd15ba9b89bddd70b"
     },
     "Account.permission.draftFound": {
-      "sourceHash": "5dc2bd5b1ffdd1b9768e4419",
-      "englishHash": "4b47f6504e200b44f93e94f7",
+      "sourceHash": "7294ea5865e01a61ef3a2f18",
+      "englishHash": "7de7b16455aef1fbc7050b55",
       "traditionalSourceHash": "5474e01608223d659f170fbc",
       "traditionalHash": "1e782de0ff7fd18b44075a6c"
     },
     "Account.permission.draftStale": {
-      "sourceHash": "924be6f55183a5fad31d40c5",
-      "englishHash": "9288ee3e7caca4cb15f98308",
+      "sourceHash": "4dc4c91366c5a3d662604ddf",
+      "englishHash": "fcce5c1e2955f3c7fc270774",
       "traditionalSourceHash": "fc442162cdda54b5a684cc6c",
       "traditionalHash": "7e4e0869cf1ebb52baa18833"
     },
     "Account.permission.draftUnavailable": {
-      "sourceHash": "0da166c1b0b103f9e443a945",
-      "englishHash": "ee5bde85ed6fd61977ea208a",
+      "sourceHash": "7fad2b715019ab8094d79d95",
+      "englishHash": "f23da0e31b3e554017738f6d",
       "traditionalSourceHash": "0dc1c2c03e87bd3313fe8950",
       "traditionalHash": "9820f23c51c3e9cb5b970bf5"
     },
     "Account.permission.restoreDraft": {
-      "sourceHash": "5692f1dd8957b9fd882bd484",
-      "englishHash": "d20d05c1b09eb32b8de14faa",
+      "sourceHash": "bcd89926f5e7d1e15260e2ff",
+      "englishHash": "a86e1a9fdcc7c4da0938ecc6",
       "traditionalSourceHash": "8d453ed59bb02982cc8c7a76",
       "traditionalHash": "850351388ebae0a37fdf77ae"
     },
     "Account.permission.discardDraft": {
-      "sourceHash": "cdc0e0cd3bf84f4f926639c4",
-      "englishHash": "8aad28f47ef69e2290839e20",
+      "sourceHash": "68de0b952c201a6d4d07fea9",
+      "englishHash": "cb30147eec19a75829e93b86",
       "traditionalSourceHash": "bb2a304cfc4f616616de71a7",
       "traditionalHash": "c515f2ff49f2217e459668f6"
     },
@@ -10114,8 +10114,8 @@
       "traditionalHash": "c7d0b982eb9cabc8c38cfb0e"
     },
     "DeveloperDocs.apiReference.designPrinciplesSubtitle": {
-      "sourceHash": "502104c3c2cb1f2d6c818902",
-      "englishHash": "3b92f2b9d7d2d854245be2b7",
+      "sourceHash": "821f9bf2f970e61100c52afc",
+      "englishHash": "dd399428745087e60fe61e95",
       "traditionalSourceHash": "9c448f6d1af93cb9b1b902bb",
       "traditionalHash": "02fa2c092b0663e34d4c407c"
     },

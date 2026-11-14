@@ -25,7 +25,7 @@ public static class EmployeeEmailHelper
         return $"{local}@{DefaultEmailDomain}";
     }
 
-    /// <summary>有 OA 邮箱时使用原值，否则按姓名全拼生成默认邮箱。</summary>
+    /// <summary>员工已登记邮箱时使用原值，否则按姓名全拼生成默认邮箱。</summary>
     public static string ResolveEmail(string? email, string? name)
         => string.IsNullOrWhiteSpace(email) ? BuildDefaultEmail(name) : email.Trim();
 }

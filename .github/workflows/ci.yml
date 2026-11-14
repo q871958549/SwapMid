@@ -75,8 +75,10 @@ jobs:
       - name: UI governance health check
         run: pnpm check:ui
 
-      - name: OpenAPI summary baseline check
-        run: pnpm check:api-summary
+      - name: OpenAPI summary & generated SDK cleanliness check
+        run: |
+          pnpm check:api-summary
+          pnpm verify:api:clean
 
       - name: Unit & contract tests (Vitest)
         run: pnpm test:run
@@ -85,12 +87,17 @@ jobs:
         run: pnpm build
 
   compose:
-    name: Docker Compose & Image Builds
+    name: Docker Compose & Full-Stack E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
 
       - name: Validate docker-compose.yml
         run: docker compose -f docker/docker-compose.yml --env-file docker/.env.example config --quiet
@@ -100,3 +107,16 @@ jobs:
           docker compose -f docker/docker-compose.yml --env-file docker/.env.example build migrator
           docker compose -f docker/docker-compose.yml --env-file docker/.env.example build api
           docker compose -f docker/docker-compose.yml --env-file docker/.env.example build web
+
+      - name: Boot full stack & run end-to-end smoke suite
+        run: |
+          docker compose -f docker/docker-compose.yml --env-file docker/.env.example up -d
+          node scripts/e2e-smoke.mjs
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: docker compose -f docker/docker-compose.yml --env-file docker/.env.example logs --no-color --tail=200
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose -f docker/docker-compose.yml --env-file docker/.env.example down -v

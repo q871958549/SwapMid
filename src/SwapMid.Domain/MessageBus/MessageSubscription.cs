@@ -59,7 +59,7 @@ public class MessageSubscription : FullAuditedAggregateRoot<Guid>
         Secret = secret;
     }
 
-    // 按投递类型校验目标:RabbitMq 必须有 ExchangeName;其余(HTTP / WeWorkBot 群机器人)必须有 EndpointUrl;互斥清空另一侧。
+    // 按投递类型校验目标:RabbitMq 必须有 ExchangeName;其余(HTTP / BotWebhook 群机器人)必须有 EndpointUrl;互斥清空另一侧。
     private void SetTarget(DeliveryType deliveryType, string? endpointUrl, string? exchangeName, string? routingKey)
     {
         if (deliveryType == DeliveryType.RabbitMq)

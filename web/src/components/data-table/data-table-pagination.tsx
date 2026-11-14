@@ -36,7 +36,7 @@ interface DataTablePaginationProps<TData> {
   manualPagination?: boolean
   /**
    * 覆盖每页档位上限（默认按 manualPagination 推导，即 200 / 10000）。
-   * 给「需要比交互默认更宽」的列表用——如样品/扫码把上限放到 500（后端同步静默钳制）。
+   * 给「需要比交互默认更宽」的列表用——如宽分页审计视图把上限放到 500（后端同步静默钳制）。
    * 不传时服务端分页走 200，避免自定义档位把单页撑到硬顶 5000。
    */
   maxPageSize?: number
@@ -134,7 +134,7 @@ export function DataTablePagination<TData>({
   }, [tableKey])
 
   // 服务端分页（manual）默认走交互上限 200；客户端分页一次性加载全部、前端切片，沿用 MAX_PAGE_SIZE。
-  // 调用方可用 maxPageSize 放宽（样品/扫码 500）或收得更严。硬顶仍是后端 MaxMaxResultCount=5000。
+  // 调用方可用 maxPageSize 放宽（如宽分页视图 500）或收得更严。硬顶仍是后端 MaxMaxResultCount=5000。
   const maxPageSize = maxPageSizeOverride ?? (manualPagination ? INTERACTIVE_LIST_MAX_PAGE_SIZE : MAX_PAGE_SIZE)
   const { usable: usableSizes, unavailable: unavailableSizes } = useMemo(
     () => splitCustomPageSizes(customSizes, maxPageSize),

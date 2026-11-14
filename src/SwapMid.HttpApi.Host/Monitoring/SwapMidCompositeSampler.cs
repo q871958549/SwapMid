@@ -4,7 +4,7 @@ namespace SwapMid.Monitoring;
 
 /// <summary>
 /// D5 复合采样器（ADR-0007 P3.0）：关键链路强采 100% + 其余 head 抽样。
-/// 带 <see cref="SwapMidTracing.CriticalTag"/>=true 初始 tag 的 span（OA/K3 写穿、消息投递、Hangfire 作业根）
+/// 带 <see cref="SwapMidTracing.CriticalTag"/>=true 初始 tag 的 span（ETL 关键路径、消息投递、Hangfire 作业根）
 /// 一律 <see cref="SamplingDecision.RecordAndSample"/>，不受 parent 抽样决定影响——确保慢/失败的关键链路
 /// 不被 10% 抽样丢弃；其余 span 委托 <see cref="ParentBasedSampler"/>(<see cref="TraceIdRatioBasedSampler"/>(ratio))。
 /// 注：OTel .NET 的 <c>SamplingParameters</c> 不暴露 ActivitySource（无 Source 字段），故按 span 的初始 tag 判定，

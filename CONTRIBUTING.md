@@ -44,7 +44,8 @@ Thank you for your interest in contributing to **SwapMid**! This guide summarize
   When modifying backend DTOs or controllers, export the OpenAPI snapshot and regenerate frontend types and API docs:
   ```bash
   cd web
-  pnpm sync:api
+  pnpm sync:api:fast   # In-memory ContractTestHost (no running PostgreSQL required)
+  # or: pnpm sync:api  # Against a live local Host + offline Redoc portal
   pnpm api-summary:baseline
   ```
 
@@ -79,6 +80,6 @@ pnpm test:run
 pnpm build
 ```
 
-## License
+## Code of Conduct & License
 
-By contributing to SwapMid, you agree that your contributions will be licensed under the [Apache License 2.0](./LICENSE).
+Please follow our [Code of Conduct](./CODE_OF_CONDUCT.md) in all project interactions. By contributing to SwapMid, you agree that your contributions will be licensed under the [Apache License 2.0](./LICENSE).

@@ -56,7 +56,7 @@ public class AccountManagementAppServiceTests : SwapMidEntityFrameworkCoreTestBa
         {
             UserName = userName,
             Email = $"{userName}@example.test",
-            Password = "Han123!!",
+            Password = "Swap123!!",
             IsActive = true,
             RoleNames = { roleName }
         });
@@ -102,9 +102,9 @@ public class AccountManagementAppServiceTests : SwapMidEntityFrameworkCoreTestBa
         var user = await _userAppService.CreateAsync(new AccountUserCreateDto
         {
             UserName = $"pinyin-{suffix}",
-            Name = "田烨",
+            Name = "唐远",
             Email = $"pinyin-{suffix}@example.test",
-            Password = "Han123!!",
+            Password = "Swap123!!",
             IsActive = true
         });
 
@@ -125,7 +125,7 @@ public class AccountManagementAppServiceTests : SwapMidEntityFrameworkCoreTestBa
         {
             UserName = $"active-{suffix}",
             Email = $"active-{suffix}@example.test",
-            Password = "Han123!!",
+            Password = "Swap123!!",
             IsActive = true
         });
 
@@ -147,7 +147,7 @@ public class AccountManagementAppServiceTests : SwapMidEntityFrameworkCoreTestBa
             {
                 UserName = $"{prefix}-{i}",
                 Email = $"{prefix}-{i}@example.test",
-                Password = "Han123!!",
+                Password = "Swap123!!",
                 IsActive = true
             });
         }
@@ -188,7 +188,7 @@ public class AccountManagementAppServiceTests : SwapMidEntityFrameworkCoreTestBa
         {
             UserName = $"batch-a-{suffix}",
             Email = $"batch-a-{suffix}@example.test",
-            Password = "Han123!!",
+            Password = "Swap123!!",
             IsActive = true,
             RoleNames = { roleA }
         });
@@ -196,7 +196,7 @@ public class AccountManagementAppServiceTests : SwapMidEntityFrameworkCoreTestBa
         {
             UserName = $"batch-b-{suffix}",
             Email = $"batch-b-{suffix}@example.test",
-            Password = "Han123!!",
+            Password = "Swap123!!",
             IsActive = true,
             RoleNames = { roleB }
         });
@@ -223,7 +223,7 @@ public class AccountManagementAppServiceTests : SwapMidEntityFrameworkCoreTestBa
         {
             UserName = $"dept-user-{suffix}",
             Email = $"dept-user-{suffix}@example.test",
-            Password = "Han123!!",
+            Password = "Swap123!!",
             IsActive = true
         });
         var enterprise = await _enterpriseAppService.CreateAsync(new EnterpriseCreateUpdateDto
@@ -297,7 +297,7 @@ public class AccountManagementAppServiceTests : SwapMidEntityFrameworkCoreTestBa
             {
                 UserName = userName,
                 Email = $"{userName}@example.test",
-                Password = "Han123!!",
+                Password = "Swap123!!",
                 IsActive = true
             });
             expectedUserIds.Add(user.Id);
@@ -351,7 +351,7 @@ public class AccountManagementAppServiceTests : SwapMidEntityFrameworkCoreTestBa
         {
             UserName = userName,
             Email = $"{userName}@example.test",
-            Password = "Han123!!",
+            Password = "Swap123!!",
             IsActive = true,
             RoleNames = { roleName }
         });
@@ -377,7 +377,7 @@ public class AccountManagementAppServiceTests : SwapMidEntityFrameworkCoreTestBa
         {
             UserName = memberUserName,
             Email = $"{memberUserName}@example.test",
-            Password = "Han123!!",
+            Password = "Swap123!!",
             IsActive = true,
             RoleNames = { roleName }
         });
@@ -387,7 +387,7 @@ public class AccountManagementAppServiceTests : SwapMidEntityFrameworkCoreTestBa
         {
             UserName = $"roleid-nonmember-{suffix}",
             Email = $"roleid-nonmember-{suffix}@example.test",
-            Password = "Han123!!",
+            Password = "Swap123!!",
             IsActive = true
         });
 
@@ -435,7 +435,7 @@ public class AccountManagementAppServiceTests : SwapMidEntityFrameworkCoreTestBa
         {
             UserName = userName,
             Email = $"{userName}@example.test",
-            Password = "Han123!!",
+            Password = "Swap123!!",
             IsActive = isActive,
             RoleNames = roleName == null ? new List<string>() : new List<string> { roleName },
         });
@@ -455,7 +455,7 @@ public class AccountManagementAppServiceTests : SwapMidEntityFrameworkCoreTestBa
         {
             UserName = userName,
             Email = $"{userName}@example.test",
-            Password = "Han123!!",
+            Password = "Swap123!!",
             IsActive = true,
             RoleNames = { roleName }
         });

@@ -11,7 +11,7 @@ namespace SwapMid.Hangfire;
 
 /// <summary>
 /// Hangfire 全局过滤器：任何后台作业最终失败（重试耗尽进 FailedState）时，经通用通知中心告警。
-/// 一处覆盖所有 Hangfire 作业（OA 同步 / 材料超耗 / 库存同步 / 项目同步 / 消息投递…）。
+/// 一处覆盖所有 Hangfire 作业（ETL 定时管道 / 消息投递 / 审计与历史清理…）。
 /// 通知是旁路：用独立 scope 异步发送，异常吞掉，绝不影响 Hangfire 作业状态机。
 /// 注：重试中途的失败由 AutomaticRetry 转为 ScheduledState，不会进这里——只有最终失败才告警。
 /// </summary>

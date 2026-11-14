@@ -34,7 +34,7 @@ public class DataSourceAppServiceTests : SwapMidEntityFrameworkCoreTestBase
             Description = "PostgreSQL source",
             Type = DataSourceType.RelationalDatabase,
             Config = """
-                {"provider":"sqlserver","host":"localhost","port":1433,"database":"Han","username":"reader"}
+                {"provider":"sqlserver","host":"localhost","port":1433,"database":"SwapMid","username":"reader"}
                 """,
             IsEnabled = true
         });
@@ -121,7 +121,7 @@ public class DataSourceAppServiceTests : SwapMidEntityFrameworkCoreTestBase
                   "provider":"sqlserver",
                   "host":"db.example.test",
                   "port":1433,
-                  "database":"Han",
+                  "database":"SwapMid",
                   "username":"reader",
                   "password":"{{secret}}",
                   "encrypt":false,
@@ -180,7 +180,7 @@ public class DataSourceAppServiceTests : SwapMidEntityFrameworkCoreTestBase
             Name = source.Name,
             Type = DataSourceType.RelationalDatabase,
             Config = """
-                {"provider":"sqlserver","host":"db.example.test","port":1433,"database":"Han","username":"reader","password":"replacement-secret"}
+                {"provider":"sqlserver","host":"db.example.test","port":1433,"database":"SwapMid","username":"reader","password":"replacement-secret"}
                 """
         });
 
@@ -238,7 +238,7 @@ public class DataSourceAppServiceTests : SwapMidEntityFrameworkCoreTestBase
             Name = $"Scoped Test Source {Guid.NewGuid():N}",
             Type = DataSourceType.RelationalDatabase,
             Config = """
-                {"provider":"sqlserver","host":"old-db.example.test","port":1433,"database":"Han","username":"reader","password":"old-secret"}
+                {"provider":"sqlserver","host":"old-db.example.test","port":1433,"database":"SwapMid","username":"reader","password":"old-secret"}
                 """
         });
 
@@ -247,7 +247,7 @@ public class DataSourceAppServiceTests : SwapMidEntityFrameworkCoreTestBase
             {
                 Type = DataSourceType.RelationalDatabase,
                 Config = """
-                    {"provider":"sqlserver","host":"new-db.example.test","port":1433,"database":"Han","username":"reader"}
+                    {"provider":"sqlserver","host":"new-db.example.test","port":1433,"database":"SwapMid","username":"reader"}
                     """
             }));
 
@@ -448,7 +448,7 @@ public class DataSourceAppServiceTests : SwapMidEntityFrameworkCoreTestBase
                 Name = target.Name,
                 Type = DataSourceType.RelationalDatabase,
                 Config = """
-                    {"provider":"sqlserver","host":"localhost","port":1433,"database":"Han","username":"reader","password":"replacement-secret","targetResourceGroup":"physical-db-repaired"}
+                    {"provider":"sqlserver","host":"localhost","port":1433,"database":"SwapMid","username":"reader","password":"replacement-secret","targetResourceGroup":"physical-db-repaired"}
                     """,
                 IsEnabled = true,
             });
@@ -473,7 +473,7 @@ public class DataSourceAppServiceTests : SwapMidEntityFrameworkCoreTestBase
             ? string.Empty
             : $",\"targetResourceGroup\":\"{targetResourceGroup}\"";
         return
-            $"{{\"provider\":\"sqlserver\",\"host\":\"localhost\",\"port\":1433,\"database\":\"Han\",\"username\":\"reader\"{group}}}";
+            $"{{\"provider\":\"sqlserver\",\"host\":\"localhost\",\"port\":1433,\"database\":\"SwapMid\",\"username\":\"reader\"{group}}}";
     }
 
     private static void AssertProtectedResponse(DataSourceDto dto, string secret)

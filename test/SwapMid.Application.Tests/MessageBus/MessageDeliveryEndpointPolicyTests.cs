@@ -81,13 +81,13 @@ public class MessageDeliveryEndpointPolicyTests
     }
 
     [Fact]
-    public void 私网地址仅在显式Cidr内允许且企业微信永不允许私网()
+    public void 私网地址仅在显式Cidr白名单内允许()
     {
         var denied = CreateConfiguration(allowedHosts: "internal.example");
         var allowed = CreateConfiguration(
             allowedHosts: "internal.example",
-            allowedPrivateNetworks: "10.168.20.0/24");
-        var address = IPAddress.Parse("10.168.20.15");
+            allowedPrivateNetworks: "10.20.30.0/24");
+        var address = IPAddress.Parse("10.20.30.15");
 
         OutboundEndpointConnectionGuard.IsAddressAllowed(
                 address, denied, MessageDeliveryEndpointPolicy.AllowedPrivateNetworksKey)
@@ -110,7 +110,7 @@ public class MessageDeliveryEndpointPolicyTests
 
         Should.Throw<InvalidOperationException>(() =>
             OutboundEndpointConnectionGuard.IsAddressAllowed(
-                IPAddress.Parse("10.168.20.15"),
+                IPAddress.Parse("10.20.30.15"),
                 configuration,
                 MessageDeliveryEndpointPolicy.AllowedPrivateNetworksKey));
     }

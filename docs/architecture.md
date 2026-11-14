@@ -12,23 +12,23 @@ flowchart LR
     UI["Admin Console & Developer Docs"]
   end
 
-  subgraph Web["Next.js 16 BFF (web:5175)"]
+  subgraph Web["Next.js 16 BFF (web:5175 / :13000)"]
     Proxy["Middleware & /api/proxy/*"]
-    Auth["Session Auth Routes (/api/auth/*)"]
+    Auth["Login Server Action & /api/auth/*"]
   end
 
   subgraph Infra["Shared Infrastructure"]
     Redis[("Redis 8\nBFF Session Store + Locks")]
     PG[("PostgreSQL 16\nMetadata, Outbox & Audit")]
-    RMQ[("RabbitMQ 3.13\nOptional AMQP Broker")]
+    RMQ[("RabbitMQ 3.13\nAMQP Broker")]
   end
 
-  subgraph Host["SwapMid.HttpApi.Host (:44362)"]
+  subgraph Host["SwapMid.HttpApi.Host (:44362 / :18080)"]
     OIDC["OpenIddict Server\n(Password + Client Credentials)"]
     DI["DataIntegration Engine\n(Streaming Connectors + Receipt v1)"]
     MB["MessageBus Engine\n(Outbox + Webhook / RabbitMQ / Bot)"]
-    GW["ApiManagement Gateway\n(/gateway/{groupPrefix}/{routePath})"]
-    SCH["Platform Scheduling\n(Cron + Execution Locks)"]
+    GW["ApiManagement Gateway\n(/api/gateway/{**path})"]
+    SCH["Platform Scheduling\n(Hangfire Cron + Execution Locks)"]
     NTF["Notification & Alertmanager\n(Webhook + SMTP + Alert Receiver)"]
     ADM["Admin & Governance\n(Identity, Enterprise, Dict, Audit, Docs)"]
   end
@@ -51,14 +51,14 @@ SwapMid follows strict Domain-Driven Design (DDD) layering across `src/` and `te
 
 | Project | Responsibility |
 | --- | --- |
-| `SwapMid.Domain.Shared` | Constants, enums, error codes (`SwapMid:*`), localization JSON (`zh-Hans`, `en`), and options contracts. |
+| `SwapMid.Domain.Shared` | Constants, enums, error codes (`SwapMid:*`), localization JSON (`zh-Hans`, `zh-Hant`, `en`), and options contracts. |
 | `SwapMid.Domain` | Aggregate roots, entities, domain services (`ImpersonationGuardService`, pipeline/topic/gateway domain models), and repository interfaces. |
 | `SwapMid.Application.Contracts` | Request/response DTOs, permission definitions (`SwapMidPermissions`), and application service interfaces. |
 | `SwapMid.Application` | Application services, streaming ETL runners, MessageBus dispatchers, notification channels, and scheduling handlers. |
 | `SwapMid.EntityFrameworkCore` | EF Core 10 `SwapMidDbContext` (PostgreSQL via Npgsql), entity mappings, indexes, and live schema metadata reader. |
-| `SwapMid.HttpApi` | Versioned REST controllers (`/api/v1/*`), API Gateway forwarding controller (`/gateway/*`), and Alertmanager webhook receiver. |
-| `SwapMid.HttpApi.Host` | ASP.NET Core 10 host, OpenIddict server setup, rate limiting, health checks (`/health/live`, `/health/ready`), Prometheus metrics, and OpenAPI export (`--export-openapi`). |
-| `SwapMid.DbMigrator` | Idempotent schema migration and initial seed runner (admin role/user, OpenIddict applications & scopes, default dictionaries). |
+| `SwapMid.HttpApi` | Versioned REST controllers (`/api/v1/*`) and Alertmanager webhook receiver. |
+| `SwapMid.HttpApi.Host` | ASP.NET Core 10 host, OpenIddict server setup, Hangfire recurring scheduler, fail-closed API Gateway controller (`/api/gateway/{**path}`), rate limiting, health checks (`/health/live`, `/health/ready`, `/health-status`), and Prometheus metrics. |
+| `SwapMid.DbMigrator` | Idempotent schema migration and initial seed runner (admin role/user, OpenIddict applications & scopes, default dictionaries, and zero-dependency ETL/MessageBus/Gateway demos). |
 
 ---
 
@@ -74,7 +74,7 @@ sequenceDiagram
   participant Redis as Redis Session Store
   participant API as SwapMid.HttpApi.Host (:44362)
 
-  User->>BFF: POST /api/auth/login (credentials)
+  User->>BFF: Submit /login Server Action (loginAction)
   BFF->>API: POST /connect/token (OpenIddict password flow)
   API-->>BFF: access_token + refresh_token
   BFF->>API: GET /api/abp/application-configuration
@@ -124,12 +124,12 @@ sequenceDiagram
   - **BotWebhook**: Formats operational/event notifications for Generic JSON, Slack, Feishu (Lark), DingTalk, and WeCom group webhooks.
 
 ### 4.3 ApiManagement & Gateway
-- **API Groups & Routes**: Organizes upstream HTTP endpoints under versioned group prefixes (`/gateway/{groupPrefix}/{routePath}`) with method, timeout, header forwarding, and enablement controls.
-- **Third-Party App Credentials**: Provisions OpenIddict `client_credentials` applications scoped to `external-integration`, with secret rotation and per-route authorization.
+- **API Groups & Routes**: Organizes upstream HTTP endpoints under managed route paths (`/api/gateway/{**path}`, fail-closed by default via `ApiGateway:Enabled=false`) with method, ordering, and enablement controls.
+- **Third-Party App Credentials**: Provisions OpenIddict `client_credentials` applications scoped to `external-integration`, with secret rotation and revocation.
 - **Interactive Test Console**: Built-in gateway request debugger with latency/header inspection.
 
 ### 4.4 Platform Scheduling & Notification
-- **Scheduling**: Unified Cron job registry, distributed execution locking, timeout guards, manual triggers, and execution history across ETL, MessageBus retries, and system maintenance jobs.
+- **Scheduling**: Unified Hangfire Cron job registry, concurrency gates, dry-run preview, manual triggers, and execution history across ETL, MessageBus retries, and system maintenance jobs.
 - **Notification & Alertmanager**: Multi-channel notification templates (`Webhook`, `SMTP Email`) plus a built-in Prometheus Alertmanager receiver at `POST /api/v1/notification/webhooks/alertmanager` authenticated via constant-time `X-SwapMid-Alert-Token` comparison.
 
 ---
@@ -138,12 +138,13 @@ sequenceDiagram
 
 Every change across backend and frontend is guarded by deterministic CI checks (`.github/workflows/ci.yml`):
 
-1. **Backend Build & Tests**: `dotnet build SwapMid.slnx --warnaserror` + `dotnet test SwapMid.slnx` (Domain, Application, EntityFrameworkCore SQLite in-memory, and HttpApi suites).
-2. **OpenAPI Contract Sync**: `SwapMid.HttpApi.Host --export-openapi` -> `docs/api/openapi.generated.json` -> `@hey-api/openapi-ts` (`pnpm gen:api` & `pnpm gen:api-doc`) + `pnpm check:api-summary`.
+1. **Backend Build & Tests**: `dotnet build SwapMid.slnx -c Release --warnaserror` + `dotnet test SwapMid.slnx -c Release` (Domain, Application, EntityFrameworkCore SQLite in-memory, and HttpApi suites).
+2. **OpenAPI Contract Sync**: `RuntimeSwaggerContractTests` (`SWAPMID_UPDATE_OPENAPI_SNAPSHOT=1` / `pnpm sync:api:fast`) -> `docs/api/openapi.generated.json` -> `@hey-api/openapi-ts` (`pnpm gen:api` & `pnpm gen:api-doc`) + `pnpm check:api-summary` + `pnpm verify:api:clean`.
 3. **Frontend Type, Dependency & Lint Gates**:
    - `npx tsc --noEmit`
    - `pnpm check:deps` (`knip` dead-code gate + `dependency-cruiser` runtime circular-dependency gate)
-   - `pnpm lint` (`eslint --max-warnings=0` including custom `swapmid/*` UI governance rules + full frontend/backend i18n parity audit)
+   - `pnpm lint` (`eslint --max-warnings=0` including custom `swapmid/*` UI governance rules + full frontend/backend `zh-Hans`/`zh-Hant`/`en` parity audit)
    - `pnpm check:ui` (AST route complexity ratchet + UI rule-card budget)
    - `pnpm test:security-deps` (supply-chain lockfile & transitive `minimatch`/`brace-expansion` bounds)
    - `pnpm test:run` (Vitest unit/component tests) & `pnpm build` (Next.js standalone production build)
+4. **Full-Stack Container E2E (`scripts/e2e-smoke.mjs`)**: Boots `postgres`, `redis`, `rabbitmq`, `seq`, `migrator`, `api`, and `web` in Docker Compose and verifies live ETL sync, RabbitMQ event delivery, OpenIddict `client_credentials`, scheduled jobs, DB dictionary, and BFF auth boundaries.

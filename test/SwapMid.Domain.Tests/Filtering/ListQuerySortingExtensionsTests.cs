@@ -128,7 +128,7 @@ public class ListQuerySortingExtensionsTests
 
     /// <summary>
     /// opt-out：调用方在返回值上自带兜底键时必须能关掉，否则共享件追加的 Id 会排在调用方兜底键
-    /// **之前**把它短路（K3 即时库存靠跨同步稳定的业务键兜底，被 Id 抢先就等于每次同步后翻页洗牌）。
+    /// **之前**把它短路（外部同步表靠跨批次稳定的业务键兜底，被 Id 抢先就等于每次同步后翻页洗牌）。
     /// </summary>
     [Fact]
     public void ApplyWhitelistedSorting_Should_Respect_OptOut_So_Caller_Tiebreaker_Wins()

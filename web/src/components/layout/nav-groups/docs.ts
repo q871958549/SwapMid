@@ -19,7 +19,7 @@ export const docsGroup: NavGroup = {
       titleKey: 'items.docs.dbDictionary',
       href: '/docs/db-dictionary',
       icon: Table2,
-      permission: 'SwapMid.DeveloperDocs.DbSchema',
+      permission: 'SwapMid.DeveloperDocs.DbDictionary',
     },
   ],
 }

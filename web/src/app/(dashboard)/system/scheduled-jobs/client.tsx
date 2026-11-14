@@ -106,8 +106,8 @@ export function ScheduledJobsClient({
   }
 
   // 已接入统一执行管道的任务：正式立即执行走 run 端点（生成落库 + 广播 + 记历史）。
-  // argsJson 留空=按 handler 默认值（如材料超耗率默认上月）；带参弹窗收集到值时经此传入。
-  // 长任务（isLongRunning：报表实时查外部库 / 全量同步，实测材料超耗率单次 51s）传 runInBackground
+  // argsJson 留空=按 handler 默认值（如清理任务默认保留天数）；带参弹窗收集到值时经此传入。
+  // 长任务（isLongRunning：跨库批量归档或全量对账等长耗时作业）传 runInBackground
   // 后台入队立即返回（F6），进度与结果看执行历史——同步等待会顶着 HTTP 超时；秒级任务仍同步直返摘要。
   async function runFormal(job: ScheduledJob, argsJson?: string | null) {
     setBusy(job.key)

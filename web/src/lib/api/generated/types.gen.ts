@@ -2236,12 +2236,12 @@ export type SwapMidSchedulingRunScheduledJobInput = {
      */
     testRecipient?: string | null;
     /**
-     * 补偿参数（JSON），如 {"month":"2026-06"}；空 = 按任务默认（材料超耗率取上月）。
+     * 补偿参数（JSON），如 {"retainDays":90}；空 = 按任务默认参数执行。
      */
     argsJson?: string | null;
     /**
      * 后台执行（F6）：入队立即返回（结果 Queued=true），进度与结果看执行历史——供长任务
-     * （报表实时查外部库 / 全量同步，实测材料超耗率单次 51s）避免顶着 HTTP 超时。
+     * （跨库批量归档 / 全量对账同步等长耗时作业）避免顶着 HTTP 超时。
      * 仅正式模式生效：演练必须同步等结果（操作者在弹窗前等摘要与测试邮件），传 true 且 DryRun=true 时报错。
      */
     runInBackground?: boolean;
@@ -2607,11 +2607,11 @@ export type SwapMidSystemManagementCodeRuleEntityTypeDto = {
      */
     entityType?: string | null;
     /**
-     * 业务对象中文名（如「项目」「样品」，作下拉标签与列表显示名）。
+     * 业务对象中文名（如「数据管道」「消息主题」，作下拉标签与列表显示名）。
      */
     displayName?: string | null;
     /**
-     * 所属业务域分组（下拉可按此分组，如「企业管理」「项目管理」）。
+     * 所属业务域分组（下拉可按此分组，如「数据集成」「企业管理」）。
      */
     group?: string | null;
 };

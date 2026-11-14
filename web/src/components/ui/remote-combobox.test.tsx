@@ -40,7 +40,7 @@ describe('RemoteCombobox 清空按钮', () => {
     render(
       <RemoteCombobox
         value="e1"
-        selectedLabel="田烨"
+        selectedLabel="唐远"
         onChange={onChange}
         fetchOptions={noopFetch}
         clearable
@@ -61,7 +61,7 @@ describe('RemoteCombobox 清空按钮', () => {
   })
 
   it('clearable=false 时即使已选值也不渲染清空按钮', () => {
-    render(<RemoteCombobox value="e1" selectedLabel="田烨" onChange={vi.fn()} fetchOptions={noopFetch} />)
+    render(<RemoteCombobox value="e1" selectedLabel="唐远" onChange={vi.fn()} fetchOptions={noopFetch} />)
     expect(screen.queryByRole('button', { name: '清空已选' })).not.toBeInTheDocument()
   })
 
@@ -69,7 +69,7 @@ describe('RemoteCombobox 清空按钮', () => {
     render(
       <RemoteCombobox
         value="e1"
-        selectedLabel="田烨"
+        selectedLabel="唐远"
         onChange={vi.fn()}
         fetchOptions={noopFetch}
         clearable
@@ -81,7 +81,7 @@ describe('RemoteCombobox 清空按钮', () => {
 
   it('点击 trigger 本体正常展开下拉', async () => {
     render(
-      <RemoteCombobox value="e1" selectedLabel="田烨" onChange={vi.fn()} fetchOptions={noopFetch} clearable />
+      <RemoteCombobox value="e1" selectedLabel="唐远" onChange={vi.fn()} fetchOptions={noopFetch} clearable />
     )
     const trigger = screen.getByRole('combobox')
     expect(trigger).toHaveAttribute('aria-expanded', 'false')

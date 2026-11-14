@@ -9,8 +9,8 @@ const toastMock = vi.hoisted(() => vi.fn())
 vi.mock('@/components/ui/use-toast', () => ({ toast: toastMock }))
 
 const job: ScheduledJob = {
-  key: 'oa-base-info-sync',
-  displayName: 'OA 基础信息同步',
+  key: 'audit-log-cleanup',
+  displayName: '审计日志定时清理',
   description: null,
   cron: '0 0 * * *',
   enabled: true,
@@ -51,7 +51,7 @@ describe('DryRunDialog', () => {
     await waitFor(() => expect(toastMock).toHaveBeenCalledWith({
       variant: 'warning',
       title: '已跳过',
-      description: 'OA 基础信息同步：已有同一任务正在执行，本次跳过',
+      description: '审计日志定时清理：已有同一任务正在执行，本次跳过',
     }))
     expect(onClose).toHaveBeenCalledTimes(1)
     expect(onDone).toHaveBeenCalledTimes(1)

@@ -31,7 +31,7 @@ public class AccountSettingsAppService : ApplicationService, IAccountSettingsApp
     {
         var password = await _settingManager.GetOrNullGlobalAsync(SwapMidSettings.AccountDefaultPassword)
             ?? _configuration["Account:DefaultPassword"]
-            ?? "Han@123456";
+            ?? "SwapMid@123456";
         return new AccountDefaultSettingsDto { DefaultPassword = password };
     }
 

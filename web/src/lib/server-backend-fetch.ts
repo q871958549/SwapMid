@@ -42,7 +42,7 @@ export type ServerBackendFetchErrorKind =
 
 /**
  * 错误消息刻意不包含完整 URL、query、请求体或原始 fetch cause，避免日志泄漏
- * OAuth token、扫码参数等敏感值；调用方只按 kind/status 做稳定分类。
+ * OAuth token、凭证密钥等敏感值；调用方只按 kind/status 做稳定分类。
  */
 export class ServerBackendFetchError extends Error {
   constructor(

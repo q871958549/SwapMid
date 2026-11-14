@@ -23,7 +23,6 @@ export const Permissions = {
     UsersCreate: 'SwapMid.AccountManagement.Users.Create',
     UsersUpdate: 'SwapMid.AccountManagement.Users.Update',
     UsersDelete: 'SwapMid.AccountManagement.Users.Delete',
-    UsersResetPassword: 'SwapMid.AccountManagement.Users.ResetPassword',
     UsersImpersonate: 'SwapMid.AccountManagement.Users.Impersonate',
     Roles: 'SwapMid.AccountManagement.Roles',
     RolesCreate: 'SwapMid.AccountManagement.Roles.Create',
@@ -64,12 +63,12 @@ export const Permissions = {
     TopicsCreate: 'SwapMid.MessageBus.Topics.Create',
     TopicsUpdate: 'SwapMid.MessageBus.Topics.Update',
     TopicsDelete: 'SwapMid.MessageBus.Topics.Delete',
-    TopicsPublish: 'SwapMid.MessageBus.Topics.Publish',
     Subscriptions: 'SwapMid.MessageBus.Subscriptions',
     SubscriptionsCreate: 'SwapMid.MessageBus.Subscriptions.Create',
     SubscriptionsUpdate: 'SwapMid.MessageBus.Subscriptions.Update',
     SubscriptionsDelete: 'SwapMid.MessageBus.Subscriptions.Delete',
     Records: 'SwapMid.MessageBus.Records',
+    RecordsPublish: 'SwapMid.MessageBus.Records.Publish',
     RecordsReplay: 'SwapMid.MessageBus.Records.Replay',
   },
   DeveloperDocs: {
@@ -92,8 +91,6 @@ export const Permissions = {
   },
   NotificationCenter: {
     Settings: 'SwapMid.NotificationCenter.Settings',
-    SettingsUpdate: 'SwapMid.NotificationCenter.Settings.Update',
-    Logs: 'SwapMid.NotificationCenter.Logs',
   },
 } as const
 

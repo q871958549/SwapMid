@@ -4,7 +4,7 @@ import { diffGranted, filterNodes, formatPermName, type PermNode } from './permi
 // P0-3 展示层剥前缀纯函数的回归网：仅影响展示，搜索/提交仍用全名（filterNodes/permissionMatches 不经它）。
 describe('formatPermName', () => {
   it('平台前缀剥除：SwapMid.X.Y → X.Y', () => {
-    expect(formatPermName('SwapMid.ProjectManagement.Warehouses')).toBe('ProjectManagement.Warehouses')
+    expect(formatPermName('SwapMid.DataIntegration.DataSources')).toBe('DataIntegration.DataSources')
     // 组名（两段）同样适用——权限页左列组 name 也经它展示
     expect(formatPermName('SwapMid.EnterpriseManagement')).toBe('EnterpriseManagement')
   })
@@ -65,27 +65,27 @@ describe('diffGranted', () => {
 describe('filterNodes 说明目录', () => {
   const tree: PermNode[] = [
     {
-      perm: { name: 'SwapMid.ProjectManagement.Samples', displayName: '样品', parentName: null, isGranted: true },
+      perm: { name: 'SwapMid.DataIntegration.DataPipelines', displayName: '数据管道', parentName: null, isGranted: true },
       children: [
-        { perm: { name: 'SwapMid.ProjectManagement.Samples.Flow', displayName: '物流流转', parentName: 'SwapMid.ProjectManagement.Samples', isGranted: false }, children: [] },
+        { perm: { name: 'SwapMid.DataIntegration.DataPipelines.Execute', displayName: '手动执行', parentName: 'SwapMid.DataIntegration.DataPipelines', isGranted: false }, children: [] },
       ],
     },
   ]
 
   it('可用后果说明搜到权限，即使显示名对不上', () => {
-    const filtered = filterNodes(tree, '确认领用', {
-      'SwapMid.ProjectManagement.Samples.Flow': {
-        name: 'SwapMid.ProjectManagement.Samples.Flow',
+    const filtered = filterNodes(tree, '立即触发', {
+      'SwapMid.DataIntegration.DataPipelines.Execute': {
+        name: 'SwapMid.DataIntegration.DataPipelines.Execute',
         kind: 0,
-        impact: '关掉后不能确认领用/寄出申请',
+        impact: '关掉后不能立即触发同步任务',
       },
     })
     expect(filtered).toHaveLength(1)
-    expect(filtered[0]?.children[0]?.perm.displayName).toBe('物流流转')
+    expect(filtered[0]?.children[0]?.perm.displayName).toBe('手动执行')
   })
 
   it('没有说明目录时仍只按名称搜', () => {
-    expect(filterNodes(tree, '确认领用')).toEqual([])
-    expect(filterNodes(tree, '物流')).toHaveLength(1)
+    expect(filterNodes(tree, '立即触发')).toEqual([])
+    expect(filterNodes(tree, '手动')).toHaveLength(1)
   })
 })

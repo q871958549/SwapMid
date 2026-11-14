@@ -37,7 +37,10 @@
     "export:api": "node scripts/export-openapi.mjs",
     "docs:api": "pnpm --package=@redocly/cli@latest dlx redocly build-docs ../docs/api/openapi.generated.json -o ../docs/api/openapi.html",
     "sync:api": "node scripts/sync-api.mjs",
+    "sync:api:fast": "node scripts/sync-api.mjs --in-memory --skip-portal",
     "verify:api": "node scripts/sync-api.mjs --verify",
+    "verify:api:fast": "node scripts/sync-api.mjs --in-memory --verify",
+    "verify:api:clean": "pnpm gen:api && pnpm gen:api-doc && node scripts/verify-api-clean.mjs",
     "check:api-summary": "node --test scripts/check-api-summary.test.mjs && node scripts/check-api-summary.mjs",
     "api-summary:baseline": "node scripts/check-api-summary.mjs --write-baseline"
   },

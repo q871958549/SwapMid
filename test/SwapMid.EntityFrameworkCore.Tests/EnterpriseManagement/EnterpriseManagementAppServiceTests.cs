@@ -39,8 +39,8 @@ public class EnterpriseManagementAppServiceTests : SwapMidEntityFrameworkCoreTes
         var created = await _enterpriseAppService.CreateAsync(new EnterpriseCreateUpdateDto
         {
             Code = $"ENT-{suffix}",
-            Name = $"Han Enterprise {suffix}",
-            ShortName = "Han",
+            Name = $"Acme Enterprise {suffix}",
+            ShortName = "Acme",
             ContactPerson = "Admin",
             Status = EnterpriseStatus.Active
         });

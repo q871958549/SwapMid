@@ -6,7 +6,7 @@ using ToolGood.Words;
 namespace SwapMid.SharedKernel.Employees;
 
 /// <summary>
-/// 员工姓名拼音首字母（与前端 <c>pinyinInitials</c> 同口径：<c>ty</c> 命中「田烨」）。
+/// 员工姓名拼音首字母（与前端 <c>pinyinInitials</c> 同口径：<c>ty</c> 命中「唐远」）。
 /// 供员工列表 <c>Filter</c> 在纯字母查询时补 SQL <c>Contains</c> 覆盖不到的读音匹配。
 /// </summary>
 public static class EmployeeNamePinyin

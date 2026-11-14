@@ -20,7 +20,7 @@ vi.mock('@/components/ui/badge', () => ({
 }))
 
 const deng: EmployeePersonRef = {
-  employeeNo: 'HAN005353',
+  employeeNo: 'SM005353',
   name: '邓育亮',
   status: 2,
 }

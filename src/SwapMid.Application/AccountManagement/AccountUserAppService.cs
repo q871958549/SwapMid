@@ -86,7 +86,7 @@ public class AccountUserAppService : ApplicationService, IAccountUserAppService
             List<Guid>? pinyinIds = null;
             if (EmployeeNamePinyin.LooksLikeInitialsQuery(filter))
             {
-                // 组织规模投影姓名即可；纯字母查询 SQL Contains 打不中「田烨」。
+                // 组织规模投影姓名即可；纯字母查询 SQL Contains 打不中「唐远」。
                 var names = await AsyncExecuter.ToListAsync(query.Select(u => new { u.Id, u.Name }));
                 pinyinIds = EmployeeNamePinyin.MatchIds(names.Select(item => (item.Id, (string?)item.Name)), filter);
             }

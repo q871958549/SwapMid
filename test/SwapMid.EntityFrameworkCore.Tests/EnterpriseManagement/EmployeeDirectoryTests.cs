@@ -10,7 +10,7 @@ using Xunit;
 namespace SwapMid.EnterpriseManagement;
 
 /// <summary>
-/// 回归 2026-09-10：OA 日同步 Handler 无 ambient UoW 时 GetActiveListAsync 释放 DbContext。
+/// 回归 2026-09-10：后台作业 Handler 无 ambient UoW 时 GetActiveListAsync 释放 DbContext。
 /// </summary>
 [Collection(EntityFrameworkCoreTestCollections.Enterprise)]
 public class EmployeeDirectoryTests : SwapMidEntityFrameworkCoreTestBase

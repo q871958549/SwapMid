@@ -66,11 +66,11 @@ describe('EmployeeCombobox 搜索失败反馈', () => {
     await screen.findByText('员工目录暂不可用，请重新登录后再试')
 
     fetchMock.mockResolvedValue(
-      mockResponse(200, [{ id: 'e1', name: '田烨', employeeNo: 'HAN005170', departmentName: 'IT部', status: 0 }])
+      mockResponse(200, [{ id: 'e1', name: '唐远', employeeNo: 'SM005170', departmentName: 'IT部', status: 0 }])
     )
     fireEvent.change(screen.getByPlaceholderText('输入姓名 / 工号 / 拼音首字母...'), { target: { value: '田' } })
     // 输入触发 300ms 防抖后的第二次拉取
-    expect(await screen.findByText('田烨')).toBeInTheDocument()
+    expect(await screen.findByText('唐远')).toBeInTheDocument()
     expect(
       screen.queryByText('员工目录暂不可用，请重新登录后再试')
     ).not.toBeInTheDocument()
@@ -138,24 +138,24 @@ describe('EmployeeCombobox 正常路径', () => {
 
   it('请求带 maxResultCount,选项渲染工号 · 部门 description', async () => {
     fetchMock.mockResolvedValue(
-      mockResponse(200, [{ id: 'e1', name: '田烨', employeeNo: 'HAN005170', departmentName: 'IT部', status: 2 }])
+      mockResponse(200, [{ id: 'e1', name: '唐远', employeeNo: 'SM005170', departmentName: 'IT部', status: 2 }])
     )
     render(<EmployeeCombobox onChange={vi.fn()} showStatus />)
     openCombobox()
-    expect(await screen.findByText('田烨')).toBeInTheDocument()
-    expect(screen.getByText('HAN005170 · IT部 · 已离职')).toBeInTheDocument()
+    expect(await screen.findByText('唐远')).toBeInTheDocument()
+    expect(screen.getByText('SM005170 · IT部 · 已离职')).toBeInTheDocument()
     expect(String(fetchMock.mock.calls[0][0])).toContain('/api/proxy/employee-lookup?maxResultCount=20')
   })
 
   it('选中选项回调员工 Id + 姓名', async () => {
     const onChange = vi.fn()
     fetchMock.mockResolvedValue(
-      mockResponse(200, [{ id: 'e1', name: '田烨', employeeNo: 'HAN005170', departmentName: 'IT部', status: 0 }])
+      mockResponse(200, [{ id: 'e1', name: '唐远', employeeNo: 'SM005170', departmentName: 'IT部', status: 0 }])
     )
     render(<EmployeeCombobox onChange={onChange} />)
     openCombobox()
-    fireEvent.click(await screen.findByText('田烨'))
-    await waitFor(() => expect(onChange).toHaveBeenCalledWith('e1', '田烨'))
+    fireEvent.click(await screen.findByText('唐远'))
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith('e1', '唐远'))
   })
 
   it('把 RemoteCombobox 的 AbortSignal 原样传给 fetch，卸载时取消请求', async () => {

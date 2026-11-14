@@ -86,7 +86,7 @@ public class ResolvePipelineExecutionOutcomeInputTests
     }
 
     [Theory]
-    [InlineData("Server=db;Database=Han;Password=secret")]
+    [InlineData("Server=db;Database=SwapMid;Password=secret")]
     [InlineData("SELECT * FROM AppPipelineExecutions")]
     [InlineData("https://evidence.example/case?token=secret")]
     [InlineData("incident:INC/2026")]

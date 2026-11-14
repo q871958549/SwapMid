@@ -68,7 +68,7 @@ const columns: ColumnDef<Row, unknown>[] = [
 
 // 5 行、单页：搜索 / 筛选 / 显隐 / 选择 / compact 用。
 const baseRows: Row[] = [
-  { id: '1', name: '田烨', status: 'active', city: '北京' },
+  { id: '1', name: '唐远', status: 'active', city: '北京' },
   { id: '2', name: '张三', status: 'inactive', city: '上海' },
   { id: '3', name: '李四', status: 'active', city: '北京' },
   { id: '4', name: '王五', status: 'inactive', city: '广州' },
@@ -137,7 +137,7 @@ describe('DataTable · 渲染基础', () => {
     expect(screen.getByPlaceholderText('搜索...')).toBeInTheDocument()
     expect(screen.getByText('姓名')).toBeInTheDocument()
     expect(screen.getByText('城市')).toBeInTheDocument()
-    expect(screen.getByText('田烨')).toBeInTheDocument()
+    expect(screen.getByText('唐远')).toBeInTheDocument()
     expect(screen.getByText('赵六')).toBeInTheDocument()
   })
 
@@ -304,14 +304,14 @@ describe('DataTable · 全局搜索', () => {
     const { container } = await renderTable()
     fireEvent.change(screen.getByPlaceholderText('搜索...'), { target: { value: '张三' } })
     expect(screen.getByText('张三')).toBeInTheDocument()
-    expect(screen.queryByText('田烨')).not.toBeInTheDocument()
+    expect(screen.queryByText('唐远')).not.toBeInTheDocument()
     expect(bodyRowCount(container)).toBe(1)
   })
 
-  it('支持拼音首字母匹配（输入 ty 命中 田烨）', async () => {
+  it('支持拼音首字母匹配（输入 ty 命中 唐远）', async () => {
     await renderTable()
     fireEvent.change(screen.getByPlaceholderText('搜索...'), { target: { value: 'ty' } })
-    expect(screen.getByText('田烨')).toBeInTheDocument()
+    expect(screen.getByText('唐远')).toBeInTheDocument()
     expect(screen.queryByText('张三')).not.toBeInTheDocument()
   })
 
@@ -353,7 +353,7 @@ describe('DataTable · 列筛选（客户端）', () => {
     const inputs = screen.getAllByPlaceholderText('筛选...')
     fireEvent.change(inputs[1], { target: { value: '北' } })
     expect(bodyRowCount(container)).toBe(2)
-    expect(screen.getByText('田烨')).toBeInTheDocument()
+    expect(screen.getByText('唐远')).toBeInTheDocument()
     expect(screen.getByText('李四')).toBeInTheDocument()
     expect(screen.queryByText('张三')).not.toBeInTheDocument()
   })
@@ -773,7 +773,7 @@ describe('DataTable · 审计列（自动追加 / 默认隐藏）', () => {
   // 含审计字段：创建时间 + 创建人姓名。刻意不给 creatorId（否则会触发账号扩展信息请求），
   // 姓名直接取自 creatorName，无需网络。
   const auditRows: AuditRow[] = [
-    { id: '1', name: '田烨', status: 'active', city: '北京', creationTime: '2024-01-01T08:00:00Z', creatorName: '管理员' },
+    { id: '1', name: '唐远', status: 'active', city: '北京', creationTime: '2024-01-01T08:00:00Z', creatorName: '管理员' },
     { id: '2', name: '张三', status: 'inactive', city: '上海', creationTime: '2024-01-02T08:00:00Z', creatorName: '运维' },
   ]
 

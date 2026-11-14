@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Npgsql;
 using SwapMid.ApiManagement;
 using SwapMid.DataIntegration;
+using SwapMid.MessageBus;
 using SwapMid.SystemManagement;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
@@ -19,7 +20,8 @@ namespace SwapMid.DbMigrator;
 /// 开箱即用演示数据种子（仅在 DbMigrator 中注册，保持自动化测试基线纯净）：
 /// 1. 10 个保留业务对象默认编码规则（CodeRule）；
 /// 2. 示例 API 分组与网关路由（ApiGroup / ApiRoute）；
-/// 3. 零外部依赖的本地 PostgreSQL ETL 演示源表、目标表、数据源与已激活数据管道（demo-orders-pg-to-pg）。
+/// 3. 零外部依赖的本地 RabbitMQ 消息总线演示订阅（demo-pipeline-events-rmq）；
+/// 4. 零外部依赖的本地 PostgreSQL ETL 演示源表、目标表、数据源与已激活数据管道（demo-orders-pg-to-pg）。
 /// </summary>
 public sealed class SwapMidDemoDataSeedContributor : IDataSeedContributor, ITransientDependency
 {
@@ -29,6 +31,8 @@ public sealed class SwapMidDemoDataSeedContributor : IDataSeedContributor, ITran
     private readonly ICodeRuleRepository _codeRuleRepository;
     private readonly IApiGroupRepository _apiGroupRepository;
     private readonly IApiRouteRepository _apiRouteRepository;
+    private readonly IMessageTopicRepository _messageTopicRepository;
+    private readonly IRepository<MessageSubscription, Guid> _messageSubscriptionRepository;
     private readonly IDataSourceRepository _dataSourceRepository;
     private readonly IDataPipelineRepository _dataPipelineRepository;
     private readonly ILogger<SwapMidDemoDataSeedContributor> _logger;
@@ -40,6 +44,8 @@ public sealed class SwapMidDemoDataSeedContributor : IDataSeedContributor, ITran
         ICodeRuleRepository codeRuleRepository,
         IApiGroupRepository apiGroupRepository,
         IApiRouteRepository apiRouteRepository,
+        IMessageTopicRepository messageTopicRepository,
+        IRepository<MessageSubscription, Guid> messageSubscriptionRepository,
         IDataSourceRepository dataSourceRepository,
         IDataPipelineRepository dataPipelineRepository,
         ILogger<SwapMidDemoDataSeedContributor> logger)
@@ -50,6 +56,8 @@ public sealed class SwapMidDemoDataSeedContributor : IDataSeedContributor, ITran
         _codeRuleRepository = codeRuleRepository;
         _apiGroupRepository = apiGroupRepository;
         _apiRouteRepository = apiRouteRepository;
+        _messageTopicRepository = messageTopicRepository;
+        _messageSubscriptionRepository = messageSubscriptionRepository;
         _dataSourceRepository = dataSourceRepository;
         _dataPipelineRepository = dataPipelineRepository;
         _logger = logger;
@@ -71,6 +79,7 @@ public sealed class SwapMidDemoDataSeedContributor : IDataSeedContributor, ITran
         {
             await SeedCodeRulesAsync();
             await SeedApiGatewayDemoAsync();
+            await SeedMessageBusDemoAsync();
             await SeedLocalPostgreSqlEtlDemoAsync();
         }
     }
@@ -148,6 +157,36 @@ public sealed class SwapMidDemoDataSeedContributor : IDataSeedContributor, ITran
                 "网关转发示例：将 /gw/demo/health 转发至平台自身存活探针端点",
                 order: 10);
             await _apiRouteRepository.InsertAsync(route, autoSave: true);
+        }
+    }
+
+    private async Task SeedMessageBusDemoAsync()
+    {
+        var topic = await _messageTopicRepository.FirstOrDefaultAsync(
+            x => x.Name == MessageBusTopics.IntegrationPipelineEvents);
+        if (topic == null)
+        {
+            topic = new MessageTopic(
+                _guidGenerator.Create(),
+                MessageBusTopics.IntegrationPipelineEvents,
+                TopicType.Broadcast,
+                description: "数据管道生命周期事件：ETL 管道触发、完成、失败与对账恢复事件流，可订阅转发至下游系统或机器人 Webhook。");
+            await _messageTopicRepository.InsertAsync(topic, autoSave: true);
+        }
+
+        const string demoSubName = "demo-pipeline-events-rmq";
+        if (!await _messageSubscriptionRepository.AnyAsync(
+                x => x.TopicId == topic.Id && x.Name == demoSubName))
+        {
+            var subscription = new MessageSubscription(
+                _guidGenerator.Create(),
+                topic.Id,
+                demoSubName,
+                DeliveryType.RabbitMq,
+                endpointUrl: null,
+                exchangeName: "swapmid.demo.events",
+                routingKey: "pipeline.events");
+            await _messageSubscriptionRepository.InsertAsync(subscription, autoSave: true);
         }
     }
 

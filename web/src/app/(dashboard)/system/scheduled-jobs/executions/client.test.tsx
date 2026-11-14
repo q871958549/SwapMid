@@ -41,7 +41,7 @@ vi.mock('@/components/data-table/data-table', () => ({
 
 const execution: JobExecution = {
   id: 'execution-1',
-  jobKey: 'oa-base-info-sync',
+  jobKey: 'audit-log-cleanup',
   jobType: 'OaBaseInfoSyncJob',
   jobMethod: 'ExecuteAsync',
   triggerKind: 1,
@@ -83,8 +83,8 @@ function renderClient(filterOverrides: Partial<{
       <ScheduledJobExecutionsClient
         initial={{ items: [execution], totalCount: 1 }}
         jobs={[{
-          key: 'oa-base-info-sync',
-          displayName: 'OA 基础信息同步',
+          key: 'audit-log-cleanup',
+          displayName: '审计日志定时清理',
           description: null,
           cron: '0 0 * * *',
           enabled: true,
@@ -118,11 +118,11 @@ describe('ScheduledJobExecutionsClient · 详情焦点恢复', () => {
     const trigger = screen.getByRole('button', { name: execution.summary! })
 
     fireEvent.click(trigger)
-    expect(await screen.findByRole('heading', { name: '执行详情 · OA 基础信息同步' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '执行详情 · 审计日志定时清理' })).toBeInTheDocument()
 
     close()
     await waitFor(() => {
-      expect(screen.queryByRole('heading', { name: '执行详情 · OA 基础信息同步' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('heading', { name: '执行详情 · 审计日志定时清理' })).not.toBeInTheDocument()
     })
     await waitFor(() => expect(trigger).toHaveFocus())
   })

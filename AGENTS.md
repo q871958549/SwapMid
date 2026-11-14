@@ -7,9 +7,9 @@ SwapMid is an open-source enterprise integration and data swap middleware built 
 - **Three Core Integration Engines**:
   1. `DataIntegration`: Multi-source connectors (`PostgreSQL`, `SqlServer`, `MySql`, REST API, File), streaming ETL pipelines, Cron scheduling, idempotent `RunId` execution coordination, and Target Receipt v1 (`__swapmid_etl_receipt_v1`).
   2. `MessageBus`: Topics, subscriptions, transactional outbox / delivery attempts, multi-channel delivery (`HTTP Webhook` with HMAC-SHA256 `X-SwapMid-Signature` + SSRF guard, `RabbitMQ`, and `BotWebhook`), and dead-letter replay.
-  3. `ApiManagement`: API groups, routes, dynamic gateway forwarding (`/gateway/{groupPrefix}/{routePath}`), interactive test console, and OpenIddict `client_credentials` third-party client management (`external-integration` scope).
+  3. `ApiManagement`: API groups, routes, dynamic gateway forwarding (`/api/gateway/{**path}`, fail-closed by default via `ApiGateway:Enabled=false`), interactive test console, and OpenIddict `client_credentials` third-party client management (`external-integration` scope).
 - **Platform Foundation**:
-  - `Scheduling`: Quartz/background job definitions, mutex groups, manual trigger, and execution logs.
+  - `Scheduling`: Hangfire/Cron recurring job definitions, concurrency gates, dry-run/manual trigger, and execution logs.
   - `EnterpriseManagement` & `AccountManagement`: Clean multi-enterprise organization tree (`Enterprise`, `CompanyDepartment`, `Position`, `Employee`), ABP Identity users/roles/permissions, and 5-invariant `ImpersonationGuardService`.
   - `SystemManagement`, `Notification` & `DeveloperDocs`: `CodeRule`, two-tier `DataDictionary`, `AuditLog`, native `SystemHealth`, `Webhook` + `SMTP Email` + incoming Prometheus `Alertmanager` webhook, OpenAPI reference, and live EF Core database schema dictionary.
 

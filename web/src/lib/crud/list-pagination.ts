@@ -11,7 +11,7 @@ export const SERVER_MAX_PAGE_SIZE = 5000
  *
  * 自定义每页条数一旦写进下拉，用户就会拿它当常规操作；5000 行会把账号角色 N+1、
  * 宽 DTO、RSC 首屏一起放大成「切一下档位转很久」。需要更宽的列表显式传入
- * （样品/扫码 500），不要把硬顶当默认。
+ * （如宽分页视图 500），不要把硬顶当默认。
  */
 export const INTERACTIVE_LIST_MAX_PAGE_SIZE = 200
 
@@ -35,7 +35,7 @@ export function parseServerListPagination(
   defaultPageSize = DEFAULT_PAGE_SIZE,
   /**
    * 单页上限（默认 `INTERACTIVE_LIST_MAX_PAGE_SIZE`，仍被 `SERVER_MAX_PAGE_SIZE` 硬顶）。
-   * 需要比默认更宽的列表显式传入——如样品/扫码传 500，与后端 `ListMaxPageSize` 静默钳制对齐。
+   * 需要比默认更宽的列表显式传入——如宽分页视图传 500，与后端 `ListMaxPageSize` 静默钳制对齐。
    *
    * 钳制刻意收在本函数内而不由调用方自己 `Math.min`：`skipCount` 与 `pageIndex` 的封顶都依赖最终
    * `pageSize`，调用方事后再钳一次就得自己重算这两个值，口径极易漂（漏算 = 深页 skipCount 与

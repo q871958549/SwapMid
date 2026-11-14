@@ -31,11 +31,11 @@ function render(ui: React.ReactElement) {
 }
 
 const longSummary = '已同步组织、部门、岗位和人员主数据，共处理 128 条记录，未发现异常。'
-const longError = 'OA 接口返回超时，已按执行策略终止本次同步，请检查上游服务状态后重试。'
+const longError = '上游服务响应超时，已按执行策略终止本次同步，请检查上游服务状态后重试。'
 
 const succeeded: JobExecution = {
   id: 'success-1',
-  jobKey: 'oa-base-info-sync',
+  jobKey: 'audit-log-cleanup',
   jobType: 'OaBaseInfoSyncJob',
   jobMethod: 'ExecuteAsync',
   triggerKind: 1,
@@ -119,7 +119,7 @@ describe('buildExecutionHistoryParams', () => {
 describe('ExecutionHistoryButton', () => {
   it('收敛摘要、合并手动操作人、打开共享详情，并提供完整历史出口', async () => {
     stubFetch()
-    render(<ExecutionHistoryButton jobKey="oa-base-info-sync" jobName="OA 基础信息同步" />)
+    render(<ExecutionHistoryButton jobKey="audit-log-cleanup" jobName="审计日志定时清理" />)
 
     fireEvent.click(screen.getByRole('button', { name: '历史' }))
     const summaryButton = await screen.findByRole('button', { name: longSummary })
@@ -142,18 +142,18 @@ describe('ExecutionHistoryButton', () => {
     )
 
     const fullHistory = screen.getByRole('link', { name: /查看该任务完整历史/ })
-    expect(fullHistory).toHaveAttribute('href', '/system/scheduled-jobs/executions?jobKey=oa-base-info-sync')
+    expect(fullHistory).toHaveAttribute('href', '/system/scheduled-jobs/executions?jobKey=audit-log-cleanup')
 
     fireEvent.click(summaryButton)
-    expect(await screen.findByRole('heading', { name: '执行详情 · OA 基础信息同步' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '执行详情 · 审计日志定时清理' })).toBeInTheDocument()
     expect(screen.getByText('执行 ID：success-1')).toBeInTheDocument()
     expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(2)
 
     fireEvent.click(screen.getByRole('button', { name: '关闭' }))
     await waitFor(() => {
-      expect(screen.queryByRole('heading', { name: '执行详情 · OA 基础信息同步' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('heading', { name: '执行详情 · 审计日志定时清理' })).not.toBeInTheDocument()
     })
-    expect(screen.getByRole('heading', { name: '执行历史 · OA 基础信息同步' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '执行历史 · 审计日志定时清理' })).toBeInTheDocument()
     expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(1)
     await waitFor(() => expect(summaryButton).toHaveFocus())
   })
@@ -168,17 +168,17 @@ describe('ExecutionHistoryButton', () => {
     }],
   ])('父弹窗通过%s关闭后焦点回到历史按钮', async (_closeMethod, close) => {
     stubFetch()
-    render(<ExecutionHistoryButton jobKey="oa-base-info-sync" jobName="OA 基础信息同步" />)
+    render(<ExecutionHistoryButton jobKey="audit-log-cleanup" jobName="审计日志定时清理" />)
     const historyButton = screen.getByRole('button', { name: '历史' })
 
     fireEvent.click(historyButton)
-    expect(await screen.findByRole('heading', { name: '执行历史 · OA 基础信息同步' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '执行历史 · 审计日志定时清理' })).toBeInTheDocument()
 
     // Radix 为避免把“打开弹窗的同一次 pointerdown”误判为外点，会在下一宏任务才挂载 outside 监听。
     await new Promise((resolve) => setTimeout(resolve, 0))
     close()
     await waitFor(() => {
-      expect(screen.queryByRole('heading', { name: '执行历史 · OA 基础信息同步' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('heading', { name: '执行历史 · 审计日志定时清理' })).not.toBeInTheDocument()
     })
     await waitFor(() => expect(historyButton).toHaveFocus())
   })
@@ -195,7 +195,7 @@ describe('ExecutionHistoryButton', () => {
       if (query.get('IsDryRun') === 'true') return [succeeded]
       return [succeeded, failed]
     })
-    render(<ExecutionHistoryButton jobKey="oa-base-info-sync" jobName="OA 基础信息同步" />)
+    render(<ExecutionHistoryButton jobKey="audit-log-cleanup" jobName="审计日志定时清理" />)
     fireEvent.click(screen.getByRole('button', { name: '历史' }))
     await screen.findByText(longSummary)
 
@@ -240,7 +240,7 @@ describe('ExecutionHistoryButton', () => {
       return response([succeeded, failed])
     }))
 
-    render(<ExecutionHistoryButton jobKey="oa-base-info-sync" jobName="OA 基础信息同步" />)
+    render(<ExecutionHistoryButton jobKey="audit-log-cleanup" jobName="审计日志定时清理" />)
     fireEvent.click(screen.getByRole('button', { name: '历史' }))
     await screen.findByText(longSummary)
 
@@ -281,7 +281,7 @@ describe('ExecutionHistoryButton', () => {
       return response([completed])
     }))
 
-    render(<ExecutionHistoryButton jobKey="oa-base-info-sync" jobName="OA 基础信息同步" />)
+    render(<ExecutionHistoryButton jobKey="audit-log-cleanup" jobName="审计日志定时清理" />)
     fireEvent.click(screen.getByRole('button', { name: '历史' }))
     await act(async () => { await vi.advanceTimersByTimeAsync(0) })
     expect(screen.getByText('正在执行')).toBeInTheDocument()

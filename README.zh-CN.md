@@ -21,7 +21,7 @@
   - 支持主题（Topic）/ 订阅（Subscription）解耦路由、持久化投递明细（Outbox / Delivery Attempt）、指数退避自动重试与一键人工重放。
   - 原生支持 **HTTP Webhook**（`HMAC-SHA256` `X-SwapMid-Signature` 签名 + 出站 SSRF 防护）、**RabbitMQ** 以及通用 **BotWebhook**（Generic JSON / Slack / 飞书 / 钉钉 / 企业微信群机器人格式）。
 - **API 网关管理与第三方凭证授权**
-  - 动态 API 分组与网关转发（`/gateway/{groupPrefix}/{routePath}`）、交互式在线调试台，以及基于 **OpenIddict** `client_credentials` 模式（`external-integration` 作用域）的第三方应用授权管理。
+  - 动态 API 分组与网关转发（`/api/gateway/{**path}`，默认通过 `ApiGateway:Enabled=false` 安全默认关闭）、交互式在线调试台，以及基于 **OpenIddict** `client_credentials` 模式（`external-integration` 作用域）的第三方应用授权管理。
 - **零浏览器令牌暴露的 BFF 安全架构**
   - Next.js 16 BFF 将 OAuth2 访问令牌与刷新令牌完全托管于服务端 Redis，浏览器仅持有 `HttpOnly` 会话 Cookie（`swapmid_sid`），内置分布式单飞刷新锁与多标签页身份世代围栏（`409 SESSION_IDENTITY_CHANGED`）。
 - **开箱即用的平台级治理底座**
@@ -57,9 +57,14 @@ flowchart LR
    ```
 3. 访问服务入口：
    - **管理控制台**：`http://localhost:13000`
+     - 默认初始化管理员账号：**`admin`** / **`1q2w3E*`** *（生产环境暴露前请立即修改密码）*
    - **后端健康检查与 Swagger**：`http://localhost:18080/health/ready` · `http://localhost:18080/swagger`
    - **RabbitMQ 管理面板**：`http://localhost:25672`
    - **Seq 结构化日志**：`http://localhost:15341`
+4. 登录后即可零外部依赖体验三大内置演示闭环（也可在仓库根目录直接运行 `node scripts/e2e-smoke.mjs` 自动验活）：
+   - **数据集成**：手动执行 **`demo-orders-pg-to-pg`** 管道，将 `public.etl_demo_source_orders` 中的 12 条演示订单流式同步至 `public.etl_demo_target_orders`。
+   - **消息总线**：向 **`integration.pipeline.events`** 主题发布测试 JSON 事件，查看 **`demo-pipeline-events-rmq`** 订阅投递至本地 RabbitMQ 交换机 `swapmid.demo.events` 的实时轨迹。
+   - **API 管理与文档**：查看 **`Platform Diagnostics`** 分组与 `/gw/demo/health` 路由、签发 **`client_credentials`** 第三方凭证，并浏览实时 **数据库表字典**。
 
 ---
 
@@ -107,7 +112,7 @@ pnpm dev
 | --- | --- | --- |
 | **数据集成（DataIntegration）** | 多源连接器、字段映射、流式 ETL 管道、Cron 调度执行、Target Receipt v1（`__swapmid_etl_receipt_v1`） | `src/SwapMid.*/DataIntegration` · `scripts/data-integration/target-receipt-v1/` |
 | **消息总线（MessageBus）** | 主题与订阅管理、持久化消息记录与投递轨迹、HMAC HTTP Webhook、RabbitMQ、群机器人 Webhook | `src/SwapMid.*/MessageBus` · `web/src/app/(dashboard)/message-bus` |
-| **API 网关（ApiManagement）** | API 分组、网关路由转发（`/gateway/*`）、在线调试控制台、OpenIddict 第三方客户端凭证管理 | `src/SwapMid.*/ApiManagement` · `web/src/app/(dashboard)/api-management` |
+| **API 网关（ApiManagement）** | API 分组、网关路由转发（`/api/gateway/*`）、在线调试控制台、OpenIddict 第三方客户端凭证管理 | `src/SwapMid.*/ApiManagement` · `web/src/app/(dashboard)/api-management` |
 | **统一调度（Scheduling）** | Cron 任务注册、分布式执行互斥锁、手动触发与执行历史 | `src/SwapMid.*/Scheduling` · `web/src/app/(dashboard)/system/scheduled-jobs` |
 | **通知与告警（Notification）** | 多通道通知模板（`Webhook`、`SMTP Email`）、Prometheus Alertmanager 告警回调接入 | `src/SwapMid.*/Notification` · `web/src/app/(dashboard)/system/notification` |
 | **账号与系统治理** | 用户/角色/权限树与差异导出、模拟登录安全守卫、企业组织目录、两级数据字典、编码规则、审计日志、系统健康 | `src/SwapMid.*/{AccountManagement,EnterpriseManagement,SystemManagement}` |

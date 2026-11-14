@@ -14,7 +14,7 @@ namespace SwapMid.DataIntegration;
 /// ETL 失败通知的耐久后台参数。只携带失败策略产生的稳定标识，禁止加入异常正文、
 /// SQL、连接字符串、密钥或任意业务配置。
 /// </summary>
-[BackgroundJobName("Han.DataIntegration.PipelineFailureNotification:v1")]
+[BackgroundJobName("SwapMid.DataIntegration.PipelineFailureNotification:v1")]
 public sealed class PipelineFailureNotificationJobArgs
 {
     public Guid PipelineId { get; set; }

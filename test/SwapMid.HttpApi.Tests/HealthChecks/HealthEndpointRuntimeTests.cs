@@ -114,7 +114,7 @@ public sealed class HealthEndpointRuntimeTests
     [InlineData("8.8.8.8", false)]
     [InlineData("127.0.0.1", true)]
     [InlineData("10.1.2.3", true)]
-    [InlineData("10.168.1.20", true)]
+    [InlineData("10.20.1.20", true)]
     public async Task Readiness_details_are_limited_to_private_clients(string remoteIp, bool includeDetails)
     {
         var builder = WebApplication.CreateBuilder();

@@ -159,7 +159,7 @@ public class MessageDeliveryService : IMessageDeliveryService, ITransientDepende
         activity?.SetTag("message.subscription", subscription.Name);
         activity?.SetTag("message.topic", topic.Name);
 
-        // 按订阅投递类型路由到对应客户端（Http / RabbitMq / WeWorkBot）。
+        // 按订阅投递类型路由到对应客户端（Http / RabbitMq / BotWebhook）。
         if (!_deliveryClients.TryGetValue(subscription.DeliveryType, out var client))
         {
             // 配置型错误，重试无意义，直接死信。

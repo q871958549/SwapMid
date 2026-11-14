@@ -8,7 +8,7 @@ namespace SwapMid.DataIntegration;
 /// 解耦出来:生产用 <see cref="EtlPipelineRunner"/>(ADO.NET 流式读取 + Dapper 参数化
 /// 临时暂存 + 源关闭后的短事务批写，直连 SqlServer/MySQL);测试可注入假实现
 /// (<c>FakeEtlPipelineRunner</c>)直接返回结果,从而在不连真库的前提下验证管道激活→执行→暂停的
-/// 状态流转与执行落库逻辑。与 OA 目录读取器(IOaDirectoryReader)抽接口同一范式(外部依赖抽接口 + 测试替身)。
+/// 状态流转与执行落库逻辑(外部依赖抽接口 + 测试替身)。
 /// </summary>
 public interface IEtlPipelineRunner
 {

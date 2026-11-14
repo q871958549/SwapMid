@@ -25,7 +25,7 @@ declare module '@tanstack/react-table' {
   }
 }
 
-// 全局搜索：原样包含匹配之外，中文值再按拼音首字母匹配（如输入 "ty" 命中 "田烨"）。
+// 全局搜索：原样包含匹配之外，中文值再按拼音首字母匹配（如输入 "ty" 命中 "唐远"）。
 // 首字母串按原文缓存（列表数据高度重复，键级缓存即可把 pinyin 开销摊到一次）。
 const _pinyinInitialCache = new Map<string, string>()
 export function pinyinInitials(text: string): string {

@@ -24,7 +24,7 @@ namespace SwapMid.EntityFrameworkCore;
 /// </summary>
 public static class EntityFrameworkCoreTestCollections
 {
-    /// <summary>样品生命周期(四类样品状态机 / K3·OA 同步 / 附件 / 流转埋点)。</summary>
+    /// <summary>共享数据库集合夹具。</summary>
     public const string Sample = "EFCore:ProjectManagement.Sample";
 
     /// <summary>项目与计划(项目主数据 / 计划版本 / 模板 / 台账)。</summary>

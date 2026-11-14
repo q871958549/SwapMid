@@ -955,7 +955,7 @@ public class DataPipelineAppServiceTests : SwapMidEntityFrameworkCoreTestBase
         firstRun.TargetDataSourceName.ShouldBe(hostnameTarget.Name);
         firstRun.TargetProvider.ShouldBe("sqlserver");
         firstRun.TargetEndpoint.ShouldBe("localhost:1433");
-        firstRun.TargetDatabase.ShouldBe("Han");
+        firstRun.TargetDatabase.ShouldBe("SwapMid");
         firstRun.TargetTable.ShouldBe("dbo.Target");
         firstRun.TargetConfigVersion.ShouldNotBeNullOrWhiteSpace();
         firstRun.SourceDataSourceId.ShouldBe(firstSource.Id);
@@ -1695,7 +1695,7 @@ public class DataPipelineAppServiceTests : SwapMidEntityFrameworkCoreTestBase
                 "Recovery Evidence Rejected");
         var rejected = new[]
         {
-            "Host=db;Database=Han;Username=etl;Password=secret",
+            "Host=db;Database=SwapMid;Username=etl;Password=secret",
             "SELECT * FROM AppPipelineExecutions",
             "https://evidence.example/case?token=secret",
             "          ",
@@ -2044,7 +2044,7 @@ public class DataPipelineAppServiceTests : SwapMidEntityFrameworkCoreTestBase
         var unknown = await CreateUnknownExecutionAsync(
             "Resolve Legacy Note Compatibility");
         const string legacyNote =
-            "Server=db;Database=Han;Password=legacy-secret";
+            "Server=db;Database=SwapMid;Password=legacy-secret";
 
         var resolved = await _pipelineExecutionAppService.ResolveOutcomeAsync(
             unknown.Id,
@@ -2632,7 +2632,7 @@ public class DataPipelineAppServiceTests : SwapMidEntityFrameworkCoreTestBase
                 provider = "sqlserver",
                 host,
                 port = 1433,
-                database = "Han",
+                database = "SwapMid",
                 username = "reader",
                 targetResourceGroup = targetResourceGroup ??
                     CreateTestTargetResourceGroup(prefix),
@@ -2642,7 +2642,7 @@ public class DataPipelineAppServiceTests : SwapMidEntityFrameworkCoreTestBase
                 provider = "sqlserver",
                 host,
                 port = 1433,
-                database = "Han",
+                database = "SwapMid",
                 username = "reader",
             });
         return _dataSourceAppService.CreateAsync(new DataSourceCreateUpdateDto

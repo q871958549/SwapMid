@@ -14,7 +14,7 @@ public class DataSourceConfigProtectorTests
           "provider":"sqlserver",
           "host":"DB.EXAMPLE.TEST.",
           "port":1433,
-          "database":"Han",
+          "database":"SwapMid",
           "username":"reader",
           "password":"old-secret",
           "encrypt":true,
@@ -47,7 +47,7 @@ public class DataSourceConfigProtectorTests
         json["provider"]!.GetValue<string>().ShouldBe("sqlserver");
         json["host"]!.GetValue<string>().ShouldBe("db.example.test");
         json["port"]!.GetValue<int>().ShouldBe(1433);
-        json["database"]!.GetValue<string>().ShouldBe("Han");
+        json["database"]!.GetValue<string>().ShouldBe("SwapMid");
         json["username"]!.GetValue<string>().ShouldBe("reader");
         json["encrypt"]!.GetValue<bool>().ShouldBeTrue();
         json["trustServerCertificate"]!.GetValue<bool>().ShouldBeFalse();
@@ -57,7 +57,7 @@ public class DataSourceConfigProtectorTests
     public void 关系型仅有白名单字段且无密码_HasSecret为false()
     {
         const string raw = """
-            {"provider":"mysql","host":"db.example.test","port":3306,"database":"Han","username":"reader","encrypt":false,"trustServerCertificate":true}
+            {"provider":"mysql","host":"db.example.test","port":3306,"database":"SwapMid","username":"reader","encrypt":false,"trustServerCertificate":true}
             """;
 
         var result = DataSourceConfigProtector.SanitizeForRead(
@@ -72,10 +72,10 @@ public class DataSourceConfigProtectorTests
     public void 目标物理资源组应安全回显持久化且不属于凭据作用域()
     {
         const string stored = """
-            {"provider":"sqlserver","host":"db-a.example.test","port":1433,"database":"Han","username":"reader","password":"old-secret","targetResourceGroup":"prod-han-primary"}
+            {"provider":"sqlserver","host":"db-a.example.test","port":1433,"database":"SwapMid","username":"reader","password":"old-secret","targetResourceGroup":"prod-swapmid-primary"}
             """;
         const string proposed = """
-            {"provider":"sqlserver","host":"db-a.example.test","port":1433,"database":"Han","username":"reader","targetResourceGroup":"prod-han-dr"}
+            {"provider":"sqlserver","host":"db-a.example.test","port":1433,"database":"SwapMid","username":"reader","targetResourceGroup":"prod-swapmid-dr"}
             """;
 
         var read = DataSourceConfigProtector.SanitizeForRead(
@@ -83,7 +83,7 @@ public class DataSourceConfigProtectorTests
             stored);
         var readJson = JsonNode.Parse(read.Config)!.AsObject();
         readJson["targetResourceGroup"]!.GetValue<string>()
-            .ShouldBe("prod-han-primary");
+            .ShouldBe("prod-swapmid-primary");
         read.Config.ShouldNotContain("old-secret");
 
         var merged = DataSourceConfigProtector.MergeForWrite(
@@ -93,7 +93,7 @@ public class DataSourceConfigProtectorTests
             proposed);
         var mergedJson = JsonNode.Parse(merged)!.AsObject();
         mergedJson["targetResourceGroup"]!.GetValue<string>()
-            .ShouldBe("prod-han-dr");
+            .ShouldBe("prod-swapmid-dr");
         mergedJson["password"]!.GetValue<string>()
             .ShouldBe("old-secret");
     }
@@ -105,7 +105,7 @@ public class DataSourceConfigProtectorTests
     public void 非法目标物理资源组应拒绝写入(string value)
     {
         var raw = $$"""
-            {"provider":"sqlserver","host":"db.example.test","port":1433,"database":"Han","username":"reader","targetResourceGroup":"{{value}}"}
+            {"provider":"sqlserver","host":"db.example.test","port":1433,"database":"SwapMid","username":"reader","targetResourceGroup":"{{value}}"}
             """;
 
         Should.Throw<DataSourceConfigFormatException>(() =>
@@ -174,7 +174,7 @@ public class DataSourceConfigProtectorTests
     public void 关系型作用域不变_缺失密码沿用旧值()
     {
         const string proposed = """
-            {"provider":"mssql","host":"db.example.test","port":"1433","database":"Han","username":"reader","encrypt":true,"trustServerCertificate":false}
+            {"provider":"mssql","host":"db.example.test","port":"1433","database":"SwapMid","username":"reader","encrypt":true,"trustServerCertificate":false}
             """;
 
         var merged = DataSourceConfigProtector.MergeForWrite(
@@ -240,7 +240,7 @@ public class DataSourceConfigProtectorTests
     public void 关系型作用域变化_显式新密码完整替换()
     {
         const string proposed = """
-            {"provider":"sqlserver","host":"new-db.example.test","port":1433,"database":"Han","username":"reader","password":"new-secret","encrypt":true,"trustServerCertificate":false}
+            {"provider":"sqlserver","host":"new-db.example.test","port":1433,"database":"SwapMid","username":"reader","password":"new-secret","encrypt":true,"trustServerCertificate":false}
             """;
 
         var merged = DataSourceConfigProtector.MergeForWrite(
@@ -257,10 +257,10 @@ public class DataSourceConfigProtectorTests
     public void 关系型即使旧配置无密码_作用域变化也要求显式新密码()
     {
         const string stored = """
-            {"provider":"sqlserver","host":"old-db","port":1433,"database":"Han","username":"reader"}
+            {"provider":"sqlserver","host":"old-db","port":1433,"database":"SwapMid","username":"reader"}
             """;
         const string proposed = """
-            {"provider":"sqlserver","host":"new-db","port":1433,"database":"Han","username":"reader"}
+            {"provider":"sqlserver","host":"new-db","port":1433,"database":"SwapMid","username":"reader"}
             """;
 
         Should.Throw<DataSourceCredentialScopeChangedException>(() =>
@@ -275,10 +275,10 @@ public class DataSourceConfigProtectorTests
     public void 仅connectionString关系型存量_无法证明作用域时拒绝沿用()
     {
         const string stored = """
-            {"connectionString":"Server=old-db;Database=Han;User Id=reader;Password=old-secret"}
+            {"connectionString":"Server=old-db;Database=SwapMid;User Id=reader;Password=old-secret"}
             """;
         const string proposed = """
-            {"provider":"sqlserver","host":"old-db","port":1433,"database":"Han","username":"reader"}
+            {"provider":"sqlserver","host":"old-db","port":1433,"database":"SwapMid","username":"reader"}
             """;
 
         Should.Throw<DataSourceCredentialScopeChangedException>(() =>
@@ -293,7 +293,7 @@ public class DataSourceConfigProtectorTests
     public void 畸形关系型存量_显式新密码可完整替换并自愈()
     {
         const string proposed = """
-            {"provider":"sqlserver","host":"db.example.test","port":1433,"database":"Han","username":"reader","password":"new-secret"}
+            {"provider":"sqlserver","host":"db.example.test","port":1433,"database":"SwapMid","username":"reader","password":"new-secret"}
             """;
 
         var merged = DataSourceConfigProtector.MergeForWrite(
@@ -335,7 +335,7 @@ public class DataSourceConfigProtectorTests
             DataSourceType.RestApi,
             "{\"token\":\"broken-old-secret\"",
             DataSourceType.RelationalDatabase,
-            """{"provider":"sqlserver","host":"db.example.test","port":1433,"database":"Han","username":"reader"}""");
+            """{"provider":"sqlserver","host":"db.example.test","port":1433,"database":"SwapMid","username":"reader"}""");
 
         merged.ShouldContain("db.example.test");
         merged.ShouldNotContain("broken-old-secret");

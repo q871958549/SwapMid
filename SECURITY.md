@@ -4,7 +4,7 @@
 
 | Version | Supported |
 | ------- | --------- |
-| `1.x` (`main`) | :white_check_mark: |
+| `0.1.x` (`main`) | :white_check_mark: |
 
 ## Built-in Security Controls
 

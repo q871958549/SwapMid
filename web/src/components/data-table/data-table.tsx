@@ -100,7 +100,7 @@ interface DataTableProps<TData> {
   manualPageSize?: number
   /**
    * 每页档位上限，透传给分页器（默认按 manualPagination 推导为 200 / 10000）。
-   * 需要比交互默认更宽的列表用之——如样品/扫码放到 500（后端同步静默钳制到同值）。
+   * 需要比交互默认更宽的列表用之——如宽分页视图放到 500（后端同步静默钳制到同值）。
    */
   maxPageSize?: number
   /**

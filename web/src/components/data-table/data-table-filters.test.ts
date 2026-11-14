@@ -17,7 +17,7 @@ function globalFilter(value: unknown, filterValue: unknown): boolean {
 
 describe('pinyinInitials', () => {
   it('中文取首字母小写串', () => {
-    expect(pinyinInitials('田烨')).toBe('ty')
+    expect(pinyinInitials('唐远')).toBe('ty')
     expect(pinyinInitials('北京')).toBe('bj')
     expect(pinyinInitials('张三')).toBe('zs')
   })
@@ -29,7 +29,7 @@ describe('pinyinInitials', () => {
   })
 
   it('重复调用结果稳定（命中缓存）', () => {
-    expect(pinyinInitials('田烨')).toBe(pinyinInitials('田烨'))
+    expect(pinyinInitials('唐远')).toBe(pinyinInitials('唐远'))
   })
 })
 
@@ -56,8 +56,8 @@ describe('statusAwareFilter · 文本模糊 + 拼音首字母', () => {
 
   it('中文值按拼音首字母命中', () => {
     expect(statusFilter('北京', 'bj')).toBe(true)
-    expect(statusFilter('田烨', 'ty')).toBe(true)
-    expect(statusFilter('田烨', 'zs')).toBe(false)
+    expect(statusFilter('唐远', 'ty')).toBe(true)
+    expect(statusFilter('唐远', 'zs')).toBe(false)
   })
 })
 
@@ -71,8 +71,8 @@ describe('statusAwareFilter · 空筛选值放行', () => {
 
 describe('pinyinAwareGlobalFilter', () => {
   it('包含或拼音首字母命中即保留', () => {
-    expect(globalFilter('田烨', '田')).toBe(true)
-    expect(globalFilter('田烨', 'ty')).toBe(true)
+    expect(globalFilter('唐远', '唐')).toBe(true)
+    expect(globalFilter('唐远', 'ty')).toBe(true)
     expect(globalFilter('abc', 'ab')).toBe(true)
   })
 

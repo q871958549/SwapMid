@@ -250,7 +250,7 @@ public sealed class DataPipelineActivationLockTests
                 provider = "sqlserver",
                 host = "localhost",
                 port = 1433,
-                database = "Han",
+                database = "SwapMid",
                 username = "reader",
                 targetResourceGroup =
                     $"test:activation-{Guid.NewGuid():N}",

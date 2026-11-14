@@ -32,8 +32,8 @@ vi.mock('./stats-cards', () => ({ StatsCards: () => null }))
 vi.mock('./dry-run-dialog', () => ({ DryRunDialog: () => null }))
 
 const job: ScheduledJob = {
-  key: 'oa-base-info-sync',
-  displayName: 'OA 基础信息同步',
+  key: 'audit-log-cleanup',
+  displayName: '审计日志定时清理',
   description: null,
   cron: '0 0 * * *',
   enabled: true,
@@ -83,7 +83,7 @@ describe('ScheduledJobsClient', () => {
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith({
       variant: 'warning',
       title: '已跳过',
-      description: 'OA 基础信息同步：已有同一任务正在执行，本次跳过',
+      description: '审计日志定时清理：已有同一任务正在执行，本次跳过',
     }))
     expect(mocks.toast).not.toHaveBeenCalledWith(expect.objectContaining({ variant: 'destructive' }))
   })

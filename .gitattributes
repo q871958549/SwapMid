@@ -9,6 +9,7 @@ web/src/lib/api/generated/** linguist-generated
 docs/api/openapi.generated.json linguist-generated
 
 *.sh text eol=lf
+*.mjs text eol=lf
 docker/Caddyfile text eol=lf
 Dockerfile text eol=lf
 Dockerfile.* text eol=lf

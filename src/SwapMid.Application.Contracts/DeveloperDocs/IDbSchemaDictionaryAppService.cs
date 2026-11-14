@@ -25,7 +25,7 @@ public interface IDbSchemaDictionaryAppService : IApplicationService
 
     // ===== 阶段二：外部业务库（只读元数据，中文取 DB 自带 COMMENT / 扩展属性）=====
 
-    /// <summary>外部数据源列表（OA/WMS/HR/扫码等外部库）。</summary>
+    /// <summary>外部数据源列表（ERP/CRM/WMS 等外部业务库）。</summary>
     Task<List<ExternalDbSourceDto>> GetExternalSourcesAsync();
 
     /// <summary>某外部库的表列表（可按关键字过滤表名/注释）。</summary>

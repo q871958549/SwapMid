@@ -15,7 +15,7 @@ public class PrometheusClientTests
     public async Task 查询完成后应释放响应及其内容()
     {
         var content = new TrackingContent(
-            """{"status":"success","data":{"resultType":"vector","result":[{"metric":{"job":"han-api"},"value":[1,"1"]}]}}""");
+            """{"status":"success","data":{"resultType":"vector","result":[{"metric":{"job":"swapmid-api"},"value":[1,"1"]}]}}""");
         var handler = new StubHttpMessageHandler
         {
             Handler = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)

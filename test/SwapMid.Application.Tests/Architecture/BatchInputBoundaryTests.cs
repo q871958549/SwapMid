@@ -33,7 +33,7 @@ public class BatchInputBoundaryTests
             {
                 if (!string.Equals(property.Name, "Ids", StringComparison.Ordinal)) continue;
                 if (!typeof(IEnumerable).IsAssignableFrom(property.PropertyType)) continue;
-                // 只认 Guid 集合：字符串集合（如扫码域的外部库主键）另有边界，不在本门禁口径内。
+                // 只认 Guid 集合：字符串集合（如外部异构系统的复合业务键）另有边界，不在本门禁口径内。
                 var elementType = property.PropertyType.IsGenericType
                     ? property.PropertyType.GetGenericArguments().FirstOrDefault()
                     : null;

@@ -23,7 +23,7 @@ public sealed class PipelineTerminalStoreTopologyGuardTests
     {
         var tenantId = Guid.NewGuid();
         const string connectionString =
-            "Host=database.test;Database=han;Username=app;Password=TEST_ONLY";
+            "Host=database.test;Database=swapmid;Username=app;Password=TEST_ONLY";
         var fixture = CreateFixture(
             tenantId,
             connectionString,
@@ -51,7 +51,7 @@ public sealed class PipelineTerminalStoreTopologyGuardTests
     public async Task 目标回执成功核验只固定HostDefault不应被独立后台队列库阻断()
     {
         const string platformConnection =
-            "Host=platform.test;Database=han;Username=app;Password=TEST_ONLY";
+            "Host=platform.test;Database=swapmid;Username=app;Password=TEST_ONLY";
         var fixture = CreateFixture(
             Guid.NewGuid(),
             platformConnection,
@@ -76,7 +76,7 @@ public sealed class PipelineTerminalStoreTopologyGuardTests
     {
         var tenantId = Guid.NewGuid();
         const string platformConnection =
-            "Host=platform.test;Database=han;Username=app;Password=TEST_ONLY";
+            "Host=platform.test;Database=swapmid;Username=app;Password=TEST_ONLY";
         var fixture = CreateFixture(
             tenantId,
             platformConnection,
@@ -120,7 +120,7 @@ public sealed class PipelineTerminalStoreTopologyGuardTests
     {
         var fixture = CreateFixture(
             Guid.NewGuid(),
-            "Host=platform.test;Database=han;Password=TEST_ONLY",
+            "Host=platform.test;Database=swapmid;Password=TEST_ONLY",
             "Host=jobs.test;Database=jobs;Password=TEST_ONLY");
 
         var exception = await Should.ThrowAsync<BusinessException>(() =>
@@ -143,7 +143,7 @@ public sealed class PipelineTerminalStoreTopologyGuardTests
     {
         var tenantId = Guid.NewGuid();
         const string platformConnection =
-            "Host=platform.test;Database=han;Username=app;Password=TEST_ONLY";
+            "Host=platform.test;Database=swapmid;Username=app;Password=TEST_ONLY";
         var fixture = CreateFixture(
             tenantId,
             platformConnection,
@@ -182,9 +182,9 @@ public sealed class PipelineTerminalStoreTopologyGuardTests
     public async Task 激活Pin应隔离探针期间的Default配置热变()
     {
         const string capturedConnection =
-            "Host=before.test;Database=han;Username=app;Password=TEST_ONLY";
+            "Host=before.test;Database=swapmid;Username=app;Password=TEST_ONLY";
         const string changedConnection =
-            "Host=after.test;Database=han;Username=app;Password=TEST_ONLY";
+            "Host=after.test;Database=swapmid;Username=app;Password=TEST_ONLY";
         var configuredConnection = capturedConnection;
         var fixture = CreateFixture(
             Guid.NewGuid(),
@@ -226,8 +226,8 @@ public sealed class PipelineTerminalStoreTopologyGuardTests
         const string secret = "P1_TOPOLOGY_SECRET";
         var fixture = CreateFixture(
             Guid.NewGuid(),
-            $"Host=database.test;Database=han;Password={secret}",
-            $"Database=han;Host=database.test;Password={secret}");
+            $"Host=database.test;Database=swapmid;Password={secret}",
+            $"Database=swapmid;Host=database.test;Password={secret}");
         var counter = PlatformMetrics.EtlExecutionCoordinationEventsTotal
             .WithLabels(PipelineTerminalStoreTopologyGuard.MismatchOutcome);
         var counterBefore = counter.Value;
@@ -310,7 +310,7 @@ public sealed class PipelineTerminalStoreTopologyGuardTests
     public void 已验证连接在作用域内应固定Default与后台队列且退出后清空()
     {
         const string connectionString =
-            "Host=pinned.test;Database=han;Password=TEST_ONLY";
+            "Host=pinned.test;Database=swapmid;Password=TEST_ONLY";
         var accessor = new PipelineTerminalStoreConnectionScopeAccessor();
 
         using (accessor.Enter(connectionString))
@@ -338,7 +338,7 @@ public sealed class PipelineTerminalStoreTopologyGuardTests
     public async Task 父作用域退出后继承Holder的延迟任务必须失败关闭而非回退动态配置()
     {
         const string connectionString =
-            "Host=pinned.test;Database=han;Password=TEST_ONLY";
+            "Host=pinned.test;Database=swapmid;Password=TEST_ONLY";
         var accessor = new PipelineTerminalStoreConnectionScopeAccessor();
         var started = new TaskCompletionSource(
             TaskCreationOptions.RunContinuationsAsynchronously);

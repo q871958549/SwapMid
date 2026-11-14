@@ -44,9 +44,9 @@ namespace SwapMid.SharedKernel;
 /// ## 什么时候**不要**用它
 ///
 /// 逐条 try/catch 容错的批量操作（`EmployeeBatchOperationService.BatchGenerateAccountsAsync`、
-/// `OaResignationService`、`AccountUserAppService`）**不适用**：它们逐条独立是设计意图——每条都带
-/// 不可回滚的外部副作用（建账号、发邮件、写 OA），一条失败不能拖垮整批，失败原因还要逐条回给用户。
-/// 那类请走各自的循环，见 `AccountManagement/CLAUDE.md`「批量容错」。
+/// `AccountUserAppService`）**不适用**：它们逐条独立是设计意图——每条都带
+/// 不可回滚的外部副作用（建账号、发邮件、推送外部回调），一条失败不能拖垮整批，失败原因还要逐条回给用户。
+/// 那类请走各自的逐条隔离循环。
 /// </summary>
 public static class BatchOperationExecutor
 {

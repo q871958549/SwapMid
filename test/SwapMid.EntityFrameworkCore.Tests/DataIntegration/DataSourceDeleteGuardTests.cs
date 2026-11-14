@@ -68,7 +68,7 @@ public sealed class DataSourceDeleteGuardTests :
     [InlineData(DataSourceType.File, "{\"path\":\"safe-delete.csv\"}")]
     [InlineData(
         DataSourceType.RelationalDatabase,
-        "{\"provider\":\"sqlserver\",\"host\":\"localhost\",\"port\":1433,\"database\":\"Han\",\"username\":\"reader\"}")]
+        "{\"provider\":\"sqlserver\",\"host\":\"localhost\",\"port\":1433,\"database\":\"SwapMid\",\"username\":\"reader\"}")]
     public async Task Data_Source_Without_Receipt_Protection_Marker_Should_Remain_Deletable(
         DataSourceType type,
         string config)
@@ -104,6 +104,6 @@ public sealed class DataSourceDeleteGuardTests :
             Name = $"{prefix} {Guid.NewGuid():N}",
             Type = DataSourceType.RelationalDatabase,
             Config =
-                $"{{\"provider\":\"sqlserver\",\"host\":\"localhost\",\"port\":1433,\"database\":\"Han\",\"username\":\"reader\",\"targetResourceGroup\":\"{targetResourceGroup}\"}}",
+                $"{{\"provider\":\"sqlserver\",\"host\":\"localhost\",\"port\":1433,\"database\":\"SwapMid\",\"username\":\"reader\",\"targetResourceGroup\":\"{targetResourceGroup}\"}}",
         });
 }

@@ -21,7 +21,7 @@ English | **[简体中文](README.zh-CN.md)**
   - Topic/subscription routing with persistent delivery attempt tracking, automatic backoff retries, and one-click manual replay.
   - Built-in **HTTP Webhook** (`HMAC-SHA256` `X-SwapMid-Signature` + outbound SSRF guard), **RabbitMQ**, and **BotWebhook** (Generic JSON, Slack, Feishu/Lark, DingTalk, WeCom) channels.
 - **Governed API Gateway & Client Credentials**
-  - Dynamic API groups and route forwarding (`/gateway/{groupPrefix}/{routePath}`), interactive request debugger, and **OpenIddict** `client_credentials` apps (`external-integration` scope) for external partners.
+  - Dynamic API groups and route forwarding (`/api/gateway/{**path}`, fail-closed by default via `ApiGateway:Enabled=false`), interactive request debugger, and **OpenIddict** `client_credentials` apps (`external-integration` scope) for external partners.
 - **Zero-Browser-Token BFF Console**
   - Next.js 16 BFF stores OAuth2 tokens exclusively in Redis behind `HttpOnly` session cookies (`swapmid_sid`), distributed single-flight refresh leases, and per-tab identity generation fencing (`409 SESSION_IDENTITY_CHANGED`).
 - **Enterprise-Ready Operations Base**
@@ -57,9 +57,14 @@ See **[docs/architecture.md](docs/architecture.md)** for sequence diagrams, DDD 
    ```
 3. Open the services:
    - **Web Console**: `http://localhost:13000`
+     - Default seeded administrator: **`admin`** / **`1q2w3E*`** *(rotate immediately before production exposure)*
    - **API Host & Readiness**: `http://localhost:18080/health/ready` · Swagger UI: `http://localhost:18080/swagger`
    - **RabbitMQ Management**: `http://localhost:25672`
    - **Seq Structured Logs**: `http://localhost:15341`
+4. Try the zero-dependency built-in demos right after signing in (or run `node scripts/e2e-smoke.mjs` from the repo root):
+   - **Data Integration**: Trigger **`demo-orders-pg-to-pg`** to stream 12 seeded orders from `public.etl_demo_source_orders` into `public.etl_demo_target_orders`.
+   - **Message Bus**: Publish a test JSON event to **`integration.pipeline.events`** and inspect live AMQP delivery via **`demo-pipeline-events-rmq`** (`swapmid.demo.events`).
+   - **API Management & Docs**: Inspect the **`Platform Diagnostics`** route (`/gw/demo/health`), provision a **`client_credentials`** app, and browse the live **Database Dictionary**.
 
 ---
 
@@ -107,7 +112,7 @@ pnpm dev
 | --- | --- | --- |
 | **Data Integration** | Data sources, field mappings, streaming ETL pipelines, Cron runs, Target Receipt v1 (`__swapmid_etl_receipt_v1`) | `src/SwapMid.*/DataIntegration` · `scripts/data-integration/target-receipt-v1/` |
 | **Message Bus** | Topics, subscriptions, outbox records, delivery attempts, HMAC HTTP webhooks, RabbitMQ, Bot webhooks | `src/SwapMid.*/MessageBus` · `web/src/app/(dashboard)/message-bus` |
-| **API Management** | API groups, gateway routes (`/gateway/*`), interactive test console, OpenIddict third-party apps | `src/SwapMid.*/ApiManagement` · `web/src/app/(dashboard)/api-management` |
+| **API Management** | API groups, gateway routes (`/api/gateway/*`), interactive test console, OpenIddict third-party apps | `src/SwapMid.*/ApiManagement` · `web/src/app/(dashboard)/api-management` |
 | **Scheduling** | Unified Cron job definitions, distributed execution locks, manual trigger & execution logs | `src/SwapMid.*/Scheduling` · `web/src/app/(dashboard)/system/scheduled-jobs` |
 | **Notification** | Multi-channel templates (`Webhook`, `SMTP Email`), incoming Prometheus Alertmanager webhook (`X-SwapMid-Alert-Token`) | `src/SwapMid.*/Notification` · `web/src/app/(dashboard)/system/notification` |
 | **Identity & Admin** | Users, roles, permission tree & diff/export, 5-invariant impersonation guard, enterprises/departments/employees, dictionaries, code rules, audit logs, system health | `src/SwapMid.*/{AccountManagement,EnterpriseManagement,SystemManagement}` |

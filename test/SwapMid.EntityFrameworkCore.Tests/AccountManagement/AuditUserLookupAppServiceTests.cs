@@ -66,7 +66,7 @@ public class AuditUserLookupAppServiceTests : SwapMidEntityFrameworkCoreTestBase
             Name = name,
             Surname = surname,
             Email = $"{userName}@example.test",
-            Password = "Han123!!",
+            Password = "Swap123!!",
             IsActive = true,
         });
 }

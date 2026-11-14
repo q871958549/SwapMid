@@ -16,12 +16,12 @@ namespace SwapMid.Scheduling;
 
 /// <summary>
 /// 统一执行管道：驱动 <see cref="IScheduledJobHandler"/>，统一 记执行历史 + 失败告警 + 产出物分发。
-/// 材料超耗率是首个接入方；其余任务按需迁入。演练/正式的分发差异在此收敛。
+/// 保留期清理与周期对账任务按需接入；演练/正式的分发差异在此收敛。
 /// </summary>
 public partial class ScheduledJobRunner : ITransientDependency
 {
     // 按 jobKey 互斥同任务并发执行的进程内轻量锁（静态：跨 Runner 实例共享，Runner 本身是 Transient）。
-    // 覆盖「手动立即执行」撞「定时到点」的同进程竞态——材料超耗率这类「整月先删后插」任务并发写有数据风险。
+    // 覆盖「手动立即执行」撞「定时到点」的同进程竞态——诸如分区先删后插类批处理任务并发写存在数据风险。
     // 跨实例/跨进程的同一 recurring job 触发已由 Hangfire 存储层自身的分布式取任务机制保证互斥，不重复加分布式锁。
     // 旧轨（未迁 Runner 的 11 个任务）不在此覆盖范围——它们迁入 Runner（P2b）时自动获得该保护，不做旁路重复实现。
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> ConcurrencyGates = new();

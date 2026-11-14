@@ -15,7 +15,7 @@ public interface IEmployeeDirectory
     Task<EmployeeSnapshot?> FindByEmployeeNoAsync(string employeeNo, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// 按工号批量查询。去空白、大小写不敏感，并同时试有/无 HAN 前缀；
+    /// 按工号批量查询。去空白、大小写不敏感，并同时试有/无 SM 前缀；
     /// 含软删除行；不按在职状态过滤。空集合返回空列表。
     /// </summary>
     Task<List<EmployeeSnapshot>> GetListByEmployeeNosAsync(

@@ -24,3 +24,4 @@ export type PipelineExecutionDto = Omit<
 }
 export type PipelineSchemaPreflightResultDto = import('../generated').SwapMidDataIntegrationPipelineSchemaPreflightResultDto
 export type PreflightSchemaIssueDto = import('../generated').SwapMidDataIntegrationPreflightSchemaIssueDto
+export type PreflightColumnDto = import('../generated').SwapMidDataIntegrationPreflightColumnDto

@@ -4,6 +4,19 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-11-15
+
+### Added
+- **Visual ETL Field Mapper & First-Class Column Mapping (`DataIntegration` / `web/`)**:
+  - Added first-class `columnMappings` (`EtlColumnMapping` source-to-target column projection, up to 256 pairs, case-insensitive unique `targetColumn` validation, and conditional `EtlReceiptHashes.ComputeExecutionContract` TLV binding preserving full backwards compatibility when omitted) across `EtlTransformConfig`, `EtlPipelineRunner`, and `EtlSchemaCompatibilityEvaluator`.
+  - Upgraded `DataPipelineSchemaPreflightAppService` to validate explicit column mappings (`MappedSourceMissing`, `MappedTargetMissing`, required `NOT NULL` target coverage, and `Upsert` key/watermark alignment against mapped targets).
+  - Added interactive `PipelineFieldMapperPanel` inside the Next.js pipeline editor (`Schema Pre-flight` workflow) featuring one-click **Auto Match** (exact case-insensitive + normalized identifier matching), per-column Source `Select` pickers, type-family mismatch / missing-column / required-unmapped diagnostics, **Clear**, and full trilingual localization (`zh-Hans`, `zh-Hant`, `en`).
+
+### Fixed
+- **Observability System Health PromQL Evaluation (`SystemManagement`)**:
+  - Fixed `HealthCheckCatalog` (`数据管道执行失败率`) label mismatch from `outcome!="succeeded"` to `result!="succeeded"` matching `PlatformMetrics.EtlExecutionResultsTotal`.
+  - Added `or vector(0)` zero-numerator fallbacks on `HTTP 接口 5xx 错误率` and `消息总线投递失败率` so healthy active services with zero errors evaluate as `Healthy (0%)` instead of `Unknown` / false `Critical`.
+
 ## [1.0.1] - 2026-11-15
 
 ### Fixed

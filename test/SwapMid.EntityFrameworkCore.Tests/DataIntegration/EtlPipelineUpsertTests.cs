@@ -109,6 +109,64 @@ public class EtlPipelineUpsertTests
     }
 
     [Fact]
+    public async Task Sqlite_Upsert_显式字段映射重命名与列裁剪_精准更新对应目标列()
+    {
+        await using var db = await SqliteUpsertPair.CreateAsync();
+        await db.ExecuteSourceAsync(
+            """
+            CREATE TABLE src_sales (
+                src_code TEXT NOT NULL,
+                src_amount INTEGER NOT NULL,
+                src_ver INTEGER NOT NULL,
+                internal_flag TEXT NOT NULL
+            );
+            INSERT INTO src_sales VALUES
+                ('ORD-1', 250, 20, 'skip'),
+                ('ORD-2', 999, 5, 'skip'),
+                ('ORD-3', 420, 10, 'skip');
+            """);
+        await db.ExecuteTargetAsync(
+            """
+            CREATE TABLE tgt_sales (
+                tgt_code TEXT NOT NULL PRIMARY KEY,
+                tgt_amount INTEGER NOT NULL,
+                tgt_ver INTEGER NOT NULL
+            );
+            INSERT INTO tgt_sales VALUES
+                ('ORD-1', 100, 10),
+                ('ORD-2', 500, 15);
+            """);
+
+        var runner = new EtlPipelineRunner(NullLogger<EtlPipelineRunner>.Instance, db);
+        var transform = JsonSerializer.Serialize(new
+        {
+            sourceQuery = "SELECT internal_flag, src_amount, src_code, src_ver FROM src_sales ORDER BY src_code",
+            targetTable = "tgt_sales",
+            mode = "upsert",
+            keyColumns = new[] { "tgt_code" },
+            watermarkColumn = "tgt_ver",
+            columnMappings = new[]
+            {
+                new { sourceColumn = "src_code", targetColumn = "tgt_code" },
+                new { sourceColumn = "src_amount", targetColumn = "tgt_amount" },
+                new { sourceColumn = "src_ver", targetColumn = "tgt_ver" },
+            },
+        });
+
+        var result = await runner.RunAsync(
+            CreateDataSource("source"),
+            CreateDataSource("target"),
+            transform);
+
+        result.Rows.ShouldBe(3);
+        (await db.TargetScalarAsync<long>("SELECT COUNT(*) FROM tgt_sales")).ShouldBe(3);
+        (await db.TargetScalarAsync<long>("SELECT tgt_amount FROM tgt_sales WHERE tgt_code = 'ORD-1'")).ShouldBe(250);
+        // ORD-2 源水位线(5) < 目标(15)，保持原值
+        (await db.TargetScalarAsync<long>("SELECT tgt_amount FROM tgt_sales WHERE tgt_code = 'ORD-2'")).ShouldBe(500);
+        (await db.TargetScalarAsync<long>("SELECT tgt_amount FROM tgt_sales WHERE tgt_code = 'ORD-3'")).ShouldBe(420);
+    }
+
+    [Fact]
     public async Task PostgreSql_Upsert_And_TargetUniqueConstraintPreflight_Work_Atomically()
     {
         if (!string.Equals(

@@ -40,15 +40,19 @@ internal sealed record EtlUpsertSpec(
     IReadOnlyList<string> KeyColumns,
     string? WatermarkColumn);
 
+/// <summary>源列到目标列的显式字段映射。</summary>
+public sealed record EtlColumnMapping(string SourceColumn, string TargetColumn);
+
 /// <summary>
 /// ETL 转换配置（<see cref="DataPipeline.TransformConfig"/> JSON 投影）：
-/// <c>{ "sourceQuery": "SELECT ...", "targetTable": "schema.table", "mode": "append|truncate|upsert|append-receipt-v1|truncate-receipt-v1|upsert-receipt-v1", "keyColumns": ["id"], "watermarkColumn": "updated_at" }</c>。
+/// <c>{ "sourceQuery": "SELECT ...", "targetTable": "schema.table", "mode": "append|truncate|upsert|append-receipt-v1|truncate-receipt-v1|upsert-receipt-v1", "keyColumns": ["id"], "watermarkColumn": "updated_at", "columnMappings": [{ "sourceColumn": "src", "targetColumn": "tgt" }] }</c>。
 /// receipt-v1 与 upsert 使用显式 mode 作为旧二进制的 fail-closed poison pill；不得改为会被旧解析器
 /// 静默忽略的可选 JSON 字段。
 /// </summary>
 public sealed class EtlTransformConfig
 {
     public const int MaxUpsertKeyColumns = 16;
+    public const int MaxColumnMappings = 256;
 
     public string SourceQuery { get; init; } = string.Empty;
     public string TargetTable { get; init; } = string.Empty;
@@ -57,6 +61,7 @@ public sealed class EtlTransformConfig
         EtlReconciliationStrategy.ManualV0;
     public IReadOnlyList<string> KeyColumns { get; init; } = Array.Empty<string>();
     public string? WatermarkColumn { get; init; }
+    public IReadOnlyList<EtlColumnMapping> ColumnMappings { get; init; } = Array.Empty<EtlColumnMapping>();
 
     internal EtlUpsertSpec? UpsertSpec =>
         Mode == EtlWriteMode.Upsert
@@ -121,6 +126,7 @@ public sealed class EtlTransformConfig
 
             var keyColumns = ParseKeyColumns(root, writeMode);
             var watermarkColumn = ParseWatermarkColumn(root, writeMode, keyColumns);
+            var columnMappings = ParseColumnMappings(root);
 
             cfg = new EtlTransformConfig
             {
@@ -135,6 +141,7 @@ public sealed class EtlTransformConfig
                 },
                 KeyColumns = keyColumns,
                 WatermarkColumn = watermarkColumn,
+                ColumnMappings = columnMappings,
             };
         }
         catch (JsonException)
@@ -255,6 +262,51 @@ public sealed class EtlTransformConfig
         }
 
         return trimmed;
+    }
+
+    private static IReadOnlyList<EtlColumnMapping> ParseColumnMappings(JsonElement root)
+    {
+        if (!root.TryGetProperty("columnMappings", out var mappingsElement) ||
+            mappingsElement.ValueKind == JsonValueKind.Null)
+        {
+            return Array.Empty<EtlColumnMapping>();
+        }
+
+        if (mappingsElement.ValueKind != JsonValueKind.Array)
+        {
+            throw InvalidInput();
+        }
+
+        var mappings = new List<EtlColumnMapping>();
+        var seenTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in mappingsElement.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object ||
+                !item.TryGetProperty("sourceColumn", out var sourceElement) ||
+                sourceElement.ValueKind != JsonValueKind.String ||
+                !item.TryGetProperty("targetColumn", out var targetElement) ||
+                targetElement.ValueKind != JsonValueKind.String)
+            {
+                throw InvalidInput();
+            }
+
+            var sourceColumn = sourceElement.GetString()?.Trim();
+            var targetColumn = targetElement.GetString()?.Trim();
+            if (!IsValidColumnName(sourceColumn) ||
+                !IsValidColumnName(targetColumn) ||
+                !seenTargets.Add(targetColumn!))
+            {
+                throw InvalidInput();
+            }
+
+            mappings.Add(new EtlColumnMapping(sourceColumn!, targetColumn!));
+            if (mappings.Count > MaxColumnMappings)
+            {
+                throw InvalidInput();
+            }
+        }
+
+        return mappings;
     }
 
     private static BusinessException InvalidInput() =>

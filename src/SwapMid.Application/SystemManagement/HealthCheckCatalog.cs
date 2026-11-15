@@ -47,7 +47,7 @@ public static class HealthCheckCatalog
         {
             Name = "HTTP 接口 5xx 错误率",
             Kind = HealthCheckKind.FailureRatio,
-            PromQl = "sum(rate(http_request_duration_seconds_count{code=~\"5..\"}[5m])) / sum(rate(http_request_duration_seconds_count[5m]))",
+            PromQl = "(sum(rate(http_request_duration_seconds_count{code=~\"5..\"}[5m])) or vector(0)) / sum(rate(http_request_duration_seconds_count[5m]))",
             WarnThreshold = 0.02,
             CriticalThreshold = 0.05,
             HealthyConclusion = "接口响应稳定，无明显服务端异常。",
@@ -119,7 +119,7 @@ public static class HealthCheckCatalog
         {
             Name = "消息总线投递失败率",
             Kind = HealthCheckKind.FailureRatio,
-            PromQl = "sum(rate(swapmid_message_delivery_total{result=\"failure\"}[10m])) / sum(rate(swapmid_message_delivery_total[10m]))",
+            PromQl = "(sum(rate(swapmid_message_delivery_total{result=\"failure\"}[10m])) or vector(0)) / sum(rate(swapmid_message_delivery_total[10m]))",
             WarnThreshold = 0.1,
             CriticalThreshold = 0.3,
             HealthyConclusion = "消息总线各订阅投递顺畅。",
@@ -133,7 +133,7 @@ public static class HealthCheckCatalog
         {
             Name = "数据管道执行失败率",
             Kind = HealthCheckKind.FailureRatio,
-            PromQl = "sum(increase(swapmid_etl_execution_results_total{outcome!=\"succeeded\"}[1h])) / sum(increase(swapmid_etl_execution_results_total[1h]))",
+            PromQl = "(sum(increase(swapmid_etl_execution_results_total{result!=\"succeeded\"}[1h])) or vector(0)) / sum(increase(swapmid_etl_execution_results_total[1h]))",
             WarnThreshold = 0.1,
             CriticalThreshold = 0.3,
             HealthyConclusion = "近 1 小时数据管道执行全部成功。",

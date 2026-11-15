@@ -153,6 +153,75 @@ public class DataPipelineSchemaPreflightTests
         factory.DidNotReceive().Create(Arg.Any<string>(), Arg.Any<int>());
     }
 
+    [Fact]
+    public async Task Preflight_validates_explicit_column_mappings_for_renamed_and_projected_columns()
+    {
+        await using var db = await SqliteSchemaPair.CreateAsync();
+        await db.ExecuteSourceAsync(
+            """
+            CREATE TABLE src_orders (
+                order_no TEXT NOT NULL,
+                gross_amt REAL NOT NULL,
+                internal_note TEXT NULL
+            );
+            """);
+        await db.ExecuteTargetAsync(
+            """
+            CREATE TABLE tgt_orders (
+                order_code TEXT NOT NULL UNIQUE,
+                amount_cny REAL NOT NULL,
+                created_tag TEXT NOT NULL DEFAULT 'v1'
+            );
+            """);
+
+        var source = CreateRelationalSource("source");
+        var target = CreateRelationalSource("target");
+        var sut = CreateService(db, source, target);
+
+        var mapped = await sut.PreflightSchemaAsync(new PreflightPipelineSchemaInput
+        {
+            SourceId = source.Id,
+            TargetId = target.Id,
+            TransformConfig = JsonSerializer.Serialize(new
+            {
+                sourceQuery = "SELECT order_no, gross_amt, internal_note FROM src_orders",
+                targetTable = "tgt_orders",
+                mode = "upsert",
+                keyColumns = new[] { "order_code" },
+                columnMappings = new[]
+                {
+                    new { sourceColumn = "order_no", targetColumn = "order_code" },
+                    new { sourceColumn = "gross_amt", targetColumn = "amount_cny" },
+                },
+            }),
+        });
+
+        mapped.Compatible.ShouldBeTrue();
+        mapped.Issues.Where(i => i.Severity == "error").ShouldBeEmpty();
+
+        var invalidMapping = await sut.PreflightSchemaAsync(new PreflightPipelineSchemaInput
+        {
+            SourceId = source.Id,
+            TargetId = target.Id,
+            TransformConfig = JsonSerializer.Serialize(new
+            {
+                sourceQuery = "SELECT order_no, gross_amt FROM src_orders",
+                targetTable = "tgt_orders",
+                mode = "append",
+                columnMappings = new[]
+                {
+                    new { sourceColumn = "missing_src", targetColumn = "order_code" },
+                    new { sourceColumn = "gross_amt", targetColumn = "missing_tgt" },
+                },
+            }),
+        });
+
+        invalidMapping.Compatible.ShouldBeFalse();
+        var codes = invalidMapping.Issues.Select(i => i.Code).ToHashSet(StringComparer.Ordinal);
+        codes.ShouldContain("SwapMid:ETL:MappedSourceMissing");
+        codes.ShouldContain("SwapMid:ETL:MappedTargetMissing");
+    }
+
     private static DataPipelineSchemaPreflightAppService CreateService(
         IEtlRelationalConnectionFactory factory,
         DataSource source,

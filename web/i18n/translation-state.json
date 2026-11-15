@@ -6477,6 +6477,84 @@
       "traditionalSourceHash": "09c827f3856438df678e1449",
       "traditionalHash": "29d8fac12d91335a163ec856"
     },
+    "DataIntegration.pipeline.mapperTitle": {
+      "sourceHash": "30af6eab41006ea14deca448",
+      "englishHash": "12a478ee6b6b319ac710854d",
+      "traditionalSourceHash": "06e4d731026d353f441735af",
+      "traditionalHash": "379b38ac7cd514b1e18d1b7d"
+    },
+    "DataIntegration.pipeline.mapperMappedCount": {
+      "sourceHash": "e6c284403f2b5ed479375ecc",
+      "englishHash": "d5884528ed7bf739432e68fc",
+      "traditionalSourceHash": "7fc2276e5b537c16d443fbda",
+      "traditionalHash": "a953fac4f2b0215b16e7d257"
+    },
+    "DataIntegration.pipeline.mapperAutoMatch": {
+      "sourceHash": "982980377a9dc18d73d32edd",
+      "englishHash": "0e369023a0cf7da6cdb89102",
+      "traditionalSourceHash": "62a7a2c882ff1316ce1e44a6",
+      "traditionalHash": "36dba7d08476362f23dd1500"
+    },
+    "DataIntegration.pipeline.mapperClear": {
+      "sourceHash": "d862776c54b00a749062fdbb",
+      "englishHash": "83b12c2216efb4fdc924e1de",
+      "traditionalSourceHash": "cb9b7c639329a1418ae9377b",
+      "traditionalHash": "151c89302b521a0f6651922b"
+    },
+    "DataIntegration.pipeline.mapperImplicitHint": {
+      "sourceHash": "448eeb2938b309357b231086",
+      "englishHash": "32d860326da60ec90d9d6e05",
+      "traditionalSourceHash": "9eb1e0be5201363dc875d3e0",
+      "traditionalHash": "8b011ef0a6e34a880ae707bf"
+    },
+    "DataIntegration.pipeline.mapperPreflightToEditHint": {
+      "sourceHash": "f57ea8ecf08f3310702f5d58",
+      "englishHash": "ac7572f9fcd4669af48454e6",
+      "traditionalSourceHash": "df34508163ed6378dcf84d79",
+      "traditionalHash": "90de526ba0e4ba64b14a12d7"
+    },
+    "DataIntegration.pipeline.mapperUnmappedOption": {
+      "sourceHash": "748b3e1f8cf9c607999c060c",
+      "englishHash": "c3316cbadfff682e14fe3701",
+      "traditionalSourceHash": "091eaa07f6787934166cda4c",
+      "traditionalHash": "c4577f6d757d6d49a36d3ca9"
+    },
+    "DataIntegration.pipeline.mapperPkBadge": {
+      "sourceHash": "7b4ca024d53ffd488dee506c",
+      "englishHash": "fcab7fcc2b4cffd9bb45003b",
+      "traditionalSourceHash": "2e3aca6d62d92d1ebb686db2",
+      "traditionalHash": "bc9a7e4214adfcaa7fb6b245"
+    },
+    "DataIntegration.pipeline.mapperRequiredBadge": {
+      "sourceHash": "1a979385265c9c4f7788c4dd",
+      "englishHash": "e95b58867bd39392c318b5c1",
+      "traditionalSourceHash": "6905fff033749559419b81e3",
+      "traditionalHash": "11da9dc4428537c43ec205e6"
+    },
+    "DataIntegration.pipeline.mapperSourceMissingBadge": {
+      "sourceHash": "42933ffa04bc35c72ed10cba",
+      "englishHash": "9800f914f46639d9869876d8",
+      "traditionalSourceHash": "994fadce81f36b9bb17f2d87",
+      "traditionalHash": "bf8249df767242202fd01cea"
+    },
+    "DataIntegration.pipeline.mapperTargetMissingBadge": {
+      "sourceHash": "80a33333c16c8ef8eba9d702",
+      "englishHash": "b97ef5572d1d7dd5bf43ce6a",
+      "traditionalSourceHash": "f8634611fccd6b7d19384154",
+      "traditionalHash": "8a17906681c75c1faeb95b06"
+    },
+    "DataIntegration.pipeline.mapperTypeMismatchBadge": {
+      "sourceHash": "c723224744567d00c57dd593",
+      "englishHash": "431c609114b713d9e2d35574",
+      "traditionalSourceHash": "db2fc47abda47c00049f699b",
+      "traditionalHash": "d20962ea015958c071044834"
+    },
+    "DataIntegration.pipeline.mapperRequiredUnmappedBadge": {
+      "sourceHash": "657d8f957ed4560e8e1d33aa",
+      "englishHash": "febefe93cd09bf00a65a487d",
+      "traditionalSourceHash": "d59355561355a2c90f8809bf",
+      "traditionalHash": "e964850dbffd99f0a48d84c3"
+    },
     "DataIntegration.execution.loadFailedTitle": {
       "sourceHash": "1e96be66a71bb7cad2f63dad",
       "englishHash": "984db9ca5917c741e7921a4b",

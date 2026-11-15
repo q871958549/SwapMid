@@ -12,17 +12,21 @@ import type {
 } from '@/lib/api/types'
 import {
   serializeEtlTransformConfig,
+  type EtlColumnMapping,
   type EtlTransformFormValue,
 } from './transform-config'
+import { PipelineFieldMapperPanel } from './pipeline-field-mapper'
 
 export function PipelineSchemaPreflightPanel({
   sourceId,
   targetId,
   form,
+  onMappingsChange,
 }: {
   sourceId: string
   targetId: string
   form: EtlTransformFormValue
+  onMappingsChange: (columnMappings: EtlColumnMapping[]) => void
 }) {
   const t = useTranslations('DataIntegration.pipeline')
   const [loading, setLoading] = useState(false)
@@ -132,6 +136,15 @@ export function PipelineSchemaPreflightPanel({
             ))
           )}
         </div>
+      )}
+
+      {(sourceCount > 0 || targetCount > 0 || (form.columnMappings?.length ?? 0) > 0) && (
+        <PipelineFieldMapperPanel
+          sourceColumns={result?.sourceColumns ?? []}
+          targetColumns={result?.targetColumns ?? []}
+          columnMappings={form.columnMappings ?? []}
+          onChange={onMappingsChange}
+        />
       )}
     </div>
   )

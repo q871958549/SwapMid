@@ -121,7 +121,8 @@ public sealed class DataPipelineActivationCoordinator : ITransientDependency
                 preparation.Transform.Mode,
                 preparation.LegacyIdentity.SourceQuerySha256,
                 preparation.Transform.KeyColumns,
-                preparation.Transform.WatermarkColumn);
+                preparation.Transform.WatermarkColumn,
+                preparation.Transform.ColumnMappings);
         }
 
         using var unitOfWork = _unitOfWorkManager.Begin(

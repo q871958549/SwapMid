@@ -126,6 +126,7 @@ export function PipelineEtlConfigSection({
         sourceId={sourceId}
         targetId={targetId}
         form={form}
+        onMappingsChange={columnMappings => onChange({ columnMappings })}
       />
     </div>
   )

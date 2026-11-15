@@ -77,7 +77,7 @@ interface FormState extends EtlTransformFormValue {
 const defaultForm: FormState = {
   name: '', description: '', sourceId: '', targetId: '',
   sourceQuery: '', targetTable: '', mode: 'append',
-  keyColumnsText: '', watermarkColumn: '', transformConfigValid: true,
+  keyColumnsText: '', watermarkColumn: '', columnMappings: [], transformConfigValid: true,
   scheduleCron: '', scheduleEnabled: false,
 }
 
@@ -409,7 +409,7 @@ export function DataPipelinesClient({
       <CrudFormDialog
         crud={crud}
         title={{ create: t('createTitle'), edit: t('editTitle') }}
-        contentClassName="sm:max-w-[520px]"
+        contentClassName="sm:max-w-2xl"
         canSubmit={!!crud.form.name && !!crud.form.sourceId && transformCanSubmit}
       >
         <div className="space-y-1.5">

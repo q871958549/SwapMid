@@ -165,7 +165,8 @@ public sealed partial class DataPipelineExecutionCoordinator
             transform.Mode,
             legacyIdentity.SourceQuerySha256,
             transform.KeyColumns,
-            transform.WatermarkColumn);
+            transform.WatermarkColumn,
+            transform.ColumnMappings);
         if (!string.Equals(
                 executionContractHash,
                 activation.ExecutionContractHash,

@@ -197,4 +197,58 @@ public sealed class EtlReceiptHashesTests
             "dbo.Target",
             EtlWriteMode.Append,
             new string('C', 64));
+
+    [Fact]
+    public void Execution_Contract_Must_Preserve_Legacy_Hash_When_Unmapped_And_Change_When_Mapped()
+    {
+        var unmappedNull = EtlReceiptHashes.ComputeExecutionContract(
+            Guid.Parse("11111111-2222-3333-4444-555555555555"),
+            Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
+            "0123456789abcdef0123456789abcdef",
+            Guid.Parse("99999999-8888-7777-6666-555555555555"),
+            "fedcba9876543210fedcba9876543210",
+            "postgresql",
+            Guid.Parse("00112233-4455-6677-8899-aabbccddeeff"),
+            new string('1', 64),
+            new string('A', 64),
+            new string('B', 64),
+            "public.target",
+            EtlWriteMode.Append,
+            new string('C', 64));
+
+        var unmappedEmpty = EtlReceiptHashes.ComputeExecutionContract(
+            Guid.Parse("11111111-2222-3333-4444-555555555555"),
+            Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
+            "0123456789abcdef0123456789abcdef",
+            Guid.Parse("99999999-8888-7777-6666-555555555555"),
+            "fedcba9876543210fedcba9876543210",
+            "postgresql",
+            Guid.Parse("00112233-4455-6677-8899-aabbccddeeff"),
+            new string('1', 64),
+            new string('A', 64),
+            new string('B', 64),
+            "public.target",
+            EtlWriteMode.Append,
+            new string('C', 64),
+            columnMappings: []);
+
+        var mapped = EtlReceiptHashes.ComputeExecutionContract(
+            Guid.Parse("11111111-2222-3333-4444-555555555555"),
+            Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
+            "0123456789abcdef0123456789abcdef",
+            Guid.Parse("99999999-8888-7777-6666-555555555555"),
+            "fedcba9876543210fedcba9876543210",
+            "postgresql",
+            Guid.Parse("00112233-4455-6677-8899-aabbccddeeff"),
+            new string('1', 64),
+            new string('A', 64),
+            new string('B', 64),
+            "public.target",
+            EtlWriteMode.Append,
+            new string('C', 64),
+            columnMappings: [new EtlColumnMapping("src_id", "tgt_id")]);
+
+        unmappedEmpty.ShouldBe(unmappedNull);
+        mapped.ShouldNotBe(unmappedNull);
+    }
 }

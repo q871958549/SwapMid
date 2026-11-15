@@ -155,4 +155,27 @@ public class EtlTransformConfigTests
         exception.Message.ShouldNotContain(secret);
         JsonSerializer.Serialize(exception.Data).ShouldNotContain(secret);
     }
+
+    [Fact]
+    public void 显式字段映射_解析成功且空白数组归一化为空()
+    {
+        var withMappings = EtlTransformConfig.Parse(
+            """{"sourceQuery":"SELECT src_a, src_b FROM s","targetTable":"public.tgt","mode":"upsert-receipt-v1","keyColumns":["tgt_a"],"columnMappings":[{"sourceColumn":"src_a","targetColumn":"tgt_a"},{"sourceColumn":"src_b","targetColumn":"tgt_b"}]}""");
+
+        withMappings.ColumnMappings.Count.ShouldBe(2);
+        withMappings.ColumnMappings[0].ShouldBe(new EtlColumnMapping("src_a", "tgt_a"));
+        withMappings.ColumnMappings[1].ShouldBe(new EtlColumnMapping("src_b", "tgt_b"));
+
+        var emptyMappings = EtlTransformConfig.Parse(
+            """{"sourceQuery":"SELECT a FROM s","targetTable":"t","columnMappings":[]}""");
+        emptyMappings.ColumnMappings.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("""{"sourceQuery":"SELECT a FROM s","targetTable":"t","columnMappings":"invalid"}""")]
+    [InlineData("""{"sourceQuery":"SELECT a FROM s","targetTable":"t","columnMappings":[{"sourceColumn":"bad-col","targetColumn":"t_a"}]}""")]
+    [InlineData("""{"sourceQuery":"SELECT a FROM s","targetTable":"t","columnMappings":[{"sourceColumn":"s_a","targetColumn":"t_a"},{"sourceColumn":"s_b","targetColumn":"T_A"}]}""")]
+    [InlineData("""{"sourceQuery":"SELECT a FROM s","targetTable":"t","columnMappings":[{"sourceColumn":"s_a"}]}""")]
+    public void 非法字段映射或目标列重复必须失败关闭(string invalidJson)
+        => Should.Throw<BusinessException>(() => EtlTransformConfig.Parse(invalidJson));
 }

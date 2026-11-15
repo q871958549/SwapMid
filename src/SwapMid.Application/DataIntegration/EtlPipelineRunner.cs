@@ -189,11 +189,12 @@ public partial class EtlPipelineRunner : IEtlPipelineRunner, ITransientDependenc
                 CommandBehavior.SequentialAccess | CommandBehavior.SingleResult,
                 executionCt);
 
-            var columns = GetValidatedColumns(reader, targetProbe);
+            var projection = ResolveColumnProjection(reader, cfg, targetProbe);
+            var columns = projection.TargetColumns;
             EtlReaderBoundary.ValidatePreReadSchema(reader, sourceProbe);
             var maxRowsPerBatch = GetMaxRowsPerBatch(columns.Length, targetProbe);
             var maxRowsForShape = GetMaxRowsForShape(
-                columns.Length,
+                Math.Max(columns.Length, projection.SourceFieldCount),
                 maxRowsPerBatch);
 
             // ② 目标连接仅在源查询已成功返回合法 schema 后打开；先做引擎/trigger/
@@ -267,7 +268,7 @@ public partial class EtlPipelineRunner : IEtlPipelineRunner, ITransientDependenc
 
                     var row = await EtlReaderBoundary.ReadRowAsync(
                         reader,
-                        columns.Length,
+                        projection.SourceFieldCount,
                         executionCt);
                     if (row.PayloadBytes >
                         targetPreparation.BatchPayloadLimit)
@@ -303,7 +304,7 @@ public partial class EtlPipelineRunner : IEtlPipelineRunner, ITransientDependenc
                         batchPayloadBytes = 0;
                     }
 
-                    rows.Add(row.Values);
+                    rows.Add(projection.ProjectRow(row.Values));
                     batchPayloadBytes += row.PayloadBytes;
                 }
 

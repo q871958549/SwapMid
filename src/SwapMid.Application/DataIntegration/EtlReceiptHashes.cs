@@ -60,7 +60,8 @@ internal static class EtlReceiptHashes
         EtlWriteMode writeMode,
         string sourceQueryHash,
         IReadOnlyList<string>? upsertKeyColumns = null,
-        string? upsertWatermarkColumn = null)
+        string? upsertWatermarkColumn = null,
+        IReadOnlyList<EtlColumnMapping>? columnMappings = null)
     {
         using var hash = new TlvHash("swapmid-etl-execution-contract-v1");
         hash.Add(pipelineId);
@@ -96,6 +97,16 @@ internal static class EtlReceiptHashes
             else
             {
                 hash.Add(upsertWatermarkColumn.ToUpperInvariant());
+            }
+        }
+
+        if (columnMappings is { Count: > 0 })
+        {
+            hash.Add(columnMappings.Count);
+            foreach (var mapping in columnMappings)
+            {
+                hash.Add(mapping.SourceColumn.ToUpperInvariant());
+                hash.Add(mapping.TargetColumn.ToUpperInvariant());
             }
         }
 

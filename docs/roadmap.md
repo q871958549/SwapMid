@@ -19,7 +19,8 @@ Every milestone adheres to five non-negotiable engineering invariants:
 | **`v0.2.0`** *(Released)* | **Composable Event Mesh & CloudEvents 1.0** | Transactional Outbox bridge (`ETL → MessageBus`), CNCF CloudEvents v1.0 webhook headers, structured subscription filter rules (glob + JSONPath), PostgreSQL 18 CI contract service, multi-arch GHCR release workflow |
 | **`v0.3.0`** *(Released)* | **Incremental Upsert & Production API Gateway** | Staging-backed atomic `Upsert` (`ON CONFLICT` / `MERGE` / `ON DUPLICATE KEY`) + `Upsert-Receipt-V1`, `external-integration` client gateway authorization, SSRF upstream guard, route-group ACLs, sliding-window rate limiting (`429`), and gateway webhook ingress |
 | **`v0.5.0`** *(Released)* | **Connector SDK, Controlled MCP & Cloud-Native** | Connector capability registry & source-target schema preflight inspector, opt-in read-only/draft-only MCP server (`/api/mcp`), official Kubernetes Helm chart (`charts/swapmid/`), and turnkey `examples/` recipes |
-| **`v1.0.0 LTS`** *(Current LTS)* | **Enterprise OIDC, Observability Pack & LTS Freeze** | Optional external OIDC SSO federation, turnkey Prometheus + Grafana dashboards + Alertmanager rule pack (`docker/observability/`), API v1 compatibility guard, and production upgrade runbook |
+| **`v1.0.0 LTS`** *(Released LTS)* | **Enterprise OIDC, Observability Pack & LTS Freeze** | Optional external OIDC SSO federation, turnkey Prometheus + Grafana dashboards + Alertmanager rule pack (`docker/observability/`), API v1 compatibility guard, and production upgrade runbook |
+| **`v1.1.0`** *(Current)* | **Visual ETL Field Mapper & Observability Polish** | First-class `columnMappings` streaming projection & Target Receipt v1 contract binding, schema pre-flight explicit mapping checks, interactive `PipelineFieldMapperPanel` (`Auto Match` + type-family diagnostics), and PromQL system-health evaluation fixes |
 
 ---
 
@@ -56,14 +57,20 @@ Every milestone adheres to five non-negotiable engineering invariants:
 - **Observability & Operations**:
   - Pre-built Grafana dashboards and Prometheus/Alertmanager configurations in `docker/observability/`, API v1 backward-compatibility contract tests, and `docs/operations-and-upgrade.md`.
 
+### `v1.1.0` — Visual ETL Field Mapper, Column Projection & Observability Polish
+- **First-Class `ColumnMappings` & Streaming Projection (`DataIntegration`)**:
+  - Added validated `columnMappings` (`SourceColumn` -> `TargetColumn`, max 256 pairs, case-insensitive unique `targetColumn`) across `EtlTransformConfig`, `EtlPipelineRunner` ordinal projection, `EtlReceiptHashes.ComputeExecutionContract`, and `EtlSchemaCompatibilityEvaluator`.
+  - Upgraded `DataPipelineSchemaPreflightAppService` (`MappedSourceMissing`, `MappedTargetMissing`, required `NOT NULL` target coverage, and `Upsert` key/watermark validation against mapped targets).
+- **Interactive Field Mapper UI (`web/`)**:
+  - Added `PipelineFieldMapperPanel` inside the Next.js pipeline editor (`Schema Pre-flight` workflow) featuring one-click `Auto Match` (case-insensitive exact + normalized identifier matching), per-column Source `Select` pickers, type-family mismatch badges, and full `zh-Hans` / `zh-Hant` / `en` localization.
+- **Observability System Health PromQL Accuracy (`SystemManagement`)**:
+  - Fixed `HealthCheckCatalog` (`result!="succeeded"` label matching `PlatformMetrics.EtlExecutionResultsTotal`) and added `or vector(0)` zero-numerator fallbacks on error-rate gauges.
+
 ---
 
-## Next Evolution (`v1.1+` Post-LTS Backlog)
+## Next Evolution (`v1.2+` Post-LTS Backlog)
 
-1. **`v1.1.0` — Visual ETL Field Mapper & Cloud-Native OCI Chart**:
-   - Interactive drag/map column transformation UI built directly on `preflight-schema` source/target column introspection (`web/`).
-   - Multi-arch container + OCI Helm chart (`oci://ghcr.io/<owner>/charts/swapmid`) single-command cluster deployment verification.
-2. **`v1.2.0` — Analytical & Event-Stream Sinks (`Kafka` / `ClickHouse` / `S3 Parquet`)**:
+1. **`v1.2.0` — Analytical & Event-Stream Sinks (`Kafka` / `ClickHouse` / `S3 Parquet`)**:
    - Pluggable sink adapters under `ConnectorCapabilityCatalog` with capability negotiation and bounded-memory streaming batch writers.
-3. **`v1.3.0` — Lightweight PostgreSQL Logical Replication (`pgoutput`) CDC**:
+2. **`v1.3.0` — Lightweight PostgreSQL Logical Replication (`pgoutput`) CDC**:
    - Continuous LSN-checkpointed incremental capture feeding either `MessageBus` CloudEvents or `Upsert-Receipt-V1` ETL targets.

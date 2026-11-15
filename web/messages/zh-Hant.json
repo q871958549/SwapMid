@@ -1177,7 +1177,20 @@
       "preflightIncompatibleBadge": "存在阻斷項",
       "preflightSummaryStats": "源列 {sourceCount} · 目標列 {targetCount}",
       "preflightNoIssuesHint": "源查詢列投影與目標表結構、主鍵及寫入模式校驗全部通過。",
-      "preflightFailedFallback": "結構預檢請求失敗，請檢查網絡連接或權限"
+      "preflightFailedFallback": "結構預檢請求失敗，請檢查網絡連接或權限",
+      "mapperTitle": "字段映射",
+      "mapperMappedCount": "已映射 {mapped} / {total}",
+      "mapperAutoMatch": "自動匹配",
+      "mapperClear": "清空映射",
+      "mapperImplicitHint": "未配置顯式映射時，將按同名列自動對齊目標表；也可點擊“自動匹配”或逐列指定。",
+      "mapperPreflightToEditHint": "已配置顯式字段映射；點擊“結構預檢”加載源列與目標列後可交互調整。",
+      "mapperUnmappedOption": "-- 不映射 --",
+      "mapperPkBadge": "主鍵",
+      "mapperRequiredBadge": "必填",
+      "mapperSourceMissingBadge": "源列缺失",
+      "mapperTargetMissingBadge": "目標列缺失",
+      "mapperTypeMismatchBadge": "類型差異",
+      "mapperRequiredUnmappedBadge": "必填未映射"
     },
     "execution": {
       "loadFailedTitle": "執行歷史加載失敗",

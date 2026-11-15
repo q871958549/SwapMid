@@ -76,28 +76,107 @@ public partial class EtlPipelineRunner
         return null;
     }
 
-    private static string[] GetValidatedColumns(
+    internal readonly record struct EtlColumnProjection(
+        string[] TargetColumns,
+        int[]? SourceOrdinals,
+        int SourceFieldCount)
+    {
+        internal object?[] ProjectRow(object?[] sourceValues)
+        {
+            if (SourceOrdinals == null)
+            {
+                return sourceValues;
+            }
+
+            var projected = new object?[TargetColumns.Length];
+            for (var i = 0; i < SourceOrdinals.Length; i++)
+            {
+                projected[i] = sourceValues[SourceOrdinals[i]];
+            }
+
+            return projected;
+        }
+    }
+
+    private static EtlColumnProjection ResolveColumnProjection(
         DbDataReader reader,
+        EtlTransformConfig cfg,
         RelationalDataSourceConnection.Probe targetProbe)
     {
-        if (reader.FieldCount is < 1 or > MaxColumns)
-        {
-            throw InvalidInput();
-        }
-
+        var sourceColumns = GetValidatedSourceColumns(reader);
         var maxIdentifierLength = targetProbe.NormalizedProvider switch
         {
             "mysql" or "mariadb" => 64,
             "postgresql" or "postgres" or "npgsql" => 63,
             _ => 128,
         };
+
+        if (cfg.ColumnMappings.Count == 0)
+        {
+            foreach (var column in sourceColumns)
+            {
+                if (column.Length > maxIdentifierLength)
+                {
+                    throw InvalidInput();
+                }
+            }
+
+            return new EtlColumnProjection(
+                sourceColumns,
+                SourceOrdinals: null,
+                SourceFieldCount: reader.FieldCount);
+        }
+
+        if (cfg.ColumnMappings.Count > MaxColumns)
+        {
+            throw InvalidInput();
+        }
+
+        var sourceOrdinalsByName = new Dictionary<string, int>(
+            sourceColumns.Length,
+            StringComparer.OrdinalIgnoreCase);
+        for (var i = 0; i < sourceColumns.Length; i++)
+        {
+            sourceOrdinalsByName[sourceColumns[i]] = i;
+        }
+
+        var targetColumns = new string[cfg.ColumnMappings.Count];
+        var sourceOrdinals = new int[cfg.ColumnMappings.Count];
+        var seenTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for (var i = 0; i < cfg.ColumnMappings.Count; i++)
+        {
+            var mapping = cfg.ColumnMappings[i];
+            if (!sourceOrdinalsByName.TryGetValue(mapping.SourceColumn, out var ordinal) ||
+                mapping.TargetColumn.Length > maxIdentifierLength ||
+                mapping.TargetColumn.Any(char.IsControl) ||
+                !seenTargets.Add(mapping.TargetColumn))
+            {
+                throw InvalidInput();
+            }
+
+            targetColumns[i] = mapping.TargetColumn;
+            sourceOrdinals[i] = ordinal;
+        }
+
+        return new EtlColumnProjection(
+            targetColumns,
+            sourceOrdinals,
+            SourceFieldCount: reader.FieldCount);
+    }
+
+    private static string[] GetValidatedSourceColumns(DbDataReader reader)
+    {
+        if (reader.FieldCount is < 1 or > MaxColumns)
+        {
+            throw InvalidInput();
+        }
+
         var columns = new string[reader.FieldCount];
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         for (var i = 0; i < reader.FieldCount; i++)
         {
             var column = reader.GetName(i);
             if (string.IsNullOrWhiteSpace(column) ||
-                column.Length > maxIdentifierLength ||
                 column.Any(char.IsControl) ||
                 !seen.Add(column))
             {

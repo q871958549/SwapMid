@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   ETL_WRITE_MODES,
+  buildAutoColumnMappings,
+  isMappingTypeIncompatible,
   isReceiptMode,
   isUpsertConfigValid,
   isUpsertMode,
@@ -165,5 +167,115 @@ describe('Target Receipt v1 target capability', () => {
     { type: 0, config: '{bad-json' },
   ])('不受支持或未认证目标不可选 receipt-v1', (target) => {
     expect(supportsTargetReceipt(target)).toBe(false)
+  })
+})
+
+describe('ETL columnMappings & field mapper helpers', () => {
+  it('往返保留显式 columnMappings 并在空映射时省略字段以兼容旧配置', () => {
+    const rawWithMappings = JSON.stringify({
+      sourceQuery: 'SELECT cust_id, cust_name FROM src_orders',
+      targetTable: 'dbo.dst_orders',
+      mode: 'upsert',
+      keyColumns: ['id'],
+      watermarkColumn: 'updated_at',
+      columnMappings: [
+        { sourceColumn: 'cust_id', targetColumn: 'id' },
+        { sourceColumn: 'cust_name', targetColumn: 'customer_name' },
+      ],
+    })
+
+    const parsed = parseEtlTransformConfig(rawWithMappings)
+    expect(parsed.transformConfigValid).toBe(true)
+    expect(parsed.columnMappings).toEqual([
+      { sourceColumn: 'cust_id', targetColumn: 'id' },
+      { sourceColumn: 'cust_name', targetColumn: 'customer_name' },
+    ])
+
+    const reserialized = JSON.parse(serializeEtlTransformConfig(parsed) ?? '{}') as Record<string, unknown>
+    expect(reserialized.columnMappings).toEqual([
+      { sourceColumn: 'cust_id', targetColumn: 'id' },
+      { sourceColumn: 'cust_name', targetColumn: 'customer_name' },
+    ])
+
+    const withoutMappings = serializeEtlTransformConfig({
+      ...parsed,
+      columnMappings: [],
+    })
+    expect(withoutMappings).not.toContain('columnMappings')
+  })
+
+  it('拒绝非法 columnMappings 结构、无效标识符及大小写重复 targetColumn', () => {
+    expect(
+      parseEtlTransformConfig(JSON.stringify({
+        sourceQuery: 'SELECT 1',
+        targetTable: 'dbo.t',
+        mode: 'append',
+        columnMappings: 'invalid',
+      })).transformConfigValid,
+    ).toBe(false)
+
+    expect(
+      parseEtlTransformConfig(JSON.stringify({
+        sourceQuery: 'SELECT 1',
+        targetTable: 'dbo.t',
+        mode: 'append',
+        columnMappings: [{ sourceColumn: '123bad', targetColumn: 'id' }],
+      })).transformConfigValid,
+    ).toBe(false)
+
+    expect(
+      parseEtlTransformConfig(JSON.stringify({
+        sourceQuery: 'SELECT 1',
+        targetTable: 'dbo.t',
+        mode: 'append',
+        columnMappings: [
+          { sourceColumn: 'a', targetColumn: 'CustomerId' },
+          { sourceColumn: 'b', targetColumn: 'customerid' },
+        ],
+      })).transformConfigValid,
+    ).toBe(false)
+
+    expect(() =>
+      serializeEtlTransformConfig({
+        sourceQuery: 'SELECT a',
+        targetTable: 'dbo.t',
+        mode: 'append',
+        columnMappings: [
+          { sourceColumn: 'a', targetColumn: 'Id' },
+          { sourceColumn: 'b', targetColumn: 'id' },
+        ],
+        transformConfigValid: true,
+      }),
+    ).toThrow()
+  })
+
+  it('buildAutoColumnMappings 按大小写精确匹配优先，其次忽略下划线与连字符匹配', () => {
+    const mappings = buildAutoColumnMappings(
+      [
+        { name: 'id', dataType: 'int' },
+        { name: 'customer_name', dataType: 'varchar' },
+        { name: 'orderAmount', dataType: 'decimal' },
+      ],
+      [
+        { name: 'Id', dataType: 'int4' },
+        { name: 'CustomerName', dataType: 'text' },
+        { name: 'order_amount', dataType: 'numeric' },
+        { name: 'unmatched_col', dataType: 'text' },
+      ],
+    )
+
+    expect(mappings).toEqual([
+      { sourceColumn: 'id', targetColumn: 'Id' },
+      { sourceColumn: 'customer_name', targetColumn: 'CustomerName' },
+      { sourceColumn: 'orderAmount', targetColumn: 'order_amount' },
+    ])
+  })
+
+  it('isMappingTypeIncompatible 识别跨类型族冲突并允许数值互转及文本目标', () => {
+    expect(isMappingTypeIncompatible('varchar(64)', 'int4')).toBe(true)
+    expect(isMappingTypeIncompatible('timestamp', 'bool')).toBe(true)
+    expect(isMappingTypeIncompatible('int4', 'numeric(18,2)')).toBe(false)
+    expect(isMappingTypeIncompatible('int4', 'varchar(64)')).toBe(false)
+    expect(isMappingTypeIncompatible(null, 'uuid')).toBe(false)
   })
 })

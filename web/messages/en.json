@@ -1177,7 +1177,20 @@
       "preflightIncompatibleBadge": "Blocking issues",
       "preflightSummaryStats": "Source cols {sourceCount} · Target cols {targetCount}",
       "preflightNoIssuesHint": "Source projection, target schema, key constraints, and write mode checks all passed.",
-      "preflightFailedFallback": "Schema pre-flight request failed; check network connectivity or permissions"
+      "preflightFailedFallback": "Schema pre-flight request failed; check network connectivity or permissions",
+      "mapperTitle": "Field Mappings",
+      "mapperMappedCount": "Mapped {mapped} / {total}",
+      "mapperAutoMatch": "Auto Match",
+      "mapperClear": "Clear",
+      "mapperImplicitHint": "When no explicit mapping is set, columns align by exact name; click Auto Match or select per column below.",
+      "mapperPreflightToEditHint": "Explicit field mappings configured; run Schema Pre-flight to load columns for interactive editing.",
+      "mapperUnmappedOption": "-- Unmapped --",
+      "mapperPkBadge": "PK",
+      "mapperRequiredBadge": "NOT NULL",
+      "mapperSourceMissingBadge": "Missing source",
+      "mapperTargetMissingBadge": "Missing target",
+      "mapperTypeMismatchBadge": "Type mismatch",
+      "mapperRequiredUnmappedBadge": "Required unmapped"
     },
     "execution": {
       "loadFailedTitle": "Failed to load execution history",

@@ -22,3 +22,5 @@ export type PipelineExecutionDto = Omit<
   correlationId: string | null
   exceptionType: string | null
 }
+export type PipelineSchemaPreflightResultDto = import('../generated').SwapMidDataIntegrationPipelineSchemaPreflightResultDto
+export type PreflightSchemaIssueDto = import('../generated').SwapMidDataIntegrationPreflightSchemaIssueDto

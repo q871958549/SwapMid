@@ -12,12 +12,17 @@ import {
   parseEtlWriteMode,
   type EtlTransformFormValue,
 } from './transform-config'
+import { PipelineSchemaPreflightPanel } from './pipeline-schema-preflight'
 
 export function PipelineEtlConfigSection({
+  sourceId,
+  targetId,
   form,
   receiptTargetSupported,
   onChange,
 }: {
+  sourceId: string
+  targetId: string
   form: EtlTransformFormValue
   receiptTargetSupported: boolean
   onChange: (patch: Partial<EtlTransformFormValue>) => void
@@ -117,6 +122,11 @@ export function PipelineEtlConfigSection({
       {receiptModeSelected && receiptTargetSupported && (
         <p className="text-muted-foreground text-xs">{t('receiptModeHint')}</p>
       )}
+      <PipelineSchemaPreflightPanel
+        sourceId={sourceId}
+        targetId={targetId}
+        form={form}
+      />
     </div>
   )
 }

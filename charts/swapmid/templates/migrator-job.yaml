@@ -1,0 +1,56 @@
+{{- if .Values.migrator.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "swapmid.fullname" . }}-migrator
+  labels:
+    {{- include "swapmid.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migrator
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: {{ .Values.migrator.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.migrator.activeDeadlineSeconds }}
+  template:
+    metadata:
+      labels:
+        {{- include "swapmid.labels" . | nindent 8 }}
+        app.kubernetes.io/component: migrator
+    spec:
+      restartPolicy: Never
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.api.podSecurityContext | nindent 8 }}
+      containers:
+        - name: migrator
+          image: {{ include "swapmid.image" (dict "global" .Values.global "image" .Values.migrator.image "appVersion" .Chart.AppVersion) | quote }}
+          imagePullPolicy: {{ .Values.migrator.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.api.securityContext | nindent 12 }}
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "swapmid.secretName" . }}
+                  key: postgres-password
+            - name: ConnectionStrings__Default
+              value: {{ printf "Host=%s;Port=%v;Database=%s;Username=%s;Password=$(POSTGRES_PASSWORD);SSL Mode=%s" .Values.externalDatabase.host .Values.externalDatabase.port .Values.externalDatabase.database .Values.externalDatabase.username .Values.externalDatabase.sslMode | quote }}
+            - name: Redis__Configuration
+              value: {{ .Values.externalRedis.configuration | quote }}
+            - name: StringEncryption__DefaultPassPhrase
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "swapmid.secretName" . }}
+                  key: string-encryption-passphrase
+            - name: OpenIddict__Applications__SwapMid_App__RootUrl
+              value: {{ .Values.publicUrls.web | quote }}
+            - name: OpenIddict__Applications__SwapMid_Swagger__RootUrl
+              value: {{ .Values.publicUrls.api | quote }}
+          resources:
+            {{- toYaml .Values.migrator.resources | nindent 12 }}
+{{- end }}

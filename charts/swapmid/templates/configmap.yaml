@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "swapmid.fullname" . }}-config
+  labels:
+    {{- include "swapmid.labels" . | nindent 4 }}
+data:
+  App__SelfUrl: {{ .Values.publicUrls.api | quote }}
+  App__FrontendUrl: {{ .Values.publicUrls.web | quote }}
+  App__CorsOrigins: {{ .Values.publicUrls.web | quote }}
+  App__RedirectAllowedUrls: {{ .Values.publicUrls.web | quote }}
+  AuthServer__Authority: {{ .Values.publicUrls.api | quote }}
+  AuthServer__RequireHttpsMetadata: {{ .Values.publicUrls.requireHttpsMetadata | quote }}
+  ApiGateway__Enabled: {{ .Values.apiGateway.enabled | quote }}
+  ApiGateway__AllowedHosts: {{ .Values.apiGateway.allowedHosts | quote }}
+  ApiGateway__AllowedPrivateNetworks: {{ .Values.apiGateway.allowedPrivateNetworks | quote }}
+  Mcp__Enabled: {{ .Values.mcp.enabled | quote }}
+  AuthServer__ExternalOidc__Enabled: {{ .Values.externalOidc.enabled | quote }}
+  AuthServer__ExternalOidc__DisplayName: {{ .Values.externalOidc.displayName | quote }}
+  AuthServer__ExternalOidc__Authority: {{ .Values.externalOidc.authority | quote }}
+  AuthServer__ExternalOidc__ClientId: {{ .Values.externalOidc.clientId | quote }}
+  AuthServer__ExternalOidc__RequireHttpsMetadata: {{ .Values.externalOidc.requireHttpsMetadata | quote }}
+  Redis__Configuration: {{ .Values.externalRedis.configuration | quote }}
+  Redis__IsEnabled: "true"
+  RabbitMQ__Host: {{ .Values.externalRabbitMq.host | quote }}
+  RabbitMQ__Port: {{ .Values.externalRabbitMq.port | quote }}
+  RabbitMQ__UserName: {{ .Values.externalRabbitMq.username | quote }}
+  RabbitMQ__VirtualHost: {{ .Values.externalRabbitMq.virtualHost | quote }}

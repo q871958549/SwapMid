@@ -110,6 +110,7 @@ services:
       ApiGateway__Enabled: "${API_GATEWAY_ENABLED:-false}"
       ApiGateway__AllowedHosts: "${API_GATEWAY_ALLOWED_HOSTS:-}"
       ApiGateway__AllowedPrivateNetworks: "${API_GATEWAY_ALLOWED_PRIVATE_NETWORKS:-}"
+      Mcp__Enabled: "${MCP_ENABLED:-false}"
       ConnectionStrings__Default: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-swapmid};Username=${POSTGRES_USER:-swapmid};Password=${POSTGRES_PASSWORD};SSL Mode=Disable;GSS Encryption Mode=Disable"
       Redis__Configuration: "redis:6379"
       Redis__IsEnabled: "true"

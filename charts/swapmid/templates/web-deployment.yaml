@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "swapmid.fullname" . }}-web
+  labels:
+    {{- include "swapmid.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  replicas: {{ .Values.web.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "swapmid.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        {{- include "swapmid.labels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "swapmid.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: web
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.web.podSecurityContext | nindent 8 }}
+      containers:
+        - name: web
+          image: {{ include "swapmid.image" (dict "global" .Values.global "image" .Values.web.image "appVersion" .Chart.AppVersion) | quote }}
+          imagePullPolicy: {{ .Values.web.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.web.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3000"
+            - name: COOKIE_SECURE
+              value: {{ .Values.publicUrls.cookieSecure | quote }}
+            - name: SESSION_STORE_MODE
+              value: "redis"
+            - name: REDIS_URL
+              value: {{ .Values.externalRedis.bffUrl | quote }}
+            - name: INTERNAL_API_URL
+              value: {{ printf "http://%s-api:%v" (include "swapmid.fullname" .) .Values.api.service.port | quote }}
+            - name: NEXT_PUBLIC_API_URL
+              value: {{ .Values.publicUrls.api | quote }}
+            - name: SWAPMID_RELEASE
+              value: {{ default .Chart.AppVersion .Values.web.image.tag | quote }}
+            - name: SWAPMID_API_READY_URL
+              value: {{ printf "http://%s-api:%v/health/ready" (include "swapmid.fullname" .) .Values.api.service.port | quote }}
+            - name: NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "swapmid.secretName" . }}
+                  key: next-server-actions-key
+                  optional: true
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /api/ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.web.resources | nindent 12 }}

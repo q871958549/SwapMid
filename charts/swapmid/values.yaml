@@ -1,0 +1,152 @@
+nameOverride: ""
+fullnameOverride: ""
+
+global:
+  imageRegistry: ghcr.io
+  imagePullSecrets: []
+
+publicUrls:
+  web: "https://swapmid.example.com"
+  api: "https://api.swapmid.example.com"
+  requireHttpsMetadata: true
+  cookieSecure: true
+
+api:
+  replicaCount: 2
+  image:
+    repository: swapmid/swapmid-api
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 1536Mi
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+web:
+  replicaCount: 2
+  image:
+    repository: swapmid/swapmid-web
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    requests:
+      cpu: 150m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 768Mi
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+migrator:
+  enabled: true
+  image:
+    repository: swapmid/swapmid-migrator
+    tag: ""
+    pullPolicy: IfNotPresent
+  backoffLimit: 3
+  activeDeadlineSeconds: 600
+  resources:
+    requests:
+      cpu: 200m
+      memory: 384Mi
+    limits:
+      cpu: "1"
+      memory: 1024Mi
+
+apiGateway:
+  enabled: false
+  allowedHosts: ""
+  allowedPrivateNetworks: ""
+
+mcp:
+  enabled: false
+
+externalOidc:
+  enabled: false
+  displayName: "Enterprise SSO"
+  authority: ""
+  clientId: ""
+  requireHttpsMetadata: true
+
+externalDatabase:
+  host: "postgres.database.svc.cluster.local"
+  port: 5432
+  database: "swapmid"
+  username: "swapmid"
+  sslMode: "Require"
+
+externalRedis:
+  configuration: "redis.cache.svc.cluster.local:6379"
+  bffUrl: "redis://redis.cache.svc.cluster.local:6379/0"
+
+externalRabbitMq:
+  host: "rabbitmq.messaging.svc.cluster.local"
+  port: 5672
+  username: "swapmid"
+  virtualHost: "/"
+
+# Production deployments SHOULD supply existingSecret containing:
+# - postgres-password
+# - rabbitmq-password
+# - openiddict-pfx-pass
+# - string-encryption-passphrase
+# - next-server-actions-key (optional)
+# - external-oidc-client-secret (optional)
+secret:
+  existingSecret: ""
+  postgresPassword: ""
+  rabbitMqPassword: ""
+  openIddictPfxPass: ""
+  stringEncryptionPassphrase: ""
+  nextServerActionsKey: ""
+  externalOidcClientSecret: ""
+
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations: {}
+  webHost: "swapmid.example.com"
+  apiHost: "api.swapmid.example.com"
+  tls: []
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 75
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+  additionalLabels: {}

@@ -442,6 +442,8 @@ export function DataPipelinesClient({
           </div>
         </div>
         <PipelineEtlConfigSection
+          sourceId={crud.form.sourceId}
+          targetId={crud.form.targetId}
           form={crud.form}
           receiptTargetSupported={receiptTargetSupported}
           onChange={crud.set}

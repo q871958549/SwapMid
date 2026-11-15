@@ -1,0 +1,10 @@
+{
+  "topicId": "00000000-0000-0000-0000-000000000010",
+  "name": "sre-pipeline-failure-webhook",
+  "channel": 0,
+  "endpoint": "https://hooks.partner.example/swapmid/cloudevents",
+  "secret": "replace-with-32-byte-webhook-hmac-secret",
+  "filterRule": "subject:pipeline.*;$.status=Failed",
+  "maxRetryCount": 5,
+  "isEnabled": true
+}

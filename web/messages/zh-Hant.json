@@ -1164,7 +1164,15 @@
       "keyColumnsFieldLabel": "業務主鍵列（逗號分隔）*",
       "watermarkColumnFieldLabel": "水位線列（可選）",
       "upsertConfigInvalidHint": "Upsert 須填寫至少 1 個合法且不重複的業務主鍵列名；若填寫水位線列，不能與主鍵列重名。",
-      "upsertModeHint": "目標表對應主鍵列須具備非空唯一索引或主鍵約束；執行前自動完成暫存表空值與重複鍵攔截。"
+      "upsertModeHint": "目標表對應主鍵列須具備非空唯一索引或主鍵約束；執行前自動完成暫存表空值與重複鍵攔截。",
+      "preflightButton": "結構預檢",
+      "preflightRunning": "預檢中...",
+      "preflightSelectSourceHint": "請先選擇資料來源並填寫源查詢 SQL",
+      "preflightCompatibleBadge": "結構兼容",
+      "preflightIncompatibleBadge": "存在阻斷項",
+      "preflightSummaryStats": "源列 {sourceCount} · 目標列 {targetCount}",
+      "preflightNoIssuesHint": "源查詢列投影與目標表結構、主鍵及寫入模式校驗全部通過。",
+      "preflightFailedFallback": "結構預檢請求失敗，請檢查網絡連接或權限"
     },
     "execution": {
       "loadFailedTitle": "執行歷史加載失敗",

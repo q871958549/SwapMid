@@ -70,6 +70,7 @@ public class DataIntegrationAuthorizationReflectionTests
             nameof(DataSourceAppService) => typeof(DataSourceAppService),
             nameof(DataPipelineAppService) => typeof(DataPipelineAppService),
             nameof(PipelineExecutionAppService) => typeof(PipelineExecutionAppService),
+            nameof(DataPipelineSchemaPreflightAppService) => typeof(DataPipelineSchemaPreflightAppService),
             _ => throw new InvalidOperationException($"未登记运行时服务类型：{className}"),
         };
 

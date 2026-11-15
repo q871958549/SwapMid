@@ -1164,7 +1164,15 @@
       "keyColumnsFieldLabel": "业务主键列（逗号分隔）*",
       "watermarkColumnFieldLabel": "水位线列（可选）",
       "upsertConfigInvalidHint": "Upsert 须填写至少 1 个合法且不重复的业务主键列名；若填写水位线列，不能与主键列重名。",
-      "upsertModeHint": "目标表对应主键列须具备非空唯一索引或主键约束；执行前自动完成暂存表空值与重复键拦截。"
+      "upsertModeHint": "目标表对应主键列须具备非空唯一索引或主键约束；执行前自动完成暂存表空值与重复键拦截。",
+      "preflightButton": "结构预检",
+      "preflightRunning": "预检中...",
+      "preflightSelectSourceHint": "请先选择数据源并填写源查询 SQL",
+      "preflightCompatibleBadge": "结构兼容",
+      "preflightIncompatibleBadge": "存在阻断项",
+      "preflightSummaryStats": "源列 {sourceCount} · 目标列 {targetCount}",
+      "preflightNoIssuesHint": "源查询列投影与目标表结构、主键及写入模式校验全部通过。",
+      "preflightFailedFallback": "结构预检请求失败，请检查网络连接或权限"
     },
     "execution": {
       "loadFailedTitle": "执行历史加载失败",

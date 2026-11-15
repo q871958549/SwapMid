@@ -6399,6 +6399,54 @@
       "traditionalSourceHash": "d75664efb7d9a8682bf17043",
       "traditionalHash": "d81f44625551678c2cdcd1b9"
     },
+    "DataIntegration.pipeline.preflightButton": {
+      "sourceHash": "eefc3b44d1933f34e7c59b94",
+      "englishHash": "b0c51764c5b92077aefde170",
+      "traditionalSourceHash": "9cba3c3088190c07a2d2b363",
+      "traditionalHash": "f0451cf8a66deff68007283b"
+    },
+    "DataIntegration.pipeline.preflightRunning": {
+      "sourceHash": "e3f25705a0aa91b3e53ca41b",
+      "englishHash": "2e5f79bb94a8c40b3a103600",
+      "traditionalSourceHash": "139eff1a90afad1cbf698498",
+      "traditionalHash": "ba2c33eec6e101390490b8b2"
+    },
+    "DataIntegration.pipeline.preflightSelectSourceHint": {
+      "sourceHash": "f1ac7d00f37c5cb2b6bb19e1",
+      "englishHash": "cc5742155d5ab414ba400e79",
+      "traditionalSourceHash": "a82f4df0ee036234ca519f3a",
+      "traditionalHash": "9cdd2f000e51ea14d01dda90"
+    },
+    "DataIntegration.pipeline.preflightCompatibleBadge": {
+      "sourceHash": "358eeb4a9a30d1d21cbb00ad",
+      "englishHash": "04c72ef3388c185b5db24dca",
+      "traditionalSourceHash": "9c6d81d44c9f4e1ad8b581e5",
+      "traditionalHash": "d3b3bed5791810c95d9a3d27"
+    },
+    "DataIntegration.pipeline.preflightIncompatibleBadge": {
+      "sourceHash": "4e0ac868dbd2f0d136a92fd6",
+      "englishHash": "6a19bd4215ed3c59713d4743",
+      "traditionalSourceHash": "2c6e6689eca027c849016939",
+      "traditionalHash": "46306e28a224b0fc4658775b"
+    },
+    "DataIntegration.pipeline.preflightSummaryStats": {
+      "sourceHash": "bba1eb15aa68375ede70451f",
+      "englishHash": "995b4901ee99b588ecbbf010",
+      "traditionalSourceHash": "44b631c3adb1a004ecd76904",
+      "traditionalHash": "f26b48b9d7a3dea891794a1e"
+    },
+    "DataIntegration.pipeline.preflightNoIssuesHint": {
+      "sourceHash": "47e126163f8dd76975c52b1a",
+      "englishHash": "a207e6bed919aff0a5b9b97f",
+      "traditionalSourceHash": "d9eea9000b1f12b793ec3856",
+      "traditionalHash": "cc624a3458c2f4ac73c2dc5f"
+    },
+    "DataIntegration.pipeline.preflightFailedFallback": {
+      "sourceHash": "f80052828ea1018992abba12",
+      "englishHash": "bd2f23287367cc14f350221d",
+      "traditionalSourceHash": "09c827f3856438df678e1449",
+      "traditionalHash": "29d8fac12d91335a163ec856"
+    },
     "DataIntegration.execution.loadFailedTitle": {
       "sourceHash": "1e96be66a71bb7cad2f63dad",
       "englishHash": "984db9ca5917c741e7921a4b",

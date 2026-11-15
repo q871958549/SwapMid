@@ -1164,7 +1164,15 @@
       "keyColumnsFieldLabel": "Business key columns (comma-separated) *",
       "watermarkColumnFieldLabel": "Watermark column (optional)",
       "upsertConfigInvalidHint": "Upsert requires at least one valid, unique business key column; if a watermark column is specified, it cannot overlap the key columns.",
-      "upsertModeHint": "Target key columns must be NOT NULL and backed by a primary key or unique index; staging null and duplicate keys are rejected before target commit."
+      "upsertModeHint": "Target key columns must be NOT NULL and backed by a primary key or unique index; staging null and duplicate keys are rejected before target commit.",
+      "preflightButton": "Schema Pre-flight",
+      "preflightRunning": "Checking...",
+      "preflightSelectSourceHint": "Select a data source and enter a source SELECT query first",
+      "preflightCompatibleBadge": "Compatible",
+      "preflightIncompatibleBadge": "Blocking issues",
+      "preflightSummaryStats": "Source cols {sourceCount} · Target cols {targetCount}",
+      "preflightNoIssuesHint": "Source projection, target schema, key constraints, and write mode checks all passed.",
+      "preflightFailedFallback": "Schema pre-flight request failed; check network connectivity or permissions"
     },
     "execution": {
       "loadFailedTitle": "Failed to load execution history",

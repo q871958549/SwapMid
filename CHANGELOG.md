@@ -4,6 +4,19 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-11-15
+
+### Added
+- **Connector Capability Registry & Pipeline Schema Pre-flight (`DataIntegration`)**:
+  - Added `ConnectorCapabilityCatalog` (`GET /api/v1/data-pipelines/capabilities`) declaring source/target capabilities, atomic upsert support, and strict-TLS Target Receipt v1 eligibility across `postgresql`, `sqlserver`, `mysql`, `rest-api`, and `file`.
+  - Added `DataPipelineSchemaPreflightAppService` (`POST /api/v1/data-pipelines/preflight-schema`) performing zero-row read-only `CommandBehavior.SchemaOnly` source projection probing and multi-dialect target catalog inspection (`PostgreSQL`, `SQL Server`, `MySQL`, `SQLite`) to detect unmapped source columns, missing required `NOT NULL` target columns, nullability narrowing, type-family mismatches, and `Upsert` key/watermark violations before activation.
+  - Added interactive **Schema Pre-flight** diagnostics panel (`pipeline-schema-preflight.tsx`) in the Next.js pipeline editor across `zh-Hans`, `zh-Hant`, and `en`.
+- **Controlled Read-Only / Draft-Only MCP Server (`Mcp`)**:
+  - Added opt-in Model Context Protocol JSON-RPC 2.0 endpoint (`POST /api/mcp`, default `Mcp:Enabled=false`) enforcing authentication, per-tool platform RBAC filtering/authorization, credential redaction, and draft-only pipeline authoring (`list_datasources`, `preflight_pipeline_schema`, `diagnose_failed_executions`, `diagnose_dead_letters`, `draft_data_pipeline`).
+- **Cloud-Native Helm Chart & Reference Examples**:
+  - Added official Helm v3 chart (`charts/swapmid/`) with `pre-install,pre-upgrade` `migrator` Job hook, `api` & `web` Deployments, `HorizontalPodAutoscaler`, `PodDisruptionBudget`, optional `Ingress` and Prometheus `ServiceMonitor`, and fail-closed security defaults.
+  - Added runnable integration templates in `examples/` (`postgres-incremental-upsert`, `cloudevents-webhook-fanout`, `partner-api-gateway`).
+
 ## [0.3.0] - 2026-11-15
 
 ### Added

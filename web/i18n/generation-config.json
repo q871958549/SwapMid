@@ -180,7 +180,15 @@
     "ApiManagement.clients.policyGroupsFieldLabel": "Allowed API route groups",
     "ApiManagement.clients.policyGroupsHint": "Leave all unchecked to allow any enabled route group; check specific groups to restrict access.",
     "ApiManagement.clients.policyGroupsEmptyHint": "No API route groups exist yet; enabled routes are allowed by default.",
-    "ApiManagement.clients.policySavedTitle": "Gateway policy updated"
+    "ApiManagement.clients.policySavedTitle": "Gateway policy updated",
+    "DataIntegration.pipeline.preflightButton": "Schema Pre-flight",
+    "DataIntegration.pipeline.preflightRunning": "Checking...",
+    "DataIntegration.pipeline.preflightSelectSourceHint": "Select a data source and enter a source SELECT query first",
+    "DataIntegration.pipeline.preflightCompatibleBadge": "Compatible",
+    "DataIntegration.pipeline.preflightIncompatibleBadge": "Blocking issues",
+    "DataIntegration.pipeline.preflightSummaryStats": "Source cols {sourceCount} · Target cols {targetCount}",
+    "DataIntegration.pipeline.preflightNoIssuesHint": "Source projection, target schema, key constraints, and write mode checks all passed.",
+    "DataIntegration.pipeline.preflightFailedFallback": "Schema pre-flight request failed; check network connectivity or permissions"
   },
   "traditionalOverrides": {
     "Account.user.batchRemoveDoneTitle": "批次移除角色完成",

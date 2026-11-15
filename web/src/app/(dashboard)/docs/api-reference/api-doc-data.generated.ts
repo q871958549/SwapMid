@@ -1613,6 +1613,268 @@ export const API_MODULES: ApiModule[] = [
         ]
       },
       {
+        "id": "DataPipelineSchemaPreflight",
+        "title": "管道结构预检与连接器能力 /data-pipelines/capabilities",
+        "endpoints": [
+          {
+            "method": "GET",
+            "path": "/api/v1/data-pipelines/capabilities",
+            "summary": "获取平台内置数据源连接器的读写、原子 Upsert 与机器回执能力清单。",
+            "summaryDocumented": true,
+            "responseFields": [
+              {
+                "name": "provider",
+                "cnName": "",
+                "type": "string",
+                "description": "标准化连接器标识（postgresql / sqlserver / mysql / rest-api / file）。",
+                "nullable": true
+              },
+              {
+                "name": "displayName",
+                "cnName": "",
+                "type": "string",
+                "description": "连接器显示名称。",
+                "nullable": true
+              },
+              {
+                "name": "dataSourceType",
+                "cnName": "",
+                "type": "DataSourceType",
+                "description": "取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）",
+                "nullable": false
+              },
+              {
+                "name": "supportsSourceRead",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否支持作为流式 ETL 源读取。",
+                "nullable": false
+              },
+              {
+                "name": "supportsTargetWrite",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否支持作为关系型目标写入。",
+                "nullable": false
+              },
+              {
+                "name": "supportsAtomicUpsert",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否支持原子增量合并（Upsert）。",
+                "nullable": false
+              },
+              {
+                "name": "supportsTargetReceiptV1",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否支持目标库机器回执 v1（__swapmid_etl_receipt_v1）。",
+                "nullable": false
+              },
+              {
+                "name": "requiresStrictTlsForReceipt",
+                "cnName": "",
+                "type": "boolean",
+                "description": "机器回执模式是否强制要求严格 TLS（encrypt=true 且 trustServerCertificate=false）。",
+                "nullable": false
+              },
+              {
+                "name": "supportedWriteModes",
+                "cnName": "",
+                "type": "string[]",
+                "description": "支持的写入模式列表。",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/data-pipelines/preflight-schema",
+            "summary": "静态探测源查询结果列与目标表字段、非空及唯一键约束的兼容性（不写入任何业务数据）。",
+            "summaryDocumented": true,
+            "requestBody": [
+              {
+                "name": "sourceId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "源数据源 ID。",
+                "required": true
+              },
+              {
+                "name": "targetId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "目标数据源 ID（可选）。",
+                "required": false
+              },
+              {
+                "name": "transformConfig",
+                "cnName": "",
+                "type": "string",
+                "description": "ETL 转换规则 JSON（含 sourceQuery / targetTable / mode / keyColumns / watermarkColumn）。",
+                "required": true
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "compatible",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否存在零阻断错误（severity=error 为 0 时为 true）。",
+                "nullable": false
+              },
+              {
+                "name": "sourceProvider",
+                "cnName": "",
+                "type": "string",
+                "description": "源连接器标识。",
+                "nullable": true
+              },
+              {
+                "name": "targetProvider",
+                "cnName": "",
+                "type": "string",
+                "description": "目标连接器标识（未选目标源时为 null）。",
+                "nullable": true
+              },
+              {
+                "name": "writeMode",
+                "cnName": "",
+                "type": "string",
+                "description": "解析后的写入模式。",
+                "nullable": true
+              },
+              {
+                "name": "sourceColumns",
+                "cnName": "",
+                "type": "PreflightColumnDto[]",
+                "description": "源查询零行 Schema 探测列清单。",
+                "nullable": true
+              },
+              {
+                "name": "sourceColumns[].name",
+                "cnName": "",
+                "type": "string",
+                "description": "列名。",
+                "nullable": true
+              },
+              {
+                "name": "sourceColumns[].dataType",
+                "cnName": "",
+                "type": "string",
+                "description": "数据库类型或 CLR 类型描述。",
+                "nullable": true
+              },
+              {
+                "name": "sourceColumns[].isNullable",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否允许空值。",
+                "nullable": false
+              },
+              {
+                "name": "sourceColumns[].isPrimaryKey",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否为主键列。",
+                "nullable": false
+              },
+              {
+                "name": "sourceColumns[].isUniqueIndexed",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否受非过滤唯一索引或主键覆盖。",
+                "nullable": false
+              },
+              {
+                "name": "sourceColumns[].hasDefaultOrIdentity",
+                "cnName": "",
+                "type": "boolean",
+                "description": "目标列是否定义了默认值或自增计算。",
+                "nullable": false
+              },
+              {
+                "name": "targetColumns",
+                "cnName": "",
+                "type": "PreflightColumnDto[]",
+                "description": "目标表结构列清单。",
+                "nullable": true
+              },
+              {
+                "name": "targetColumns[].name",
+                "cnName": "",
+                "type": "string",
+                "description": "列名。",
+                "nullable": true
+              },
+              {
+                "name": "targetColumns[].dataType",
+                "cnName": "",
+                "type": "string",
+                "description": "数据库类型或 CLR 类型描述。",
+                "nullable": true
+              },
+              {
+                "name": "targetColumns[].isNullable",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否允许空值。",
+                "nullable": false
+              },
+              {
+                "name": "targetColumns[].isPrimaryKey",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否为主键列。",
+                "nullable": false
+              },
+              {
+                "name": "targetColumns[].isUniqueIndexed",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否受非过滤唯一索引或主键覆盖。",
+                "nullable": false
+              },
+              {
+                "name": "targetColumns[].hasDefaultOrIdentity",
+                "cnName": "",
+                "type": "boolean",
+                "description": "目标列是否定义了默认值或自增计算。",
+                "nullable": false
+              },
+              {
+                "name": "issues",
+                "cnName": "",
+                "type": "PreflightSchemaIssueDto[]",
+                "description": "兼容性诊断问题列表。",
+                "nullable": true
+              },
+              {
+                "name": "issues[].severity",
+                "cnName": "",
+                "type": "string",
+                "description": "严重级别：error 或 warning。",
+                "nullable": true
+              },
+              {
+                "name": "issues[].code",
+                "cnName": "",
+                "type": "string",
+                "description": "稳定诊断代码。",
+                "nullable": true
+              },
+              {
+                "name": "issues[].message",
+                "cnName": "",
+                "type": "string",
+                "description": "面向操作员的诊断说明（不含敏感连接串或驱动原文）。",
+                "nullable": true
+              }
+            ]
+          }
+        ]
+      },
+      {
         "id": "PipelineExecution",
         "title": "管道执行记录 /pipeline-executions",
         "endpoints": [

@@ -1,0 +1,12 @@
+SwapMid ({{ .Chart.AppVersion }}) has been deployed!
+
+1. Web Console (Next.js BFF):
+   {{ .Values.publicUrls.web }}
+
+2. Integration Host & OpenIddict Authority:
+   {{ .Values.publicUrls.api }}
+
+3. Security Posture:
+   - Managed API Gateway (/api/gateway/*): {{ if .Values.apiGateway.enabled }}ENABLED{{ else }}DISABLED (fail-closed){{ end }}
+   - Controlled MCP Server (/api/mcp):     {{ if .Values.mcp.enabled }}ENABLED{{ else }}DISABLED (fail-closed){{ end }}
+   - External OIDC Federation:             {{ if .Values.externalOidc.enabled }}ENABLED ({{ .Values.externalOidc.displayName }}){{ else }}DISABLED{{ end }}

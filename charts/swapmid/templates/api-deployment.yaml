@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "swapmid.fullname" . }}-api
+  labels:
+    {{- include "swapmid.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.api.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "swapmid.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        {{- include "swapmid.labels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "swapmid.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: api
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.api.podSecurityContext | nindent 8 }}
+      containers:
+        - name: api
+          image: {{ include "swapmid.image" (dict "global" .Values.global "image" .Values.api.image "appVersion" .Chart.AppVersion) | quote }}
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.api.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "swapmid.fullname" . }}-config
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+            - name: ASPNETCORE_URLS
+              value: "http://+:8080"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "swapmid.secretName" . }}
+                  key: postgres-password
+            - name: ConnectionStrings__Default
+              value: {{ printf "Host=%s;Port=%v;Database=%s;Username=%s;Password=$(POSTGRES_PASSWORD);SSL Mode=%s" .Values.externalDatabase.host .Values.externalDatabase.port .Values.externalDatabase.database .Values.externalDatabase.username .Values.externalDatabase.sslMode | quote }}
+            - name: RabbitMQ__Password
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "swapmid.secretName" . }}
+                  key: rabbitmq-password
+            - name: AuthServer__CertificatePassPhrase
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "swapmid.secretName" . }}
+                  key: openiddict-pfx-pass
+            - name: StringEncryption__DefaultPassPhrase
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "swapmid.secretName" . }}
+                  key: string-encryption-passphrase
+            - name: AuthServer__ExternalOidc__ClientSecret
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "swapmid.secretName" . }}
+                  key: external-oidc-client-secret
+                  optional: true
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}

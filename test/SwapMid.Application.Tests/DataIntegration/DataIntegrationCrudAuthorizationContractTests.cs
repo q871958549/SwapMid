@@ -46,8 +46,8 @@ public class DataIntegrationCrudAuthorizationContractTests
             inspectedEntryCount += contract.Entries.Length;
         }
 
-        contracts.Length.ShouldBe(3);
-        inspectedEntryCount.ShouldBe(25);
+        contracts.Length.ShouldBe(4);
+        inspectedEntryCount.ShouldBe(27);
     }
 
     [Fact]
@@ -403,6 +403,15 @@ public class DataIntegrationCrudAuthorizationContractTests
                     Secured("RecoverRunningAsync(Guid,RecoverPipelineExecutionInput,CancellationToken)", PipelineExecutions + ".RecoverRunning"),
                     Secured("VerifyTargetReceiptAsync(Guid)", PipelineExecutions + ".VerifyTargetReceipt"),
                     Secured("VerifyTargetReceiptAsync(Guid,CancellationToken)", PipelineExecutions + ".VerifyTargetReceipt"),
+                ],
+                []),
+            new(
+                "DataPipelineSchemaPreflightAppService.cs",
+                "DataPipelineSchemaPreflightAppService",
+                DataPipelines + ".Default",
+                [
+                    new("GetCapabilitiesAsync()", DataPipelines + ".Default"),
+                    new("PreflightSchemaAsync(PreflightPipelineSchemaInput,CancellationToken)", DataPipelines + ".Default"),
                 ],
                 []),
         ];

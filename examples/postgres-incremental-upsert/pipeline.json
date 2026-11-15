@@ -1,0 +1,9 @@
+{
+  "name": "Orders Incremental Upsert (OLTP -> Mart)",
+  "description": "Synchronizes changed order rows every 5 minutes using watermark-guarded ON CONFLICT upsert and Target Receipt v1.",
+  "sourceId": "00000000-0000-0000-0000-000000000001",
+  "targetId": "00000000-0000-0000-0000-000000000002",
+  "transformConfig": "{\"version\":1,\"sourceQuery\":\"SELECT order_id, customer_code, total_amount, status_code, updated_at FROM public.orders WHERE updated_at >= CURRENT_TIMESTAMP - INTERVAL '2 hours'\",\"targetTable\":\"mart.fact_orders\",\"mode\":\"upsert\",\"reconciliationStrategy\":\"target-receipt-v1\",\"keyColumns\":[\"order_id\"],\"watermarkColumn\":\"updated_at\"}",
+  "scheduleCron": "0 */5 * * * ?",
+  "scheduleEnabled": false
+}

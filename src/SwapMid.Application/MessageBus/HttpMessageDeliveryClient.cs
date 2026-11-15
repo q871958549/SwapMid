@@ -45,6 +45,7 @@ public class HttpMessageDeliveryClient : IMessageDeliveryClient, ITransientDepen
             SensitiveOutboundRequestOptions.Mark(message);
             message.Headers.TryAddWithoutValidation("X-SwapMid-Message-Id", request.MessageId.ToString());
             message.Headers.TryAddWithoutValidation("X-SwapMid-Topic", request.TopicName);
+            AddCloudEventsHeaders(message, request);
             // 订阅配了密钥则加 HMAC 签名头(对原始 body 签),消费者验真(D11)。
             if (!string.IsNullOrEmpty(request.Secret))
             {
@@ -81,5 +82,76 @@ public class HttpMessageDeliveryClient : IMessageDeliveryClient, ITransientDepen
         {
             return MessageDeliveryResponse.Failure("HTTP 投递失败");
         }
+    }
+
+    private static void AddCloudEventsHeaders(HttpRequestMessage message, MessageDeliveryRequest request)
+    {
+        var occurredAt = request.OccurredAtUtc.HasValue
+            ? (request.OccurredAtUtc.Value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(request.OccurredAtUtc.Value, DateTimeKind.Utc)
+                : request.OccurredAtUtc.Value.ToUniversalTime())
+            : DateTime.UtcNow;
+
+        message.Headers.TryAddWithoutValidation("ce-specversion", "1.0");
+        message.Headers.TryAddWithoutValidation("ce-id", request.MessageId.ToString());
+        message.Headers.TryAddWithoutValidation(
+            "ce-source",
+            $"urn:swapmid:topic:{Uri.EscapeDataString(request.TopicName)}");
+        message.Headers.TryAddWithoutValidation("ce-type", BuildCloudEventType(request.Subject));
+        message.Headers.TryAddWithoutValidation("ce-subject", SanitizeHeaderAscii(request.Subject));
+        message.Headers.TryAddWithoutValidation("ce-time", occurredAt.ToString("O"));
+    }
+
+    internal static string BuildCloudEventType(string subject)
+    {
+        if (string.IsNullOrWhiteSpace(subject))
+        {
+            return "io.swapmid.message";
+        }
+
+        var prefix = subject;
+        var colonIndex = prefix.IndexOf(':');
+        if (colonIndex > 0)
+        {
+            prefix = prefix[..colonIndex];
+        }
+
+        var builder = new StringBuilder(prefix.Length);
+        foreach (var ch in prefix.Trim())
+        {
+            if (char.IsAsciiLetterOrDigit(ch) || ch is '.' or '_' or '-')
+            {
+                builder.Append(char.ToLowerInvariant(ch));
+            }
+            else if (builder.Length > 0 && builder[^1] != '.')
+            {
+                builder.Append('.');
+            }
+        }
+
+        var normalized = builder.ToString().Trim('.');
+        return string.IsNullOrEmpty(normalized)
+            ? "io.swapmid.message"
+            : $"io.swapmid.{normalized}";
+    }
+
+    private static string SanitizeHeaderAscii(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        var hasNonPrintableAscii = false;
+        foreach (var ch in value)
+        {
+            if (ch < 0x20 || ch > 0x7E)
+            {
+                hasNonPrintableAscii = true;
+                break;
+            }
+        }
+
+        return hasNonPrintableAscii ? Uri.EscapeDataString(value) : value;
     }
 }

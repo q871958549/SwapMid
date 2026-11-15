@@ -1,3 +1,5 @@
+using SwapMid.SharedKernel.IntegrationEvents;
+
 namespace SwapMid.MessageBus;
 
 /// <summary>
@@ -5,6 +7,6 @@ namespace SwapMid.MessageBus;
 /// </summary>
 public static class MessageBusTopics
 {
-    public const string IntegrationPipelineEvents = "integration.pipeline.events";
+    public const string IntegrationPipelineEvents = IntegrationTopicNames.PipelineEvents;
     public const string SystemAlerts = "system.alerts";
 }

@@ -182,7 +182,8 @@ public class MessageDeliveryService : IMessageDeliveryService, ITransientDepende
             TopicName = topic.Name,
             Subject = record.Subject,
             Payload = record.Payload,
-            SubscriptionName = subscription.Name
+            SubscriptionName = subscription.Name,
+            OccurredAtUtc = record.CreationTime,
         }, cancellationToken);
 
         if (response.Succeeded)
@@ -233,19 +234,10 @@ public class MessageDeliveryService : IMessageDeliveryService, ITransientDepende
             .FirstOrDefault(e => !string.IsNullOrWhiteSpace(e));
 
     private static bool MatchesFilter(MessageSubscription subscription, MessageRecord record)
-    {
-        if (string.IsNullOrWhiteSpace(subscription.FilterRule))
-        {
-            return true;
-        }
-
-        return Contains(record.Subject, subscription.FilterRule) || Contains(record.Payload, subscription.FilterRule);
-    }
-
-    private static bool Contains(string value, string filter)
-    {
-        return value.Contains(filter, StringComparison.OrdinalIgnoreCase);
-    }
+        => MessageSubscriptionFilterEvaluator.IsMatch(
+            subscription.FilterRule,
+            record.Subject,
+            record.Payload);
 
     private static string BuildErrorMessage(MessageSubscription subscription, int attempt, int maxAttempts, string? errorMessage)
     {

@@ -17,9 +17,10 @@
 - **流式数据集成与幂等目标回执（Target Receipt v1）**
   - 内置 **PostgreSQL**、**SQL Server**、**MySQL**、**REST API** 与 **CSV / Excel** 多源连接器。
   - 全链路分批流式读取与字段映射转换，避免大表全量驻留内存；配合目标库事务级幂等回执表 **`__swapmid_etl_receipt_v1`**，确保跨库重跑零重复写入。
-- **可靠消息总线与多通道投递**
-  - 支持主题（Topic）/ 订阅（Subscription）解耦路由、持久化投递明细（Outbox / Delivery Attempt）、指数退避自动重试与一键人工重放。
-  - 原生支持 **HTTP Webhook**（`HMAC-SHA256` `X-SwapMid-Signature` 签名 + 出站 SSRF 防护）、**RabbitMQ** 以及通用 **BotWebhook**（Generic JSON / Slack / 飞书 / 钉钉 / 企业微信群机器人格式）。
+- **可靠消息总线、CloudEvents 1.0 与跨引擎事务 Outbox**
+  - 内置跨引擎事务性 Outbox 桥接（`DataIntegration` -> `MessageBus`）：ETL 管道进入终态时自动在同事务内入队并幂等发布 `pipeline.execution.*` 事件至 `integration.pipeline.events`。
+  - 支持主题（Topic）/ 订阅（Subscription）结构化过滤（兼容纯子串、`subject:<通配符>`、`$.jsonPath=value` 及 `;` 多条件与组合）、持久化投递明细、指数退避自动重试与一键人工重放。
+  - 原生支持 **HTTP Webhook**（CNCF **CloudEvents v1.0** 标准 `ce-*` 头 + `HMAC-SHA256` `X-SwapMid-Signature` 签名 + 出站 SSRF 防护）、**RabbitMQ** 以及通用 **BotWebhook**（Generic JSON / Slack / 飞书 / 钉钉 / 企业微信群机器人格式）。
 - **API 网关管理与第三方凭证授权**
   - 动态 API 分组与网关转发（`/api/gateway/{**path}`，默认通过 `ApiGateway:Enabled=false` 安全默认关闭）、交互式在线调试台，以及基于 **OpenIddict** `client_credentials` 模式（`external-integration` 作用域）的第三方应用授权管理。
 - **零浏览器令牌暴露的 BFF 安全架构**
@@ -143,8 +144,9 @@ pnpm build
 
 ---
 
-## 贡献与安全披露
+## 演进路线图、贡献与安全披露
 
+- 长期架构演进路线图（`v0.2.0` -> `v1.0.0 LTS`）请参阅 **[docs/roadmap.md](docs/roadmap.md)** · **[CHANGELOG.md](CHANGELOG.md)**
 - 贡献流程与代码规范请参阅 **[CONTRIBUTING.md](CONTRIBUTING.md)**
 - 安全漏洞私密披露流程请参阅 **[SECURITY.md](SECURITY.md)**
 

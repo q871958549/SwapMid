@@ -508,6 +508,10 @@ public class SwapMidHttpApiHostModule : AbpModule
         {
             Configure<AbpBackgroundJobOptions>(options => options.IsJobExecutionEnabled = false);
         }
+        else
+        {
+            context.Services.AddHostedService<TransactionalOutboxRelayHostedService>();
+        }
 
         Configure<AbpHangfireOptions>(options =>
         {

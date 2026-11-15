@@ -114,7 +114,7 @@ async function main() {
   assert.equal(replayResult.processedRows, 12)
   console.log(`  ✓ Synced 12 orders & verified idempotent replay (runId=${runId})`)
 
-  step('4/7 Engine 2 (MessageBus): Publishing event to integration.pipeline.events -> RabbitMQ delivery')
+  step('4/7 Engine 2 (MessageBus): Verifying automatic ETL->MessageBus Outbox bridge & manual publish -> RabbitMQ')
   const topics = await apiJson('/api/v1/message-topics', { token })
   const demoTopic = topics.items?.find((t) => t.name === 'integration.pipeline.events')
   assert.ok(demoTopic, 'Seeded topic integration.pipeline.events not found')
@@ -122,6 +122,25 @@ async function main() {
   const subs = await apiJson(`/api/v1/message-subscriptions?topicId=${demoTopic.id}`, { token })
   const demoSub = subs.items?.find((s) => s.name === 'demo-pipeline-events-rmq')
   assert.ok(demoSub?.isEnabled, 'Seeded RabbitMQ subscription demo-pipeline-events-rmq not found or disabled')
+
+  let autoBridgeRecord = null
+  for (let i = 0; i < 25; i++) {
+    const recordList = await apiJson(
+      `/api/v1/message-records?topicId=${demoTopic.id}&maxResultCount=20`,
+      { token },
+    )
+    autoBridgeRecord = recordList.items?.find(
+      (r) => r.subject === 'pipeline.execution.succeeded' && String(r.payload ?? '').includes(runId),
+    )
+    if (autoBridgeRecord?.status === 1) break
+    await sleep(1_000)
+  }
+  assert.equal(
+    autoBridgeRecord?.status,
+    1,
+    `Expected automatic ETL->MessageBus Outbox record for runId=${runId} to reach status=1 (Delivered), got ${JSON.stringify(autoBridgeRecord)}`,
+  )
+  console.log(`  ✓ Verified automatic ETL->Outbox->MessageBus->RabbitMQ bridge (${autoBridgeRecord.id})`)
 
   const published = await apiJson('/api/v1/message-records/publish', {
     method: 'POST',

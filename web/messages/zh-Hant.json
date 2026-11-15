@@ -1011,7 +1011,7 @@
       "endpointFieldLabel": "端點 URL *",
       "webhookPlaceholder": "https://hooks.example.com/services/...",
       "endpointPlaceholder": "https://service/callback",
-      "filterRulePlaceholder": "可選，消息過濾表達式",
+      "filterRulePlaceholder": "可選，支持子串、subject:pipeline.* 或 $.status=Succeeded",
       "secretFieldLabel": "HMAC 簽名密鑰",
       "secretPlaceholderConfigured": "已配置，留空保持不變",
       "secretPlaceholderEmpty": "可選，配了則投遞帶簽名頭供驗真",

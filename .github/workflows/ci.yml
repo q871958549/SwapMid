@@ -15,9 +15,23 @@ concurrency:
 
 jobs:
   backend:
-    name: Backend (.NET 10)
+    name: Backend (.NET 10 + PostgreSQL 18 Contracts)
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: SwapMidCiOnly_2026!
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,7 +47,10 @@ jobs:
       - name: Build (warnings as errors)
         run: dotnet build SwapMid.slnx --no-restore -c Release --nologo
 
-      - name: Run test suites
+      - name: Run unit, architecture & PostgreSQL 18 contract test suites
+        env:
+          SWAPMID_POSTGRES_TEST_CONNECTION: Host=127.0.0.1;Port=5432;Database=postgres;Username=postgres;Password=SwapMidCiOnly_2026!
+          SWAPMID_RUN_POSTGRES_CONTRACT_TESTS: '1'
         run: dotnet test SwapMid.slnx --no-build -c Release --nologo --verbosity normal
 
   frontend:

@@ -1011,7 +1011,7 @@
       "endpointFieldLabel": "Endpoint URL *",
       "webhookPlaceholder": "https://hooks.example.com/services/...",
       "endpointPlaceholder": "https://service/callback",
-      "filterRulePlaceholder": "Optional, message filter expression",
+      "filterRulePlaceholder": "Optional: substring, subject:pipeline.*, or $.status=Succeeded",
       "secretFieldLabel": "HMAC Signing Secret",
       "secretPlaceholderConfigured": "Configured. Leave blank to keep unchanged",
       "secretPlaceholderEmpty": "Optional. If set, deliveries carry a signature header for verification",

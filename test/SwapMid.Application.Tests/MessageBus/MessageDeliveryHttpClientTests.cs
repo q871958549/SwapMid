@@ -43,6 +43,12 @@ public class MessageDeliveryHttpClientTests
         captured.Header("X-SwapMid-Topic").ShouldBe(request.TopicName);
         captured.Header("X-SwapMid-Signature").ShouldBe(
             WebhookSignature.Compute(request.Secret!, captured.Body));
+        captured.Header("ce-specversion").ShouldBe("1.0");
+        captured.Header("ce-id").ShouldBe(request.MessageId.ToString());
+        captured.Header("ce-source").ShouldBe("urn:swapmid:topic:order.lifecycle");
+        captured.Header("ce-type").ShouldBe("io.swapmid.order.shipped");
+        captured.Header("ce-subject").ShouldBe(request.Subject);
+        captured.Header("ce-time").ShouldBe("2026-04-15T08:30:00.0000000Z");
         captured.ContainsCredential.ShouldBeTrue();
         using var body = JsonDocument.Parse(captured.Body);
         body.RootElement.GetProperty("topicName").GetString().ShouldBe(request.TopicName);
@@ -149,6 +155,7 @@ public class MessageDeliveryHttpClientTests
         Subject = "order.shipped:ORD-001",
         Payload = "{\"orderCode\":\"ORD-001\"}",
         SubscriptionName = "测试订阅",
+        OccurredAtUtc = new DateTime(2026, 4, 15, 8, 30, 0, DateTimeKind.Utc),
     };
 
     private static MessageDeliveryRequest CreateBotWebhookRequest()

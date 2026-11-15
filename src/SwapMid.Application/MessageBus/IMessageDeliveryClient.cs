@@ -23,6 +23,7 @@ public class MessageDeliveryRequest
     public string Subject { get; init; } = null!;
     public string Payload { get; init; } = null!;
     public string SubscriptionName { get; init; } = null!;
+    public DateTime? OccurredAtUtc { get; init; }
 }
 
 public class MessageDeliveryResponse

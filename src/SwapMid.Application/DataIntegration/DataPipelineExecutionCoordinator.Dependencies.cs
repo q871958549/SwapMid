@@ -26,6 +26,7 @@ public sealed partial class DataPipelineExecutionCoordinator
     private readonly ICurrentTenant _currentTenant;
     private readonly EtlExecutionOptions _options;
     private readonly ILogger<DataPipelineExecutionCoordinator> _logger;
+    private readonly IPipelineTerminalEventScheduler? _terminalEventScheduler;
 
     public DataPipelineExecutionCoordinator(
         IDataPipelineRepository pipelineRepository,
@@ -41,7 +42,8 @@ public sealed partial class DataPipelineExecutionCoordinator
         IUnitOfWorkManager unitOfWorkManager,
         ICurrentTenant currentTenant,
         IOptions<EtlExecutionOptions> options,
-        ILogger<DataPipelineExecutionCoordinator> logger)
+        ILogger<DataPipelineExecutionCoordinator> logger,
+        IPipelineTerminalEventScheduler? terminalEventScheduler = null)
     {
         _pipelineRepository = pipelineRepository;
         _sourceRepository = sourceRepository;
@@ -57,5 +59,6 @@ public sealed partial class DataPipelineExecutionCoordinator
         _currentTenant = currentTenant;
         _options = options.Value;
         _logger = logger;
+        _terminalEventScheduler = terminalEventScheduler;
     }
 }

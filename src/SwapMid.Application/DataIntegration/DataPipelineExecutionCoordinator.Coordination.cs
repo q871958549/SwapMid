@@ -240,6 +240,13 @@ public sealed partial class DataPipelineExecutionCoordinator
                 outcomeUnknown);
         }
 
+        if (transitionRequired && _terminalEventScheduler != null)
+        {
+            await _terminalEventScheduler.ScheduleTerminalEventAsync(
+                execution,
+                failure);
+        }
+
         await CompleteUnitOfWorkAsync(unitOfWork, "terminal_state");
         return execution;
     }

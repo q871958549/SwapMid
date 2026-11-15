@@ -149,7 +149,8 @@
     "Account.permission.draftStale": "A permission draft was found, but the saved grants have changed since then. Discard the stale draft and reconfigure to avoid overwriting concurrent updates.",
     "Account.permission.draftUnavailable": "Browser draft storage is unavailable. Save your changes before switching tabs or leaving.",
     "Account.permission.restoreDraft": "Restore draft",
-    "Account.permission.discardDraft": "Discard draft"
+    "Account.permission.discardDraft": "Discard draft",
+    "MessageBus.subscription.filterRulePlaceholder": "Optional: substring, subject:pipeline.*, or $.status=Succeeded"
   },
   "traditionalOverrides": {
     "Account.user.batchRemoveDoneTitle": "批次移除角色完成",

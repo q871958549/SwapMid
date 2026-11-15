@@ -82,6 +82,8 @@ public class SwapMidApplicationModule : AbpModule
 
         services.AddTransient<
             DataIntegration.PipelineFailureNotificationJob>();
+        services.AddTransient<
+            DataIntegration.PipelineTerminalEventDispatchJob>();
         services
             .AddOptions<DataIntegration.EtlExecutionOptions>()
             .Bind(configuration.GetSection(

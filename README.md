@@ -17,9 +17,10 @@ English | **[简体中文](README.zh-CN.md)**
 - **Streaming Data Integration & Idempotent Receipt v1**
   - Multi-source connectors across **PostgreSQL**, **SQL Server**, **MySQL**, **REST APIs**, and **CSV / Excel** files.
   - Batch streaming execution without full-table memory buffering, paired with transactional **Target Receipt v1** (`__swapmid_etl_receipt_v1`) to guarantee idempotent target writes.
-- **Durable Message Bus & Multi-Channel Dispatch**
-  - Topic/subscription routing with persistent delivery attempt tracking, automatic backoff retries, and one-click manual replay.
-  - Built-in **HTTP Webhook** (`HMAC-SHA256` `X-SwapMid-Signature` + outbound SSRF guard), **RabbitMQ**, and **BotWebhook** (Generic JSON, Slack, Feishu/Lark, DingTalk, WeCom) channels.
+- **Durable Message Bus, CloudEvents 1.0 & Cross-Engine Outbox**
+  - Automatic transactional Outbox bridge (`DataIntegration` -> `MessageBus`) emits idempotent `pipeline.execution.*` events onto `integration.pipeline.events` whenever a pipeline run finishes.
+  - Topic/subscription routing with structured filtering (`subject:<glob>`, `$.jsonPath=value`, `;`-joined `AND`), persistent delivery attempts, exponential backoff retries, and manual dead-letter replay.
+  - Built-in **HTTP Webhook** (CNCF **CloudEvents v1.0** `ce-*` headers + `HMAC-SHA256` `X-SwapMid-Signature` + outbound SSRF guard), **RabbitMQ**, and **BotWebhook** (Generic JSON, Slack, Feishu/Lark, DingTalk, WeCom) channels.
 - **Governed API Gateway & Client Credentials**
   - Dynamic API groups and route forwarding (`/api/gateway/{**path}`, fail-closed by default via `ApiGateway:Enabled=false`), interactive request debugger, and **OpenIddict** `client_credentials` apps (`external-integration` scope) for external partners.
 - **Zero-Browser-Token BFF Console**
@@ -143,8 +144,9 @@ pnpm build
 
 ---
 
-## Contributing & Security
+## Roadmap, Contributing & Security
 
+- Architecture & long-term roadmap (`v0.2.0` -> `v1.0.0 LTS`): **[docs/roadmap.md](docs/roadmap.md)** · **[CHANGELOG.md](CHANGELOG.md)**
 - Contribution workflow and coding standards: **[CONTRIBUTING.md](CONTRIBUTING.md)**
 - Vulnerability disclosure policy: **[SECURITY.md](SECURITY.md)**
 

@@ -29,6 +29,7 @@
         "Nav.items.api.groups",
         "Nav.items.api.routes",
         "Nav.items.api.testConsole",
+        "Nav.items.data.cdc",
         "Nav.items.data.executions",
         "Nav.items.data.pipelines",
         "Nav.items.data.sources",

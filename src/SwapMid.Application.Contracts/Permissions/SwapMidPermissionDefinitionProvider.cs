@@ -144,9 +144,19 @@ public class SwapMidPermissionDefinitionProvider : PermissionDefinitionProvider
         pipelineExecutionsPermission.AddChild(SwapMidPermissions.DataIntegration.PipelineExecutions.RecoverRunning, L("Permission:RecoverRunning"), multiTenancySide: MultiTenancySides.Host);
         pipelineExecutionsPermission.AddChild(SwapMidPermissions.DataIntegration.PipelineExecutions.VerifyTargetReceipt, L("Permission:VerifyTargetReceipt"), multiTenancySide: MultiTenancySides.Host);
 
+        var cdcStreamsPermission = dataIntegrationGroup.AddPermission(
+            SwapMidPermissions.DataIntegration.CdcStreams.Default,
+            L("Permission:DataIntegration:CdcStreams"),
+            multiTenancySide: MultiTenancySides.Host);
+        cdcStreamsPermission.AddChild(SwapMidPermissions.DataIntegration.CdcStreams.Create, L("Permission:Create"), multiTenancySide: MultiTenancySides.Host);
+        cdcStreamsPermission.AddChild(SwapMidPermissions.DataIntegration.CdcStreams.Update, L("Permission:Update"), multiTenancySide: MultiTenancySides.Host);
+        cdcStreamsPermission.AddChild(SwapMidPermissions.DataIntegration.CdcStreams.Delete, L("Permission:Delete"), multiTenancySide: MultiTenancySides.Host);
+        cdcStreamsPermission.AddChild(SwapMidPermissions.DataIntegration.CdcStreams.Manage, L("Permission:Manage"), multiTenancySide: MultiTenancySides.Host);
+
         AddDataIo(dataSourcesPermission, MultiTenancySides.Host);
         AddDataIo(dataPipelinesPermission, MultiTenancySides.Host);
         AddDataIo(pipelineExecutionsPermission, MultiTenancySides.Host);
+        AddDataIo(cdcStreamsPermission, MultiTenancySides.Host);
     }
 
     private static void DefineApiManagement(IPermissionDefinitionContext context, string prefix)

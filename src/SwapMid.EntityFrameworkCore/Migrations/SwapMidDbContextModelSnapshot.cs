@@ -182,6 +182,136 @@ namespace SwapMid.Migrations
                     b.ToTable("AppApiRoutes", (string)null);
                 });
 
+            modelBuilder.Entity("SwapMid.DataIntegration.CdcStreamDefinition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("AutoCreatePublicationAndSlot")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("CheckpointLsn")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastCapturedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<long>("LastCapturedCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("LastErrorCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("LastErrorMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<int>("MaxBatchSize")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MonitoredTables")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("PollIntervalSeconds")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PublicationName")
+                        .IsRequired()
+                        .HasMaxLength(63)
+                        .HasColumnType("character varying(63)");
+
+                    b.Property<string>("SlotName")
+                        .IsRequired()
+                        .HasMaxLength(63)
+                        .HasColumnType("character varying(63)");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TargetMode")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("TargetPipelineId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TargetTopicName")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("TotalCapturedCount")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("SourceId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("TargetPipelineId");
+
+                    b.ToTable("AppCdcStreams", (string)null);
+                });
+
             modelBuilder.Entity("SwapMid.DataIntegration.DataPipeline", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3506,6 +3636,20 @@ namespace SwapMid.Migrations
                     b.HasOne("SwapMid.ApiManagement.ApiGroup", null)
                         .WithMany()
                         .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("SwapMid.DataIntegration.CdcStreamDefinition", b =>
+                {
+                    b.HasOne("SwapMid.DataIntegration.DataSource", null)
+                        .WithMany()
+                        .HasForeignKey("SourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SwapMid.DataIntegration.DataPipeline", null)
+                        .WithMany()
+                        .HasForeignKey("TargetPipelineId")
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 

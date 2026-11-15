@@ -12,6 +12,7 @@ namespace SwapMid.SharedKernel.IntegrationEvents;
 public static class IntegrationTopicNames
 {
     public const string PipelineEvents = "integration.pipeline.events";
+    public const string CdcEvents = "integration.cdc.events";
 }
 
 /// <summary>

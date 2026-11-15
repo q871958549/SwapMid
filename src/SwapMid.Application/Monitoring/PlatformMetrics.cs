@@ -88,6 +88,24 @@ public static partial class PlatformMetrics
             Buckets = Histogram.ExponentialBuckets(0.005, 2, 12),
         });
 
+    public static readonly Counter CdcEventsCapturedTotal = Metrics.CreateCounter(
+        "swapmid_cdc_events_captured_total",
+        "PostgreSQL CDC（pgoutput）成功捕获的变更事件数（固定低基数标签 operation=insert/update/delete）",
+        new CounterConfiguration { LabelNames = ["operation"] });
+
+    public static readonly Counter CdcCapturesTotal = Metrics.CreateCounter(
+        "swapmid_cdc_captures_total",
+        "PostgreSQL CDC 单次增量捕获执行计数（固定低基数标签 result=succeeded/failed）",
+        new CounterConfiguration { LabelNames = ["result"] });
+
+    public static readonly Histogram CdcCaptureDuration = Metrics.CreateHistogram(
+        "swapmid_cdc_capture_duration_seconds",
+        "PostgreSQL CDC 单次有界捕获耗时（秒）",
+        new HistogramConfiguration
+        {
+            Buckets = Histogram.ExponentialBuckets(0.01, 2, 10),
+        });
+
     private static readonly string[] EtlExecutionAdmissionOutcomes =
     [
         "acquired", "busy", "idempotent_replay", "coordination_failure",
@@ -124,6 +142,8 @@ public static partial class PlatformMetrics
             EtlExecutionAdmissionTotal,
             EtlExecutionCoordinationEventsTotal,
             EtlExecutionResultsTotal);
+        PublishSingleLabelSeries(CdcEventsCapturedTotal, ["insert", "update", "delete"]);
+        PublishSingleLabelSeries(CdcCapturesTotal, ["succeeded", "failed"]);
     }
 
     internal static void PublishEtlExecutionSeries(

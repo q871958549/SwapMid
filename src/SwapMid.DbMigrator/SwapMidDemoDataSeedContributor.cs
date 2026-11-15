@@ -191,6 +191,33 @@ public sealed class SwapMidDemoDataSeedContributor : IDataSeedContributor, ITran
                 routingKey: "pipeline.events");
             await _messageSubscriptionRepository.InsertAsync(subscription, autoSave: true);
         }
+
+        var cdcTopic = await _messageTopicRepository.FirstOrDefaultAsync(
+            x => x.Name == MessageBusTopics.IntegrationCdcEvents);
+        if (cdcTopic == null)
+        {
+            cdcTopic = new MessageTopic(
+                _guidGenerator.Create(),
+                MessageBusTopics.IntegrationCdcEvents,
+                TopicType.Broadcast,
+                description: "PostgreSQL 逻辑复制（pgoutput）CDC 变更事件流：实时捕获表级 INSERT/UPDATE/DELETE 变更与 LSN 检查点，推送至 CloudEvents 下游订阅。");
+            await _messageTopicRepository.InsertAsync(cdcTopic, autoSave: true);
+        }
+
+        const string demoCdcSubName = "demo-cdc-events-rmq";
+        if (!await _messageSubscriptionRepository.AnyAsync(
+                x => x.TopicId == cdcTopic.Id && x.Name == demoCdcSubName))
+        {
+            var cdcSub = new MessageSubscription(
+                _guidGenerator.Create(),
+                cdcTopic.Id,
+                demoCdcSubName,
+                DeliveryType.RabbitMq,
+                endpointUrl: null,
+                exchangeName: "swapmid.demo.cdc",
+                routingKey: "cdc.events");
+            await _messageSubscriptionRepository.InsertAsync(cdcSub, autoSave: true);
+        }
     }
 
     private async Task SeedLocalPostgreSqlEtlDemoAsync()

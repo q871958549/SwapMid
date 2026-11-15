@@ -4,6 +4,16 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-11-16
+
+### Added
+- **Lightweight PostgreSQL Logical Replication (`pgoutput`) CDC (`DataIntegration` / `MessageBus` / `web/`)**:
+  - Added `CdcStreamDefinition` (`AppCdcStreams` EF migration `AddCdcStreams`), `CdcStreamStatus` (`Draft` / `Active` / `Paused` / `Error`), `CdcTargetMode` (`MessageBusTopic` / `DataPipeline`), and host-only RBAC permissions `SwapMid.DataIntegration.CdcStreams.*` (`GET/POST/PUT/DELETE/preflight/activate/pause/capture/checkpoint` on `/api/v1/cdc-streams`).
+  - Implemented zero-dependency `pgoutput` logical replication reader & WAL capture engine (`PgOutputWalStreamReader`, `PgOutputCdcCaptureService`, `CdcStreamCaptureCoordinator`) using `Npgsql 10` `LogicalReplicationConnection`, strict PostgreSQL identifier & LSN validation (`CdcProtocolHelpers`), per-stream distributed lock exclusivity, and post-delivery `ConfirmedFlushLsn` checkpoint advancement.
+  - Wired downstream delivery to either seeded Message Bus topic `integration.cdc.events` (`IIntegrationEventPublisher` CloudEvents v1.0, plus demo RabbitMQ subscription `demo-cdc-events-rmq`) or triggered downstream `DataPipeline` runs, paired with Hangfire recurring capture scheduling (`HangfireCdcScheduleSynchronizer`, `RunScheduledCdcCaptureHangfireJob`).
+  - Added Prometheus CDC telemetry (`swapmid_cdc_events_captured_total`, `swapmid_cdc_captures_total`, `swapmid_cdc_capture_duration_seconds`) and `HealthCheckCatalog` evaluation (`PostgreSQL CDC 捕获失败率`).
+  - Built `/data-integration/cdc` management console (`ListPageShell`, `FilterBar`, `CdcFormDialog`, `CdcPreflightDialog`, `CdcCheckpointDialog`, lifecycle activation/pause/capture-now actions, and trilingual `zh-Hans`, `zh-Hant`, `en` localization) plus turnkey recipe [`examples/postgres-pgoutput-cdc/`](./examples/postgres-pgoutput-cdc/).
+
 ## [1.2.1] - 2026-11-15
 
 ### Added

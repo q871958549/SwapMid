@@ -165,5 +165,39 @@ public static class DataIntegrationEntityTypeConfigurations
                         targetCoordinationIdentityHashCheck + ")");
                 });
         });
+
+        builder.Entity<CdcStreamDefinition>(b =>
+        {
+            b.ToTable(
+                SwapMidConsts.DbTablePrefix + "CdcStreams",
+                SwapMidConsts.DbSchema);
+            b.ConfigureByConvention();
+            b.Property(x => x.Name).IsRequired().HasMaxLength(CdcStreamConsts.MaxNameLength);
+            b.Property(x => x.Description).HasMaxLength(CdcStreamConsts.MaxDescriptionLength);
+            b.Property(x => x.PublicationName).IsRequired().HasMaxLength(CdcStreamConsts.MaxPostgresIdentifierLength);
+            b.Property(x => x.SlotName).IsRequired().HasMaxLength(CdcStreamConsts.MaxPostgresIdentifierLength);
+            b.Property(x => x.MonitoredTables).HasMaxLength(CdcStreamConsts.MaxMonitoredTablesLength);
+            b.Property(x => x.TargetTopicName).HasMaxLength(CdcStreamConsts.MaxTargetTopicNameLength);
+            b.Property(x => x.CheckpointLsn).HasMaxLength(CdcStreamConsts.MaxCheckpointLsnLength);
+            b.Property(x => x.LastErrorCode).HasMaxLength(CdcStreamConsts.MaxErrorCodeLength);
+            b.Property(x => x.LastErrorMessage).HasMaxLength(CdcStreamConsts.MaxErrorMessageLength);
+            b.Property(x => x.TargetMode).HasConversion<int>();
+            b.Property(x => x.Status).HasConversion<int>();
+            b.HasIndex(x => x.Name).IsUnique();
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => x.SourceId);
+
+            b.HasOne<DataSource>()
+                .WithMany()
+                .HasForeignKey(x => x.SourceId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired();
+
+            b.HasOne<DataPipeline>()
+                .WithMany()
+                .HasForeignKey(x => x.TargetPipelineId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+        });
     }
 }

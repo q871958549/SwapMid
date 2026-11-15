@@ -207,6 +207,12 @@
       "traditionalSourceHash": "e6d9c491941fe27785093722",
       "traditionalHash": "8edc68b421e781b1db40a71a"
     },
+    "Permission:DataIntegration:CdcStreams": {
+      "sourceHash": "26058c08d0232eb460ca41d4",
+      "englishHash": "c371ff0ae5167c2061b0979a",
+      "traditionalSourceHash": "d6b01dc39f74e8a7c264e65a",
+      "traditionalHash": "853a800fe681ca28cf7fa396"
+    },
     "Permission:Group:ApiManagement": {
       "sourceHash": "b6c4aa0b2594951c84770589",
       "englishHash": "c30ce1af7a4e154be919aed2",
@@ -311,19 +317,19 @@
     },
     "SwapMid:ACC:001": {
       "sourceHash": "f4692dd2af1308870998fe0f",
-      "englishHash": "3e1fb37dd5fec14021b7282b",
+      "englishHash": "ad33f421912d48fb92128c34",
       "traditionalSourceHash": "f052dcc31944734d2a0c7f19",
       "traditionalHash": "8c3224135f10e371aa031ac7"
     },
     "SwapMid:ACC:002": {
       "sourceHash": "45899e70688cd01968d4380c",
-      "englishHash": "fe69aa8781844bd6bf0cdc78",
+      "englishHash": "b83c68c128b22a8dfd0f92cf",
       "traditionalSourceHash": "7f15c8a737b081a259dc9240",
       "traditionalHash": "443acce608c7d00cfe52980a"
     },
     "SwapMid:ACC:003": {
       "sourceHash": "354618749c5d5a1cb1c764fd",
-      "englishHash": "9427e287e1e625d47e140d89",
+      "englishHash": "69d058f1c691a0e4b746ff8d",
       "traditionalSourceHash": "4ba79c12515c06e389b0fe5d",
       "traditionalHash": "bfc0aaa76983be955554ce38"
     },
@@ -531,6 +537,42 @@
       "traditionalSourceHash": "b7adab821f96fbf11738f9ee",
       "traditionalHash": "0f23e351623400541512afc6"
     },
+    "SwapMid:ETL:030": {
+      "sourceHash": "b0b2df7c672e13d786ee949a",
+      "englishHash": "1380ad8012c23f62180787b0",
+      "traditionalSourceHash": "c819ef72ad1a0c35f4d547fa",
+      "traditionalHash": "b1b710faebf185f48cce5899"
+    },
+    "SwapMid:ETL:031": {
+      "sourceHash": "97c98e03c6f483033545706d",
+      "englishHash": "86601c5f438b37d2c0d0bdb6",
+      "traditionalSourceHash": "d5d3ca120d36e4296b6f946e",
+      "traditionalHash": "47ebeec2abd1bad74880c593"
+    },
+    "SwapMid:ETL:032": {
+      "sourceHash": "4ec795b2cd85e65074d74355",
+      "englishHash": "d32bfa2e9d53078f92258d92",
+      "traditionalSourceHash": "3db9f3ca21341147f28250c6",
+      "traditionalHash": "b6446f6f3de64ca9329844c8"
+    },
+    "SwapMid:ETL:033": {
+      "sourceHash": "7c04d5f3e45119515dce635c",
+      "englishHash": "827bb3d5d976f0ad4cc3900a",
+      "traditionalSourceHash": "69c13242a0de22be237673c8",
+      "traditionalHash": "661f6d39077b7e35a0abd49f"
+    },
+    "SwapMid:ETL:034": {
+      "sourceHash": "307178c2922b518c2119d461",
+      "englishHash": "8763a83f94c6a2d320231793",
+      "traditionalSourceHash": "294eb74b57c8f6e8b3ecdb96",
+      "traditionalHash": "f8dd818903dc19f70fa2c417"
+    },
+    "SwapMid:ETL:035": {
+      "sourceHash": "0cacb0ea9dcb74d963346309",
+      "englishHash": "0a923f22e243c425fe0bd91e",
+      "traditionalSourceHash": "2941731b50f4552839edf42b",
+      "traditionalHash": "29add20fa6d5f59349370aee"
+    },
     "SwapMid:ENT:001": {
       "sourceHash": "04e0279cd91c2bb0bb034ce5",
       "englishHash": "e06a8fd935e1c3abb74d7f43",
@@ -665,7 +707,7 @@
     },
     "SwapMid:System:DataDictionaryItemReorderMismatch": {
       "sourceHash": "587cbea2338621e9faa63f26",
-      "englishHash": "49bd677e335973db9be81dc8",
+      "englishHash": "a60e19b9e294a5d29eb3cd2c",
       "traditionalSourceHash": "7d2827ecb9d7bb361faf634f",
       "traditionalHash": "a9780f975c15b505a37de208"
     },

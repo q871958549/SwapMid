@@ -52,6 +52,12 @@ public static class SwapMidDomainErrorCodes
         public const string PipelineExecutionReceiptInconclusive = "SwapMid:ETL:027";
         public const string PipelineExecutionReceiptVerificationRequired = "SwapMid:ETL:028";
         public const string PipelineScheduleCronInvalid = "SwapMid:ETL:029";
+        public const string CdcStreamNotFound = "SwapMid:ETL:030";
+        public const string CdcStreamNameAlreadyExists = "SwapMid:ETL:031";
+        public const string CdcStreamConfigInvalid = "SwapMid:ETL:032";
+        public const string CdcStreamNotActive = "SwapMid:ETL:033";
+        public const string CdcStreamCaptureBusy = "SwapMid:ETL:034";
+        public const string CdcReplicationPreconditionFailed = "SwapMid:ETL:035";
     }
 
     public static class EnterpriseManagement

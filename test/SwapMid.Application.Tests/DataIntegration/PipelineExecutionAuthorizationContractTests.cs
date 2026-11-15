@@ -46,6 +46,15 @@ public class PipelineExecutionAuthorizationContractTests
                 SwapMidPermissions.ExportSuffix,
             SwapMidPermissions.DataIntegration.PipelineExecutions.Default +
                 SwapMidPermissions.ImportSuffix,
+            SwapMidPermissions.DataIntegration.CdcStreams.Default,
+            SwapMidPermissions.DataIntegration.CdcStreams.Create,
+            SwapMidPermissions.DataIntegration.CdcStreams.Update,
+            SwapMidPermissions.DataIntegration.CdcStreams.Delete,
+            SwapMidPermissions.DataIntegration.CdcStreams.Manage,
+            SwapMidPermissions.DataIntegration.CdcStreams.Default +
+                SwapMidPermissions.ExportSuffix,
+            SwapMidPermissions.DataIntegration.CdcStreams.Default +
+                SwapMidPermissions.ImportSuffix,
         };
 
         var definitions = context

@@ -1,4 +1,4 @@
-import { Database, GitBranch, History } from 'lucide-react'
+import { Activity, Database, GitBranch, History } from 'lucide-react'
 import type { NavGroup } from '../nav-types'
 
 export const dataGroup: NavGroup = {
@@ -27,6 +27,13 @@ export const dataGroup: NavGroup = {
       href: '/data-integration/executions',
       icon: History,
       permission: 'SwapMid.DataIntegration.PipelineExecutions',
+    },
+    {
+      title: 'PostgreSQL CDC',
+      titleKey: 'items.data.cdc',
+      href: '/data-integration/cdc',
+      icon: Activity,
+      permission: 'SwapMid.DataIntegration.CdcStreams',
     },
   ],
 }

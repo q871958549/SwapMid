@@ -71,6 +71,7 @@ public class DataIntegrationAuthorizationReflectionTests
             nameof(DataPipelineAppService) => typeof(DataPipelineAppService),
             nameof(PipelineExecutionAppService) => typeof(PipelineExecutionAppService),
             nameof(DataPipelineSchemaPreflightAppService) => typeof(DataPipelineSchemaPreflightAppService),
+            nameof(CdcStreamAppService) => typeof(CdcStreamAppService),
             _ => throw new InvalidOperationException($"未登记运行时服务类型：{className}"),
         };
 
@@ -113,6 +114,16 @@ public class DataIntegrationAuthorizationReflectionTests
                 Permissions.SwapMidPermissions.DataIntegration.PipelineExecutions.RecoverRunning,
             "SwapMidPermissions.DataIntegration.PipelineExecutions.VerifyTargetReceipt" =>
                 Permissions.SwapMidPermissions.DataIntegration.PipelineExecutions.VerifyTargetReceipt,
+            "SwapMidPermissions.DataIntegration.CdcStreams.Default" =>
+                Permissions.SwapMidPermissions.DataIntegration.CdcStreams.Default,
+            "SwapMidPermissions.DataIntegration.CdcStreams.Create" =>
+                Permissions.SwapMidPermissions.DataIntegration.CdcStreams.Create,
+            "SwapMidPermissions.DataIntegration.CdcStreams.Update" =>
+                Permissions.SwapMidPermissions.DataIntegration.CdcStreams.Update,
+            "SwapMidPermissions.DataIntegration.CdcStreams.Delete" =>
+                Permissions.SwapMidPermissions.DataIntegration.CdcStreams.Delete,
+            "SwapMidPermissions.DataIntegration.CdcStreams.Manage" =>
+                Permissions.SwapMidPermissions.DataIntegration.CdcStreams.Manage,
             _ => throw new InvalidOperationException($"未登记运行时权限：{sourcePermission}"),
         };
 }

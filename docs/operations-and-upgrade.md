@@ -115,3 +115,15 @@ GRAFANA_ADMIN_PASSWORD="ChangeMe_Grafana!2026" \
 - **Prometheus** (`:19090`): Scrapes `api:8080/metrics` and evaluates `docker/observability/prometheus/alert-rules.yml`.
 - **Alertmanager** (`:19093`): Routes firing/resolved alerts back into SwapMid's `/api/v1/notification/webhooks/alertmanager`, dispatching multi-channel notifications (SMTP Email / Slack / Feishu / DingTalk / WeCom).
 - **Grafana** (`:13300`): Auto-provisions the **SwapMid — Three Integration Engines Overview** dashboard (`docker/observability/grafana/dashboards/swapmid-overview.json`).
+
+## 6. PostgreSQL Logical Replication (`pgoutput`) CDC Operations (`v1.3.0+`)
+
+1. **PostgreSQL Server Configuration**:
+   - Enable `wal_level = logical`, `max_replication_slots >= 4`, and `max_wal_senders >= 4` (restart PostgreSQL when changing `wal_level`).
+   - Grant `REPLICATION` (or DBA-precreated Publication + Slot ownership) and `SELECT` on monitored tables to the SwapMid DataSource user.
+2. **Pre-flight & Least-Privilege Provisioning**:
+   - Use **Pre-flight** (`/data-integration/cdc` or `POST /api/v1/cdc-streams/{id}/preflight`) to verify `wal_level = logical`, Publication/Slot existence, and current WAL position before activation.
+   - Disable `autoCreatePublicationAndSlot` in locked-down environments after DBA pre-creation (`CREATE PUBLICATION ... FOR TABLE ...` and `SELECT pg_create_logical_replication_slot(..., 'pgoutput')`).
+3. **Replication Slot Retention & Disk Monitoring**:
+   - Monitor PostgreSQL inactive replication slots (`SELECT slot_name, active, confirmed_flush_lsn, pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)) AS retained_wal FROM pg_replication_slots;`) alongside Prometheus metric `swapmid_cdc_captures_total` and System Health item **PostgreSQL CDC 捕获失败率**.
+   - Always **Pause** or **Delete** retired CDC streams and drop unused PostgreSQL replication slots so retained WAL cannot exhaust disk space.

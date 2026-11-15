@@ -25,3 +25,20 @@ export type PipelineExecutionDto = Omit<
 export type PipelineSchemaPreflightResultDto = import('../generated').SwapMidDataIntegrationPipelineSchemaPreflightResultDto
 export type PreflightSchemaIssueDto = import('../generated').SwapMidDataIntegrationPreflightSchemaIssueDto
 export type PreflightColumnDto = import('../generated').SwapMidDataIntegrationPreflightColumnDto
+export type CdcStreamStatus = import('../generated').SwapMidDataIntegrationCdcStreamStatus
+export type CdcTargetMode = import('../generated').SwapMidDataIntegrationCdcTargetMode
+export type CdcPreflightResultDto = import('../generated').SwapMidDataIntegrationCdcPreflightResultDto
+export type CdcCaptureResultDto = import('../generated').SwapMidDataIntegrationCdcCaptureResultDto
+export type CdcStreamDto = Omit<
+  Require<
+    import('../generated').SwapMidDataIntegrationCdcStreamDto,
+    'id' | 'sourceId' | 'autoCreatePublicationAndSlot' | 'pollIntervalSeconds'
+    | 'maxBatchSize' | 'targetMode' | 'status' | 'lastCapturedCount'
+    | 'totalCapturedCount' | 'creationTime'
+  >,
+  'name' | 'publicationName' | 'slotName'
+> & {
+  name: string
+  publicationName: string
+  slotName: string
+}

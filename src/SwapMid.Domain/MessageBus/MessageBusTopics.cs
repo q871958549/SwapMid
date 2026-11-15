@@ -8,5 +8,6 @@ namespace SwapMid.MessageBus;
 public static class MessageBusTopics
 {
     public const string IntegrationPipelineEvents = IntegrationTopicNames.PipelineEvents;
+    public const string IntegrationCdcEvents = IntegrationTopicNames.CdcEvents;
     public const string SystemAlerts = "system.alerts";
 }

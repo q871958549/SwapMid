@@ -142,6 +142,20 @@ public static class HealthCheckCatalog
             Impact = "源端与目标库之间的数据同步可能滞后或需要人工回执核验。",
             WarningSuggestion = SuggestWatch,
             CriticalSuggestion = "请前往「数据集成 → 执行记录」查看失败原因或执行目标回执核验。"
+        },
+        new()
+        {
+            Name = "PostgreSQL CDC 捕获失败率",
+            Kind = HealthCheckKind.FailureRatio,
+            PromQl = "(sum(increase(swapmid_cdc_captures_total{result!=\"succeeded\"}[1h])) or vector(0)) / sum(increase(swapmid_cdc_captures_total[1h]))",
+            WarnThreshold = 0.1,
+            CriticalThreshold = 0.3,
+            HealthyConclusion = "近 1 小时 PostgreSQL 逻辑复制（pgoutput）捕获全部正常。",
+            WarningConclusion = "部分 CDC 捕获轮次异常（异常占比 {value}）。",
+            CriticalConclusion = "CDC 逻辑复制捕获频繁失败（异常占比 {value}）。",
+            Impact = "上游库表实时增量变更可能产生延迟或 WAL 复制槽堆积。",
+            WarningSuggestion = SuggestWatch,
+            CriticalSuggestion = "请前往「数据集成 → CDC 实时流」执行复制槽预检或检查异常原因。"
         }
     };
 }

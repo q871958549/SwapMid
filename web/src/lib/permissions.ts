@@ -57,6 +57,11 @@ export const Permissions = {
     PipelineExecutions: 'SwapMid.DataIntegration.PipelineExecutions',
     PipelineExecutionsResolveOutcome: 'SwapMid.DataIntegration.PipelineExecutions.ResolveOutcome',
     PipelineExecutionsVerifyTargetReceipt: 'SwapMid.DataIntegration.PipelineExecutions.VerifyTargetReceipt',
+    CdcStreams: 'SwapMid.DataIntegration.CdcStreams',
+    CdcStreamsCreate: 'SwapMid.DataIntegration.CdcStreams.Create',
+    CdcStreamsUpdate: 'SwapMid.DataIntegration.CdcStreams.Update',
+    CdcStreamsDelete: 'SwapMid.DataIntegration.CdcStreams.Delete',
+    CdcStreamsManage: 'SwapMid.DataIntegration.CdcStreams.Manage',
   },
   MessageBus: {
     Topics: 'SwapMid.MessageBus.Topics',

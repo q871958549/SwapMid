@@ -28,6 +28,11 @@ public class MessageBusDataSeedContributor : IDataSeedContributor, ITransientDep
             "数据管道生命周期事件：ETL 管道触发、完成、失败与对账恢复事件流，可订阅转发至下游系统或机器人 Webhook。");
 
         await EnsureTopicAsync(
+            MessageBusTopics.IntegrationCdcEvents,
+            TopicType.Broadcast,
+            "PostgreSQL 逻辑复制（pgoutput）CDC 变更事件流：实时捕获表级 INSERT/UPDATE/DELETE 变更与 LSN 检查点，推送至 CloudEvents 下游订阅。");
+
+        await EnsureTopicAsync(
             MessageBusTopics.SystemAlerts,
             TopicType.Broadcast,
             "平台运行告警事件：定时任务异常、投递耗尽与外部探针告警统一事件主题。");

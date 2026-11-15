@@ -39,8 +39,9 @@ public sealed class PipelineExecutionDurableIndexContractTests
             migrationsAssembly.ModelSnapshot!.Model,
             "SwapMidDbContextModelSnapshot");
 
-        var initialMigrationId = dbContext.Database.GetMigrations().SingleOrDefault();
-        initialMigrationId.ShouldNotBeNull();
+        var migrations = dbContext.Database.GetMigrations().ToList();
+        migrations.ShouldNotBeEmpty();
+        var initialMigrationId = migrations.First();
         var upScript = dbContext.GetService<IMigrator>().GenerateScript(null, initialMigrationId);
         upScript.ShouldContain($"CREATE INDEX \"{IndexName}\"");
         upScript.ShouldContain(
@@ -50,6 +51,13 @@ public sealed class PipelineExecutionDurableIndexContractTests
             "INSERT INTO \"__EFMigrationsHistory\"");
         upScript.ShouldContain(
             $"VALUES ('{initialMigrationId}'");
+
+        if (migrations.Count > 1)
+        {
+            var latestScript = dbContext.GetService<IMigrator>().GenerateScript(null, migrations[^1]);
+            latestScript.ShouldContain($"CREATE INDEX \"{IndexName}\"");
+            latestScript.ShouldNotContain($"DROP INDEX IF EXISTS \"{IndexName}\"");
+        }
     }
 
     [Fact]

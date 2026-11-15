@@ -7,7 +7,7 @@ export const API_MODULES: ApiModule[] = [
   {
     "id": "data-integration",
     "title": "数据集成",
-    "description": "多源关系型/REST/文件连接管理、流式 ETL 管道、Cron 调度、目标回执对账与执行恢复。",
+    "description": "多源关系型/REST/文件连接管理、流式 ETL 管道、PostgreSQL 逻辑复制 CDC、Cron 调度、目标回执对账与执行恢复。",
     "baseUrl": "/api/v1",
     "sections": [
       {
@@ -1335,7 +1335,7 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/data-pipelines/{id}/activate",
-            "summary": "activate",
+            "summary": "激活",
             "summaryDocumented": false,
             "queryParams": [
               {
@@ -1598,7 +1598,7 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/data-pipelines/{id}/pause",
-            "summary": "pause",
+            "summary": "暂停",
             "summaryDocumented": false,
             "queryParams": [
               {
@@ -3210,6 +3210,1419 @@ export const API_MODULES: ApiModule[] = [
                 "type": "DateTime",
                 "description": "创建时间",
                 "nullable": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "CdcStream",
+        "title": "PostgreSQL CDC 实时流 /cdc-streams",
+        "endpoints": [
+          {
+            "method": "GET",
+            "path": "/api/v1/cdc-streams",
+            "summary": "分页查询 PostgreSQL CDC 实时流定义列表",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "filter",
+                "cnName": "",
+                "type": "string",
+                "required": false,
+                "description": "关键字过滤（按名称/编码模糊搜索）"
+              },
+              {
+                "name": "sourceId",
+                "cnName": "",
+                "type": "Guid",
+                "required": false,
+                "description": ""
+              },
+              {
+                "name": "status",
+                "cnName": "",
+                "type": "CdcStreamStatus",
+                "required": false,
+                "description": "状态；取值：0=Draft；1=Active；2=Paused；3=Error"
+              },
+              {
+                "name": "sorting",
+                "cnName": "",
+                "type": "string",
+                "required": false,
+                "description": "排序表达式，如 creationTime desc、name asc"
+              },
+              {
+                "name": "skipCount",
+                "cnName": "",
+                "type": "integer",
+                "required": false,
+                "description": "跳过条数（分页偏移），默认 0"
+              },
+              {
+                "name": "maxResultCount",
+                "cnName": "",
+                "type": "integer",
+                "required": false,
+                "description": "每页条数，默认 10、最大 1000"
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "description": "唯一标识",
+                "nullable": false
+              },
+              {
+                "name": "name",
+                "cnName": "",
+                "type": "string",
+                "description": "名称",
+                "nullable": true
+              },
+              {
+                "name": "description",
+                "cnName": "",
+                "type": "string",
+                "description": "描述",
+                "nullable": true
+              },
+              {
+                "name": "sourceId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "sourceName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "publicationName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "slotName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "monitoredTables",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "autoCreatePublicationAndSlot",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "pollIntervalSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "maxBatchSize",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "targetMode",
+                "cnName": "",
+                "type": "CdcTargetMode",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline",
+                "nullable": false
+              },
+              {
+                "name": "targetTopicName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetPipelineId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetPipelineName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "status",
+                "cnName": "",
+                "type": "CdcStreamStatus",
+                "description": "状态；取值：0=Draft；1=Active；2=Paused；3=Error",
+                "nullable": false
+              },
+              {
+                "name": "checkpointLsn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lastCapturedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lastCapturedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "totalCapturedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "lastErrorCode",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lastErrorMessage",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "creationTime",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "创建时间",
+                "nullable": false
+              },
+              {
+                "name": "creatorId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "创建人 ID",
+                "nullable": true
+              },
+              {
+                "name": "lastModificationTime",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "最后修改时间",
+                "nullable": true
+              },
+              {
+                "name": "lastModifierId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "最后修改人 ID",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/cdc-streams",
+            "summary": "新建 PostgreSQL CDC 实时流定义",
+            "summaryDocumented": true,
+            "requestBody": [
+              {
+                "name": "name",
+                "cnName": "",
+                "type": "string",
+                "description": "名称",
+                "required": true
+              },
+              {
+                "name": "description",
+                "cnName": "",
+                "type": "string",
+                "description": "描述",
+                "required": false
+              },
+              {
+                "name": "sourceId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "publicationName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "slotName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "monitoredTables",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "autoCreatePublicationAndSlot",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "pollIntervalSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "maxBatchSize",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "targetMode",
+                "cnName": "",
+                "type": "CdcTargetMode",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline",
+                "required": false
+              },
+              {
+                "name": "targetTopicName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "targetPipelineId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "required": false
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "description": "唯一标识",
+                "nullable": false
+              },
+              {
+                "name": "name",
+                "cnName": "",
+                "type": "string",
+                "description": "名称",
+                "nullable": true
+              },
+              {
+                "name": "description",
+                "cnName": "",
+                "type": "string",
+                "description": "描述",
+                "nullable": true
+              },
+              {
+                "name": "sourceId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "sourceName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "publicationName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "slotName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "monitoredTables",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "autoCreatePublicationAndSlot",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "pollIntervalSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "maxBatchSize",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "targetMode",
+                "cnName": "",
+                "type": "CdcTargetMode",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline",
+                "nullable": false
+              },
+              {
+                "name": "targetTopicName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetPipelineId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetPipelineName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "status",
+                "cnName": "",
+                "type": "CdcStreamStatus",
+                "description": "状态；取值：0=Draft；1=Active；2=Paused；3=Error",
+                "nullable": false
+              },
+              {
+                "name": "checkpointLsn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lastCapturedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lastCapturedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "totalCapturedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "lastErrorCode",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lastErrorMessage",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "creationTime",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "创建时间",
+                "nullable": false
+              },
+              {
+                "name": "creatorId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "创建人 ID",
+                "nullable": true
+              },
+              {
+                "name": "lastModificationTime",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "最后修改时间",
+                "nullable": true
+              },
+              {
+                "name": "lastModifierId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "最后修改人 ID",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/cdc-streams/{id}",
+            "summary": "获取单个 PostgreSQL CDC 实时流详情",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "description": "唯一标识",
+                "nullable": false
+              },
+              {
+                "name": "name",
+                "cnName": "",
+                "type": "string",
+                "description": "名称",
+                "nullable": true
+              },
+              {
+                "name": "description",
+                "cnName": "",
+                "type": "string",
+                "description": "描述",
+                "nullable": true
+              },
+              {
+                "name": "sourceId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "sourceName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "publicationName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "slotName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "monitoredTables",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "autoCreatePublicationAndSlot",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "pollIntervalSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "maxBatchSize",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "targetMode",
+                "cnName": "",
+                "type": "CdcTargetMode",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline",
+                "nullable": false
+              },
+              {
+                "name": "targetTopicName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetPipelineId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetPipelineName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "status",
+                "cnName": "",
+                "type": "CdcStreamStatus",
+                "description": "状态；取值：0=Draft；1=Active；2=Paused；3=Error",
+                "nullable": false
+              },
+              {
+                "name": "checkpointLsn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lastCapturedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lastCapturedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "totalCapturedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "lastErrorCode",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lastErrorMessage",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "creationTime",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "创建时间",
+                "nullable": false
+              },
+              {
+                "name": "creatorId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "创建人 ID",
+                "nullable": true
+              },
+              {
+                "name": "lastModificationTime",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "最后修改时间",
+                "nullable": true
+              },
+              {
+                "name": "lastModifierId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "最后修改人 ID",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "PUT",
+            "path": "/api/v1/cdc-streams/{id}",
+            "summary": "更新 PostgreSQL CDC 实时流配置",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "requestBody": [
+              {
+                "name": "name",
+                "cnName": "",
+                "type": "string",
+                "description": "名称",
+                "required": true
+              },
+              {
+                "name": "description",
+                "cnName": "",
+                "type": "string",
+                "description": "描述",
+                "required": false
+              },
+              {
+                "name": "sourceId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "publicationName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "slotName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "monitoredTables",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "autoCreatePublicationAndSlot",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "pollIntervalSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "maxBatchSize",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "targetMode",
+                "cnName": "",
+                "type": "CdcTargetMode",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline",
+                "required": false
+              },
+              {
+                "name": "targetTopicName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "targetPipelineId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "required": false
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "description": "唯一标识",
+                "nullable": false
+              },
+              {
+                "name": "name",
+                "cnName": "",
+                "type": "string",
+                "description": "名称",
+                "nullable": true
+              },
+              {
+                "name": "description",
+                "cnName": "",
+                "type": "string",
+                "description": "描述",
+                "nullable": true
+              },
+              {
+                "name": "sourceId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "sourceName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "publicationName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "slotName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "monitoredTables",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "autoCreatePublicationAndSlot",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "pollIntervalSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "maxBatchSize",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "targetMode",
+                "cnName": "",
+                "type": "CdcTargetMode",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline",
+                "nullable": false
+              },
+              {
+                "name": "targetTopicName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetPipelineId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetPipelineName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "status",
+                "cnName": "",
+                "type": "CdcStreamStatus",
+                "description": "状态；取值：0=Draft；1=Active；2=Paused；3=Error",
+                "nullable": false
+              },
+              {
+                "name": "checkpointLsn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lastCapturedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lastCapturedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "totalCapturedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "lastErrorCode",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lastErrorMessage",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "creationTime",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "创建时间",
+                "nullable": false
+              },
+              {
+                "name": "creatorId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "创建人 ID",
+                "nullable": true
+              },
+              {
+                "name": "lastModificationTime",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "最后修改时间",
+                "nullable": true
+              },
+              {
+                "name": "lastModifierId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "最后修改人 ID",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "DELETE",
+            "path": "/api/v1/cdc-streams/{id}",
+            "summary": "删除 PostgreSQL CDC 实时流定义",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ]
+          },
+          {
+            "method": "PUT",
+            "path": "/api/v1/cdc-streams/{id}/activate",
+            "summary": "激活 CDC 实时流并注册 Hangfire 轮询捕获作业",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/cdc-streams/{id}/capture",
+            "summary": "手动立即捕获一批 WAL 变更并投递到下游目标",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "previousCheckpointLsn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "newCheckpointLsn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "capturedEventCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "deliveredCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "capturedAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "message",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "PUT",
+            "path": "/api/v1/cdc-streams/{id}/checkpoint",
+            "summary": "重置或清空 CDC 流的逻辑复制位点（LSN）",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "requestBody": [
+              {
+                "name": "checkpointLsn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "description": "唯一标识",
+                "nullable": false
+              },
+              {
+                "name": "name",
+                "cnName": "",
+                "type": "string",
+                "description": "名称",
+                "nullable": true
+              },
+              {
+                "name": "description",
+                "cnName": "",
+                "type": "string",
+                "description": "描述",
+                "nullable": true
+              },
+              {
+                "name": "sourceId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "sourceName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "publicationName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "slotName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "monitoredTables",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "autoCreatePublicationAndSlot",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "pollIntervalSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "maxBatchSize",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "targetMode",
+                "cnName": "",
+                "type": "CdcTargetMode",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline",
+                "nullable": false
+              },
+              {
+                "name": "targetTopicName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetPipelineId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetPipelineName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "status",
+                "cnName": "",
+                "type": "CdcStreamStatus",
+                "description": "状态；取值：0=Draft；1=Active；2=Paused；3=Error",
+                "nullable": false
+              },
+              {
+                "name": "checkpointLsn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lastCapturedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lastCapturedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "totalCapturedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "lastErrorCode",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lastErrorMessage",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "creationTime",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "创建时间",
+                "nullable": false
+              },
+              {
+                "name": "creatorId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "创建人 ID",
+                "nullable": true
+              },
+              {
+                "name": "lastModificationTime",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "最后修改时间",
+                "nullable": true
+              },
+              {
+                "name": "lastModifierId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "最后修改人 ID",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "PUT",
+            "path": "/api/v1/cdc-streams/{id}/pause",
+            "summary": "暂停 CDC 实时流并移除调度轮询作业",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/cdc-streams/{id}/preflight",
+            "summary": "执行 PostgreSQL 逻辑复制前置预检（wal_level、Publication 与 Replication Slot）",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "isReady",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "walLevel",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "postgreSqlVersion",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "publicationExists",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "slotExists",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "slotActive",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "slotPlugin",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "confirmedFlushLsn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "currentWalLsn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "diagnostics",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "summary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
               }
             ]
           }

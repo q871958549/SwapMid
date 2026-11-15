@@ -1,0 +1,232 @@
+import type { ReactNode } from 'react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { NextIntlClientProvider } from 'next-intl'
+import zhHansMessages from '../../../../../messages/zh-Hans.json'
+import type { CdcStreamDto } from '@/lib/api/types'
+import { CdcStreamsClient } from './client'
+
+type ActionColumn = {
+  id?: string
+  cell?: (context: { row: { original: CdcStreamDto } }) => ReactNode
+}
+
+const STREAM_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+const SOURCE_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+
+const mocks = vi.hoisted(() => ({
+  fetch: vi.fn(),
+  reloadAndRefresh: vi.fn(),
+  toast: vi.fn(),
+  openEdit: vi.fn(),
+  openCreate: vi.fn(),
+  askDelete: vi.fn(),
+}))
+
+vi.mock('@/components/ui/use-toast', () => ({ toast: mocks.toast }))
+vi.mock('@/lib/crud/use-crud-resource', () => ({
+  useCrudResource: ({ initial }: { initial: { items: CdcStreamDto[]; totalCount: number } }) => ({
+    rows: initial.items,
+    total: initial.totalCount,
+    reload: vi.fn(),
+    reloadAndRefresh: mocks.reloadAndRefresh,
+    tableProps: {},
+  }),
+}))
+vi.mock('@/lib/crud/use-crud-form', () => ({
+  useCrudForm: () => ({
+    form: {
+      name: '',
+      description: '',
+      sourceId: SOURCE_ID,
+      publicationName: 'swapmid_cdc_pub',
+      slotName: 'swapmid_cdc_slot',
+      monitoredTables: 'public.orders',
+      autoCreatePublicationAndSlot: true,
+      pollIntervalSeconds: '15',
+      maxBatchSize: '500',
+      targetMode: '0',
+      targetTopicName: 'integration.cdc.events',
+      targetPipelineId: '',
+    },
+    openEdit: mocks.openEdit,
+    openCreate: mocks.openCreate,
+    askDelete: mocks.askDelete,
+    set: vi.fn(),
+  }),
+}))
+vi.mock('@/components/data-table/column-factories', () => ({
+  actionsColumn: ({ extraItems }: { extraItems?: (row: CdcStreamDto) => ReactNode }) => ({
+    id: 'actions',
+    cell: ({ row }: { row: { original: CdcStreamDto } }) => extraItems?.(row.original),
+  }),
+  primaryColumn: (key: string) => ({ id: key }),
+  numberColumn: (key: string) => ({ id: key }),
+}))
+vi.mock('@/components/data-table/data-table', () => ({
+  DataTable: ({ columns, data }: { columns: ActionColumn[]; data: CdcStreamDto[] }) => {
+    const actions = columns.find(column => column.id === 'actions')
+    return <>{data.map(row => <div key={row.id}>{actions?.cell?.({ row: { original: row } })}</div>)}</>
+  },
+}))
+vi.mock('@/components/data-table/data-table-column-header', () => ({
+  DataTableColumnHeader: ({ title }: { title: string }) => <span>{title}</span>,
+}))
+vi.mock('@/components/data-table/page-header', () => ({
+  PageHeader: ({ title, primaryAction }: { title: string; primaryAction?: ReactNode }) => (
+    <div>
+      <h1>{title}</h1>
+      {primaryAction}
+    </div>
+  ),
+}))
+vi.mock('@/components/data-table/filter-bar', () => ({
+  FilterBar: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+}))
+vi.mock('@/components/data-table/list-page-shell', () => ({
+  ListPageShell: ({ header, filters, table }: { header?: ReactNode; filters?: ReactNode; table?: ReactNode }) => (
+    <div>{header}{filters}{table}</div>
+  ),
+}))
+vi.mock('@/components/data-table/crud-form-dialog', () => ({
+  CrudFormDialog: () => null,
+}))
+vi.mock('@/components/data-table/delete-confirm', () => ({
+  DeleteConfirm: () => null,
+}))
+vi.mock('@/components/ui/dropdown-menu', () => ({
+  DropdownMenuItem: ({
+    children,
+    disabled,
+    onClick,
+  }: {
+    children: ReactNode
+    disabled?: boolean
+    onClick?: () => void
+  }) => (
+    <button type="button" disabled={disabled} onClick={onClick}>{children}</button>
+  ),
+}))
+
+function makeStream(overrides: Partial<CdcStreamDto> = {}): CdcStreamDto {
+  return {
+    id: STREAM_ID,
+    name: 'orders-pg-cdc',
+    sourceId: SOURCE_ID,
+    sourceName: 'Local Demo PostgreSQL',
+    publicationName: 'swapmid_orders_pub',
+    slotName: 'swapmid_orders_slot',
+    monitoredTables: 'public.etl_demo_source_orders',
+    autoCreatePublicationAndSlot: true,
+    pollIntervalSeconds: 15,
+    maxBatchSize: 500,
+    targetMode: 0,
+    targetTopicName: 'integration.cdc.events',
+    status: 0,
+    lastCapturedCount: 0,
+    totalCapturedCount: 0,
+    creationTime: '2026-11-16T00:00:00Z',
+    ...overrides,
+  }
+}
+
+function renderClient(stream: CdcStreamDto) {
+  return render(
+    <NextIntlClientProvider locale="zh-Hans" messages={zhHansMessages}>
+      <CdcStreamsClient
+        data={{ items: [stream], totalCount: 1 }}
+        sources={[{ id: SOURCE_ID, name: 'Local Demo PostgreSQL', type: 0, config: '{"provider":"PostgreSql"}' }]}
+        pipelines={[]}
+        topics={[{ id: 't1', name: 'integration.cdc.events' }]}
+        canCreate
+        canUpdate
+        canDelete
+        canManage
+      />
+    </NextIntlClientProvider>,
+  )
+}
+
+describe('CdcStreamsClient', () => {
+  beforeEach(() => {
+    mocks.fetch.mockReset()
+    mocks.reloadAndRefresh.mockReset()
+    mocks.toast.mockReset()
+    vi.stubGlobal('fetch', mocks.fetch)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('triggers preflight check and renders ready summary dialog', async () => {
+    mocks.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        isReady: true,
+        walLevel: 'logical',
+        postgreSqlVersion: '18.0',
+        publicationExists: true,
+        slotExists: true,
+        slotActive: false,
+        slotPlugin: 'pgoutput',
+        confirmedFlushLsn: '0/16B6C50',
+        currentWalLsn: '0/16B6D00',
+        diagnostics: [],
+        summary: 'Ready for logical replication',
+      }),
+    })
+
+    renderClient(makeStream({ status: 0 }))
+    fireEvent.click(screen.getByRole('button', { name: '前置预检' }))
+
+    await waitFor(() => {
+      expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/preflight`, { method: 'POST' })
+    })
+    expect(await screen.findByText('logical')).toBeTruthy()
+    expect(screen.getByText('0/16B6C50')).toBeTruthy()
+  })
+
+  it('activates a Draft stream and refreshes list', async () => {
+    mocks.fetch.mockResolvedValueOnce({ ok: true })
+    renderClient(makeStream({ status: 0 }))
+
+    const captureBtn = screen.getByRole('button', { name: '激活后可捕获' }) as HTMLButtonElement
+    expect(captureBtn.disabled).toBe(true)
+
+    fireEvent.click(screen.getByRole('button', { name: '激活' }))
+
+    await waitFor(() => {
+      expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/activate`, { method: 'PUT' })
+      expect(mocks.reloadAndRefresh).toHaveBeenCalledOnce()
+    })
+  })
+
+  it('captures WAL batch and pauses an Active stream', async () => {
+    mocks.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          capturedEventCount: 3,
+          deliveredCount: 1,
+          newCheckpointLsn: '0/16B7000',
+        }),
+      })
+      .mockResolvedValueOnce({ ok: true })
+
+    renderClient(makeStream({ status: 1 }))
+
+    fireEvent.click(screen.getByRole('button', { name: '立即捕获' }))
+    await waitFor(() => {
+      expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/capture`, { method: 'POST' })
+      expect(mocks.reloadAndRefresh).toHaveBeenCalledTimes(1)
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '暂停' }))
+    await waitFor(() => {
+      expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/pause`, { method: 'PUT' })
+      expect(mocks.reloadAndRefresh).toHaveBeenCalledTimes(2)
+    })
+  })
+})

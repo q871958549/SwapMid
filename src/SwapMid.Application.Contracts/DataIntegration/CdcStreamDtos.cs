@@ -1,0 +1,109 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using Volo.Abp.Application.Dtos;
+
+namespace SwapMid.DataIntegration;
+
+public class CdcStreamDto : FullAuditedEntityDto<Guid>
+{
+    public string Name { get; set; } = null!;
+    public string? Description { get; set; }
+    public Guid SourceId { get; set; }
+    public string? SourceName { get; set; }
+    public string PublicationName { get; set; } = null!;
+    public string SlotName { get; set; } = null!;
+    public string? MonitoredTables { get; set; }
+    public bool AutoCreatePublicationAndSlot { get; set; }
+    public int PollIntervalSeconds { get; set; }
+    public int MaxBatchSize { get; set; }
+    public CdcTargetMode TargetMode { get; set; }
+    public string? TargetTopicName { get; set; }
+    public Guid? TargetPipelineId { get; set; }
+    public string? TargetPipelineName { get; set; }
+    public CdcStreamStatus Status { get; set; }
+    public string? CheckpointLsn { get; set; }
+    public DateTime? LastCapturedAt { get; set; }
+    public long LastCapturedCount { get; set; }
+    public long TotalCapturedCount { get; set; }
+    public string? LastErrorCode { get; set; }
+    public string? LastErrorMessage { get; set; }
+}
+
+public class CdcStreamCreateUpdateDto
+{
+    [Required]
+    [StringLength(128)]
+    public string Name { get; set; } = null!;
+
+    [StringLength(512)]
+    public string? Description { get; set; }
+
+    [Required]
+    public Guid SourceId { get; set; }
+
+    [Required]
+    [StringLength(63)]
+    public string PublicationName { get; set; } = null!;
+
+    [Required]
+    [StringLength(63)]
+    public string SlotName { get; set; } = null!;
+
+    [StringLength(2048)]
+    public string? MonitoredTables { get; set; }
+
+    public bool AutoCreatePublicationAndSlot { get; set; } = true;
+
+    [Range(5, 3600)]
+    public int PollIntervalSeconds { get; set; } = 15;
+
+    [Range(1, 5000)]
+    public int MaxBatchSize { get; set; } = 500;
+
+    public CdcTargetMode TargetMode { get; set; } = CdcTargetMode.MessageBusTopic;
+
+    [StringLength(128)]
+    public string? TargetTopicName { get; set; }
+
+    public Guid? TargetPipelineId { get; set; }
+}
+
+public class GetCdcStreamListInput : PagedAndSortedResultRequestDto
+{
+    public string? Filter { get; set; }
+    public Guid? SourceId { get; set; }
+    public CdcStreamStatus? Status { get; set; }
+}
+
+public class CdcPreflightResultDto
+{
+    public bool IsReady { get; set; }
+    public string? WalLevel { get; set; }
+    public string? PostgreSqlVersion { get; set; }
+    public bool PublicationExists { get; set; }
+    public bool SlotExists { get; set; }
+    public bool SlotActive { get; set; }
+    public string? SlotPlugin { get; set; }
+    public string? ConfirmedFlushLsn { get; set; }
+    public string? CurrentWalLsn { get; set; }
+    public List<string> Diagnostics { get; set; } = new();
+    public string Summary { get; set; } = null!;
+}
+
+public class CdcCaptureResultDto
+{
+    public Guid StreamId { get; set; }
+    public string? PreviousCheckpointLsn { get; set; }
+    public string? NewCheckpointLsn { get; set; }
+    public long CapturedEventCount { get; set; }
+    public long DeliveredCount { get; set; }
+    public DateTime CapturedAtUtc { get; set; }
+    public string Message { get; set; } = null!;
+}
+
+public class CdcResetCheckpointInput
+{
+    [StringLength(32)]
+    public string? CheckpointLsn { get; set; }
+}

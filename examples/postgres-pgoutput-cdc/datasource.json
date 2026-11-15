@@ -1,0 +1,7 @@
+{
+  "name": "Local Demo PostgreSQL (Logical CDC)",
+  "type": 0,
+  "description": "PostgreSQL 18 source configured with wal_level=logical for pgoutput CDC",
+  "isEnabled": true,
+  "config": "{\"provider\":\"PostgreSql\",\"host\":\"postgres\",\"port\":5432,\"database\":\"swapmid\",\"targetResourceGroup\":\"demo-pg-primary\",\"username\":\"swapmid\",\"password\":\"<SET_PASSWORD>\",\"encrypt\":false,\"trustServerCertificate\":true}"
+}

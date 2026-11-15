@@ -87,6 +87,15 @@ public static class SwapMidPermissions
             public const string RecoverRunning = Default + ".RecoverRunning";
             public const string VerifyTargetReceipt = Default + ".VerifyTargetReceipt";
         }
+
+        public static class CdcStreams
+        {
+            public const string Default = GroupName + ".DataIntegration.CdcStreams";
+            public const string Create = Default + ".Create";
+            public const string Update = Default + ".Update";
+            public const string Delete = Default + ".Delete";
+            public const string Manage = Default + ".Manage";
+        }
     }
 
     public static class DeveloperDocs

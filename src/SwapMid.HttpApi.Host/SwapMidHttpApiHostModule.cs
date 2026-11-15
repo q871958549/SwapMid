@@ -880,6 +880,7 @@ public class SwapMidHttpApiHostModule : AbpModule
             }
 
             RefreshDataPipelineRecurringJobs(context, manager, recurringJobs, logger);
+            RefreshCdcRecurringJobs(context, manager, recurringJobs, logger);
         }
         catch (Exception ex)
         {
@@ -941,6 +942,57 @@ public class SwapMidHttpApiHostModule : AbpModule
         catch (Exception ex)
         {
             logger.LogWarning(ex, "启动时同步数据管道定时调度失败，跳过");
+        }
+    }
+
+    private static void RefreshCdcRecurringJobs(
+        ApplicationInitializationContext context,
+        IRecurringJobManager manager,
+        List<RecurringJobDto> recurringJobs,
+        ILogger logger)
+    {
+        try
+        {
+            using var scope = context.ServiceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            var uowManager = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
+            var cdcRepo = scope.ServiceProvider.GetRequiredService<ICdcStreamRepository>();
+            var synchronizer = scope.ServiceProvider.GetRequiredService<ICdcScheduleSynchronizer>();
+
+            List<CdcStreamDefinition> activeStreams;
+            using (var uow = uowManager.Begin(requiresNew: true, isTransactional: false))
+            {
+                activeStreams = cdcRepo.GetActiveAsync().GetAwaiter().GetResult();
+                uow.CompleteAsync().GetAwaiter().GetResult();
+            }
+
+            var expectedJobIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var stream in activeStreams)
+            {
+                try
+                {
+                    synchronizer.SyncAsync(stream.Id, stream.Status, stream.PollIntervalSeconds)
+                        .GetAwaiter().GetResult();
+                    expectedJobIds.Add(HangfireCdcScheduleSynchronizer.BuildRecurringJobId(stream.Id));
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "CDC 流后台轮询刷新失败 streamId={StreamId}", stream.Id);
+                }
+            }
+
+            foreach (var rj in recurringJobs)
+            {
+                if (rj.Id.StartsWith(HangfireCdcScheduleSynchronizer.JobIdPrefix, StringComparison.OrdinalIgnoreCase) &&
+                    !expectedJobIds.Contains(rj.Id))
+                {
+                    manager.RemoveIfExists(rj.Id);
+                    logger.LogInformation("已清理孤立 CDC 流定时轮询：{JobId}", rj.Id);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "启动时同步 CDC 流定时轮询失败，跳过");
         }
     }
 }

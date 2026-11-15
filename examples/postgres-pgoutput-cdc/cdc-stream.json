@@ -1,0 +1,13 @@
+{
+  "name": "orders-pg-cdc",
+  "description": "Capture INSERT/UPDATE/DELETE changes from public.etl_demo_source_orders into CloudEvents topic integration.cdc.events",
+  "sourceId": "<POSTGRES_DATASOURCE_ID>",
+  "publicationName": "swapmid_orders_pub",
+  "slotName": "swapmid_orders_slot",
+  "monitoredTables": "public.etl_demo_source_orders",
+  "autoCreatePublicationAndSlot": true,
+  "pollIntervalSeconds": 15,
+  "maxBatchSize": 500,
+  "targetMode": 0,
+  "targetTopicName": "integration.cdc.events"
+}

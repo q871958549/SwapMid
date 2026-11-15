@@ -14,6 +14,8 @@ public class DataIntegrationCrudAuthorizationContractTests
         "SwapMidPermissions.DataIntegration.DataPipelines";
     private const string PipelineExecutions =
         "SwapMidPermissions.DataIntegration.PipelineExecutions";
+    private const string CdcStreams =
+        "SwapMidPermissions.DataIntegration.CdcStreams";
 
     [Fact]
     public void AppService文件集合和全部public入口必须由契约精确封闭()
@@ -46,8 +48,8 @@ public class DataIntegrationCrudAuthorizationContractTests
             inspectedEntryCount += contract.Entries.Length;
         }
 
-        contracts.Length.ShouldBe(4);
-        inspectedEntryCount.ShouldBe(27);
+        contracts.Length.ShouldBe(5);
+        inspectedEntryCount.ShouldBe(37);
     }
 
     [Fact]
@@ -412,6 +414,23 @@ public class DataIntegrationCrudAuthorizationContractTests
                 [
                     new("GetCapabilitiesAsync()", DataPipelines + ".Default"),
                     new("PreflightSchemaAsync(PreflightPipelineSchemaInput,CancellationToken)", DataPipelines + ".Default"),
+                ],
+                []),
+            new(
+                "CdcStreamAppService.cs",
+                "CdcStreamAppService",
+                CdcStreams + ".Default",
+                [
+                    new("GetListAsync(GetCdcStreamListInput)", CdcStreams + ".Default"),
+                    new("GetAsync(Guid)", CdcStreams + ".Default"),
+                    Secured("CreateAsync(CdcStreamCreateUpdateDto)", CdcStreams + ".Create"),
+                    Secured("UpdateAsync(Guid,CdcStreamCreateUpdateDto)", CdcStreams + ".Update"),
+                    Secured("DeleteAsync(Guid)", CdcStreams + ".Delete"),
+                    Secured("PreflightAsync(Guid,CancellationToken)", CdcStreams + ".Manage"),
+                    Secured("ActivateAsync(Guid,CancellationToken)", CdcStreams + ".Manage"),
+                    Secured("PauseAsync(Guid)", CdcStreams + ".Manage"),
+                    Secured("CaptureNowAsync(Guid,CancellationToken)", CdcStreams + ".Manage"),
+                    Secured("ResetCheckpointAsync(Guid,CdcResetCheckpointInput)", CdcStreams + ".Manage"),
                 ],
                 []),
         ];

@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <PackageReference Include="Cronos" Version="0.9.0" />
+    <PackageReference Include="Confluent.Kafka" Version="2.16.0" />
     <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="MailKit" Version="4.17.0" /><!-- SMTP 通知渠道（MailKit ≥4.16.0 / MimeKit ≥4.15.1 安全基线） -->
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
@@ -23,6 +24,7 @@
     <PackageReference Include="MiniExcel" Version="1.45.0" /><!-- 开发者文档·数据库表字典 Excel 导出 -->
     <PackageReference Include="MySqlConnector" Version="2.6.1" />
     <PackageReference Include="Npgsql" Version="10.0.0" />
+    <PackageReference Include="Parquet.Net" Version="6.1.0" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
     <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.13" />
     <PackageReference Include="prometheus-net" Version="8.2.1" />

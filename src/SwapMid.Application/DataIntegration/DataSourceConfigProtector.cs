@@ -34,17 +34,32 @@ internal static class DataSourceConfigProtector
             return new DataSourceProtectedConfig(SafeEmptyConfig, HasSecret: true);
         }
 
-        if (type != DataSourceType.RelationalDatabase)
+        if (type == DataSourceType.RelationalDatabase)
         {
-            return new DataSourceProtectedConfig(
-                SafeEmptyConfig,
-                HasSecret: DataSourceConfigJson.HasMeaningfulContent(root));
+            return RelationalDataSourceConfigContract.SanitizeForRead(root);
         }
 
-        return RelationalDataSourceConfigContract.SanitizeForRead(root);
+        if (type == DataSourceType.ClickHouse)
+        {
+            return ClickHouseSinkConfigContract.SanitizeForRead(root);
+        }
+
+        if (type == DataSourceType.ObjectStorage)
+        {
+            return ObjectStorageSinkConfigContract.SanitizeForRead(root);
+        }
+
+        if (type == DataSourceType.Kafka)
+        {
+            return KafkaSinkConfigContract.SanitizeForRead(root);
+        }
+
+        return new DataSourceProtectedConfig(
+            SafeEmptyConfig,
+            HasSecret: DataSourceConfigJson.HasMeaningfulContent(root));
     }
 
-    /// <summary>校验并规范待创建配置；关系型只保存强类型字段和可选密码。</summary>
+    /// <summary>校验并规范待创建配置；强类型连接器仅保存规范化字段与凭据。</summary>
     internal static string NormalizeForWrite(DataSourceType type, string? config)
     {
         if (!Enum.IsDefined(type) ||
@@ -53,15 +68,21 @@ internal static class DataSourceConfigProtector
             throw new DataSourceConfigFormatException();
         }
 
-        var normalized = type == DataSourceType.RelationalDatabase
-            ? RelationalDataSourceConfigContract.ParseForWrite(root).ToJson(includePassword: true)
-            : root.ToJsonString();
+        var normalized = type switch
+        {
+            DataSourceType.RelationalDatabase =>
+                RelationalDataSourceConfigContract.ParseForWrite(root).ToJson(includePassword: true),
+            DataSourceType.ClickHouse => ClickHouseSinkConfigContract.NormalizeForWrite(root),
+            DataSourceType.ObjectStorage => ObjectStorageSinkConfigContract.NormalizeForWrite(root),
+            DataSourceType.Kafka => KafkaSinkConfigContract.NormalizeForWrite(root),
+            _ => root.ToJsonString(),
+        };
         return EnsureStorageLength(normalized);
     }
 
     /// <summary>
-    /// 合并更新配置。关系型仅在 provider/host/port/database/username/TLS 姿态全部
-    /// 规范化相等时恢复旧 password；REST/File 的旧非空配置必须由完整非空新对象整体替换。
+    /// 合并更新配置。强类型连接器仅在连接作用域未变化时沿用旧凭据；
+    /// REST/File 的旧非空配置必须由完整非空新对象整体替换。
     /// targetResourceGroup 是非秘密的执行隔离标识，不属于数据库凭据作用域。
     /// </summary>
     internal static string MergeForWrite(
@@ -74,6 +95,57 @@ internal static class DataSourceConfigProtector
             !DataSourceConfigJson.TryParseObject(proposedConfig, out var proposed))
         {
             throw new DataSourceConfigFormatException();
+        }
+
+        if (proposedType == DataSourceType.ClickHouse)
+        {
+            if (storedType != DataSourceType.ClickHouse || !DataSourceConfigJson.TryParseObject(storedConfig, out var storedCh))
+            {
+                return EnsureStorageLength(ClickHouseSinkConfigContract.NormalizeForWrite(proposed));
+            }
+
+            try
+            {
+                return EnsureStorageLength(ClickHouseSinkConfigContract.MergeForWrite(storedCh, proposed));
+            }
+            catch (DataSourceConfigFormatException)
+            {
+                return EnsureStorageLength(ClickHouseSinkConfigContract.NormalizeForWrite(proposed));
+            }
+        }
+
+        if (proposedType == DataSourceType.ObjectStorage)
+        {
+            if (storedType != DataSourceType.ObjectStorage || !DataSourceConfigJson.TryParseObject(storedConfig, out var storedObj))
+            {
+                return EnsureStorageLength(ObjectStorageSinkConfigContract.NormalizeForWrite(proposed));
+            }
+
+            try
+            {
+                return EnsureStorageLength(ObjectStorageSinkConfigContract.MergeForWrite(storedObj, proposed));
+            }
+            catch (DataSourceConfigFormatException)
+            {
+                return EnsureStorageLength(ObjectStorageSinkConfigContract.NormalizeForWrite(proposed));
+            }
+        }
+
+        if (proposedType == DataSourceType.Kafka)
+        {
+            if (storedType != DataSourceType.Kafka || !DataSourceConfigJson.TryParseObject(storedConfig, out var storedKafka))
+            {
+                return EnsureStorageLength(KafkaSinkConfigContract.NormalizeForWrite(proposed));
+            }
+
+            try
+            {
+                return EnsureStorageLength(KafkaSinkConfigContract.MergeForWrite(storedKafka, proposed));
+            }
+            catch (DataSourceConfigFormatException)
+            {
+                return EnsureStorageLength(KafkaSinkConfigContract.NormalizeForWrite(proposed));
+            }
         }
 
         if (proposedType != DataSourceType.RelationalDatabase)

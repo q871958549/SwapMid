@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Text.Json;
@@ -6,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shouldly;
@@ -28,11 +30,11 @@ public class DataPipelineSchemaPreflightTests
         var capabilities = await sut.GetCapabilitiesAsync();
 
         capabilities.Select(c => c.Provider).ShouldBe(
-            ["postgresql", "sqlserver", "mysql", "rest-api", "file"]);
+            ["postgresql", "sqlserver", "mysql", "rest-api", "file", "clickhouse", "s3-parquet", "kafka"]);
         capabilities.Where(c => c.SupportsTargetReceiptV1).Select(c => c.Provider).ShouldBe(
             ["postgresql", "sqlserver"]);
         capabilities.Where(c => c.SupportsTargetWrite).Select(c => c.Provider).ShouldBe(
-            ["postgresql", "sqlserver", "mysql"]);
+            ["postgresql", "sqlserver", "mysql", "clickhouse", "s3-parquet", "kafka"]);
     }
 
     [Fact]
@@ -222,10 +224,141 @@ public class DataPipelineSchemaPreflightTests
         codes.ShouldContain("SwapMid:ETL:MappedTargetMissing");
     }
 
+    [Fact]
+    public async Task Preflight与Runner_ClickHouse与ObjectStorage目标_支持结构自省及真实SQLite流式Parquet传输()
+    {
+        await using var sqlite = await SqliteSchemaPair.CreateAsync();
+        await sqlite.ExecuteSourceAsync("""
+            CREATE TABLE src_orders (
+                id INTEGER PRIMARY KEY,
+                customer_name TEXT NOT NULL,
+                total_amount NUMERIC
+            );
+            INSERT INTO src_orders (id, customer_name, total_amount) VALUES (1, 'Alice', 42.5), (2, 'Bob', 100.0);
+            """);
+
+        byte[]? uploadedParquet = null;
+        string? uploadedMethod = null;
+        string? uploadedPath = null;
+        var multiHandler = new RoutingHttpHandler(async request =>
+        {
+            if (request.RequestUri!.AbsolutePath.Contains("lake"))
+            {
+                uploadedMethod = request.Method.Method;
+                uploadedPath = request.RequestUri.AbsolutePath;
+                uploadedParquet = request.Content is not null
+                    ? await request.Content.ReadAsByteArrayAsync()
+                    : null;
+                return new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.OK);
+            }
+
+            return new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new System.Net.Http.StringContent("""
+                    {
+                      "data": [
+                        ["id", "Int64", 1, ""],
+                        ["customer", "String", 0, ""],
+                        ["amount", "Nullable(Decimal(18, 2))", 0, ""]
+                      ]
+                    }
+                    """, System.Text.Encoding.UTF8, "application/json"),
+            };
+        });
+
+        var probeConfig = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [SwapMid.Infrastructure.ExternalHttpConfigurationKeys.DataIntegrationSinkAllowedHosts] = "8.8.8.8",
+            })
+            .Build();
+        var httpFactory = new InlineHttpClientFactory(multiHandler);
+        var probeService = new DataIntegrationSinkProbeService(httpFactory, probeConfig);
+
+        var source = CreateRelationalSource("source");
+        var chTarget = new DataSource(
+            Guid.NewGuid(),
+            "ch-target",
+            DataSourceType.ClickHouse,
+            """{"host":"8.8.8.8","port":8123,"database":"analytics","username":"etl","targetResourceGroup":"rg-ch"}""");
+        var chService = CreateService(sqlite, source, chTarget, probeService);
+
+        var chPreflight = await chService.PreflightSchemaAsync(new PreflightPipelineSchemaInput
+        {
+            SourceId = source.Id,
+            TargetId = chTarget.Id,
+            TransformConfig = """
+                {
+                  "sourceQuery": "SELECT id, customer_name, total_amount FROM src_orders",
+                  "targetTable": "orders_fact",
+                  "mode": "append",
+                  "columnMappings": [
+                    { "sourceColumn": "id", "targetColumn": "id" },
+                    { "sourceColumn": "customer_name", "targetColumn": "customer" },
+                    { "sourceColumn": "total_amount", "targetColumn": "amount" }
+                  ]
+                }
+                """,
+        });
+
+        chPreflight.Compatible.ShouldBeTrue();
+        chPreflight.TargetProvider.ShouldBe("clickhouse");
+        chPreflight.TargetColumns.Select(c => c.Name).ShouldBe(new[] { "id", "customer", "amount" });
+
+        var s3Target = new DataSource(
+            Guid.NewGuid(),
+            "s3-target",
+            DataSourceType.ObjectStorage,
+            """{"provider":"minio","endpoint":"https://8.8.8.8:9000","region":"us-east-1","bucket":"lake","prefix":"ods","format":"parquet","accessKey":"AK","secretKey":"SK","targetResourceGroup":"rg-s3"}""");
+        var s3Service = CreateService(sqlite, source, s3Target, probeService);
+
+        var s3TransformJson = """
+            {
+              "sourceQuery": "SELECT id, customer_name FROM src_orders ORDER BY id",
+              "targetTable": "orders-v1",
+              "mode": "append",
+              "columnMappings": [
+                { "sourceColumn": "id", "targetColumn": "order_id" },
+                { "sourceColumn": "customer_name", "targetColumn": "buyer" }
+              ]
+            }
+            """;
+
+        var s3Preflight = await s3Service.PreflightSchemaAsync(new PreflightPipelineSchemaInput
+        {
+            SourceId = source.Id,
+            TargetId = s3Target.Id,
+            TransformConfig = s3TransformJson,
+        });
+
+        s3Preflight.Compatible.ShouldBeTrue();
+        s3Preflight.TargetProvider.ShouldBe("s3-parquet");
+        s3Preflight.TargetColumns.Select(c => c.Name).ShouldBe(new[] { "order_id", "buyer" });
+
+        var runner = new EtlPipelineRunner(
+            NullLogger<EtlPipelineRunner>.Instance,
+            sqlite,
+            sinkWriters: new IEtlSinkWriter[]
+            {
+                new ObjectStorageEtlSinkWriter(httpFactory, probeConfig),
+                new ClickHouseEtlSinkWriter(httpFactory, probeConfig),
+            });
+
+        var runResult = await runner.RunAsync(source, s3Target, s3TransformJson);
+        runResult.Rows.ShouldBe(2);
+        runResult.TargetTruncated.ShouldBeFalse();
+        uploadedMethod.ShouldBe("PUT");
+        uploadedPath.ShouldStartWith("/lake/ods/orders-v1/run_");
+        uploadedPath.ShouldEndWith(".parquet");
+        uploadedParquet.ShouldNotBeNull();
+        System.Text.Encoding.ASCII.GetString(uploadedParquet!, 0, 4).ShouldBe("PAR1");
+    }
+
     private static DataPipelineSchemaPreflightAppService CreateService(
         IEtlRelationalConnectionFactory factory,
         DataSource source,
-        DataSource target)
+        DataSource target,
+        DataIntegrationSinkProbeService? sinkProbe = null)
     {
         var repo = Substitute.For<IRepository<DataSource, Guid>>();
         repo.GetAsync(source.Id, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(source);
@@ -244,10 +377,26 @@ public class DataPipelineSchemaPreflightTests
             repo,
             factory,
             uowManager,
-            NullLogger<DataPipelineSchemaPreflightAppService>.Instance)
+            NullLogger<DataPipelineSchemaPreflightAppService>.Instance,
+            sinkProbe)
         {
             LazyServiceProvider = lazyProvider,
         };
+    }
+
+    private sealed class RoutingHttpHandler(
+        Func<System.Net.Http.HttpRequestMessage, Task<System.Net.Http.HttpResponseMessage>> responder)
+        : System.Net.Http.HttpMessageHandler
+    {
+        protected override Task<System.Net.Http.HttpResponseMessage> SendAsync(
+            System.Net.Http.HttpRequestMessage request,
+            CancellationToken cancellationToken)
+            => responder(request);
+    }
+
+    private sealed class InlineHttpClientFactory(System.Net.Http.HttpMessageHandler handler) : System.Net.Http.IHttpClientFactory
+    {
+        public System.Net.Http.HttpClient CreateClient(string name) => new(handler, disposeHandler: false);
     }
 
     private static DataSource CreateRelationalSource(string dbName) =>

@@ -1,10 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import {
+  buildClickHouseConfig,
+  buildKafkaConfig,
+  buildObjectStorageConfig,
   buildRelationalConfig,
   changeDataSourceType,
   createDefaultDataSourceForm,
+  isDataSourceConfigReadyToSave,
+  isDataSourceTestable,
   isRelationalConfigReadyToSave,
+  readClickHouseConfig,
+  readKafkaConfig,
+  readObjectStorageConfig,
   readRelationalConfig,
+  requiresNewClickHousePassword,
+  requiresNewKafkaSaslPassword,
+  requiresNewObjectStorageSecretKey,
   requiresNewRelationalPassword,
   toDataSourceBody,
   toDataSourceForm,
@@ -210,5 +221,159 @@ describe('DataSource 表单敏感配置边界', () => {
     expect(changed.config).toBe('{}')
     expect(changed.hasSecret).toBe(false)
     expect(changed.relational.host).toBe('')
+  })
+})
+
+const clickHouseSource: DataSource = {
+  id: 'source-ch',
+  name: 'ClickHouse-Analytics',
+  description: null,
+  type: 4,
+  config: JSON.stringify({
+    provider: 'clickhouse',
+    host: 'ch1.example.internal',
+    port: 8443,
+    database: 'analytics',
+    username: 'etl_writer',
+    password: 'must-not-leak',
+    useTls: true,
+    trustServerCertificate: false,
+    targetResourceGroup: 'ch-analytics-prod',
+  }),
+  hasSecret: true,
+  isEnabled: true,
+  creationTime: '2026-11-15T00:00:00Z',
+}
+
+const objectStorageSource: DataSource = {
+  id: 'source-s3',
+  name: 'MinIO-Lake',
+  description: null,
+  type: 5,
+  config: JSON.stringify({
+    provider: 'minio',
+    endpoint: 'http://minio.example.internal:9000',
+    region: 'us-east-1',
+    bucket: 'swapmid-lake',
+    prefix: 'erp/daily',
+    format: 'parquet',
+    pathStyle: true,
+    accessKey: 'minioadmin',
+    secretKey: 'must-not-leak',
+    targetResourceGroup: 'lake-minio-prod',
+  }),
+  hasSecret: true,
+  isEnabled: true,
+  creationTime: '2026-11-15T00:00:00Z',
+}
+
+const kafkaSource: DataSource = {
+  id: 'source-kafka',
+  name: 'Kafka-Events',
+  description: null,
+  type: 3,
+  config: JSON.stringify({
+    provider: 'kafka',
+    bootstrapServers: 'kafka-1:9092,kafka-2:9092',
+    clientId: 'swapmid-etl',
+    securityProtocol: 'SaslSsl',
+    saslMechanism: 'ScramSha256',
+    saslUsername: 'etl_producer',
+    saslPassword: 'must-not-leak',
+    acks: 'All',
+    compressionType: 'Snappy',
+    targetResourceGroup: 'kafka-prod-bus',
+  }),
+  hasSecret: true,
+  isEnabled: true,
+  creationTime: '2026-11-15T00:00:00Z',
+}
+
+describe('ClickHouse / ObjectStorage / Kafka 表单与凭据边界', () => {
+  it('ClickHouse 读取脱敏且仅在凭据作用域变化时要求重输密码', () => {
+    const ch = readClickHouseConfig(clickHouseSource.config)
+    expect(ch.password).toBe('')
+    expect(ch.useTls).toBe(true)
+
+    const form = toDataSourceForm(clickHouseSource)
+    expect(requiresNewClickHousePassword(form, clickHouseSource)).toBe(false)
+    form.clickhouse.targetResourceGroup = 'ch-analytics-alias'
+    expect(requiresNewClickHousePassword(form, clickHouseSource)).toBe(false)
+
+    form.clickhouse.host = 'ch2.example.internal'
+    expect(requiresNewClickHousePassword(form, clickHouseSource)).toBe(true)
+    expect(isDataSourceConfigReadyToSave(form, clickHouseSource)).toBe(false)
+
+    form.clickhouse.password = 'new-secret'
+    expect(isDataSourceConfigReadyToSave(form, clickHouseSource)).toBe(true)
+    const built = JSON.parse(buildClickHouseConfig(form.clickhouse)) as Record<string, unknown>
+    expect(built.password).toBe('new-secret')
+    expect(built.provider).toBe('clickhouse')
+  })
+
+  it('ObjectStorage 新建必须填写 secretKey，编辑仅修改 prefix/format 可沿用密钥', () => {
+    const createForm = changeDataSourceType(createDefaultDataSourceForm(), '5')
+    createForm.name = 'Lake'
+    createForm.objectStorage = {
+      ...createForm.objectStorage,
+      provider: 'minio',
+      endpoint: 'http://minio.example.internal:9000/',
+      bucket: 'swapmid-lake',
+      accessKey: 'minioadmin',
+      pathStyle: true,
+      targetResourceGroup: 'lake-minio-prod',
+    }
+    expect(requiresNewObjectStorageSecretKey(createForm, null)).toBe(true)
+    expect(isDataSourceConfigReadyToSave(createForm, null)).toBe(false)
+
+    createForm.objectStorage.secretKey = 'minioadmin123'
+    expect(isDataSourceConfigReadyToSave(createForm, null)).toBe(true)
+    expect(isDataSourceTestable(createForm, null)).toBe(true)
+
+    const editForm = toDataSourceForm(objectStorageSource)
+    expect(readObjectStorageConfig(objectStorageSource.config).secretKey).toBe('')
+    expect(requiresNewObjectStorageSecretKey(editForm, objectStorageSource)).toBe(false)
+
+    editForm.objectStorage.prefix = '/erp/hourly/'
+    editForm.objectStorage.format = 'jsonl'
+    expect(requiresNewObjectStorageSecretKey(editForm, objectStorageSource)).toBe(false)
+    const serialized = JSON.parse(buildObjectStorageConfig(editForm.objectStorage)) as Record<string, unknown>
+    expect(serialized.prefix).toBe('erp/hourly')
+    expect(serialized.secretKey).toBeUndefined()
+
+    editForm.objectStorage.accessKey = 'other-key'
+    expect(requiresNewObjectStorageSecretKey(editForm, objectStorageSource)).toBe(true)
+  })
+
+  it('Kafka Plaintext 不要求 SASL 凭据；SASL 作用域变化时强制重输 saslPassword', () => {
+    const plainForm = changeDataSourceType(createDefaultDataSourceForm(), '3')
+    plainForm.name = 'Local-Kafka'
+    plainForm.kafka = {
+      ...plainForm.kafka,
+      bootstrapServers: 'localhost:9092',
+      targetResourceGroup: 'kafka-local',
+    }
+    expect(requiresNewKafkaSaslPassword(plainForm, null)).toBe(false)
+    expect(isDataSourceConfigReadyToSave(plainForm, null)).toBe(true)
+    const plainJson = JSON.parse(buildKafkaConfig(plainForm.kafka)) as Record<string, unknown>
+    expect(plainJson.saslMechanism).toBeUndefined()
+    expect(plainJson.saslUsername).toBeUndefined()
+    expect(plainJson.saslPassword).toBeUndefined()
+
+    const saslForm = toDataSourceForm(kafkaSource)
+    expect(readKafkaConfig(kafkaSource.config).saslPassword).toBe('')
+    expect(requiresNewKafkaSaslPassword(saslForm, kafkaSource)).toBe(false)
+
+    saslForm.kafka.compressionType = 'Zstd'
+    expect(requiresNewKafkaSaslPassword(saslForm, kafkaSource)).toBe(false)
+
+    saslForm.kafka.bootstrapServers = 'kafka-3:9092'
+    expect(requiresNewKafkaSaslPassword(saslForm, kafkaSource)).toBe(true)
+    expect(isDataSourceConfigReadyToSave(saslForm, kafkaSource)).toBe(false)
+
+    saslForm.kafka.saslPassword = 'rotated-password'
+    expect(isDataSourceConfigReadyToSave(saslForm, kafkaSource)).toBe(true)
+    const body = toDataSourceBody(saslForm)
+    expect(body.type).toBe(3)
   })
 })

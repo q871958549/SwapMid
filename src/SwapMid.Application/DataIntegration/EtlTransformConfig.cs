@@ -77,6 +77,9 @@ public sealed class EtlTransformConfig
         new(@"^[A-Za-z_][A-Za-z0-9_]*$", RegexOptions.Compiled);
 
     public static EtlTransformConfig Parse(string? json)
+        => Parse(json, DataSourceType.RelationalDatabase);
+
+    public static EtlTransformConfig Parse(string? json, DataSourceType targetType)
     {
         if (string.IsNullOrWhiteSpace(json))
         {
@@ -154,7 +157,10 @@ public sealed class EtlTransformConfig
             throw InvalidInput();
         }
 
-        if (!IsValidTargetTable(cfg.TargetTable))
+        if (!IsValidDestinationFor(targetType, cfg.TargetTable) ||
+            !IsWriteModeSupportedFor(targetType, cfg.Mode) ||
+            (targetType != DataSourceType.RelationalDatabase &&
+             cfg.ReconciliationStrategy == EtlReconciliationStrategy.TargetReceiptV1))
         {
             throw InvalidInput();
         }
@@ -165,6 +171,24 @@ public sealed class EtlTransformConfig
     internal static bool IsValidTargetTable(string? targetTable) =>
         !string.IsNullOrWhiteSpace(targetTable) &&
         IdentifierPattern.IsMatch(targetTable);
+
+    internal static bool IsValidDestinationFor(DataSourceType targetType, string? destination)
+        => targetType switch
+        {
+            DataSourceType.RelationalDatabase or DataSourceType.ClickHouse => IsValidTargetTable(destination),
+            DataSourceType.Kafka => KafkaSinkConfigContract.IsValidTopicName(destination),
+            DataSourceType.ObjectStorage => ObjectStorageSinkConfigContract.IsValidDestinationPath(destination),
+            _ => false,
+        };
+
+    internal static bool IsWriteModeSupportedFor(DataSourceType targetType, EtlWriteMode mode)
+        => targetType switch
+        {
+            DataSourceType.RelationalDatabase => true,
+            DataSourceType.ClickHouse => mode is EtlWriteMode.Append or EtlWriteMode.Truncate,
+            DataSourceType.Kafka or DataSourceType.ObjectStorage => mode == EtlWriteMode.Append,
+            _ => false,
+        };
 
     internal static bool IsValidColumnName(string? columnName) =>
         !string.IsNullOrWhiteSpace(columnName) &&

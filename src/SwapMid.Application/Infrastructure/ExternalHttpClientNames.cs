@@ -10,4 +10,5 @@ public static class ExternalHttpClientNames
     public const string MessageDeliveryBotWebhook = "MessageDeliveryBotWebhook";
     public const string NotificationWebhook = "NotificationWebhook";
     public const string ApiGateway = "ApiGateway";
+    public const string DataIntegrationSink = "DataIntegrationSink";
 }

@@ -54,16 +54,19 @@ public partial class EtlPipelineRunner : IEtlPipelineRunner, ITransientDependenc
     private readonly ILogger<EtlPipelineRunner> _logger;
     private readonly IEtlRelationalConnectionFactory _connectionFactory;
     private readonly IEtlTargetReceiptStore _receiptStore;
+    private readonly IReadOnlyList<IEtlSinkWriter> _sinkWriters;
 
     public EtlPipelineRunner(
         ILogger<EtlPipelineRunner> logger,
         IEtlRelationalConnectionFactory connectionFactory,
-        IEtlTargetReceiptStore? receiptStore = null)
+        IEtlTargetReceiptStore? receiptStore = null,
+        IEnumerable<IEtlSinkWriter>? sinkWriters = null)
     {
         _logger = logger;
         _connectionFactory = connectionFactory;
         _receiptStore = receiptStore ??
             new EtlTargetReceiptStore(connectionFactory);
+        _sinkWriters = sinkWriters?.ToArray() ?? Array.Empty<IEtlSinkWriter>();
     }
 
     /// <summary>仅供 runner 低层测试的 manual-v0 兼容入口；生产端口强制传执行上下文。</summary>
@@ -73,7 +76,7 @@ public partial class EtlPipelineRunner : IEtlPipelineRunner, ITransientDependenc
         string? transformConfig,
         CancellationToken ct = default)
     {
-        var cfg = EtlTransformConfig.Parse(transformConfig);
+        var cfg = EtlTransformConfig.Parse(transformConfig, target.Type);
         if (cfg.ReconciliationStrategy != EtlReconciliationStrategy.ManualV0)
         {
             throw InvalidInput();
@@ -81,7 +84,7 @@ public partial class EtlPipelineRunner : IEtlPipelineRunner, ITransientDependenc
 
         return RunAsync(
             new EtlExecutionContext(
-                Guid.Empty,
+                Guid.NewGuid(),
                 Guid.Empty,
                 new string('0', PipelineExecutionConsts.Sha256HexLength),
                 VerifiedTargetResourceHash: null,
@@ -106,6 +109,11 @@ public partial class EtlPipelineRunner : IEtlPipelineRunner, ITransientDependenc
         string? transformConfig,
         CancellationToken ct = default)
     {
+        if (target.Type.IsExternalAnalyticalSink())
+        {
+            return await RunExternalSinkAsync(executionContext, source, target, transformConfig, ct);
+        }
+
         if (source.Type != DataSourceType.RelationalDatabase || target.Type != DataSourceType.RelationalDatabase)
         {
             throw InvalidInput();

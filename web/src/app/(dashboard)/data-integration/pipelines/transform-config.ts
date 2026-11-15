@@ -35,6 +35,9 @@ export interface ReceiptTargetOption {
   config?: string | null
 }
 
+const TABLE_IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$/
+const KAFKA_TOPIC_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/
+const OBJECT_PREFIX_PATTERN = /^[A-Za-z0-9][A-Za-z0-9/_.-]{0,191}$/
 const COLUMN_IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/
 const MAX_UPSERT_KEY_COLUMNS = 16
 const MAX_COLUMN_MAPPINGS = 256
@@ -336,4 +339,52 @@ export function supportsTargetReceipt(target: ReceiptTargetOption | undefined): 
   } catch {
     return false
   }
+}
+
+const CLICKHOUSE_WRITE_MODES: readonly EtlWriteMode[] = ['append', 'truncate']
+const STREAM_SINK_WRITE_MODES: readonly EtlWriteMode[] = ['append']
+
+export function getAllowedWriteModesForTarget(targetType?: number): readonly EtlWriteMode[] {
+  if (targetType === undefined || targetType === 0) return ETL_WRITE_MODES
+  if (targetType === 4) return CLICKHOUSE_WRITE_MODES
+  if (targetType === 3 || targetType === 5) return STREAM_SINK_WRITE_MODES
+  return []
+}
+
+export function isWriteModeAllowedForTarget(
+  mode: EtlWriteModeFormValue,
+  targetType?: number,
+): boolean {
+  if (mode === 'unsupported') return false
+  return getAllowedWriteModesForTarget(targetType).includes(mode as EtlWriteMode)
+}
+
+export function getDestinationKindForTarget(targetType?: number): 'table' | 'topic' | 'prefix' {
+  if (targetType === 3) return 'topic'
+  if (targetType === 5) return 'prefix'
+  return 'table'
+}
+
+export function isValidDestinationForTarget(
+  destination: string,
+  targetType?: number,
+): boolean {
+  const trimmed = destination.trim()
+  if (!trimmed) return false
+  if (targetType === 3) {
+    return trimmed !== '.' && trimmed !== '..' && KAFKA_TOPIC_PATTERN.test(trimmed)
+  }
+  if (targetType === 5) {
+    return (
+      !trimmed.startsWith('/')
+      && !trimmed.endsWith('/')
+      && !trimmed.includes('..')
+      && !trimmed.includes('//')
+      && OBJECT_PREFIX_PATTERN.test(trimmed)
+    )
+  }
+  if (targetType === undefined || targetType === 0 || targetType === 4) {
+    return TABLE_IDENTIFIER_PATTERN.test(trimmed)
+  }
+  return false
 }

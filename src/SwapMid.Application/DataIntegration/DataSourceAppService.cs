@@ -20,13 +20,16 @@ public class DataSourceAppService :
     IDataSourceAppService
 {
     private readonly IDataSourceRepository _dataSourceRepository;
+    private readonly DataIntegrationSinkProbeService? _sinkProbe;
 
     public DataSourceAppService(
         IRepository<DataSource, Guid> repository,
-        IDataSourceRepository dataSourceRepository)
+        IDataSourceRepository dataSourceRepository,
+        DataIntegrationSinkProbeService? sinkProbe = null)
         : base(repository)
     {
         _dataSourceRepository = dataSourceRepository;
+        _sinkProbe = sinkProbe;
         GetPolicyName = SwapMidPermissions.DataIntegration.DataSources.Default;
         GetListPolicyName = SwapMidPermissions.DataIntegration.DataSources.Default;
         CreatePolicyName = SwapMidPermissions.DataIntegration.DataSources.Create;
@@ -146,7 +149,7 @@ public class DataSourceAppService :
         // targetResourceGroup 是历史 Running/OutcomeUnknown 的永久隔离身份；软删同样会让
         // 默认数据过滤器隐藏核验所需的目标凭据，使 durable quarantine 无法再收敛。
         // 已建立稳定组的数据源只能禁用，物理归属迁移应新建数据源并保留旧记录。
-        if (dataSource.Type == DataSourceType.RelationalDatabase &&
+        if (dataSource.Type.SupportsTypedConfig() &&
             !string.IsNullOrWhiteSpace(
                 TryReadEstablishedTargetResourceGroup(dataSource.Config)))
         {
@@ -207,7 +210,7 @@ public class DataSourceAppService :
         DataSourceType proposedType,
         string proposedConfig)
     {
-        if (stored.Type != DataSourceType.RelationalDatabase)
+        if (!stored.Type.SupportsTypedConfig())
         {
             return;
         }
@@ -276,8 +279,35 @@ public class DataSourceAppService :
             base.CurrentTenant.Id,
             SwapMidPermissions.DataIntegration.DataSources.Create);
 
+        if (input.Type.IsExternalAnalyticalSink())
+        {
+            string normalizedSinkConfig;
+            try
+            {
+                normalizedSinkConfig = DataSourceConfigProtector.NormalizeForWrite(input.Type, input.Config);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(
+                    "外部接收端数据源配置解析失败（type={DataSourceType}, exceptionType={ExceptionType}）",
+                    input.Type,
+                    ex.GetType().Name);
+                return new TestConnectionResultDto { Success = false, Message = "连接配置格式无效，请检查端点、认证与格式参数。" };
+            }
+
+            if (_sinkProbe is null)
+            {
+                return new TestConnectionResultDto { Success = false, Message = "外部接收端连接探测服务暂不可用。" };
+            }
+
+            return await _sinkProbe.TestConnectionAsync(
+                input.Type,
+                normalizedSinkConfig,
+                System.Threading.CancellationToken.None);
+        }
+
         if (input.Type != DataSourceType.RelationalDatabase)
-            return new TestConnectionResultDto { Success = false, Message = "目前仅支持关系数据库类型的连接测试。" };
+            return new TestConnectionResultDto { Success = false, Message = "目前仅支持关系数据库、ClickHouse、对象存储及 Kafka 类型的连接测试。" };
 
         RelationalDataSourceConnection.Probe probe;
         try

@@ -6,9 +6,13 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
+  getAllowedWriteModesForTarget,
+  getDestinationKindForTarget,
   isReceiptMode,
   isUpsertConfigValid,
   isUpsertMode,
+  isValidDestinationForTarget,
+  isWriteModeAllowedForTarget,
   parseEtlWriteMode,
   type EtlTransformFormValue,
 } from './transform-config'
@@ -17,12 +21,14 @@ import { PipelineSchemaPreflightPanel } from './pipeline-schema-preflight'
 export function PipelineEtlConfigSection({
   sourceId,
   targetId,
+  targetType,
   form,
   receiptTargetSupported,
   onChange,
 }: {
   sourceId: string
   targetId: string
+  targetType?: number
   form: EtlTransformFormValue
   receiptTargetSupported: boolean
   onChange: (patch: Partial<EtlTransformFormValue>) => void
@@ -31,6 +37,25 @@ export function PipelineEtlConfigSection({
   const receiptModeSelected = isReceiptMode(form.mode)
   const upsertModeSelected = isUpsertMode(form.mode)
   const upsertConfigValid = isUpsertConfigValid(form)
+  const allowedModes = getAllowedWriteModesForTarget(targetType)
+  const modeAllowedForTarget = isWriteModeAllowedForTarget(form.mode, targetType)
+  const destinationKind = getDestinationKindForTarget(targetType)
+  const hasDestinationInput = form.targetTable.trim().length > 0
+  const destinationInvalid = hasDestinationInput && !isValidDestinationForTarget(form.targetTable, targetType)
+
+  const destinationLabel = destinationKind === 'topic'
+    ? t('targetTopicFieldLabel')
+    : destinationKind === 'prefix'
+      ? t('targetPrefixFieldLabel')
+      : t('targetTableFieldLabel')
+
+  const destinationPlaceholder = destinationKind === 'topic'
+    ? 'orders.events'
+    : destinationKind === 'prefix'
+      ? 'orders/daily'
+      : targetType === 4
+        ? 'analytics.orders_copy'
+        : 'dbo.users_copy'
 
   return (
     <div className="space-y-2 rounded-md border bg-muted/30 p-3">
@@ -47,11 +72,11 @@ export function PipelineEtlConfigSection({
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label className="text-xs">{t('targetTableFieldLabel')}</Label>
+          <Label className="text-xs">{destinationLabel}</Label>
           <Input
             value={form.targetTable}
             onChange={e => onChange({ targetTable: e.target.value })}
-            placeholder="dbo.users_copy"
+            placeholder={destinationPlaceholder}
             className="font-mono text-xs"
           />
         </div>
@@ -69,16 +94,31 @@ export function PipelineEtlConfigSection({
               {form.mode === 'unsupported' && (
                 <SelectItem value="unsupported" disabled>{t('writeModeUnsupported')}</SelectItem>
               )}
-              <SelectItem value="append">{t('writeModeAppend')}</SelectItem>
-              <SelectItem value="truncate">{t('writeModeTruncate')}</SelectItem>
-              <SelectItem value="upsert">{t('writeModeUpsert')}</SelectItem>
-              <SelectItem value="append-receipt-v1" disabled={!receiptTargetSupported}>
+              <SelectItem value="append" disabled={!allowedModes.includes('append')}>
+                {t('writeModeAppend')}
+              </SelectItem>
+              <SelectItem value="truncate" disabled={!allowedModes.includes('truncate')}>
+                {t('writeModeTruncate')}
+              </SelectItem>
+              <SelectItem value="upsert" disabled={!allowedModes.includes('upsert')}>
+                {t('writeModeUpsert')}
+              </SelectItem>
+              <SelectItem
+                value="append-receipt-v1"
+                disabled={!receiptTargetSupported || !allowedModes.includes('append-receipt-v1')}
+              >
                 {t('writeModeAppendReceipt')}
               </SelectItem>
-              <SelectItem value="truncate-receipt-v1" disabled={!receiptTargetSupported}>
+              <SelectItem
+                value="truncate-receipt-v1"
+                disabled={!receiptTargetSupported || !allowedModes.includes('truncate-receipt-v1')}
+              >
                 {t('writeModeTruncateReceipt')}
               </SelectItem>
-              <SelectItem value="upsert-receipt-v1" disabled={!receiptTargetSupported}>
+              <SelectItem
+                value="upsert-receipt-v1"
+                disabled={!receiptTargetSupported || !allowedModes.includes('upsert-receipt-v1')}
+              >
                 {t('writeModeUpsertReceipt')}
               </SelectItem>
             </SelectContent>
@@ -107,10 +147,13 @@ export function PipelineEtlConfigSection({
           </div>
         </div>
       )}
+      {destinationInvalid && (
+        <p role="alert" className="text-destructive text-xs">{t('destinationInvalidHint')}</p>
+      )}
       {upsertModeSelected && !upsertConfigValid && (
         <p role="alert" className="text-destructive text-xs">{t('upsertConfigInvalidHint')}</p>
       )}
-      {upsertModeSelected && upsertConfigValid && (
+      {upsertModeSelected && upsertConfigValid && modeAllowedForTarget && (
         <p className="text-muted-foreground text-xs">{t('upsertModeHint')}</p>
       )}
       {!form.transformConfigValid && (
@@ -119,8 +162,14 @@ export function PipelineEtlConfigSection({
       {form.transformConfigValid && receiptModeSelected && !receiptTargetSupported && (
         <p role="alert" className="text-destructive text-xs">{t('receiptTargetUnsupportedHint')}</p>
       )}
+      {form.transformConfigValid && !receiptModeSelected && !modeAllowedForTarget && (
+        <p role="alert" className="text-destructive text-xs">{t('writeModeTargetUnsupportedHint')}</p>
+      )}
       {receiptModeSelected && receiptTargetSupported && (
         <p className="text-muted-foreground text-xs">{t('receiptModeHint')}</p>
+      )}
+      {(targetType === 3 || targetType === 5) && modeAllowedForTarget && (
+        <p className="text-muted-foreground text-xs">{t('schemaOnWriteSinkHint')}</p>
       )}
       <PipelineSchemaPreflightPanel
         sourceId={sourceId}

@@ -232,7 +232,7 @@ public sealed class DataPipelineActivationCoordinator : ITransientDependency
             cancellationToken: cancellationToken);
         if (!source.IsEnabled || !target.IsEnabled ||
             source.Type != DataSourceType.RelationalDatabase ||
-            target.Type != DataSourceType.RelationalDatabase)
+            !target.Type.IsEtlSupportedTarget())
         {
             throw ReceiptInvalid();
         }
@@ -241,14 +241,20 @@ public sealed class DataPipelineActivationCoordinator : ITransientDependency
         DataPipelineExecutionCoordinator.TargetIdentity legacyIdentity;
         try
         {
-            transform = EtlTransformConfig.Parse(pipeline.TransformConfig);
+            transform = EtlTransformConfig.Parse(pipeline.TransformConfig, target.Type);
+            if (target.Type != DataSourceType.RelationalDatabase &&
+                transform.ReconciliationStrategy == EtlReconciliationStrategy.TargetReceiptV1)
+            {
+                throw ReceiptInvalid();
+            }
+
             var sourceProbe = RelationalDataSourceConnection.Parse(source.Config);
             EtlSourceQueryGuard.Validate(
                 transform.SourceQuery,
                 sourceProbe.NormalizedProvider);
             legacyIdentity =
                 DataPipelineExecutionCoordinator.ComputeTargetIdentity(
-                    target.Config,
+                    target,
                     pipeline.TransformConfig);
         }
         catch (BusinessException)

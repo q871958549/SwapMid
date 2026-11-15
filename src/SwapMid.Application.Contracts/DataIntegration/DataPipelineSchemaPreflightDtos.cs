@@ -7,7 +7,7 @@ namespace SwapMid.DataIntegration;
 /// <summary>数据源连接器能力声明。</summary>
 public sealed class ConnectorCapabilityDto
 {
-    /// <summary>标准化连接器标识（postgresql / sqlserver / mysql / rest-api / file）。</summary>
+    /// <summary>标准化连接器标识（postgresql / sqlserver / mysql / rest-api / file / clickhouse / s3-parquet / kafka）。</summary>
     public string Provider { get; init; } = string.Empty;
 
     /// <summary>连接器显示名称。</summary>

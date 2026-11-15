@@ -5877,6 +5877,24 @@
       "traditionalSourceHash": "88c209081d905e7d84c7fa02",
       "traditionalHash": "39932f24fe11a6baf55145a8"
     },
+    "DataIntegration.source.typeKafka": {
+      "sourceHash": "e31ad12745a4b6712488cec3",
+      "englishHash": "e4a5f92fd340eccee976b5f5",
+      "traditionalSourceHash": "82f9527c8616d4414643a138",
+      "traditionalHash": "e4a5f92fd340eccee976b5f5"
+    },
+    "DataIntegration.source.typeClickHouse": {
+      "sourceHash": "5ffe8d3513e7a53411ca6baf",
+      "englishHash": "dee91ddb90597936302cfd43",
+      "traditionalSourceHash": "05f8d8b15c50e25305fcb518",
+      "traditionalHash": "dee91ddb90597936302cfd43"
+    },
+    "DataIntegration.source.typeObjectStorage": {
+      "sourceHash": "bae9a8ad921ec2a1985253f8",
+      "englishHash": "ed7497d78ca5c160d718932c",
+      "traditionalSourceHash": "918497f042f2020ed195a107",
+      "traditionalHash": "f74aff92393d9f7cadb13db6"
+    },
     "DataIntegration.source.pageTitle": {
       "sourceHash": "b3fac53dd1d69adcb0af6939",
       "englishHash": "fee47c958ac2dade130911d3",
@@ -6050,6 +6068,126 @@
       "englishHash": "4bb886062fb6ff494747bc44",
       "traditionalSourceHash": "a33dce5b78253afaa5efe8cf",
       "traditionalHash": "1ad0b6f3ffdf242bf2e80f08"
+    },
+    "DataIntegration.source.optionalPasswordPlaceholder": {
+      "sourceHash": "dd0a1e55be1fe75b1db3f8ea",
+      "englishHash": "234e51265153a6f6571af25c",
+      "traditionalSourceHash": "b6f4b6d80c5adb06bd6c0192",
+      "traditionalHash": "d27b5807154d6d961adcc1d7"
+    },
+    "DataIntegration.source.storageProviderFieldLabel": {
+      "sourceHash": "732dd6124de74c1b1c57eae0",
+      "englishHash": "51ba19e3d12ef9c5aeae5636",
+      "traditionalSourceHash": "7d37401591c19a4054ba02da",
+      "traditionalHash": "9e6bfebef3faa54d7132c53c"
+    },
+    "DataIntegration.source.storageFormatFieldLabel": {
+      "sourceHash": "7a7ac0318894456c2630bb4c",
+      "englishHash": "1b62c3114cda1a5b2c5e4a7a",
+      "traditionalSourceHash": "83566f7b100905c8ad515868",
+      "traditionalHash": "821708b4a1954f01e099c738"
+    },
+    "DataIntegration.source.endpointFieldLabel": {
+      "sourceHash": "1ffdf827d93c71f6a725becc",
+      "englishHash": "57685d354ff731b40bdec6e1",
+      "traditionalSourceHash": "136cde3c8ac4c626460e1bc4",
+      "traditionalHash": "d6525ef2b1ccb6ec2a4b3be1"
+    },
+    "DataIntegration.source.regionFieldLabel": {
+      "sourceHash": "9872d423f85491e75c67d9ca",
+      "englishHash": "d3a008ef1335692d9d045175",
+      "traditionalSourceHash": "e7e0eff123ab2fea4f081552",
+      "traditionalHash": "d6db108664d83de7e9912961"
+    },
+    "DataIntegration.source.bucketFieldLabel": {
+      "sourceHash": "9f599bdbd026d442eef18d4e",
+      "englishHash": "121e6ed00b1f38b98765e072",
+      "traditionalSourceHash": "0908782032adc932a49c7194",
+      "traditionalHash": "2f0613544b2e3e1059e6709e"
+    },
+    "DataIntegration.source.prefixFieldLabel": {
+      "sourceHash": "fd299c2e6a9d8e45f269afaa",
+      "englishHash": "a3184f58dfc79bf00425738c",
+      "traditionalSourceHash": "9ff2591a41e872b329535282",
+      "traditionalHash": "49103bc612dab5a7e92b2041"
+    },
+    "DataIntegration.source.accessKeyFieldLabel": {
+      "sourceHash": "006025b4b08dd0bd638f1c23",
+      "englishHash": "ede92c3763f92ca5282e5a55",
+      "traditionalSourceHash": "67e7fc0dd7830e3923248652",
+      "traditionalHash": "ede92c3763f92ca5282e5a55"
+    },
+    "DataIntegration.source.secretKeyFieldLabel": {
+      "sourceHash": "910f8717d1a24e2fa68eb082",
+      "englishHash": "eeefa4cae35abf41b3c4e60f",
+      "traditionalSourceHash": "31c344714ab86455eab259a2",
+      "traditionalHash": "eeefa4cae35abf41b3c4e60f"
+    },
+    "DataIntegration.source.secretPlaceholderEdit": {
+      "sourceHash": "c75307301ede4702fb53e394",
+      "englishHash": "ba10000393d0ece612a52202",
+      "traditionalSourceHash": "5301bec7d882563c8638aeb8",
+      "traditionalHash": "a0348f7c573bbc974cf8fade"
+    },
+    "DataIntegration.source.secretPlaceholderCreate": {
+      "sourceHash": "af4f7380af44b6d1d651d7b7",
+      "englishHash": "f0ff01f9581ca2f082b6e627",
+      "traditionalSourceHash": "980efe52dd09818286485cee",
+      "traditionalHash": "42072ad52eeb58ff1893289a"
+    },
+    "DataIntegration.source.pathStyleSwitchLabel": {
+      "sourceHash": "2835b80f47b680eadac95950",
+      "englishHash": "02e2f20821a39ab41d7ef85c",
+      "traditionalSourceHash": "9c2e6a227f920a8345411b39",
+      "traditionalHash": "15d60d4b50a749aa081a30e9"
+    },
+    "DataIntegration.source.bootstrapServersFieldLabel": {
+      "sourceHash": "047a9b6a21ba66527e10f325",
+      "englishHash": "97dda2baf7cb1fb507f1069f",
+      "traditionalSourceHash": "c6737f94ac76ce8ba7d54e90",
+      "traditionalHash": "838e98b3677bebb41677b9a9"
+    },
+    "DataIntegration.source.clientIdFieldLabel": {
+      "sourceHash": "784841b02661809f472a4e12",
+      "englishHash": "8726db013948f0703807f17d",
+      "traditionalSourceHash": "95c11a70d95162f6fd4ed4ea",
+      "traditionalHash": "8726db013948f0703807f17d"
+    },
+    "DataIntegration.source.securityProtocolFieldLabel": {
+      "sourceHash": "91e8465be30fc0760b1a6ab0",
+      "englishHash": "f9effa1bddc172b87ccf79c9",
+      "traditionalSourceHash": "0a3580a873d5379156c32a06",
+      "traditionalHash": "74934b01036f66c76333b9d7"
+    },
+    "DataIntegration.source.kafkaAcksFieldLabel": {
+      "sourceHash": "00da3f2ebc63af3c3c5f01bf",
+      "englishHash": "54018e638b46e2aeceef1f20",
+      "traditionalSourceHash": "be0893e59d649972dd66117f",
+      "traditionalHash": "43bf6527bb08e256453a1bf9"
+    },
+    "DataIntegration.source.kafkaCompressionFieldLabel": {
+      "sourceHash": "9e3f4c8defe0cca63787e6a7",
+      "englishHash": "278b1b2a9c84730f37f6d366",
+      "traditionalSourceHash": "0c080524993f6d119e274bd9",
+      "traditionalHash": "7bf3899ebd81accf7649e7b9"
+    },
+    "DataIntegration.source.saslMechanismFieldLabel": {
+      "sourceHash": "6c57c31f00738120737dc0b6",
+      "englishHash": "ab944b0fee6fb494d653cce5",
+      "traditionalSourceHash": "1f05f0fdd7a2e07b12d7b64d",
+      "traditionalHash": "55399664d063cfd4650f2bfa"
+    },
+    "DataIntegration.source.saslUsernameFieldLabel": {
+      "sourceHash": "7dd222edab59922586a8cbe2",
+      "englishHash": "4687f005f7f58a5cb74b6cfa",
+      "traditionalSourceHash": "9faa25ec10dea196109c48bf",
+      "traditionalHash": "f034ded826ab0383c3734c13"
+    },
+    "DataIntegration.source.saslPasswordFieldLabel": {
+      "sourceHash": "21d8db78b704c771cbe96c82",
+      "englishHash": "53fe6497b09a8d7fb7150f7c",
+      "traditionalSourceHash": "a125708c748cd3f7111fda51",
+      "traditionalHash": "4911aedc8745e25114247cc8"
     },
     "DataIntegration.pipeline.loadFailedTitle": {
       "sourceHash": "a2f3a11838ae59947cc0a1fc",
@@ -6304,16 +6442,16 @@
       "traditionalHash": "495d19ea680154547916c413"
     },
     "DataIntegration.pipeline.etlSectionTitle": {
-      "sourceHash": "7c8f0bdc4be5f3ecb3ea4c2e",
-      "englishHash": "ae72eea9402a52b20eac059f",
-      "traditionalSourceHash": "cd8443e7112167a52d19f17b",
-      "traditionalHash": "16ade2ed66b1206e5958aee1"
+      "sourceHash": "86c8b766276ea2c2d6d26e69",
+      "englishHash": "4947a5fdda8aaeb8fc790876",
+      "traditionalSourceHash": "43ff6d496765cd7b1752cd8a",
+      "traditionalHash": "39f510f47953f01ce66e862e"
     },
     "DataIntegration.pipeline.etlSectionHint": {
-      "sourceHash": "f36b843002a3aeadadc31c19",
-      "englishHash": "9c541fda20a08e0d26412c04",
-      "traditionalSourceHash": "13b8ad62d23d0de8e92291ac",
-      "traditionalHash": "4e17d9d5659fc5edac5e520f"
+      "sourceHash": "fe0b479a0098cb01c106be75",
+      "englishHash": "00b019dab388f8c0f2ca2d15",
+      "traditionalSourceHash": "a204be5e504508e4eeb655d3",
+      "traditionalHash": "619fcf7fd32d97797beae1f6"
     },
     "DataIntegration.pipeline.sourceQueryFieldLabel": {
       "sourceHash": "3527103bd4fac6ea70ff1456",
@@ -6326,6 +6464,36 @@
       "englishHash": "feeb64acb5e0f4ebba723e99",
       "traditionalSourceHash": "a74d4720816302cd5550a4a7",
       "traditionalHash": "07a51420ba1a5bcc7d3e47ff"
+    },
+    "DataIntegration.pipeline.targetTopicFieldLabel": {
+      "sourceHash": "eb36f6a29a3bfc82660630b3",
+      "englishHash": "d112cf8ab7dd08840cf54eab",
+      "traditionalSourceHash": "60825545e9b34f7e8ab1c366",
+      "traditionalHash": "d8dfb563019e39429e90f7ad"
+    },
+    "DataIntegration.pipeline.targetPrefixFieldLabel": {
+      "sourceHash": "d0df1aafb31e6fef5c900433",
+      "englishHash": "596ca54fac6495ba17a5207a",
+      "traditionalSourceHash": "bd03ad97fcb6c6e845084729",
+      "traditionalHash": "c13f951b416655c97288b6bd"
+    },
+    "DataIntegration.pipeline.destinationInvalidHint": {
+      "sourceHash": "6b95a0963d6f1f34eec33e06",
+      "englishHash": "ddf2129312ab601bd1bbb7ce",
+      "traditionalSourceHash": "8d159cb09e91fc81ae946561",
+      "traditionalHash": "5ada1d1d32147d186050f693"
+    },
+    "DataIntegration.pipeline.writeModeTargetUnsupportedHint": {
+      "sourceHash": "33b50d0cf49edaf97d9bdee4",
+      "englishHash": "0fa54e218bf26843aed96e9b",
+      "traditionalSourceHash": "20498611fa0710fb8586d753",
+      "traditionalHash": "0a26910125e3b0eb5042c225"
+    },
+    "DataIntegration.pipeline.schemaOnWriteSinkHint": {
+      "sourceHash": "8a3a162c23fb9812ad1ec01f",
+      "englishHash": "cfa45ed92155c03bf07ea9f1",
+      "traditionalSourceHash": "10a92422ce539849bb884d63",
+      "traditionalHash": "d17c2f0e03e62ac22c597810"
     },
     "DataIntegration.pipeline.writeModeFieldLabel": {
       "sourceHash": "1ee490fed978f897ed5cf685",

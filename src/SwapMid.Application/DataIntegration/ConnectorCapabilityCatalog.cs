@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SwapMid.DataIntegration;
 
@@ -90,14 +92,58 @@ public static class ConnectorCapabilityCatalog
             RequiresStrictTlsForReceipt = false,
             SupportedWriteModes = [],
         },
+        new ConnectorCapabilityDto
+        {
+            Provider = "clickhouse",
+            DisplayName = "ClickHouse",
+            DataSourceType = DataSourceType.ClickHouse,
+            SupportsSourceRead = false,
+            SupportsTargetWrite = true,
+            SupportsAtomicUpsert = false,
+            SupportsTargetReceiptV1 = false,
+            RequiresStrictTlsForReceipt = false,
+            SupportedWriteModes = new[] { "append", "truncate" },
+        },
+        new ConnectorCapabilityDto
+        {
+            Provider = "s3-parquet",
+            DisplayName = "S3 / MinIO Object Storage",
+            DataSourceType = DataSourceType.ObjectStorage,
+            SupportsSourceRead = false,
+            SupportsTargetWrite = true,
+            SupportsAtomicUpsert = false,
+            SupportsTargetReceiptV1 = false,
+            RequiresStrictTlsForReceipt = false,
+            SupportedWriteModes = new[] { "append" },
+        },
+        new ConnectorCapabilityDto
+        {
+            Provider = "kafka",
+            DisplayName = "Apache Kafka",
+            DataSourceType = DataSourceType.Kafka,
+            SupportsSourceRead = false,
+            SupportsTargetWrite = true,
+            SupportsAtomicUpsert = false,
+            SupportsTargetReceiptV1 = false,
+            RequiresStrictTlsForReceipt = false,
+            SupportedWriteModes = new[] { "append" },
+        },
     ];
 
     public static IReadOnlyList<ConnectorCapabilityDto> GetAll() => All;
+
+    public static ConnectorCapabilityDto? FindByProvider(string? provider)
+        => string.IsNullOrWhiteSpace(provider)
+            ? null
+            : All.FirstOrDefault(item => string.Equals(item.Provider, provider.Trim(), StringComparison.OrdinalIgnoreCase));
 
     public static string CanonicalProvider(DataSourceType type, string? rawProvider)
     {
         if (type == DataSourceType.RestApi) return "rest-api";
         if (type == DataSourceType.File) return "file";
+        if (type == DataSourceType.Kafka) return "kafka";
+        if (type == DataSourceType.ClickHouse) return "clickhouse";
+        if (type == DataSourceType.ObjectStorage) return "s3-parquet";
 
         return rawProvider?.Trim().ToLowerInvariant() switch
         {

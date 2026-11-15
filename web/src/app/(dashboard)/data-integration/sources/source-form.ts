@@ -1,4 +1,43 @@
 import type { DataSourceDto } from '@/lib/api/types'
+import {
+  DEFAULT_CLICKHOUSE_CONFIG,
+  DEFAULT_KAFKA_CONFIG,
+  DEFAULT_OBJECT_STORAGE_CONFIG,
+  buildClickHouseConfig,
+  buildKafkaConfig,
+  buildObjectStorageConfig,
+  clickHouseCredentialScope,
+  defaultPortForClickHouse,
+  haveSameScope,
+  isClickHouseConfigReadyToSave,
+  isKafkaConfigReadyToSave,
+  isKafkaSaslProtocol,
+  isObjectStorageConfigReadyToSave,
+  kafkaCredentialScope,
+  objectStorageCredentialScope,
+  parseJsonObject,
+  parsePortNumber,
+  readClickHouseConfig,
+  readKafkaConfig,
+  readObjectStorageConfig,
+  type ClickHouseConfig,
+  type KafkaConfig,
+  type ObjectStorageConfig,
+} from './sink-config-forms'
+
+export {
+  buildClickHouseConfig,
+  buildKafkaConfig,
+  buildObjectStorageConfig,
+  defaultPortForClickHouse,
+  isKafkaSaslProtocol,
+  readClickHouseConfig,
+  readKafkaConfig,
+  readObjectStorageConfig,
+  type ClickHouseConfig,
+  type KafkaConfig,
+  type ObjectStorageConfig,
+}
 
 export type DataSource = DataSourceDto
 
@@ -22,6 +61,9 @@ export interface DataSourceFormState {
   hasSecret: boolean
   isEnabled: boolean
   relational: RelationalConfig
+  clickhouse: ClickHouseConfig
+  objectStorage: ObjectStorageConfig
+  kafka: KafkaConfig
 }
 
 export function defaultPortForProvider(provider: string): string {
@@ -56,6 +98,9 @@ export function createDefaultDataSourceForm(): DataSourceFormState {
     hasSecret: false,
     isEnabled: true,
     relational: { ...defaultRelational },
+    clickhouse: { ...DEFAULT_CLICKHOUSE_CONFIG },
+    objectStorage: { ...DEFAULT_OBJECT_STORAGE_CONFIG },
+    kafka: { ...DEFAULT_KAFKA_CONFIG },
   }
 }
 
@@ -80,30 +125,24 @@ export function buildRelationalConfig(config: RelationalConfig) {
 }
 
 export function readRelationalConfig(raw: string): RelationalConfig {
-  try {
-    const value: unknown = JSON.parse(raw)
-    if (!value || typeof value !== 'object' || Array.isArray(value))
-      return { ...defaultRelational }
+  const parsed = parseJsonObject(raw)
+  if (!parsed) return { ...defaultRelational }
 
-    const parsed = value as Record<string, unknown>
-    const provider = String(parsed.provider ?? 'sqlserver')
-    return {
-      ...defaultRelational,
-      provider,
-      host: String(parsed.host ?? ''),
-      port: String(parsed.port ?? defaultPortForProvider(provider)),
-      database: String(parsed.database ?? ''),
-      targetResourceGroup: String(parsed.targetResourceGroup ?? ''),
-      username: String(parsed.username ?? parsed.userName ?? ''),
-      password: '',
-      encrypt: typeof parsed.encrypt === 'boolean' ? parsed.encrypt : false,
-      trustServerCertificate:
-        typeof parsed.trustServerCertificate === 'boolean'
-          ? parsed.trustServerCertificate
-          : true,
-    }
-  } catch {
-    return { ...defaultRelational }
+  const provider = String(parsed.provider ?? 'sqlserver')
+  return {
+    ...defaultRelational,
+    provider,
+    host: String(parsed.host ?? ''),
+    port: String(parsed.port ?? defaultPortForProvider(provider)),
+    database: String(parsed.database ?? ''),
+    targetResourceGroup: String(parsed.targetResourceGroup ?? ''),
+    username: String(parsed.username ?? parsed.userName ?? ''),
+    password: '',
+    encrypt: typeof parsed.encrypt === 'boolean' ? parsed.encrypt : false,
+    trustServerCertificate:
+      typeof parsed.trustServerCertificate === 'boolean'
+        ? parsed.trustServerCertificate
+        : true,
   }
 }
 
@@ -127,10 +166,7 @@ function normalizeProvider(provider: string) {
 
 function relationalCredentialScope(config: RelationalConfig) {
   const provider = normalizeProvider(config.provider)
-  const parsedPort = Number(config.port.trim())
-  const port = Number.isInteger(parsedPort) && parsedPort > 0
-    ? parsedPort
-    : Number(defaultPortForProvider(provider))
+  const port = parsePortNumber(config.port, Number(defaultPortForProvider(provider)))
 
   return {
     provider,
@@ -151,18 +187,139 @@ export function requiresNewRelationalPassword(
   form: DataSourceFormState,
   source: DataSource | null,
 ) {
-  if (!source || form.type !== '0')
+  if (!source || form.type !== '0' || source.type !== 0)
     return false
 
-  if (source.type !== 0)
+  return !haveSameScope(
+    relationalCredentialScope(readRelationalConfig(source.config)),
+    relationalCredentialScope(form.relational),
+  )
+}
+
+export function requiresNewClickHousePassword(
+  form: DataSourceFormState,
+  source: DataSource | null,
+) {
+  if (!source || form.type !== '4' || source.type !== 4)
     return false
 
-  const originalScope = relationalCredentialScope(readRelationalConfig(source.config))
-  const proposedScope = relationalCredentialScope(form.relational)
-  return Object.keys(originalScope).some((key) => {
-    const field = key as keyof typeof originalScope
-    return originalScope[field] !== proposedScope[field]
-  })
+  return !haveSameScope(
+    clickHouseCredentialScope(readClickHouseConfig(source.config)),
+    clickHouseCredentialScope(form.clickhouse),
+  )
+}
+
+export function requiresNewObjectStorageSecretKey(
+  form: DataSourceFormState,
+  source: DataSource | null,
+) {
+  if (form.type !== '5') return false
+  if (!source || source.type !== 5 || !source.hasSecret) return true
+
+  return !haveSameScope(
+    objectStorageCredentialScope(readObjectStorageConfig(source.config)),
+    objectStorageCredentialScope(form.objectStorage),
+  )
+}
+
+export function requiresNewKafkaSaslPassword(
+  form: DataSourceFormState,
+  source: DataSource | null,
+) {
+  if (form.type !== '3' || !isKafkaSaslProtocol(form.kafka.securityProtocol))
+    return false
+
+  if (!source || source.type !== 3 || !source.hasSecret)
+    return true
+
+  const original = readKafkaConfig(source.config)
+  if (!isKafkaSaslProtocol(original.securityProtocol))
+    return true
+
+  return !haveSameScope(
+    kafkaCredentialScope(original),
+    kafkaCredentialScope(form.kafka),
+  )
+}
+
+export function requiresNewCredential(
+  form: DataSourceFormState,
+  source: DataSource | null,
+) {
+  switch (form.type) {
+    case '0':
+      return requiresNewRelationalPassword(form, source)
+    case '3':
+      return requiresNewKafkaSaslPassword(form, source)
+    case '4':
+      return requiresNewClickHousePassword(form, source)
+    case '5':
+      return requiresNewObjectStorageSecretKey(form, source)
+    default:
+      return false
+  }
+}
+
+function hasRequiredCredentialForSave(
+  form: DataSourceFormState,
+  source: DataSource | null,
+) {
+  if (!requiresNewCredential(form, source)) return true
+  switch (form.type) {
+    case '0':
+      return form.relational.password.trim().length > 0
+    case '3':
+      return form.kafka.saslPassword.trim().length > 0
+    case '4':
+      return form.clickhouse.password.trim().length > 0
+    case '5':
+      return form.objectStorage.secretKey.trim().length > 0
+    default:
+      return true
+  }
+}
+
+export function isDataSourceConfigReadyToSave(
+  form: DataSourceFormState,
+  source: DataSource | null,
+) {
+  if (!hasRequiredCredentialForSave(form, source)) return false
+  switch (form.type) {
+    case '0':
+      return isRelationalConfigReadyToSave(form.relational)
+    case '3':
+      return isKafkaConfigReadyToSave(form.kafka)
+    case '4':
+      return isClickHouseConfigReadyToSave(form.clickhouse)
+    case '5':
+      return isObjectStorageConfigReadyToSave(form.objectStorage)
+    default:
+      return form.config.trim().length > 0
+  }
+}
+
+export function isDataSourceTestable(
+  form: DataSourceFormState,
+  source: DataSource | null,
+) {
+  if (form.type !== '0' && form.type !== '3' && form.type !== '4' && form.type !== '5')
+    return false
+  return isDataSourceConfigReadyToSave(form, source)
+}
+
+export function buildDataSourceConfig(form: DataSourceFormState): string {
+  switch (form.type) {
+    case '0':
+      return buildRelationalConfig(form.relational)
+    case '3':
+      return buildKafkaConfig(form.kafka)
+    case '4':
+      return buildClickHouseConfig(form.clickhouse)
+    case '5':
+      return buildObjectStorageConfig(form.objectStorage)
+    default:
+      return form.config
+  }
 }
 
 export function changeDataSourceType(
@@ -179,6 +336,9 @@ export function changeDataSourceType(
     config: '{}',
     hasSecret: false,
     relational: fresh.relational,
+    clickhouse: fresh.clickhouse,
+    objectStorage: fresh.objectStorage,
+    kafka: fresh.kafka,
   }
 }
 
@@ -191,6 +351,9 @@ export function toDataSourceForm(source: DataSource): DataSourceFormState {
     hasSecret: source.hasSecret,
     isEnabled: source.isEnabled,
     relational: readRelationalConfig(source.config),
+    clickhouse: readClickHouseConfig(source.config),
+    objectStorage: readObjectStorageConfig(source.config),
+    kafka: readKafkaConfig(source.config),
   }
 }
 
@@ -198,7 +361,7 @@ export function toDataSourceBody(form: DataSourceFormState) {
   return {
     name: form.name,
     type: Number(form.type),
-    config: form.type === '0' ? buildRelationalConfig(form.relational) : form.config,
+    config: buildDataSourceConfig(form),
     description: form.description || null,
     isEnabled: form.isEnabled,
   }

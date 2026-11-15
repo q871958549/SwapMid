@@ -84,6 +84,11 @@ apiGateway:
   allowedHosts: ""
   allowedPrivateNetworks: ""
 
+dataIntegration:
+  sinks:
+    allowedHosts: ""
+    allowedPrivateNetworks: ""
+
 mcp:
   enabled: false
 

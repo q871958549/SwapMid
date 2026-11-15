@@ -35,6 +35,8 @@ import { PipelineEtlConfigSection } from './etl-config-section'
 import {
   isReceiptMode,
   isUpsertConfigValid,
+  isValidDestinationForTarget,
+  isWriteModeAllowedForTarget,
   parseEtlTransformConfig,
   serializeEtlTransformConfig,
   supportsTargetReceipt,
@@ -142,11 +144,19 @@ export function DataPipelinesClient({
     onSuccess: list.reload,
   })
   const selectedTarget = sources.find(source => source.id === crud.form.targetId)
+  const targetType = selectedTarget?.type
   const receiptTargetSupported = supportsTargetReceipt(selectedTarget)
   const receiptModeSelected = isReceiptMode(crud.form.mode)
+  const modeAllowedForTarget = isWriteModeAllowedForTarget(crud.form.mode, targetType)
+  const isExternalAnalyticalTarget = targetType === 3 || targetType === 4 || targetType === 5
+  const destinationReady = isExternalAnalyticalTarget
+    ? isValidDestinationForTarget(crud.form.targetTable, targetType)
+    : crud.form.targetTable.trim() === '' || isValidDestinationForTarget(crud.form.targetTable, targetType)
   const transformCanSubmit = crud.form.transformConfigValid &&
     crud.form.mode !== 'unsupported' &&
     isUpsertConfigValid(crud.form) &&
+    modeAllowedForTarget &&
+    destinationReady &&
     (!receiptModeSelected || receiptTargetSupported)
 
   function showAmbiguousResponse(runId: string) {
@@ -444,6 +454,7 @@ export function DataPipelinesClient({
         <PipelineEtlConfigSection
           sourceId={crud.form.sourceId}
           targetId={crud.form.targetId}
+          targetType={selectedTarget?.type}
           form={crud.form}
           receiptTargetSupported={receiptTargetSupported}
           onChange={crud.set}

@@ -19,4 +19,7 @@ public static class ExternalHttpConfigurationKeys
 
     public const string ApiGatewayAllowedHosts = "ApiGateway:AllowedHosts";
     public const string ApiGatewayAllowedPrivateNetworks = "ApiGateway:AllowedPrivateNetworks";
+
+    public const string DataIntegrationSinkAllowedHosts = "DataIntegration:Sinks:AllowedHosts";
+    public const string DataIntegrationSinkAllowedPrivateNetworks = "DataIntegration:Sinks:AllowedPrivateNetworks";
 }

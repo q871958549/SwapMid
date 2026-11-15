@@ -20,17 +20,20 @@ public class DataPipelineSchemaPreflightAppService
     private readonly IEtlRelationalConnectionFactory _connectionFactory;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
     private readonly ILogger<DataPipelineSchemaPreflightAppService> _logger;
+    private readonly DataIntegrationSinkProbeService? _sinkProbe;
 
     public DataPipelineSchemaPreflightAppService(
         IRepository<DataSource, Guid> sourceRepository,
         IEtlRelationalConnectionFactory connectionFactory,
         IUnitOfWorkManager unitOfWorkManager,
-        ILogger<DataPipelineSchemaPreflightAppService> logger)
+        ILogger<DataPipelineSchemaPreflightAppService> logger,
+        DataIntegrationSinkProbeService? sinkProbe = null)
     {
         _sourceRepository = sourceRepository;
         _connectionFactory = connectionFactory;
         _unitOfWorkManager = unitOfWorkManager;
         _logger = logger;
+        _sinkProbe = sinkProbe;
     }
 
     public Task<List<ConnectorCapabilityDto>> GetCapabilitiesAsync()
@@ -60,7 +63,8 @@ public class DataPipelineSchemaPreflightAppService
         EtlTransformConfig cfg;
         try
         {
-            cfg = EtlTransformConfig.Parse(input.TransformConfig);
+            var effectiveTargetType = target?.Type ?? DataSourceType.RelationalDatabase;
+            cfg = EtlTransformConfig.Parse(input.TransformConfig, effectiveTargetType);
         }
         catch (BusinessException)
         {
@@ -162,6 +166,16 @@ public class DataPipelineSchemaPreflightAppService
             return result;
         }
 
+        if (target.Type == DataSourceType.ClickHouse)
+        {
+            return await PreflightClickHouseTargetAsync(target, cfg, result, cancellationToken);
+        }
+
+        if (target.Type is DataSourceType.ObjectStorage or DataSourceType.Kafka)
+        {
+            return PreflightSchemaOnWriteSink(target, cfg, result);
+        }
+
         if (target.Type != DataSourceType.RelationalDatabase)
         {
             result.TargetProvider = ConnectorCapabilityCatalog.CanonicalProvider(target.Type, null);
@@ -169,7 +183,7 @@ public class DataPipelineSchemaPreflightAppService
             {
                 Severity = "error",
                 Code = "SwapMid:ETL:UnsupportedTargetType",
-                Message = "目标数据源必须是关系型数据库（PostgreSQL / SQL Server / MySQL）。",
+                Message = "目标数据源必须是关系型数据库、ClickHouse、对象存储或 Kafka。",
             });
             result.Compatible = false;
             return result;
@@ -242,6 +256,147 @@ public class DataPipelineSchemaPreflightAppService
         }
 
         EtlSchemaCompatibilityEvaluator.Evaluate(cfg, result);
+        result.Compatible = result.Issues.All(i => i.Severity != "error");
+        return result;
+    }
+
+    private async Task<PipelineSchemaPreflightResultDto> PreflightClickHouseTargetAsync(
+        DataSource target,
+        EtlTransformConfig cfg,
+        PipelineSchemaPreflightResultDto result,
+        CancellationToken cancellationToken)
+    {
+        result.TargetProvider = ConnectorCapabilityCatalog.CanonicalProvider(target.Type, null);
+        ClickHouseSinkConfig chConfig;
+        try
+        {
+            chConfig = ClickHouseSinkConfigContract.ParseForWrite(target.Config);
+        }
+        catch (Exception)
+        {
+            result.Issues.Add(new PreflightSchemaIssueDto
+            {
+                Severity = "error",
+                Code = "SwapMid:ETL:TargetConfigInvalid",
+                Message = "ClickHouse 目标连接配置无效。",
+            });
+            result.Compatible = false;
+            return result;
+        }
+
+        if (_sinkProbe is null)
+        {
+            result.Issues.Add(new PreflightSchemaIssueDto
+            {
+                Severity = "error",
+                Code = "SwapMid:ETL:TargetProbeFailed",
+                Message = "ClickHouse 元数据探测服务暂不可用。",
+            });
+            result.Compatible = false;
+            return result;
+        }
+
+        try
+        {
+            result.TargetColumns = await _sinkProbe.InspectClickHouseColumnsAsync(
+                chConfig,
+                cfg.TargetTable,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                "ClickHouse Schema 预检失败 targetId={TargetId} exceptionType={ExceptionType}",
+                target.Id,
+                ex.GetType().Name);
+            result.Issues.Add(new PreflightSchemaIssueDto
+            {
+                Severity = "error",
+                Code = "SwapMid:ETL:TargetProbeFailed",
+                Message = "无法连接 ClickHouse 或读取 system.columns 元数据失败。",
+            });
+            result.Compatible = false;
+            return result;
+        }
+
+        EtlSchemaCompatibilityEvaluator.Evaluate(cfg, result);
+        result.Compatible = result.Issues.All(i => i.Severity != "error");
+        return result;
+    }
+
+    private static PipelineSchemaPreflightResultDto PreflightSchemaOnWriteSink(
+        DataSource target,
+        EtlTransformConfig cfg,
+        PipelineSchemaPreflightResultDto result)
+    {
+        result.TargetProvider = ConnectorCapabilityCatalog.CanonicalProvider(target.Type, null);
+        try
+        {
+            if (target.Type == DataSourceType.ObjectStorage)
+            {
+                _ = ObjectStorageSinkConfigContract.ParseForWrite(target.Config, requireSecretKey: false);
+            }
+            else
+            {
+                _ = KafkaSinkConfigContract.ParseForWrite(target.Config, requirePasswordIfSasl: false);
+            }
+        }
+        catch (Exception)
+        {
+            result.Issues.Add(new PreflightSchemaIssueDto
+            {
+                Severity = "error",
+                Code = "SwapMid:ETL:TargetConfigInvalid",
+                Message = target.Type == DataSourceType.Kafka
+                    ? "Kafka 目标连接配置无效。"
+                    : "对象存储目标连接配置无效。",
+            });
+            result.Compatible = false;
+            return result;
+        }
+
+        var sourceMap = result.SourceColumns
+            .GroupBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        if (cfg.ColumnMappings.Count > 0)
+        {
+            var projected = new List<PreflightColumnDto>(cfg.ColumnMappings.Count);
+            foreach (var mapping in cfg.ColumnMappings)
+            {
+                if (!sourceMap.TryGetValue(mapping.SourceColumn, out var srcCol))
+                {
+                    result.Issues.Add(new PreflightSchemaIssueDto
+                    {
+                        Severity = "error",
+                        Code = "SwapMid:ETL:MappedSourceMissing",
+                        Message = $"字段映射中的源列「{mapping.SourceColumn}」未包含在源查询投影中。",
+                    });
+                    continue;
+                }
+
+                projected.Add(new PreflightColumnDto
+                {
+                    Name = mapping.TargetColumn,
+                    DataType = srcCol.DataType,
+                    IsNullable = srcCol.IsNullable,
+                });
+            }
+
+            result.TargetColumns = projected;
+        }
+        else
+        {
+            result.TargetColumns = result.SourceColumns
+                .Select(c => new PreflightColumnDto
+                {
+                    Name = c.Name,
+                    DataType = c.DataType,
+                    IsNullable = c.IsNullable,
+                })
+                .ToList();
+        }
+
         result.Compatible = result.Issues.All(i => i.Severity != "error");
         return result;
     }

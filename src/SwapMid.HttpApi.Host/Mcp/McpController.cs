@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using SwapMid.ApiGateway;
 using SwapMid.DataIntegration;
 using SwapMid.MessageBus;
+using SwapMid.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -404,7 +405,10 @@ public class McpController : AbpController
         var sourceId = ReadRequiredGuid(args, "sourceId");
         var targetId = ReadOptionalGuid(args, "targetId");
         var transformConfig = ReadOptionalString(args, "transformConfig") ?? string.Empty;
-        _ = EtlTransformConfig.Parse(transformConfig);
+        var targetType = targetId.HasValue && (await _authorizationService.AuthorizeAsync(User, null, SwapMidPermissions.DataIntegration.DataSources.Default)).Succeeded
+            ? (await _serviceProvider.GetRequiredService<IDataSourceAppService>().GetAsync(targetId.Value))?.Type ?? DataSourceType.RelationalDatabase
+            : DataSourceType.RelationalDatabase;
+        _ = EtlTransformConfig.Parse(transformConfig, targetType);
 
         var service = _serviceProvider.GetRequiredService<IDataPipelineAppService>();
         var created = await service.CreateAsync(new DataPipelineCreateUpdateDto

@@ -23,16 +23,26 @@ import { cn } from '@/lib/utils'
 import { useCrudForm } from '@/lib/crud/use-crud-form'
 import { useCrudResource } from '@/lib/crud/use-crud-resource'
 import {
+  ClickHouseConfigFields,
+  KafkaConfigFields,
+  ObjectStorageConfigFields,
+  RelationalConfigFields,
+} from './source-config-fields'
+import {
+  buildDataSourceConfig,
   changeDataSourceType,
   createDefaultDataSourceForm,
   defaultPortForProvider,
-  isRelationalConfigReadyToSave,
-  requiresNewRelationalPassword,
+  isDataSourceConfigReadyToSave,
+  isDataSourceTestable,
+  requiresNewCredential,
   toDataSourceBody,
   toDataSourceForm,
-  buildRelationalConfig,
+  type ClickHouseConfig,
   type DataSource,
   type DataSourceFormState,
+  type KafkaConfig,
+  type ObjectStorageConfig,
   type RelationalConfig,
 } from './source-form'
 
@@ -43,14 +53,11 @@ function getSourceTypes(t: ReturnType<typeof useTranslations>) {
     { value: 0, label: t('typeRelational') },
     { value: 1, label: t('typeRestApi') },
     { value: 2, label: t('typeFile') },
+    { value: 3, label: t('typeKafka') },
+    { value: 4, label: t('typeClickHouse') },
+    { value: 5, label: t('typeObjectStorage') },
   ]
 }
-
-const PROVIDERS = [
-  { value: 'postgresql', label: 'PostgreSQL' },
-  { value: 'sqlserver', label: 'SQL Server' },
-  { value: 'mysql', label: 'MySQL' },
-]
 
 export function DataSourcesClient({
   data,
@@ -91,11 +98,26 @@ export function DataSourcesClient({
   })
 
   const f = crud.set
-  const requiresNewPassword = crud.mode === 'edit'
-    && requiresNewRelationalPassword(crud.form, crud.target)
+  const editingTarget = crud.mode === 'edit' ? crud.target : null
+  const requiresNewSecret = requiresNewCredential(crud.form, editingTarget)
+  const canSave = !!crud.form.name.trim() && isDataSourceConfigReadyToSave(crud.form, editingTarget)
+  const canTestConnection = isDataSourceTestable(crud.form, editingTarget)
+  const showTestButton = ['0', '3', '4', '5'].includes(crud.form.type)
 
   function relational(patch: Partial<RelationalConfig>) {
     crud.set({ relational: { ...crud.form.relational, ...patch } })
+  }
+
+  function clickhouse(patch: Partial<ClickHouseConfig>) {
+    crud.set({ clickhouse: { ...crud.form.clickhouse, ...patch } })
+  }
+
+  function objectStorage(patch: Partial<ObjectStorageConfig>) {
+    crud.set({ objectStorage: { ...crud.form.objectStorage, ...patch } })
+  }
+
+  function kafka(patch: Partial<KafkaConfig>) {
+    crud.set({ kafka: { ...crud.form.kafka, ...patch } })
   }
 
   function changeProvider(provider: string) {
@@ -119,7 +141,7 @@ export function DataSourcesClient({
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: Number(crud.form.type),
-          config: crud.form.type === '0' ? buildRelationalConfig(crud.form.relational) : crud.form.config,
+          config: buildDataSourceConfig(crud.form),
         }),
       })
       if (!res.ok) throw new Error(await res.text())
@@ -164,21 +186,17 @@ export function DataSourcesClient({
       <CrudFormDialog
         crud={crud}
         title={{ create: t('createTitle'), edit: t('editTitle') }}
-        contentClassName="sm:max-w-[480px]"
-        canSubmit={
-          !!crud.form.name
-          && (crud.form.type !== '0' || isRelationalConfigReadyToSave(crud.form.relational))
-          && (!requiresNewPassword || !!crud.form.relational.password.trim())
-        }
+        size="lg"
+        canSubmit={canSave}
         footerExtra={
           <>
-            {crud.form.type === '0' && (
+            {showTestButton && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={testConnection}
-                disabled={testing || !crud.form.relational.host || (requiresNewPassword && !crud.form.relational.password.trim())}
+                disabled={testing || !canTestConnection}
               >
                 {testing ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : <PlugZap className="mr-1.5 size-3.5" />}{t('testConnectionButton')}
               </Button>
@@ -215,73 +233,34 @@ export function DataSourcesClient({
           </div>
         </div>
         {crud.form.type === '0' ? (
-          <div className="grid gap-3">
-            <div className="space-y-1.5">
-              <Label>{t('providerFieldLabel')}</Label>
-              <Select value={crud.form.relational.provider} onValueChange={changeProvider}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {PROVIDERS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>{t('hostFieldLabel')}</Label>
-                <Input value={crud.form.relational.host} onChange={e => relational({ host: e.target.value })} placeholder="db.example.internal" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t('portFieldLabel')}</Label>
-                <Input value={crud.form.relational.port} onChange={e => relational({ port: e.target.value })} placeholder={defaultPortForProvider(crud.form.relational.provider)} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>{t('databaseFieldLabel')}</Label>
-                <Input value={crud.form.relational.database} onChange={e => relational({ database: e.target.value })} placeholder="app_db" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t('usernameFieldLabel')}</Label>
-                <Input value={crud.form.relational.username} onChange={e => relational({ username: e.target.value })} placeholder={t('usernamePlaceholder')} />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="target-resource-group">{t('targetResourceGroupFieldLabel')}</Label>
-              <Input
-                id="target-resource-group"
-                value={crud.form.relational.targetResourceGroup}
-                onChange={e => relational({ targetResourceGroup: e.target.value })}
-                placeholder={t('targetResourceGroupPlaceholder')}
-                aria-describedby="target-resource-group-hint"
-                required
-              />
-              <p id="target-resource-group-hint" className="text-xs text-muted-foreground">
-                {t('targetResourceGroupRequiredHint')}
-              </p>
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t('passwordFieldLabel')}{requiresNewPassword ? ' *' : ''}</Label>
-              <Input
-                type="password"
-                value={crud.form.relational.password}
-                onChange={e => relational({ password: e.target.value })}
-                placeholder={crud.form.hasSecret && !requiresNewPassword ? t('passwordPlaceholderEdit') : t('passwordPlaceholderCreate')}
-                required={requiresNewPassword}
-              />
-            </div>
-            {crud.form.relational.provider !== 'mysql' && (
-              <div className="flex flex-wrap gap-4 text-sm">
-                <label className="flex items-center gap-2">
-                  <Switch checked={crud.form.relational.encrypt} onCheckedChange={v => relational({ encrypt: v })} />
-                  {t('encryptSwitchLabel')}
-                </label>
-                <label className="flex items-center gap-2">
-                  <Switch checked={crud.form.relational.trustServerCertificate} onCheckedChange={v => relational({ trustServerCertificate: v })} />
-                  {t('trustCertSwitchLabel')}
-                </label>
-              </div>
-            )}
-          </div>
+          <RelationalConfigFields
+            value={crud.form.relational}
+            hasSecret={crud.form.hasSecret}
+            requiresNewPassword={requiresNewSecret}
+            onChangeProvider={changeProvider}
+            onPatch={relational}
+          />
+        ) : crud.form.type === '4' ? (
+          <ClickHouseConfigFields
+            value={crud.form.clickhouse}
+            hasSecret={crud.form.hasSecret}
+            requiresNewPassword={requiresNewSecret}
+            onPatch={clickhouse}
+          />
+        ) : crud.form.type === '5' ? (
+          <ObjectStorageConfigFields
+            value={crud.form.objectStorage}
+            hasSecret={crud.form.hasSecret}
+            requiresNewSecretKey={requiresNewSecret}
+            onPatch={objectStorage}
+          />
+        ) : crud.form.type === '3' ? (
+          <KafkaConfigFields
+            value={crud.form.kafka}
+            hasSecret={crud.form.hasSecret}
+            requiresNewPassword={requiresNewSecret}
+            onPatch={kafka}
+          />
         ) : (
           <div className="space-y-1.5">
             <Label>{t('configJsonFieldLabel')}</Label>

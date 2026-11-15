@@ -32,7 +32,7 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "DataSourceType",
                 "required": false,
-                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）"
+                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）"
               },
               {
                 "name": "startTime",
@@ -103,7 +103,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "type",
                 "cnName": "",
                 "type": "DataSourceType",
-                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）",
+                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）",
                 "nullable": false
               },
               {
@@ -181,7 +181,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "type",
                 "cnName": "",
                 "type": "DataSourceType",
-                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）",
+                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）",
                 "required": true
               },
               {
@@ -225,7 +225,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "type",
                 "cnName": "",
                 "type": "DataSourceType",
-                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）",
+                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）",
                 "nullable": false
               },
               {
@@ -319,7 +319,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "type",
                 "cnName": "",
                 "type": "DataSourceType",
-                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）",
+                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）",
                 "nullable": false
               },
               {
@@ -406,7 +406,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "type",
                 "cnName": "",
                 "type": "DataSourceType",
-                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）",
+                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）",
                 "required": true
               },
               {
@@ -450,7 +450,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "type",
                 "cnName": "",
                 "type": "DataSourceType",
-                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）",
+                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）",
                 "nullable": false
               },
               {
@@ -538,7 +538,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "type",
                 "cnName": "",
                 "type": "DataSourceType",
-                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）",
+                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）",
                 "required": true
               },
               {
@@ -583,7 +583,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "type",
                 "cnName": "",
                 "type": "DataSourceType",
-                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）",
+                "description": "类型；取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）",
                 "required": true
               },
               {
@@ -1626,7 +1626,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "provider",
                 "cnName": "",
                 "type": "string",
-                "description": "标准化连接器标识（postgresql / sqlserver / mysql / rest-api / file）。",
+                "description": "标准化连接器标识（postgresql / sqlserver / mysql / rest-api / file / clickhouse / s3-parquet / kafka）。",
                 "nullable": true
               },
               {
@@ -1640,7 +1640,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "dataSourceType",
                 "cnName": "",
                 "type": "DataSourceType",
-                "description": "取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）",
+                "description": "取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）",
                 "nullable": false
               },
               {

@@ -4,6 +4,17 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-11-15
+
+### Added
+- **Analytical & Event-Stream ETL Sinks (`DataIntegration` / `HttpApi.Host` / `web/`)**:
+  - Extended `DataSourceType` (`Kafka = 3`, `ClickHouse = 4`, `ObjectStorage = 5`) and `ConnectorCapabilityCatalog` (`clickhouse`, `s3-parquet`, `kafka`) with explicit write-mode & receipt capability declarations.
+  - Added strongly-typed, secret-redacted configuration contracts (`ClickHouseSinkConfigContract`, `ObjectStorageSinkConfigContract`, `KafkaSinkConfigContract`), `targetResourceGroup` single-writer fencing identity, AWS Signature Version 4 request signing (`AwsSigV4Signer`), fail-closed SSRF / private-network guards (`DataIntegrationSinkEndpointPolicy` + `DataIntegration:Sinks:AllowedHosts` / `AllowedPrivateNetworks`), and live connection testing (`DataIntegrationSinkProbeService`).
+  - Implemented pluggable bounded-memory `IEtlSinkWriter` adapters (`ClickHouseEtlSinkWriter` via HTTP `FORMAT JSONEachRow` / `TRUNCATE`, `ObjectStorageEtlSinkWriter` writing temp-file Apache Parquet RowGroups via `Parquet.Net` or `jsonl` with `StreamContent` SigV4 uploads, and `KafkaEtlSinkWriter` via `Confluent.Kafka` async batch producer with trace/run correlation headers).
+  - Upgraded schema pre-flight (`DataPipelineSchemaPreflightAppService`) to inspect `ClickHouse` `system.columns` and generate projected schema-on-write targets for `ObjectStorage` and `Kafka`, alongside fail-closed mode/destination validation in `EtlTransformConfig`, `DataPipelineActivationCoordinator`, and `McpController`.
+  - Upgraded the Next.js Data Sources and Pipelines UI with structured `ClickHouse`, `Object Storage (S3/MinIO)`, and `Kafka` editors (preserving redacted secrets and scope-change secret prompts), live connection testing, target-aware write-mode/destination constraints, and full `zh-Hans`, `zh-Hant`, and `en` i18n parity.
+  - Exposed fail-closed `DataIntegration__Sinks__AllowedHosts` / `AllowedPrivateNetworks` configuration across `docker/docker-compose.yml`, `docker/.env.example`, and `charts/swapmid/`.
+
 ## [1.1.0] - 2026-11-15
 
 ### Added

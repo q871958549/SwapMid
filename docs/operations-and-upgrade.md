@@ -18,8 +18,8 @@ Before exposing SwapMid to corporate networks or partner traffic, verify all sev
 4. **Fail-Closed Machine Surfaces**:
    - Keep `API_GATEWAY_ENABLED=false` unless partner API forwarding is actively used; when enabled, configure explicit `API_GATEWAY_ALLOWED_HOSTS` (DNS-rebinding-safe SSRF allowlist) and per-client ACL + rate-limit policies (`PUT /api/v1/third-party-clients/{clientId}/policy`).
    - Keep `MCP_ENABLED=false` unless controlled AI operator tooling (`POST /api/mcp`) is explicitly required.
-5. **Outbound Webhook SSRF Allowlists**:
-   - Restrict `MessageBus:HttpDelivery:AllowedHosts` and `NotificationCenter:Webhook:AllowedHosts` to approved receiver domains; never allow RFC1918 or link-local metadata CIDR ranges unless explicitly scoped in `AllowedPrivateNetworks`.
+5. **Outbound Webhook & External Sink SSRF Allowlists**:
+   - Restrict `MessageBus:HttpDelivery:AllowedHosts`, `NotificationCenter:Webhook:AllowedHosts`, and `DataIntegration:Sinks:AllowedHosts` (ClickHouse / S3 / MinIO / Kafka) to approved receiver domains; never allow RFC1918 or link-local metadata CIDR ranges unless explicitly scoped in `AllowedPrivateNetworks`.
 6. **Least-Privilege External Database Accounts**:
    - Provision read-only accounts for ETL source connectors (`SELECT` only).
    - For **Target Receipt v1** targets, grant only table DML + receipt table `SELECT, INSERT` (never `CONTROL`, `ALTER`, or `DELETE` on `__swapmid_etl_receipt_v1`).

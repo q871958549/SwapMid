@@ -2,10 +2,14 @@ import { describe, expect, it } from 'vitest'
 import {
   ETL_WRITE_MODES,
   buildAutoColumnMappings,
+  getAllowedWriteModesForTarget,
+  getDestinationKindForTarget,
   isMappingTypeIncompatible,
   isReceiptMode,
   isUpsertConfigValid,
   isUpsertMode,
+  isValidDestinationForTarget,
+  isWriteModeAllowedForTarget,
   parseEtlTransformConfig,
   parseKeyColumnsText,
   serializeEtlTransformConfig,
@@ -276,6 +280,43 @@ describe('ETL columnMappings & field mapper helpers', () => {
     expect(isMappingTypeIncompatible('timestamp', 'bool')).toBe(true)
     expect(isMappingTypeIncompatible('int4', 'numeric(18,2)')).toBe(false)
     expect(isMappingTypeIncompatible('int4', 'varchar(64)')).toBe(false)
+    expect(isMappingTypeIncompatible('int4', 'Nullable(String)')).toBe(false)
     expect(isMappingTypeIncompatible(null, 'uuid')).toBe(false)
+  })
+})
+
+describe('Analytical & Streaming Sink Targets (ClickHouse / Kafka / ObjectStorage)', () => {
+  it('按目标类型限制允许的写入模式', () => {
+    expect(getAllowedWriteModesForTarget(0)).toEqual(ETL_WRITE_MODES)
+    expect(getAllowedWriteModesForTarget(4)).toEqual(['append', 'truncate'])
+    expect(getAllowedWriteModesForTarget(3)).toEqual(['append'])
+    expect(getAllowedWriteModesForTarget(5)).toEqual(['append'])
+    expect(getAllowedWriteModesForTarget(1)).toEqual([])
+
+    expect(isWriteModeAllowedForTarget('truncate', 4)).toBe(true)
+    expect(isWriteModeAllowedForTarget('upsert', 4)).toBe(false)
+    expect(isWriteModeAllowedForTarget('append-receipt-v1', 4)).toBe(false)
+    expect(isWriteModeAllowedForTarget('append', 3)).toBe(true)
+    expect(isWriteModeAllowedForTarget('truncate', 3)).toBe(false)
+    expect(isWriteModeAllowedForTarget('append', 5)).toBe(true)
+    expect(isWriteModeAllowedForTarget('upsert', 5)).toBe(false)
+  })
+
+  it('按目标类型校验 Topic / 对象键前缀 / 表名', () => {
+    expect(getDestinationKindForTarget(0)).toBe('table')
+    expect(getDestinationKindForTarget(4)).toBe('table')
+    expect(getDestinationKindForTarget(3)).toBe('topic')
+    expect(getDestinationKindForTarget(5)).toBe('prefix')
+
+    expect(isValidDestinationForTarget('analytics.orders_daily', 4)).toBe(true)
+    expect(isValidDestinationForTarget('orders/daily', 4)).toBe(false)
+
+    expect(isValidDestinationForTarget('orders.events-v1', 3)).toBe(true)
+    expect(isValidDestinationForTarget('..', 3)).toBe(false)
+    expect(isValidDestinationForTarget('orders/events', 3)).toBe(false)
+
+    expect(isValidDestinationForTarget('erp/orders/daily', 5)).toBe(true)
+    expect(isValidDestinationForTarget('/leading-slash', 5)).toBe(false)
+    expect(isValidDestinationForTarget('erp/../secret', 5)).toBe(false)
   })
 })

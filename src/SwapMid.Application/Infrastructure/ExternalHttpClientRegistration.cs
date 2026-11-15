@@ -57,6 +57,14 @@ internal static class ExternalHttpClientRegistration
             DefaultMessageDeliveryTimeoutSeconds,
             ExternalHttpConfigurationKeys.ApiGatewayAllowedHosts,
             ExternalHttpConfigurationKeys.ApiGatewayAllowedPrivateNetworks);
+
+        AddTimeoutOnlyClient(
+            services,
+            configuration,
+            ExternalHttpClientNames.DataIntegrationSink,
+            DefaultMessageDeliveryTimeoutSeconds,
+            ExternalHttpConfigurationKeys.DataIntegrationSinkAllowedHosts,
+            ExternalHttpConfigurationKeys.DataIntegrationSinkAllowedPrivateNetworks);
     }
 
     private static void AddTimeoutOnlyClient(

@@ -11,5 +11,14 @@ public enum DataSourceType
     RestApi = 1,
 
     [Description("文件")]
-    File = 2
+    File = 2,
+
+    [Description("Kafka")]
+    Kafka = 3,
+
+    [Description("ClickHouse")]
+    ClickHouse = 4,
+
+    [Description("对象存储")]
+    ObjectStorage = 5
 }

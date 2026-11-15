@@ -251,7 +251,7 @@ internal static class EtlSchemaCompatibilityEvaluator
             if (t.Contains("bool") || t == "bit") return "boolean";
             if (t.Contains("uuid") || t.Contains("uniqueidentifier")) return "uuid";
             if (t.Contains("date") || t.Contains("time")) return "temporal";
-            if (t.Contains("char") || t.Contains("text") || t.Contains("json") || t.Contains("xml")) return "text";
+            if (t.Contains("char") || t.Contains("text") || t.Contains("string") || t.Contains("json") || t.Contains("xml")) return "text";
             return "other";
         }
 

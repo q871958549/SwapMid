@@ -184,5 +184,74 @@ public class McpServerSecurityAndToolsTests
         capturedDraft.ShouldNotBeNull();
         capturedDraft!.ScheduleEnabled.ShouldBeFalse();
         capturedDraft.ScheduleCron.ShouldBeNull();
+
+        // 3. Author user with both DataPipelines.Create & DataSources.Default -> validates ObjectStorage & Kafka destinations
+        var objectStorageTargetId = Guid.NewGuid();
+        var kafkaTargetId = Guid.NewGuid();
+        dataSourceService.GetAsync(objectStorageTargetId)
+            .Returns(new DataSourceDto { Id = objectStorageTargetId, Name = "MinIO Lake", Type = DataSourceType.ObjectStorage });
+        dataSourceService.GetAsync(kafkaTargetId)
+            .Returns(new DataSourceDto { Id = kafkaTargetId, Name = "Kafka Events", Type = DataSourceType.Kafka });
+
+        using var sinkAuthorClient = host.CreateClient(
+            authenticated: true,
+            SwapMidPermissions.DataIntegration.DataPipelines.Create,
+            SwapMidPermissions.DataIntegration.DataSources.Default);
+
+        capturedDraft = null;
+        var s3DraftRes = await sinkAuthorClient.PostAsJsonAsync("/api/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = 6,
+            method = "tools/call",
+            @params = new
+            {
+                name = McpToolCatalog.DraftDataPipeline,
+                arguments = new
+                {
+                    name = "Orders Parquet Draft",
+                    sourceId = sourceId.ToString(),
+                    targetId = objectStorageTargetId.ToString(),
+                    transformConfig = JsonSerializer.Serialize(new
+                    {
+                        sourceQuery = "SELECT order_id, amount FROM orders",
+                        targetTable = "erp/daily",
+                        mode = "append",
+                    }),
+                },
+            },
+        });
+        s3DraftRes.StatusCode.ShouldBe(HttpStatusCode.OK);
+        capturedDraft.ShouldNotBeNull();
+        capturedDraft!.TargetId.ShouldBe(objectStorageTargetId);
+        capturedDraft.ScheduleEnabled.ShouldBeFalse();
+
+        capturedDraft = null;
+        var kafkaDraftRes = await sinkAuthorClient.PostAsJsonAsync("/api/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = 7,
+            method = "tools/call",
+            @params = new
+            {
+                name = McpToolCatalog.DraftDataPipeline,
+                arguments = new
+                {
+                    name = "Orders Kafka Draft",
+                    sourceId = sourceId.ToString(),
+                    targetId = kafkaTargetId.ToString(),
+                    transformConfig = JsonSerializer.Serialize(new
+                    {
+                        sourceQuery = "SELECT order_id, amount FROM orders",
+                        targetTable = "orders.events",
+                        mode = "append",
+                    }),
+                },
+            },
+        });
+        kafkaDraftRes.StatusCode.ShouldBe(HttpStatusCode.OK);
+        capturedDraft.ShouldNotBeNull();
+        capturedDraft!.TargetId.ShouldBe(kafkaTargetId);
+        capturedDraft.ScheduleEnabled.ShouldBeFalse();
     }
 }

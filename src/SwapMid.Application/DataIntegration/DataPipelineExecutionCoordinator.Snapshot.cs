@@ -117,16 +117,22 @@ public sealed partial class DataPipelineExecutionCoordinator
     {
         if (!source.IsEnabled || !target.IsEnabled ||
             source.Type != DataSourceType.RelationalDatabase ||
-            target.Type != DataSourceType.RelationalDatabase)
+            !target.Type.IsEtlSupportedTarget())
         {
             throw new BusinessException(
                 SwapMidDomainErrorCodes.DataIntegration
                     .PipelineExecutionInputInvalid);
         }
 
-        var transform = EtlTransformConfig.Parse(pipeline.TransformConfig);
+        var transform = EtlTransformConfig.Parse(pipeline.TransformConfig, target.Type);
+        if (target.Type != DataSourceType.RelationalDatabase &&
+            transform.ReconciliationStrategy == EtlReconciliationStrategy.TargetReceiptV1)
+        {
+            throw ReceiptInvalid();
+        }
+
         var legacyIdentity = ComputeTargetIdentity(
-            target.Config,
+            target,
             pipeline.TransformConfig);
         var activation = DataPipelineReceiptActivation.Read(pipeline);
         if (transform.ReconciliationStrategy ==
@@ -200,6 +206,136 @@ public sealed partial class DataPipelineExecutionCoordinator
             .ToArray());
         return normalized;
     }
+
+    internal static TargetIdentity ComputeTargetIdentity(
+        DataSource target,
+        string? transformConfig)
+    {
+        if (target.Type == DataSourceType.RelationalDatabase)
+        {
+            return ComputeTargetIdentity(target.Config, transformConfig);
+        }
+
+        try
+        {
+            var transform = EtlTransformConfig.Parse(transformConfig, target.Type);
+            return target.Type switch
+            {
+                DataSourceType.ClickHouse => ComputeClickHouseTargetIdentity(target.Config, transform),
+                DataSourceType.ObjectStorage => ComputeObjectStorageTargetIdentity(target.Config, transform),
+                DataSourceType.Kafka => ComputeKafkaTargetIdentity(target.Config, transform),
+                _ => throw new BusinessException(
+                    SwapMidDomainErrorCodes.DataIntegration.PipelineExecutionInputInvalid),
+            };
+        }
+        catch (BusinessException)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            throw new BusinessException(
+                SwapMidDomainErrorCodes.DataIntegration.PipelineExecutionInputInvalid);
+        }
+    }
+
+    private static TargetIdentity ComputeClickHouseTargetIdentity(
+        string targetConfig,
+        EtlTransformConfig transform)
+    {
+        var ch = ClickHouseSinkConfigContract.ParseForWrite(targetConfig);
+        RequireValidTargetResourceGroup(ch.TargetResourceGroup);
+        var (db, table) = DataIntegrationSinkProbeService.SplitClickHouseTable(ch.Database, transform.TargetTable);
+        var canonicalTable = $"{db}.{table}";
+        var canonicalIdentity = string.Join('\u001f', "clickhouse", ch.TargetResourceGroup, canonicalTable.Trim())
+            .ToUpperInvariant();
+        return BuildExternalTargetIdentity(
+            canonicalIdentity,
+            "clickhouse",
+            ch.Host,
+            ch.Port,
+            db,
+            canonicalTable,
+            ch.TargetResourceGroup,
+            transform);
+    }
+
+    private static TargetIdentity ComputeObjectStorageTargetIdentity(
+        string targetConfig,
+        EtlTransformConfig transform)
+    {
+        var obj = ObjectStorageSinkConfigContract.ParseForWrite(targetConfig, requireSecretKey: false);
+        RequireValidTargetResourceGroup(obj.TargetResourceGroup);
+        var uri = new Uri(obj.Endpoint, UriKind.Absolute);
+        var prefix = string.IsNullOrEmpty(obj.Prefix)
+            ? transform.TargetTable
+            : $"{obj.Prefix}/{transform.TargetTable}";
+        var canonicalIdentity = string.Join(
+                '\u001f',
+                "s3-parquet",
+                obj.TargetResourceGroup,
+                obj.Bucket,
+                prefix)
+            .ToUpperInvariant();
+        return BuildExternalTargetIdentity(
+            canonicalIdentity,
+            "s3-parquet",
+            uri.Host,
+            uri.Port,
+            obj.Bucket,
+            prefix,
+            obj.TargetResourceGroup,
+            transform);
+    }
+
+    private static TargetIdentity ComputeKafkaTargetIdentity(
+        string targetConfig,
+        EtlTransformConfig transform)
+    {
+        var kafka = KafkaSinkConfigContract.ParseForWrite(targetConfig, requirePasswordIfSasl: false);
+        RequireValidTargetResourceGroup(kafka.TargetResourceGroup);
+        var primary = kafka.Brokers[0];
+        var canonicalIdentity = string.Join('\u001f', "kafka", kafka.TargetResourceGroup, transform.TargetTable.Trim())
+            .ToUpperInvariant();
+        return BuildExternalTargetIdentity(
+            canonicalIdentity,
+            "kafka",
+            primary.Host,
+            primary.Port,
+            kafka.ClientId,
+            transform.TargetTable.Trim(),
+            kafka.TargetResourceGroup,
+            transform);
+    }
+
+    private static void RequireValidTargetResourceGroup(string group)
+    {
+        if (!RelationalDataSourceConfigContract.IsValidTargetResourceGroup(group))
+        {
+            throw new BusinessException(
+                SwapMidDomainErrorCodes.DataIntegration.PipelineTargetResourceGroupRequired);
+        }
+    }
+
+    private static TargetIdentity BuildExternalTargetIdentity(
+        string canonicalIdentity,
+        string provider,
+        string host,
+        int port,
+        string database,
+        string targetTable,
+        string targetResourceGroup,
+        EtlTransformConfig transform)
+        => new(
+            Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonicalIdentity))),
+            provider,
+            host,
+            port,
+            database,
+            targetTable,
+            targetResourceGroup,
+            transform.Mode == EtlWriteMode.Truncate ? "truncate" : "append",
+            Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(transform.SourceQuery))));
 
     internal static TargetIdentity ComputeTargetIdentity(
         string targetConfig,

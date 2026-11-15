@@ -14,6 +14,8 @@ data:
   ApiGateway__Enabled: {{ .Values.apiGateway.enabled | quote }}
   ApiGateway__AllowedHosts: {{ .Values.apiGateway.allowedHosts | quote }}
   ApiGateway__AllowedPrivateNetworks: {{ .Values.apiGateway.allowedPrivateNetworks | quote }}
+  DataIntegration__Sinks__AllowedHosts: {{ .Values.dataIntegration.sinks.allowedHosts | quote }}
+  DataIntegration__Sinks__AllowedPrivateNetworks: {{ .Values.dataIntegration.sinks.allowedPrivateNetworks | quote }}
   Mcp__Enabled: {{ .Values.mcp.enabled | quote }}
   AuthServer__ExternalOidc__Enabled: {{ .Values.externalOidc.enabled | quote }}
   AuthServer__ExternalOidc__DisplayName: {{ .Values.externalOidc.displayName | quote }}

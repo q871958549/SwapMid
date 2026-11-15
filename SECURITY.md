@@ -4,7 +4,8 @@
 
 | Version | Supported |
 | ------- | --------- |
-| `1.1.x` (`main`, Current) | :white_check_mark: |
+| `1.2.x` (`main`, Current) | :white_check_mark: |
+| `1.1.x` | :white_check_mark: |
 | `1.0.x` (LTS) | :white_check_mark: |
 | `< 1.0.0` (pre-release) | :x: |
 

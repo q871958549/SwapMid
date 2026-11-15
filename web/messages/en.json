@@ -286,6 +286,8 @@
     "errorPasswordComplexity": "The new password does not meet the current rules",
     "errorSessionExpired": "The password-change session has expired, please sign in again",
     "errorChangePasswordNetworkError": "Network connection failed, please try again later",
+    "ssoDivider": "or enterprise federation",
+    "ssoButton": "Sign in with {provider}",
     "techSupportFooter": "Tech Support: IT Dept · © 2026 {brand} · {version}"
   },
   "PasswordPolicy": {

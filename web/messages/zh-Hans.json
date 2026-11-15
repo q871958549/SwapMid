@@ -286,6 +286,8 @@
     "errorPasswordComplexity": "新密码不符合当前规则",
     "errorSessionExpired": "改密会话已失效，请重新登录后再试",
     "errorChangePasswordNetworkError": "网络连接失败，请稍后再试",
+    "ssoDivider": "或企业身份联邦",
+    "ssoButton": "使用 {provider} 单点登录",
     "techSupportFooter": "技术支持：IT 部 · © 2026 {brand} · {version}"
   },
   "PasswordPolicy": {

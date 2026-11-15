@@ -286,6 +286,8 @@
     "errorPasswordComplexity": "新密碼不符合當前規則",
     "errorSessionExpired": "改密會話已失效，請重新登錄後再試",
     "errorChangePasswordNetworkError": "網絡連接失敗，請稍後再試",
+    "ssoDivider": "或企業身份聯邦",
+    "ssoButton": "使用 {provider} 單點登錄",
     "techSupportFooter": "技術支持：IT 部 · © 2026 {brand} · {version}"
   },
   "PasswordPolicy": {

@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { changeInitialPasswordAction, loginAction, type LoginState } from '@/app/actions/auth'
+import type { ExternalAuthProvidersDto } from '@/lib/api/types'
 import { PasswordPolicyHints } from '@/components/password-policy-hints'
 import { evaluatePasswordPolicy, type PasswordPolicy } from '@/lib/password-policy'
 import { useTheme } from '@/components/theme-provider'
@@ -44,9 +45,11 @@ async function invokeLoginAction(
 
 export function LoginClient({
   initialPasswordPolicy,
+  externalAuth = null,
   releaseTag = '',
 }: {
   initialPasswordPolicy: PasswordPolicy | null
+  externalAuth?: ExternalAuthProvidersDto | null
   releaseTag?: string
 }) {
   const t = useTranslations('Login')
@@ -358,6 +361,23 @@ export function LoginClient({
                     </>
                   ) : t('loginButton')}
                 </Button>
+
+                {externalAuth?.externalOidcEnabled && (
+                  <div className="space-y-3 pt-1">
+                    <div className="relative flex items-center justify-center">
+                      <div className="border-border w-full border-t" />
+                      <span className="bg-card text-muted-foreground relative px-2 text-xs">
+                        {t('ssoDivider')}
+                      </span>
+                      <div className="border-border w-full border-t" />
+                    </div>
+                    <Button asChild type="button" variant="outline" className="w-full">
+                      <a href="/api/auth/oidc/start">
+                        {t('ssoButton', { provider: externalAuth.displayName || 'SSO' })}
+                      </a>
+                    </Button>
+                  </div>
+                )}
 
                 <div className="text-muted-foreground space-y-1 rounded-md bg-muted/50 px-3 py-2 text-xs leading-relaxed">
                   <p>{t('forgotPasswordHint')}</p>

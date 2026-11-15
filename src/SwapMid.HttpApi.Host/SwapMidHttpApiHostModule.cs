@@ -315,6 +315,9 @@ public class SwapMidHttpApiHostModule : AbpModule
             options.Grants.Add(
                 ImpersonationTokenExtensionGrant.ExtensionGrantName,
                 new ImpersonationTokenExtensionGrant());
+            options.Grants.Add(
+                ExternalOidcTokenExtensionGrant.ExtensionGrantName,
+                new ExternalOidcTokenExtensionGrant());
         });
     }
 
@@ -476,6 +479,11 @@ public class SwapMidHttpApiHostModule : AbpModule
     private static void ConfigureApiGateway(ServiceConfigurationContext context)
     {
         ApiGateway.GatewayAuthorizationPolicies.AddGatewayServices(context.Services);
+        context.Services.AddHttpClient(OpenIddict.DefaultExternalOidcCodeExchanger.HttpClientName, client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
+        context.Services.AddTransient<OpenIddict.IExternalOidcCodeExchanger, OpenIddict.DefaultExternalOidcCodeExchanger>();
     }
 
     private void ConfigureHangfire(ServiceConfigurationContext context, IConfiguration configuration)

@@ -14,19 +14,20 @@ English | **[简体中文](README.zh-CN.md)**
 
 ## Highlights
 
-- **Streaming Data Integration & Idempotent Receipt v1**
-  - Multi-source connectors across **PostgreSQL**, **SQL Server**, **MySQL**, **REST APIs**, and **CSV / Excel** files.
-  - Batch streaming execution without full-table memory buffering, paired with transactional **Target Receipt v1** (`__swapmid_etl_receipt_v1`) to guarantee idempotent target writes.
+- **Streaming Data Integration, Atomic Upsert & Schema Pre-flight**
+  - Multi-source connectors across **PostgreSQL**, **SQL Server**, **MySQL**, **REST APIs**, and **CSV / Excel** files with connector capability discovery and zero-row **Schema Pre-flight** diagnostics (`POST /api/v1/data-pipelines/preflight-schema`).
+  - Batch streaming execution (`append`, `truncate`, and watermark-guarded dialect-native atomic `upsert`), paired with transactional **Target Receipt v1** (`__swapmid_etl_receipt_v1`) to guarantee idempotent target writes.
 - **Durable Message Bus, CloudEvents 1.0 & Cross-Engine Outbox**
   - Automatic transactional Outbox bridge (`DataIntegration` -> `MessageBus`) emits idempotent `pipeline.execution.*` events onto `integration.pipeline.events` whenever a pipeline run finishes.
   - Topic/subscription routing with structured filtering (`subject:<glob>`, `$.jsonPath=value`, `;`-joined `AND`), persistent delivery attempts, exponential backoff retries, and manual dead-letter replay.
   - Built-in **HTTP Webhook** (CNCF **CloudEvents v1.0** `ce-*` headers + `HMAC-SHA256` `X-SwapMid-Signature` + outbound SSRF guard), **RabbitMQ**, and **BotWebhook** (Generic JSON, Slack, Feishu/Lark, DingTalk, WeCom) channels.
-- **Governed API Gateway & Client Credentials**
-  - Dynamic API groups and route forwarding (`/api/gateway/{**path}`, fail-closed by default via `ApiGateway:Enabled=false`), interactive request debugger, and **OpenIddict** `client_credentials` apps (`external-integration` scope) for external partners.
-- **Zero-Browser-Token BFF Console**
-  - Next.js 16 BFF stores OAuth2 tokens exclusively in Redis behind `HttpOnly` session cookies (`swapmid_sid`), distributed single-flight refresh leases, and per-tab identity generation fencing (`409 SESSION_IDENTITY_CHANGED`).
-- **Enterprise-Ready Operations Base**
-  - Unified Cron job scheduler, RBAC with 5-invariant admin impersonation guard, organization directory, two-tier data dictionaries, audit logs, Prometheus Alertmanager webhook receiver, and live OpenAPI + EF Core schema docs.
+- **Governed API Gateway, Event Ingress & Controlled MCP Server**
+  - Dynamic API groups and route forwarding (`/api/gateway/{**path}`, fail-closed by default via `ApiGateway:Enabled=false`) with DNS-rebinding-safe SSRF protection, per-client route-group ACLs, sliding-window rate limiting (`429` + `Retry-After`), and idempotent partner event ingress (`POST /api/gateway/events/{topicName}`).
+  - Opt-in RBAC-enforced **MCP Server** (`POST /api/mcp`, default `Mcp:Enabled=false`) exposing read-only diagnostics and `Draft`-only pipeline authoring for AI operators.
+- **Zero-Browser-Token BFF Console & Optional External OIDC SSO**
+  - Next.js 16 BFF stores OAuth2 tokens exclusively in Redis behind `HttpOnly` session cookies (`swapmid_sid`), supporting both local credentials and S256 PKCE **External OIDC Federation** (`AuthServer:ExternalOidc`).
+- **Cloud-Native Helm & Turnkey Observability**
+  - Official Kubernetes Helm v3 chart ([`charts/swapmid/`](charts/swapmid/)), runnable integration blueprints ([`examples/`](examples/)), Prometheus + Grafana + Alertmanager closed-loop observability overlay ([`docker/docker-compose.observability.yml`](docker/docker-compose.observability.yml)), and [Operations & Upgrade Runbook](docs/operations-and-upgrade.md).
 
 ---
 

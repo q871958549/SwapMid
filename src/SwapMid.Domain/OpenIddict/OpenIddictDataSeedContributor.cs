@@ -80,7 +80,8 @@ public class OpenIddictDataSeedContributor : OpenIddictDataSeedContributorBase, 
                     OpenIddictConstants.GrantTypes.ClientCredentials,
                     OpenIddictConstants.GrantTypes.RefreshToken,
                     "LinkLogin",
-                    "Impersonation"
+                    "Impersonation",
+                    "external_oidc"
                 },
                 scopes: commonScopes,
                 redirectUris: null,

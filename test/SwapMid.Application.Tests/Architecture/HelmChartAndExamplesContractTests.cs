@@ -74,6 +74,33 @@ public class HelmChartAndExamplesContractTests
         }
     }
 
+    [Fact]
+    public void Turnkey_observability_pack_contains_valid_grafana_dashboard_and_closed_loop_alerts()
+    {
+        var obsCompose = Path.Combine(RepoRoot, "docker", "docker-compose.observability.yml");
+        var promRules = Path.Combine(RepoRoot, "docker", "observability", "prometheus", "alert-rules.yml");
+        var alertmanager = Path.Combine(RepoRoot, "docker", "observability", "alertmanager", "alertmanager.yml");
+        var dashboard = Path.Combine(RepoRoot, "docker", "observability", "grafana", "dashboards", "swapmid-overview.json");
+
+        File.Exists(obsCompose).ShouldBeTrue();
+        File.Exists(promRules).ShouldBeTrue();
+        File.Exists(alertmanager).ShouldBeTrue();
+        File.Exists(dashboard).ShouldBeTrue();
+
+        var rulesText = File.ReadAllText(promRules);
+        rulesText.ShouldContain("swapmid_etl_execution_results_total");
+        rulesText.ShouldContain("swapmid_message_delivery_total");
+        rulesText.ShouldContain("swapmid_gateway_requests_total");
+
+        var amText = File.ReadAllText(alertmanager);
+        amText.ShouldContain("/api/v1/notification/webhooks/alertmanager");
+
+        var dashboardJson = File.ReadAllText(dashboard);
+        using var doc = JsonDocument.Parse(dashboardJson);
+        doc.RootElement.GetProperty("uid").GetString().ShouldBe("swapmid-overview-v1");
+        doc.RootElement.GetProperty("panels").GetArrayLength().ShouldBeGreaterThanOrEqualTo(6);
+    }
+
     private static string FindRepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

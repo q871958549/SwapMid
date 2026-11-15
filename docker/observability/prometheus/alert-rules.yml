@@ -1,0 +1,62 @@
+groups:
+  - name: swapmid.integration.engines
+    rules:
+      - alert: SwapMidEtlOutcomeUnknownDetected
+        expr: increase(swapmid_etl_execution_results_total{result="outcome_unknown"}[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          engine: data-integration
+        annotations:
+          summary: "ETL execution entered OutcomeUnknown quarantine"
+          description: "At least one DataIntegration pipeline execution entered OutcomeUnknown in the last 5 minutes. Automatic retries are blocked; verify Target Receipt v1 or reconcile manually before re-running."
+
+      - alert: SwapMidEtlExecutionFailures
+        expr: increase(swapmid_etl_execution_results_total{result="failed"}[10m]) >= 3
+        for: 2m
+        labels:
+          severity: warning
+          engine: data-integration
+        annotations:
+          summary: "Repeated DataIntegration ETL failures"
+          description: "3 or more ETL executions failed within 10 minutes."
+
+      - alert: SwapMidMessageBusDeliveryFailures
+        expr: rate(swapmid_message_delivery_total{result="failure"}[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          engine: message-bus
+        annotations:
+          summary: "Elevated MessageBus delivery failure rate"
+          description: "Outbound subscription deliveries are failing at > 0.1/sec over 5m; inspect dead-letter queue and subscriber endpoints."
+
+      - alert: SwapMidApiGateway5xxSpike
+        expr: sum(rate(swapmid_gateway_requests_total{status_class="5xx"}[5m])) > 0.2
+        for: 2m
+        labels:
+          severity: warning
+          engine: api-gateway
+        annotations:
+          summary: "Managed API Gateway 5xx error spike"
+          description: "Upstream forwarding or SSRF/timeout rejections exceeded 0.2 req/s over 5 minutes."
+
+      - alert: SwapMidHangfireJobExhausted
+        expr: increase(swapmid_hangfire_jobs_failed_total[10m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          engine: scheduling
+        annotations:
+          summary: "Hangfire background job exhausted retries"
+          description: "A background job entered FailedState after exhausting retries."
+
+      - alert: SwapMidDatabaseCommandFailures
+        expr: increase(swapmid_ef_commands_failed_total[5m]) >= 5
+        for: 1m
+        labels:
+          severity: critical
+          engine: platform-db
+        annotations:
+          summary: "EF Core database command failures detected"
+          description: "5 or more EF Core SQL commands failed or timed out in the last 5 minutes."

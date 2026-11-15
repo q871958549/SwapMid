@@ -4,6 +4,18 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-11-15
+
+### Added
+- **Optional External OIDC Identity Federation (`AccountManagement` / `OpenIddict` / `web/`)**:
+  - Added public OIDC discovery metadata endpoint (`GET /api/v1/auth-providers` via `AuthProviderController`, never exposing `ClientSecret`) and server-to-server OpenIddict extension grant (`grant_type=external_oidc` via `ExternalOidcTokenExtensionGrant` + `DefaultExternalOidcCodeExchanger`) validating ID tokens against OIDC Discovery JWKS.
+  - Added Next.js BFF S256 PKCE + HMAC-sealed state initiation and callback routes (`/api/auth/oidc/start`, `/api/auth/oidc/callback`) and conditional enterprise SSO sign-in button on `/login` across `zh-Hans`, `zh-Hant`, and `en`.
+- **Turnkey Observability Suite (`docker/observability/`)**:
+  - Added `docker/docker-compose.observability.yml` overlay, Prometheus scrape & 3-engine alert rule pack (`docker/observability/prometheus/`), closed-loop Alertmanager webhook routing into SwapMid (`docker/observability/alertmanager/alertmanager.yml`), and auto-provisioned Grafana overview dashboard (`docker/observability/grafana/dashboards/swapmid-overview.json`).
+- **v1.0 LTS Contract Freeze & Operations Runbook**:
+  - Added `OpenApiV1CompatibilityContractTests` locking core `/api/v1/*` paths and HTTP verbs across `DataIntegration`, `MessageBus`, `ApiManagement`, `AccountManagement`, and `NotificationCenter`.
+  - Authored production hardening, backup/restore, zero-downtime Compose/Helm upgrade, and `OutcomeUnknown` Target Receipt v1 DBA runbook in `docs/operations-and-upgrade.md`.
+
 ## [0.5.0] - 2026-11-15
 
 ### Added

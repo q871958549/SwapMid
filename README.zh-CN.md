@@ -14,19 +14,20 @@
 
 ## 核心特性
 
-- **流式数据集成与幂等目标回执（Target Receipt v1）**
-  - 内置 **PostgreSQL**、**SQL Server**、**MySQL**、**REST API** 与 **CSV / Excel** 多源连接器。
-  - 全链路分批流式读取与字段映射转换，避免大表全量驻留内存；配合目标库事务级幂等回执表 **`__swapmid_etl_receipt_v1`**，确保跨库重跑零重复写入。
+- **流式数据集成、原子 Upsert 与 Schema 静态预检**
+  - 内置 **PostgreSQL**、**SQL Server**、**MySQL**、**REST API** 与 **CSV / Excel** 多源连接器，提供连接器能力注册表与激活前零行只读 **Schema 兼容性预检**（`POST /api/v1/data-pipelines/preflight-schema`）。
+  - 全链路分批流式执行（支持 `append`、`truncate` 与带水位线保护的多方言原子 `upsert`），配合目标库事务级幂等回执表 **`__swapmid_etl_receipt_v1`**，确保跨库重跑零重复写入。
 - **可靠消息总线、CloudEvents 1.0 与跨引擎事务 Outbox**
   - 内置跨引擎事务性 Outbox 桥接（`DataIntegration` -> `MessageBus`）：ETL 管道进入终态时自动在同事务内入队并幂等发布 `pipeline.execution.*` 事件至 `integration.pipeline.events`。
   - 支持主题（Topic）/ 订阅（Subscription）结构化过滤（兼容纯子串、`subject:<通配符>`、`$.jsonPath=value` 及 `;` 多条件与组合）、持久化投递明细、指数退避自动重试与一键人工重放。
   - 原生支持 **HTTP Webhook**（CNCF **CloudEvents v1.0** 标准 `ce-*` 头 + `HMAC-SHA256` `X-SwapMid-Signature` 签名 + 出站 SSRF 防护）、**RabbitMQ** 以及通用 **BotWebhook**（Generic JSON / Slack / 飞书 / 钉钉 / 企业微信群机器人格式）。
-- **API 网关管理与第三方凭证授权**
-  - 动态 API 分组与网关转发（`/api/gateway/{**path}`，默认通过 `ApiGateway:Enabled=false` 安全默认关闭）、交互式在线调试台，以及基于 **OpenIddict** `client_credentials` 模式（`external-integration` 作用域）的第三方应用授权管理。
-- **零浏览器令牌暴露的 BFF 安全架构**
-  - Next.js 16 BFF 将 OAuth2 访问令牌与刷新令牌完全托管于服务端 Redis，浏览器仅持有 `HttpOnly` 会话 Cookie（`swapmid_sid`），内置分布式单飞刷新锁与多标签页身份世代围栏（`409 SESSION_IDENTITY_CHANGED`）。
-- **开箱即用的平台级治理底座**
-  - 统一 Cron 调度中心、满足 5 项安全不变量的管理员模拟登录守卫（`ImpersonationGuardService`）、企业/部门/岗位/员工主数据、两级数据字典、编码规则、审计日志、Prometheus Alertmanager 告警接入（`X-SwapMid-Alert-Token`）与在线 OpenAPI / 数据库字典文档。
+- **生产级 API 网关、异步事件接入与受控 MCP Server**
+  - 动态 API 分组与网关转发（`/api/gateway/{**path}`，默认 `ApiGateway:Enabled=false` 安全关闭），内置防 DNS 重绑定 SSRF 守卫、客户端路由组 ACL、滑动窗口分钟级限流（`429` + `Retry-After`）及幂等事件接入（`POST /api/gateway/events/{topicName}`）。
+  - 可选开启受平台 RBAC 约束的只读/草稿型 **MCP Server**（`POST /api/mcp`，默认 `Mcp:Enabled=false`），安全赋能 AI 运维诊断与草稿管道生成。
+- **零浏览器令牌 BFF 架构与可选外部 OIDC 单点登录**
+  - Next.js 16 BFF 将 OAuth2 令牌完全托管于服务端 Redis，同时支持本地账号密码与 S256 PKCE **外部企业 OIDC 身份联邦**（`AuthServer:ExternalOidc`）。
+- **云原生 Helm 交付与开箱即用可观测性闭环**
+  - 提供官方 Kubernetes Helm Chart（[`charts/swapmid/`](charts/swapmid/)）、可运行场景模板库（[`examples/`](examples/)）、Prometheus + Grafana + Alertmanager 闭环可观测性编排（[`docker/docker-compose.observability.yml`](docker/docker-compose.observability.yml)）与 [生产运维及升级手册](docs/operations-and-upgrade.md)。
 
 ---
 

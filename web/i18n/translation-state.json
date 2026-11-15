@@ -1659,6 +1659,18 @@
       "traditionalSourceHash": "b067c84a2905f76cb017f6da",
       "traditionalHash": "fbe6852d26c0ad20049f162a"
     },
+    "Login.ssoDivider": {
+      "sourceHash": "41726408ca856097e6d1e0f1",
+      "englishHash": "f95cefdf4bc8e3819e1faf41",
+      "traditionalSourceHash": "942d8c8a963a45f3bfb8bc5c",
+      "traditionalHash": "29d09b031179f0df86e92a00"
+    },
+    "Login.ssoButton": {
+      "sourceHash": "5c5c9f25e10fa42966d69d43",
+      "englishHash": "b8794f1164d2041f5130dcb4",
+      "traditionalSourceHash": "bb241471a71ad4d28aa90900",
+      "traditionalHash": "d004919cc7efb255d4c564ef"
+    },
     "Login.techSupportFooter": {
       "sourceHash": "955ca24451ffd9009dcb9db9",
       "englishHash": "9c1c5bc06c1a432bfac94ad6",

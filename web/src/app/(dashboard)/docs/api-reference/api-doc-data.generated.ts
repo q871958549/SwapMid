@@ -10989,7 +10989,7 @@ export const API_MODULES: ApiModule[] = [
   {
     "id": "account",
     "title": "账号与权限",
-    "description": "ABP Identity 账号、角色、细粒度权限矩阵、密码策略与受控代登录。",
+    "description": "ABP Identity 账号、角色、细粒度权限矩阵、密码策略、外部 OIDC 联邦与受控代登录。",
     "baseUrl": "/api/v1",
     "sections": [
       {
@@ -13372,6 +13372,55 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "string[]",
                 "description": "已授予的权限名集合。",
+                "nullable": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "AuthProvider",
+        "title": "身份认证提供商 /auth-providers",
+        "endpoints": [
+          {
+            "method": "GET",
+            "path": "/api/v1/auth-providers",
+            "summary": "查询登录页可用的外部身份认证提供方公开配置（不含客户端密钥）。",
+            "summaryDocumented": true,
+            "responseFields": [
+              {
+                "name": "externalOidcEnabled",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否已启用并完整配置外部 OIDC 单点登录。",
+                "nullable": false
+              },
+              {
+                "name": "displayName",
+                "cnName": "",
+                "type": "string",
+                "description": "外部 OIDC 提供方展示名称（如 Enterprise SSO / Keycloak / Entra ID）。",
+                "nullable": true
+              },
+              {
+                "name": "authority",
+                "cnName": "",
+                "type": "string",
+                "description": "OIDC Issuer / Authority 根地址（仅启用时返回）。",
+                "nullable": true
+              },
+              {
+                "name": "clientId",
+                "cnName": "",
+                "type": "string",
+                "description": "公开 OIDC ClientId（仅启用时返回）。",
+                "nullable": true
+              },
+              {
+                "name": "authorizationEndpoint",
+                "cnName": "",
+                "type": "string",
+                "description": "可选显式覆盖的授权端点 URL；为空时由 BFF 按 OIDC Discovery 自动发现。",
                 "nullable": true
               }
             ]

@@ -80,3 +80,4 @@ export interface PasswordPolicyDto {
   requireUppercase: boolean
   requireNonAlphanumeric: boolean
 }
+export type ExternalAuthProvidersDto = import('../generated').SwapMidAccountManagementExternalAuthProvidersDto

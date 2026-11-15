@@ -188,7 +188,9 @@
     "DataIntegration.pipeline.preflightIncompatibleBadge": "Blocking issues",
     "DataIntegration.pipeline.preflightSummaryStats": "Source cols {sourceCount} · Target cols {targetCount}",
     "DataIntegration.pipeline.preflightNoIssuesHint": "Source projection, target schema, key constraints, and write mode checks all passed.",
-    "DataIntegration.pipeline.preflightFailedFallback": "Schema pre-flight request failed; check network connectivity or permissions"
+    "DataIntegration.pipeline.preflightFailedFallback": "Schema pre-flight request failed; check network connectivity or permissions",
+    "Login.ssoDivider": "or enterprise federation",
+    "Login.ssoButton": "Sign in with {provider}"
   },
   "traditionalOverrides": {
     "Account.user.batchRemoveDoneTitle": "批次移除角色完成",

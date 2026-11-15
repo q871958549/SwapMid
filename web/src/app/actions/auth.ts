@@ -11,6 +11,7 @@ import {
   serverBackendFetch,
 } from '@/lib/server-backend-fetch'
 import { parsePasswordPolicy, type PasswordPolicy } from '@/lib/password-policy'
+import type { ExternalAuthProvidersDto } from '@/lib/api/types'
 
 export interface LoginState {
   error?: string
@@ -146,6 +147,20 @@ export async function getPasswordPolicyAction(): Promise<PasswordPolicy | null> 
     })
     if (!res.ok) return null
     return parsePasswordPolicy(await res.json())
+  } catch {
+    return null
+  }
+}
+
+export async function getExternalAuthProvidersAction(): Promise<ExternalAuthProvidersDto | null> {
+  try {
+    const res = await serverBackendFetch('/api/v1/auth-providers', {
+      cache: 'no-store',
+      deadlineMs: SERVER_BACKEND_DEADLINE_MS.publicPage,
+      maxResponseBytes: SERVER_BACKEND_RESPONSE_LIMIT_BYTES.oauthToken,
+    })
+    if (!res.ok) return null
+    return (await res.json()) as ExternalAuthProvidersDto
   } catch {
     return null
   }

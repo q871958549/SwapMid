@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: SwapMid Dashboards
+    orgId: 1
+    folder: SwapMid
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

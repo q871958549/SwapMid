@@ -82,7 +82,7 @@ async function main() {
       client_id: 'SwapMid_App',
       scope: 'SwapMid offline_access',
     }),
-    signal: AbortSignal.timeout(15_000),
+    signal: AbortSignal.timeout(30_000),
   })
   assert.equal(tokenRes.status, 200, `Expected /connect/token 200, got ${tokenRes.status}`)
   const tokenJson = await tokenRes.json()
@@ -95,6 +95,20 @@ async function main() {
   const pipelines = await apiJson('/api/v1/data-pipelines', { token })
   const demoPipeline = pipelines.items?.find((p) => p.name === 'demo-orders-pg-to-pg')
   assert.ok(demoPipeline, 'Seeded pipeline demo-orders-pg-to-pg not found')
+
+  const capabilities = await apiJson('/api/v1/data-pipelines/capabilities', { token })
+  assert.ok(Array.isArray(capabilities) && capabilities.length >= 5, 'Expected >=5 connector capabilities')
+
+  const preflight = await apiJson('/api/v1/data-pipelines/preflight-schema', {
+    method: 'POST',
+    token,
+    body: {
+      sourceId: demoPipeline.sourceId,
+      targetId: demoPipeline.targetId,
+      transformConfig: demoPipeline.transformConfig,
+    },
+  })
+  assert.equal(preflight.compatible, true, `Expected demo pipeline schema preflight compatible=true, got ${JSON.stringify(preflight.issues)}`)
 
   const runId = randomUUID()
   const execResult = await apiJson(`/api/v1/data-pipelines/${demoPipeline.id}/execute?runId=${runId}`, {
@@ -256,12 +270,31 @@ async function main() {
     })
   }
 
-  step('6/7 Platform Foundation: Verifying Hangfire Scheduled Jobs & Live DB Schema Dictionary')
+  step('6/7 Platform Foundation: Verifying Hangfire Scheduled Jobs, DB Schema Dictionary, Auth Providers & MCP')
   const jobs = await apiJson('/api/v1/scheduled-jobs', { token })
   assert.ok(Array.isArray(jobs) && jobs.length >= 4, `Expected >=4 scheduled jobs, got ${jobs?.length}`)
   const tables = await apiJson('/api/v1/db-schema/tables', { token })
   assert.ok(Array.isArray(tables) && tables.length >= 10, `Expected >=10 platform DB tables, got ${tables?.length}`)
-  console.log(`  ✓ Verified ${jobs.length} scheduled jobs and ${tables.length} live database dictionary tables`)
+  const authProviders = await apiJson('/api/v1/auth-providers')
+  assert.equal(typeof authProviders.externalOidcEnabled, 'boolean')
+
+  const mcpRes = await fetch(`${API_BASE}/api/mcp`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+    signal: AbortSignal.timeout(10_000),
+  })
+  if (mcpRes.status !== 404) {
+    assert.equal(mcpRes.status, 200, `Expected /api/mcp 200 when enabled, got ${mcpRes.status}`)
+    const mcpJson = await mcpRes.json()
+    assert.ok(Array.isArray(mcpJson.result?.tools) && mcpJson.result.tools.length === 5, 'Expected 5 RBAC-authorized MCP tools for admin')
+    console.log(`  ✓ Verified ${jobs.length} scheduled jobs, ${tables.length} DB tables, /api/v1/auth-providers, and 5 MCP tools`)
+  } else {
+    console.log(`  ✓ Verified ${jobs.length} scheduled jobs, ${tables.length} DB tables, /api/v1/auth-providers, and fail-closed /api/mcp (404)`)
+  }
 
   step('7/7 Next.js 16 BFF Security Boundary: Verifying build-meta, login SSR, route guard & /api/proxy 401')
   const buildMetaRes = await fetch(`${WEB_BASE}/build-meta`, { signal: AbortSignal.timeout(10_000) })

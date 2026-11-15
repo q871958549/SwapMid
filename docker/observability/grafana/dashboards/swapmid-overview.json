@@ -1,0 +1,118 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "DataIntegration — ETL Execution Outcomes (rate / 5m)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "swapmid-prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (result) (rate(swapmid_etl_execution_results_total[5m]))",
+          "legendFormat": "{{result}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "MessageBus — Subscription Delivery Rate (success vs failure)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "swapmid-prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (result) (rate(swapmid_message_delivery_total[5m]))",
+          "legendFormat": "{{result}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "ApiGateway — Traffic by Outcome & Status Class",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "swapmid-prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (outcome, status_class) (rate(swapmid_gateway_requests_total[5m]))",
+          "legendFormat": "{{outcome}} ({{status_class}})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "DataIntegration — Admission & Fence Coordination Events",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "swapmid-prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (outcome) (rate(swapmid_etl_execution_admission_total[5m]))",
+          "legendFormat": "admission:{{outcome}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (outcome) (rate(swapmid_etl_execution_coordination_events_total[5m])) > 0",
+          "legendFormat": "coord:{{outcome}}",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "P95 Latency — Message Delivery & API Gateway Upstream (s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "swapmid-prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(swapmid_message_delivery_duration_seconds_bucket[5m])))",
+          "legendFormat": "message_delivery p95",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(swapmid_gateway_upstream_duration_seconds_bucket[5m])))",
+          "legendFormat": "gateway_upstream p95",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Platform Foundation — EF Core P95 & Hangfire / Rate-Limit Events",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "swapmid-prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(swapmid_ef_command_duration_seconds_bucket[5m])))",
+          "legendFormat": "ef_command p95",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (policy) (rate(swapmid_out_rate_limit_rejections_total[5m]))",
+          "legendFormat": "ratelimit:{{policy}}",
+          "refId": "B"
+        }
+      ]
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 39,
+  "tags": ["swapmid", "integration", "etl", "message-bus", "api-gateway"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "browser",
+  "title": "SwapMid — Three Integration Engines Overview",
+  "uid": "swapmid-overview-v1",
+  "version": 1
+}

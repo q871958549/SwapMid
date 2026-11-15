@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using SwapMid.ApiManagement;
 using SwapMid.DbMigrator;
@@ -35,6 +36,7 @@ using Xunit;
 
 namespace SwapMid.DbMigratorTests;
 
+[Collection(SwapMidTestConsts.CollectionDefinitionName)]
 public class DbMigratorProductionSeedTests
 {
     [Fact]
@@ -144,11 +146,20 @@ public class DbMigratorProductionSeedTests
     )]
     private sealed class DbMigratorTestHostModule : AbpModule
     {
-        [ThreadStatic]
-        internal static SqliteConnection? BootstrapConnection;
+        private static readonly AsyncLocal<SqliteConnection?> BootstrapConnectionSlot = new();
+        private static readonly AsyncLocal<bool> DemoSeedEnabledSlot = new();
 
-        [ThreadStatic]
-        internal static bool DemoSeedEnabled;
+        internal static SqliteConnection? BootstrapConnection
+        {
+            get => BootstrapConnectionSlot.Value;
+            set => BootstrapConnectionSlot.Value = value;
+        }
+
+        internal static bool DemoSeedEnabled
+        {
+            get => DemoSeedEnabledSlot.Value;
+            set => DemoSeedEnabledSlot.Value = value;
+        }
 
         public override void PreConfigureServices(ServiceConfigurationContext context)
         {

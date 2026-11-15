@@ -33,6 +33,13 @@ public class ThirdPartyClientController : SwapMidController, IThirdPartyClientAp
     public Task<ThirdPartyClientCredentialDto> ResetSecretAsync(string clientId)
         => _service.ResetSecretAsync(clientId);
 
+    /// <summary>更新第三方客户端网关访问策略（允许访问的 API 路由分组与每分钟限流配额）。</summary>
+    [HttpPut("{clientId}/policy")]
+    public Task<ThirdPartyClientDto> UpdatePolicyAsync(
+        string clientId,
+        [FromBody] UpdateThirdPartyClientPolicyDto input)
+        => _service.UpdatePolicyAsync(clientId, input);
+
     [HttpDelete("{clientId}")]
     public Task DeleteAsync(string clientId) => _service.DeleteAsync(clientId);
 }

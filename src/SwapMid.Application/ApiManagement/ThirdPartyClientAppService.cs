@@ -45,13 +45,7 @@ public class ThirdPartyClientAppService : SwapMidAppService, IThirdPartyClientAp
 
         return apps
             .Where(app => ParseJsonArray(app.Permissions).Contains(ScopePermission))
-            .Select(app => new ThirdPartyClientDto
-            {
-                Id = app.Id,
-                ClientId = app.ClientId ?? string.Empty,
-                DisplayName = app.DisplayName ?? app.ClientId ?? string.Empty,
-                CreationTime = app.CreationTime
-            })
+            .Select(MapToDto)
             .ToList();
     }
 
@@ -84,6 +78,14 @@ public class ThirdPartyClientAppService : SwapMidAppService, IThirdPartyClientAp
                 ScopePermission
             }
         };
+
+        if ((input.AllowedGroupIds is { Count: > 0 }) || input.RateLimitPerMinute.HasValue)
+        {
+            descriptor.Properties[GatewayClientGovernanceReader.PolicyPropertyKey] =
+                GatewayClientGovernanceReader.SerializePolicyElement(
+                    input.AllowedGroupIds,
+                    input.RateLimitPerMinute);
+        }
 
         var created = await _applicationManager.CreateAsync(descriptor);
         var model = (OpenIddictApplicationModel)created;
@@ -120,6 +122,39 @@ public class ThirdPartyClientAppService : SwapMidAppService, IThirdPartyClientAp
         };
     }
 
+    [Authorize(SwapMidPermissions.ApiManagement.ThirdPartyClients.Update)]
+    public async Task<ThirdPartyClientDto> UpdatePolicyAsync(
+        string clientId,
+        UpdateThirdPartyClientPolicyDto input)
+    {
+        var entity = await FindByClientIdOrThrowAsync(clientId);
+        EnsureThirdPartyManagedClient(entity);
+
+        var model = entity.ToModel();
+        var descriptor = new AbpApplicationDescriptor();
+        await _applicationManager.PopulateAsync(descriptor, model);
+
+        var normalizedGroups = (input.AllowedGroupIds ?? [])
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .ToList();
+        if (normalizedGroups.Count == 0 && !input.RateLimitPerMinute.HasValue)
+        {
+            descriptor.Properties.Remove(GatewayClientGovernanceReader.PolicyPropertyKey);
+        }
+        else
+        {
+            descriptor.Properties[GatewayClientGovernanceReader.PolicyPropertyKey] =
+                GatewayClientGovernanceReader.SerializePolicyElement(
+                    normalizedGroups,
+                    input.RateLimitPerMinute);
+        }
+
+        await _applicationManager.UpdateAsync(model, descriptor);
+        var updated = await FindByClientIdOrThrowAsync(clientId);
+        return MapToDto(updated);
+    }
+
     [Authorize(SwapMidPermissions.ApiManagement.ThirdPartyClients.Delete)]
     public async Task DeleteAsync(string clientId)
     {
@@ -127,6 +162,29 @@ public class ThirdPartyClientAppService : SwapMidAppService, IThirdPartyClientAp
         EnsureThirdPartyManagedClient(entity);
 
         await _applicationManager.DeleteAsync(entity.ToModel());
+    }
+
+    private static ThirdPartyClientDto MapToDto(OpenIddictApplication app)
+    {
+        var permissions = ParseJsonArray(app.Permissions);
+        var scopes = permissions
+            .Where(p => p.StartsWith(OpenIddictConstants.Permissions.Prefixes.Scope, StringComparison.Ordinal))
+            .Select(p => p[OpenIddictConstants.Permissions.Prefixes.Scope.Length..])
+            .OrderBy(s => s, StringComparer.Ordinal)
+            .ToList();
+        var (allowedGroups, rateLimit) =
+            GatewayClientGovernanceReader.ReadFromPropertiesJson(app.Properties);
+
+        return new ThirdPartyClientDto
+        {
+            Id = app.Id,
+            ClientId = app.ClientId ?? string.Empty,
+            DisplayName = app.DisplayName ?? app.ClientId ?? string.Empty,
+            Scopes = scopes,
+            AllowedGroupIds = allowedGroups,
+            RateLimitPerMinute = rateLimit,
+            CreationTime = app.CreationTime,
+        };
     }
 
     private async Task<OpenIddictApplication> FindByClientIdOrThrowAsync(string clientId)

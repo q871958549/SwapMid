@@ -29,8 +29,14 @@ internal static class EtlTargetPreflight
         bool truncate,
         long maxBatchPayloadBytes,
         int commandTimeoutSeconds,
-        CancellationToken ct)
+        CancellationToken ct,
+        EtlUpsertSpec? upsertSpec = null)
     {
+        if (upsertSpec != null)
+        {
+            _ = EtlTargetUpsertPreflight.ResolveProjection(sourceColumns, upsertSpec);
+        }
+
         var canonicalTargetTable =
             await EtlTargetSession.ResolveCanonicalTargetTableAsync(
                 targetConnection,
@@ -62,6 +68,17 @@ internal static class EtlTargetPreflight
                     targetProbe,
                     commandTimeoutSeconds,
                     ct);
+                if (upsertSpec != null)
+                {
+                    await EtlTargetUpsertPreflight.ValidateTargetAsync(
+                        targetConnection,
+                        transaction: null,
+                        canonicalTargetTable,
+                        targetProbe,
+                        upsertSpec,
+                        commandTimeoutSeconds,
+                        ct);
+                }
             }
 
             return new Preparation(
@@ -95,6 +112,17 @@ internal static class EtlTargetPreflight
                     targetProbe,
                     commandTimeoutSeconds,
                     ct);
+                if (upsertSpec != null)
+                {
+                    await EtlTargetUpsertPreflight.ValidateTargetAsync(
+                        targetConnection,
+                        transaction: null,
+                        canonicalTargetTable,
+                        targetProbe,
+                        upsertSpec,
+                        commandTimeoutSeconds,
+                        ct);
+                }
             }
 
             return new Preparation(
@@ -146,6 +174,17 @@ internal static class EtlTargetPreflight
             targetProbe,
             commandTimeoutSeconds,
             ct);
+        if (upsertSpec != null)
+        {
+            await EtlTargetUpsertPreflight.ValidateTargetAsync(
+                targetConnection,
+                transaction: null,
+                canonicalTargetTable,
+                targetProbe,
+                upsertSpec,
+                commandTimeoutSeconds,
+                ct);
+        }
 
         await targetConnection.ExecuteAsync(new CommandDefinition(
             """
@@ -193,7 +232,8 @@ internal static class EtlTargetPreflight
         RelationalDataSourceConnection.Probe targetProbe,
         bool truncate,
         int commandTimeoutSeconds,
-        CancellationToken ct)
+        CancellationToken ct,
+        EtlUpsertSpec? upsertSpec = null)
     {
         if (targetConnection is SqlConnection &&
             targetProbe.NormalizedProvider is "sqlserver" or "mssql")
@@ -225,6 +265,18 @@ internal static class EtlTargetPreflight
                 targetTransaction,
                 targetTable,
                 truncate,
+                commandTimeoutSeconds,
+                ct);
+        }
+
+        if (upsertSpec != null)
+        {
+            await EtlTargetUpsertPreflight.ValidateTargetAsync(
+                targetConnection,
+                targetTransaction,
+                targetTable,
+                targetProbe,
+                upsertSpec,
                 commandTimeoutSeconds,
                 ct);
         }

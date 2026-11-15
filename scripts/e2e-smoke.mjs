@@ -168,12 +168,10 @@ async function main() {
   )
   console.log(`  ✓ MessageRecord ${published.id} delivered to RabbitMQ exchange swapmid.demo.events`)
 
-  step('5/7 Engine 3 (ApiManagement): Verifying seeded route & OpenIddict client_credentials lifecycle')
+  step('5/7 Engine 3 (ApiManagement): Verifying route catalog, client governance policy & API Gateway')
   const routes = await apiJson('/api/v1/api-routes', { token })
-  assert.ok(
-    routes.items?.some((r) => r.path === '/gw/demo/health'),
-    'Seeded API route /gw/demo/health not found',
-  )
+  const demoRoute = routes.items?.find((r) => r.path === '/gw/demo/health')
+  assert.ok(demoRoute, 'Seeded API route /gw/demo/health not found')
 
   const tempClientId = `smoke_client_${randomUUID().slice(0, 8)}`
   const createdClient = await apiJson('/api/v1/third-party-clients', {
@@ -184,6 +182,19 @@ async function main() {
   try {
     assert.equal(createdClient.clientId, tempClientId)
     assert.ok(createdClient.clientSecret, 'Expected one-time clientSecret')
+
+    const updatedClient = await apiJson(
+      `/api/v1/third-party-clients/${encodeURIComponent(tempClientId)}/policy`,
+      {
+        method: 'PUT',
+        token,
+        body: {
+          allowedGroupIds: demoRoute.groupId ? [demoRoute.groupId] : [],
+          rateLimitPerMinute: 60,
+        },
+      },
+    )
+    assert.equal(updatedClient.rateLimitPerMinute, 60)
 
     const ccRes = await fetch(`${API_BASE}/connect/token`, {
       method: 'POST',
@@ -199,7 +210,45 @@ async function main() {
     assert.equal(ccRes.status, 200, `Expected client_credentials /connect/token 200, got ${ccRes.status}`)
     const ccJson = await ccRes.json()
     assert.ok(ccJson.access_token, 'Expected client_credentials access_token')
-    console.log(`  ✓ Provisioned ${tempClientId}, issued external-integration JWT, and verified route catalog`)
+
+    const gwRes = await fetch(`${API_BASE}/api/gateway/gw/demo/health`, {
+      headers: { Authorization: `Bearer ${ccJson.access_token}` },
+      signal: AbortSignal.timeout(15_000),
+    })
+    if (gwRes.status !== 404) {
+      assert.equal(gwRes.status, 200, `Expected live /api/gateway/gw/demo/health 200, got ${gwRes.status}`)
+      const idempotencyKey = `smoke-evt-${randomUUID()}`
+      const evtRes1 = await fetch(`${API_BASE}/api/gateway/events/integration.pipeline.events`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${ccJson.access_token}`,
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey,
+          'X-SwapMid-Subject': 'gateway.smoke.event',
+        },
+        body: JSON.stringify({ source: 'e2e-smoke', ok: true }),
+        signal: AbortSignal.timeout(15_000),
+      })
+      assert.equal(evtRes1.status, 202, `Expected /api/gateway/events/* 202, got ${evtRes1.status}`)
+      const evtJson1 = await evtRes1.json()
+      const evtRes2 = await fetch(`${API_BASE}/api/gateway/events/integration.pipeline.events`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${ccJson.access_token}`,
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey,
+          'X-SwapMid-Subject': 'gateway.smoke.event',
+        },
+        body: JSON.stringify({ source: 'e2e-smoke', ok: true }),
+        signal: AbortSignal.timeout(15_000),
+      })
+      assert.equal(evtRes2.status, 202)
+      const evtJson2 = await evtRes2.json()
+      assert.equal(evtJson1.eventId, evtJson2.eventId, 'Expected deterministic eventId on Idempotency-Key replay')
+      console.log(`  ✓ Provisioned ${tempClientId}, enforced client policy (60 req/min), forwarded /gw/demo/health (200), and ingested idempotent gateway event (${evtJson1.eventId})`)
+    } else {
+      console.log(`  ✓ Provisioned ${tempClientId}, enforced client policy (60 req/min), issued external-integration JWT (gateway disabled by default -> 404)`)
+    }
   } finally {
     await apiJson(`/api/v1/third-party-clients/${encodeURIComponent(tempClientId)}`, {
       method: 'DELETE',

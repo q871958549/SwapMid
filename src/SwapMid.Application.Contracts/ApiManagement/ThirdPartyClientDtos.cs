@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace SwapMid.ApiManagement;
@@ -11,6 +12,9 @@ public class ThirdPartyClientDto
     public Guid Id { get; set; }
     public string ClientId { get; set; } = null!;
     public string DisplayName { get; set; } = null!;
+    public List<string> Scopes { get; set; } = [];
+    public List<Guid> AllowedGroupIds { get; set; } = [];
+    public int? RateLimitPerMinute { get; set; }
     public DateTime? CreationTime { get; set; }
 }
 
@@ -23,6 +27,19 @@ public class CreateThirdPartyClientDto
     [Required]
     [StringLength(128)]
     public string DisplayName { get; set; } = null!;
+
+    public List<Guid>? AllowedGroupIds { get; set; }
+
+    [Range(1, 60_000)]
+    public int? RateLimitPerMinute { get; set; }
+}
+
+public class UpdateThirdPartyClientPolicyDto
+{
+    public List<Guid> AllowedGroupIds { get; set; } = [];
+
+    [Range(1, 60_000)]
+    public int? RateLimitPerMinute { get; set; }
 }
 
 public class ThirdPartyClientCredentialDto
@@ -31,4 +48,16 @@ public class ThirdPartyClientCredentialDto
     public string ClientId { get; set; } = null!;
     public string DisplayName { get; set; } = null!;
     public string ClientSecret { get; set; } = null!;
+}
+
+public sealed record GatewayClientPolicySnapshot(
+    string ClientId,
+    IReadOnlySet<Guid> AllowedGroupIds,
+    int? RateLimitPerMinute);
+
+public interface IGatewayClientGovernanceReader
+{
+    System.Threading.Tasks.Task<GatewayClientPolicySnapshot?> FindPolicyAsync(
+        string clientId,
+        System.Threading.CancellationToken cancellationToken = default);
 }

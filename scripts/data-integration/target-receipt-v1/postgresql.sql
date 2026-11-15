@@ -58,7 +58,7 @@ CREATE TABLE swapmid_etl.execution_receipt_v1
     CONSTRAINT ck_swapmid_etl_execution_receipt_v1_protocol_version
         CHECK (protocol_version = 1),
     CONSTRAINT ck_swapmid_etl_execution_receipt_v1_write_mode
-        CHECK (write_mode IN (1, 2) AND octet_length(batch_digest) = 32),
+        CHECK (write_mode IN (1, 2, 3) AND octet_length(batch_digest) = 32),
     CONSTRAINT ck_swapmid_etl_execution_receipt_v1_processed_rows
         CHECK (processed_rows >= 0)
 );

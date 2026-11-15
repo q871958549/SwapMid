@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Volo.Abp;
@@ -13,6 +14,9 @@ public enum EtlWriteMode
 
     /// <summary>全量替换：先清空目标表（DELETE）再写入。</summary>
     Truncate,
+
+    /// <summary>幂等合并：按业务唯一键执行冲突更新与新行插入（Upsert）。</summary>
+    Upsert,
 }
 
 /// <summary>ETL 外部结果对账协议。</summary>
@@ -31,24 +35,41 @@ public sealed record EtlRunResult(
     bool TargetTruncated,
     EtlTargetReceiptEvidence? ReceiptEvidence = null);
 
+/// <summary>Upsert 唯一键与可选水位线规格。</summary>
+internal sealed record EtlUpsertSpec(
+    IReadOnlyList<string> KeyColumns,
+    string? WatermarkColumn);
+
 /// <summary>
 /// ETL 转换配置（<see cref="DataPipeline.TransformConfig"/> JSON 投影）：
-/// <c>{ "sourceQuery": "SELECT ...", "targetTable": "schema.table", "mode": "append|truncate|append-receipt-v1|truncate-receipt-v1" }</c>。
-/// receipt-v1 使用新的 mode 作为旧二进制的 fail-closed poison pill；不得改为会被旧解析器
+/// <c>{ "sourceQuery": "SELECT ...", "targetTable": "schema.table", "mode": "append|truncate|upsert|append-receipt-v1|truncate-receipt-v1|upsert-receipt-v1", "keyColumns": ["id"], "watermarkColumn": "updated_at" }</c>。
+/// receipt-v1 与 upsert 使用显式 mode 作为旧二进制的 fail-closed poison pill；不得改为会被旧解析器
 /// 静默忽略的可选 JSON 字段。
 /// </summary>
 public sealed class EtlTransformConfig
 {
+    public const int MaxUpsertKeyColumns = 16;
+
     public string SourceQuery { get; init; } = string.Empty;
     public string TargetTable { get; init; } = string.Empty;
     public EtlWriteMode Mode { get; init; } = EtlWriteMode.Append;
     public EtlReconciliationStrategy ReconciliationStrategy { get; init; } =
         EtlReconciliationStrategy.ManualV0;
+    public IReadOnlyList<string> KeyColumns { get; init; } = Array.Empty<string>();
+    public string? WatermarkColumn { get; init; }
+
+    internal EtlUpsertSpec? UpsertSpec =>
+        Mode == EtlWriteMode.Upsert
+            ? new EtlUpsertSpec(KeyColumns, WatermarkColumn)
+            : null;
 
     // 合法表名：字母/下划线开头 + 字母数字下划线，可含一级 schema.table。
     // 表名不能参数化，因此只能通过白名单校验后再按数据库方言引用。
     private static readonly Regex IdentifierPattern =
         new(@"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$", RegexOptions.Compiled);
+
+    private static readonly Regex ColumnIdentifierPattern =
+        new(@"^[A-Za-z_][A-Za-z0-9_]*$", RegexOptions.Compiled);
 
     public static EtlTransformConfig Parse(string? json)
     {
@@ -87,24 +108,33 @@ public sealed class EtlTransformConfig
                 }
             }
 
+            var writeMode = mode switch
+            {
+                null or "append" or "append-receipt-v1" =>
+                    EtlWriteMode.Append,
+                "truncate" or "truncate-receipt-v1" =>
+                    EtlWriteMode.Truncate,
+                "upsert" or "upsert-receipt-v1" =>
+                    EtlWriteMode.Upsert,
+                _ => throw InvalidInput(),
+            };
+
+            var keyColumns = ParseKeyColumns(root, writeMode);
+            var watermarkColumn = ParseWatermarkColumn(root, writeMode, keyColumns);
+
             cfg = new EtlTransformConfig
             {
                 SourceQuery = Get("sourceQuery")?.Trim() ?? string.Empty,
                 TargetTable = Get("targetTable")?.Trim() ?? string.Empty,
-                Mode = mode switch
-                {
-                    null or "append" or "append-receipt-v1" =>
-                        EtlWriteMode.Append,
-                    "truncate" or "truncate-receipt-v1" =>
-                        EtlWriteMode.Truncate,
-                    _ => throw InvalidInput(),
-                },
+                Mode = writeMode,
                 ReconciliationStrategy = mode switch
                 {
-                    "append-receipt-v1" or "truncate-receipt-v1" =>
+                    "append-receipt-v1" or "truncate-receipt-v1" or "upsert-receipt-v1" =>
                         EtlReconciliationStrategy.TargetReceiptV1,
                     _ => EtlReconciliationStrategy.ManualV0,
                 },
+                KeyColumns = keyColumns,
+                WatermarkColumn = watermarkColumn,
             };
         }
         catch (JsonException)
@@ -128,6 +158,104 @@ public sealed class EtlTransformConfig
     internal static bool IsValidTargetTable(string? targetTable) =>
         !string.IsNullOrWhiteSpace(targetTable) &&
         IdentifierPattern.IsMatch(targetTable);
+
+    internal static bool IsValidColumnName(string? columnName) =>
+        !string.IsNullOrWhiteSpace(columnName) &&
+        ColumnIdentifierPattern.IsMatch(columnName);
+
+    private static IReadOnlyList<string> ParseKeyColumns(
+        JsonElement root,
+        EtlWriteMode writeMode)
+    {
+        if (!root.TryGetProperty("keyColumns", out var keyElement) ||
+            keyElement.ValueKind == JsonValueKind.Null)
+        {
+            if (writeMode == EtlWriteMode.Upsert)
+            {
+                throw InvalidInput();
+            }
+
+            return Array.Empty<string>();
+        }
+
+        if (keyElement.ValueKind != JsonValueKind.Array)
+        {
+            throw InvalidInput();
+        }
+
+        var keys = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in keyElement.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.String)
+            {
+                throw InvalidInput();
+            }
+
+            var trimmed = item.GetString()?.Trim();
+            if (!IsValidColumnName(trimmed) || !seen.Add(trimmed!))
+            {
+                throw InvalidInput();
+            }
+
+            keys.Add(trimmed!);
+        }
+
+        if (writeMode == EtlWriteMode.Upsert)
+        {
+            if (keys.Count == 0 || keys.Count > MaxUpsertKeyColumns)
+            {
+                throw InvalidInput();
+            }
+
+            return keys;
+        }
+
+        if (keys.Count > 0)
+        {
+            throw InvalidInput();
+        }
+
+        return Array.Empty<string>();
+    }
+
+    private static string? ParseWatermarkColumn(
+        JsonElement root,
+        EtlWriteMode writeMode,
+        IReadOnlyList<string> keyColumns)
+    {
+        if (!root.TryGetProperty("watermarkColumn", out var watermarkElement) ||
+            watermarkElement.ValueKind == JsonValueKind.Null)
+        {
+            return null;
+        }
+
+        if (watermarkElement.ValueKind != JsonValueKind.String)
+        {
+            throw InvalidInput();
+        }
+
+        var trimmed = watermarkElement.GetString()?.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return null;
+        }
+
+        if (writeMode != EtlWriteMode.Upsert || !IsValidColumnName(trimmed))
+        {
+            throw InvalidInput();
+        }
+
+        foreach (var key in keyColumns)
+        {
+            if (string.Equals(key, trimmed, StringComparison.OrdinalIgnoreCase))
+            {
+                throw InvalidInput();
+            }
+        }
+
+        return trimmed;
+    }
 
     private static BusinessException InvalidInput() =>
         new(SwapMidDomainErrorCodes.DataIntegration.PipelineExecutionInputInvalid);

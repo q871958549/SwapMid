@@ -16,7 +16,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Combobox } from '@/components/ui/combobox'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { toast } from '@/components/ui/use-toast'
@@ -32,10 +31,11 @@ import {
 } from './execution-safety'
 import { isEtlExecutionRunPayload } from './execution-recovery'
 import { useEtlExecutionRecovery } from './use-etl-execution-recovery'
+import { PipelineEtlConfigSection } from './etl-config-section'
 import {
   isReceiptMode,
+  isUpsertConfigValid,
   parseEtlTransformConfig,
-  parseEtlWriteMode,
   serializeEtlTransformConfig,
   supportsTargetReceipt,
   type EtlTransformFormValue,
@@ -76,7 +76,8 @@ interface FormState extends EtlTransformFormValue {
 }
 const defaultForm: FormState = {
   name: '', description: '', sourceId: '', targetId: '',
-  sourceQuery: '', targetTable: '', mode: 'append', transformConfigValid: true,
+  sourceQuery: '', targetTable: '', mode: 'append',
+  keyColumnsText: '', watermarkColumn: '', transformConfigValid: true,
   scheduleCron: '', scheduleEnabled: false,
 }
 
@@ -145,6 +146,7 @@ export function DataPipelinesClient({
   const receiptModeSelected = isReceiptMode(crud.form.mode)
   const transformCanSubmit = crud.form.transformConfigValid &&
     crud.form.mode !== 'unsupported' &&
+    isUpsertConfigValid(crud.form) &&
     (!receiptModeSelected || receiptTargetSupported)
 
   function showAmbiguousResponse(runId: string) {
@@ -439,54 +441,11 @@ export function DataPipelinesClient({
             />
           </div>
         </div>
-        <div className="space-y-2 rounded-md border bg-muted/30 p-3">
-          <Label className="text-foreground text-sm font-medium">{t('etlSectionTitle')}</Label>
-          <p className="text-muted-foreground text-xs">{t('etlSectionHint')}</p>
-          <div className="space-y-1.5">
-            <Label className="text-xs">{t('sourceQueryFieldLabel')}</Label>
-            <Textarea value={crud.form.sourceQuery} onChange={e => crud.set({ sourceQuery: e.target.value })} placeholder="SELECT id, name FROM users WHERE ..." className="font-mono text-xs min-h-[72px]" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">{t('targetTableFieldLabel')}</Label>
-              <Input value={crud.form.targetTable} onChange={e => crud.set({ targetTable: e.target.value })} placeholder="dbo.users_copy" className="font-mono text-xs" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">{t('writeModeFieldLabel')}</Label>
-              <Select
-                value={crud.form.mode}
-                onValueChange={(value) => {
-                  const mode = parseEtlWriteMode(value)
-                  if (mode) crud.set({ mode, transformConfigValid: true })
-                }}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {crud.form.mode === 'unsupported' && (
-                    <SelectItem value="unsupported" disabled>{t('writeModeUnsupported')}</SelectItem>
-                  )}
-                  <SelectItem value="append">{t('writeModeAppend')}</SelectItem>
-                  <SelectItem value="truncate">{t('writeModeTruncate')}</SelectItem>
-                  <SelectItem value="append-receipt-v1" disabled={!receiptTargetSupported}>
-                    {t('writeModeAppendReceipt')}
-                  </SelectItem>
-                  <SelectItem value="truncate-receipt-v1" disabled={!receiptTargetSupported}>
-                    {t('writeModeTruncateReceipt')}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          {!crud.form.transformConfigValid && (
-            <p role="alert" className="text-destructive text-xs">{t('writeModeUnsupportedHint')}</p>
-          )}
-          {crud.form.transformConfigValid && receiptModeSelected && !receiptTargetSupported && (
-            <p role="alert" className="text-destructive text-xs">{t('receiptTargetUnsupportedHint')}</p>
-          )}
-          {receiptModeSelected && receiptTargetSupported && (
-            <p className="text-muted-foreground text-xs">{t('receiptModeHint')}</p>
-          )}
-        </div>
+        <PipelineEtlConfigSection
+          form={crud.form}
+          receiptTargetSupported={receiptTargetSupported}
+          onChange={crud.set}
+        />
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label>{t('cronFieldLabel')}</Label>

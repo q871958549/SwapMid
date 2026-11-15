@@ -163,7 +163,9 @@ public sealed partial class DataPipelineExecutionCoordinator
             activation.VerifiedTargetResourceHash,
             activation.CanonicalTargetTable,
             transform.Mode,
-            legacyIdentity.SourceQuerySha256);
+            legacyIdentity.SourceQuerySha256,
+            transform.KeyColumns,
+            transform.WatermarkColumn);
         if (!string.Equals(
                 executionContractHash,
                 activation.ExecutionContractHash,
@@ -267,9 +269,12 @@ public sealed partial class DataPipelineExecutionCoordinator
                 target.Database?.Trim() ?? string.Empty,
                 targetTable.Trim(),
                 targetResourceGroup,
-                transform.Mode == EtlWriteMode.Truncate
-                    ? "truncate"
-                    : "append",
+                transform.Mode switch
+                {
+                    EtlWriteMode.Truncate => "truncate",
+                    EtlWriteMode.Upsert => "upsert",
+                    _ => "append",
+                },
                 Convert.ToHexString(SHA256.HashData(
                     Encoding.UTF8.GetBytes(transform.SourceQuery))));
         }

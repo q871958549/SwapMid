@@ -42,7 +42,9 @@ internal static partial class EtlTargetAtomicWriter
         EtlTargetReceiptEvidence? receiptEvidence,
         string? targetCoordinationIdentityHash,
         CancellationToken commitConfirmationToken,
-        CancellationToken ct)
+        CancellationToken ct,
+        EtlUpsertSpec? upsertSpec = null,
+        EtlTargetUpsertPreflight.ResolvedUpsertPlan? upsertPlan = null)
     {
         await EtlTargetSession.PrepareForFormalWriteAsync(
             connection,
@@ -107,7 +109,8 @@ internal static partial class EtlTargetAtomicWriter
                 targetProbe,
                 truncate,
                 commandTimeoutSeconds,
-                ct);
+                ct,
+                upsertSpec);
             if (!string.Equals(
                     expectedSchemaFingerprint,
                     lockedSchemaFingerprint,
@@ -179,17 +182,35 @@ internal static partial class EtlTargetAtomicWriter
                 var expectedRows = checked((int)Math.Min(
                     transferBatchSize,
                     totalRows - firstRowId + 1));
-                await EtlTargetStagingWriter.TransferBatchAsync(
-                    connection,
-                    targetTransaction,
-                    stage,
-                    targetTable,
-                    columns,
-                    firstRowId,
-                    expectedRows,
-                    targetProbe,
-                    commandTimeoutSeconds,
-                    ct);
+                if (upsertPlan != null)
+                {
+                    await EtlTargetUpsertWriter.TransferBatchAsync(
+                        connection,
+                        targetTransaction,
+                        stage,
+                        targetTable,
+                        columns,
+                        upsertPlan,
+                        firstRowId,
+                        expectedRows,
+                        targetProbe,
+                        commandTimeoutSeconds,
+                        ct);
+                }
+                else
+                {
+                    await EtlTargetStagingWriter.TransferBatchAsync(
+                        connection,
+                        targetTransaction,
+                        stage,
+                        targetTable,
+                        columns,
+                        firstRowId,
+                        expectedRows,
+                        targetProbe,
+                        commandTimeoutSeconds,
+                        ct);
+                }
             }
 
             ct.ThrowIfCancellationRequested();

@@ -4,6 +4,17 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-11-15
+
+### Added
+- **Incremental Atomic `Upsert` & `Upsert-Receipt-V1` (`DataIntegration`)**:
+  - Extended `EtlTransformConfig` with `EtlWriteMode.Upsert`, `keyColumns` (`1..16` unique column identifiers), and optional `watermarkColumn`, together with `EtlTargetUpsertPreflight` (non-null unique/PK index verification + enabled `UPDATE` trigger guard) and pre-transaction staging `NULL`/duplicate-key verification (`EtlTargetUpsertWriter`).
+  - Added dialect-native atomic batch upsert across **PostgreSQL** (`INSERT ... AS "etl_target" ... ON CONFLICT (...) DO UPDATE`), **SQL Server** (`MERGE ... WITH (HOLDLOCK)`), and **MySQL** (`INSERT ... ON DUPLICATE KEY UPDATE`), plus **Target Receipt v1** support (`upsert-receipt-v1`, `write_mode = 3`) and full `zh-Hans` / `zh-Hant` / `en` pipeline form support.
+- **Production-Hardened Managed API Gateway & Client Governance (`ApiManagement`)**:
+  - Upgraded `GatewayController` (`/api/gateway/{**path}`) with dual-principal authorization (`SwapMid.ApiManagement.ApiRoutes` OR OpenIddict `external-integration` client tokens), DNS-rebinding-safe outbound SSRF connection guard (`ApiGateway:AllowedHosts` + `ApiGateway:AllowedPrivateNetworks`), inbound credential stripping (`Authorization` / `Cookie`), bounded payload streaming, and zero-ambient-transaction forwarding (`[UnitOfWork(IsDisabled = true)]`).
+  - Added per-client route-group ACLs and per-minute sliding-window rate limits (`429 Too Many Requests` + `Retry-After`) persisted in OpenIddict application properties (`PUT /api/v1/third-party-clients/{clientId}/policy`) with a dedicated Gateway Access Policy dialog in `web/`.
+  - Added asynchronous gateway event ingress (`POST /api/gateway/events/{topicName}` -> `202 Accepted` into `MessageBus` with deterministic `Idempotency-Key` deduplication) and Prometheus gateway metrics (`swapmid_gateway_requests_total`, `swapmid_gateway_upstream_duration_seconds`).
+
 ## [0.2.0] - 2026-11-15
 
 ### Added

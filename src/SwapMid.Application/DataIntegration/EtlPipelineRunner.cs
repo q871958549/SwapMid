@@ -214,6 +214,10 @@ public partial class EtlPipelineRunner : IEtlPipelineRunner, ITransientDependenc
                 targetProbe,
                 CommandTimeoutSeconds,
                 executionCt);
+            var upsertSpec = cfg.UpsertSpec;
+            var upsertPlan = upsertSpec == null
+                ? null
+                : EtlTargetUpsertPreflight.ResolveProjection(columns, upsertSpec);
             var targetPreparation = await EtlTargetPreflight.PrepareAsync(
                 tgtConn,
                 cfg.TargetTable,
@@ -222,7 +226,8 @@ public partial class EtlPipelineRunner : IEtlPipelineRunner, ITransientDependenc
                 cfg.Mode == EtlWriteMode.Truncate,
                 MaxBatchPayloadBytes,
                 CommandTimeoutSeconds,
-                executionCt);
+                executionCt,
+                upsertSpec);
             EtlTargetReceiptStore.EnsureBusinessTargetIsNotReserved(
                 targetPreparation.CanonicalTargetTable,
                 targetProbe,
@@ -336,6 +341,17 @@ public partial class EtlPipelineRunner : IEtlPipelineRunner, ITransientDependenc
                     await sourceTransaction.CommitAsync(executionCt);
                 }
 
+                if (upsertPlan != null && readRows > 0)
+                {
+                    await EtlTargetUpsertWriter.VerifyStageKeysAsync(
+                        tgtConn,
+                        stage,
+                        upsertPlan,
+                        targetProbe,
+                        CommandTimeoutSeconds,
+                        executionCt);
+                }
+
                 executionCt.ThrowIfCancellationRequested();
                 var receiptEvidence = executionContext.TargetReceipt == null
                     ? null
@@ -378,7 +394,9 @@ public partial class EtlPipelineRunner : IEtlPipelineRunner, ITransientDependenc
                         receiptEvidence,
                         executionContext.TargetCoordinationIdentityHash,
                         totalExecutionDeadline.Token,
-                        executionCt);
+                        executionCt,
+                        upsertSpec,
+                        upsertPlan);
                     // ApplyAsync 只有在 COMMIT ACK 已收到后才返回。从此刻起，后续临时表/
                     // transaction/connection 释放或日志异常都不得把已提交事实翻成 Failed。
                     committedResult = new EtlRunResult(

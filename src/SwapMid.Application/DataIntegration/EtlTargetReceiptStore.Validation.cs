@@ -152,9 +152,9 @@ public sealed partial class EtlTargetReceiptStore
         RelationalDataSourceConnection.Probe probe,
         EtlWriteMode writeMode)
     {
-        if (writeMode is not (EtlWriteMode.Append or EtlWriteMode.Truncate) ||
+        if (writeMode is not (EtlWriteMode.Append or EtlWriteMode.Truncate or EtlWriteMode.Upsert) ||
             (probe.NormalizedProvider is "mysql" or "mariadb" &&
-             writeMode == EtlWriteMode.Truncate))
+             writeMode is EtlWriteMode.Truncate or EtlWriteMode.Upsert))
         {
             throw EtlPipelineRunner.InvalidInput();
         }

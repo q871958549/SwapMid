@@ -36,6 +36,15 @@ internal static class EtlReceiptHashes
         return hash.CompleteHex();
     }
 
+    internal static byte EncodeWriteMode(EtlWriteMode writeMode) =>
+        writeMode switch
+        {
+            EtlWriteMode.Append => 1,
+            EtlWriteMode.Truncate => 2,
+            EtlWriteMode.Upsert => 3,
+            _ => throw EtlPipelineRunner.InvalidInput(),
+        };
+
     internal static string ComputeExecutionContract(
         Guid pipelineId,
         Guid sourceDataSourceId,
@@ -49,7 +58,9 @@ internal static class EtlReceiptHashes
         string verifiedTargetResourceHash,
         string canonicalTargetTable,
         EtlWriteMode writeMode,
-        string sourceQueryHash)
+        string sourceQueryHash,
+        IReadOnlyList<string>? upsertKeyColumns = null,
+        string? upsertWatermarkColumn = null)
     {
         using var hash = new TlvHash("swapmid-etl-execution-contract-v1");
         hash.Add(pipelineId);
@@ -63,8 +74,31 @@ internal static class EtlReceiptHashes
         hash.AddHex(legacyTargetResourceHash);
         hash.AddHex(verifiedTargetResourceHash);
         hash.Add(canonicalTargetTable);
-        hash.Add((byte)(writeMode == EtlWriteMode.Append ? 1 : 2));
+        hash.Add(EncodeWriteMode(writeMode));
         hash.AddHex(sourceQueryHash);
+        if (writeMode == EtlWriteMode.Upsert)
+        {
+            if (upsertKeyColumns == null || upsertKeyColumns.Count == 0)
+            {
+                throw EtlPipelineRunner.InvalidInput();
+            }
+
+            hash.Add(upsertKeyColumns.Count);
+            foreach (var key in upsertKeyColumns)
+            {
+                hash.Add(key.ToUpperInvariant());
+            }
+
+            if (string.IsNullOrWhiteSpace(upsertWatermarkColumn))
+            {
+                hash.AddNull();
+            }
+            else
+            {
+                hash.Add(upsertWatermarkColumn.ToUpperInvariant());
+            }
+        }
+
         return hash.CompleteHex();
     }
 

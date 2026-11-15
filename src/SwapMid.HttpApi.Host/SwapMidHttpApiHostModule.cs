@@ -473,12 +473,9 @@ public class SwapMidHttpApiHostModule : AbpModule
         });
     }
 
-    private void ConfigureApiGateway(ServiceConfigurationContext context)
+    private static void ConfigureApiGateway(ServiceConfigurationContext context)
     {
-        context.Services.AddHttpClient("ApiGateway", client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(100);
-        });
+        ApiGateway.GatewayAuthorizationPolicies.AddGatewayServices(context.Services);
     }
 
     private void ConfigureHangfire(ServiceConfigurationContext context, IConfiguration configuration)

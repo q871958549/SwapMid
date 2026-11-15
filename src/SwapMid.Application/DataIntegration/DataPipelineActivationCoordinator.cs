@@ -119,7 +119,9 @@ public sealed class DataPipelineActivationCoordinator : ITransientDependency
                 receiptActivation.VerifiedTargetResourceHash,
                 receiptActivation.CanonicalTargetTable,
                 preparation.Transform.Mode,
-                preparation.LegacyIdentity.SourceQuerySha256);
+                preparation.LegacyIdentity.SourceQuerySha256,
+                preparation.Transform.KeyColumns,
+                preparation.Transform.WatermarkColumn);
         }
 
         using var unitOfWork = _unitOfWorkManager.Begin(

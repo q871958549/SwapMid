@@ -37,6 +37,7 @@ namespace SwapMid.HttpApi.Tests;
 internal sealed class ContractTestHost : IDisposable
 {
     public const string AuthHeaderName = "X-Contract-Auth";
+    public const string ClientIdHeaderName = "X-Contract-Client-Id";
     public const string PermissionsHeaderName = "X-Contract-Permissions";
     public const string ScopesHeaderName = "X-Contract-Scopes";
     public const string OpenIddictValidationScheme = "OpenIddict.Validation.AspNetCore";
@@ -51,7 +52,8 @@ internal sealed class ContractTestHost : IDisposable
         bool? enableApiGateway = null,
         IJobSchedulingAppService? jobSchedulingService = null,
         bool enableUnitOfWorkPipeline = false,
-        Action<IServiceCollection>? configureServices = null)
+        Action<IServiceCollection>? configureServices = null,
+        IReadOnlyDictionary<string, string?>? extraSettings = null)
     {
         ContentRoot = Path.Combine(Path.GetTempPath(), "swapmid-http-contract", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(ContentRoot);
@@ -63,6 +65,13 @@ internal sealed class ContractTestHost : IDisposable
         if (enableApiGateway.HasValue)
         {
             settings["ApiGateway:Enabled"] = enableApiGateway.Value.ToString();
+        }
+        if (extraSettings != null)
+        {
+            foreach (var pair in extraSettings)
+            {
+                settings[pair.Key] = pair.Value;
+            }
         }
 
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -131,6 +140,7 @@ internal sealed class ContractTestHost : IDisposable
                 });
             }
         });
+        global::SwapMid.ApiGateway.GatewayAuthorizationPolicies.AddGatewayServices(builder.Services);
 
         var mvc = builder.Services
             .AddControllers(options =>
@@ -284,6 +294,15 @@ internal sealed class ContractTestHost : IDisposable
         return client;
     }
 
+    public HttpClient CreateExternalClient(string clientId)
+    {
+        var client = _app.GetTestClient();
+        client.DefaultRequestHeaders.Add(AuthHeaderName, clientId);
+        client.DefaultRequestHeaders.Add(ClientIdHeaderName, clientId);
+        client.DefaultRequestHeaders.Add(ScopesHeaderName, "external-integration");
+        return client;
+    }
+
     public void Dispose()
     {
         _app.StopAsync().GetAwaiter().GetResult();
@@ -394,6 +413,12 @@ internal sealed class ContractTestAuthHandler(
             {
                 claims.Add(new Claim("permission", permission));
             }
+        }
+
+        if (Request.Headers.TryGetValue(ContractTestHost.ClientIdHeaderName, out var clientIdHeader) &&
+            !string.IsNullOrWhiteSpace(clientIdHeader.ToString()))
+        {
+            claims.Add(new Claim("client_id", clientIdHeader.ToString()));
         }
 
         if (Request.Headers.TryGetValue(ContractTestHost.ScopesHeaderName, out var scopesHeader) &&

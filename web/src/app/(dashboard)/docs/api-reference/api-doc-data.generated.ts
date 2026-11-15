@@ -5738,6 +5738,27 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "scopes",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "allowedGroupIds",
+                "cnName": "",
+                "type": "Guid[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "rateLimitPerMinute",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "creationTime",
                 "cnName": "",
                 "type": "DateTime",
@@ -5765,6 +5786,20 @@ export const API_MODULES: ApiModule[] = [
                 "type": "string",
                 "description": "",
                 "required": true
+              },
+              {
+                "name": "allowedGroupIds",
+                "cnName": "",
+                "type": "Guid[]",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "rateLimitPerMinute",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
               }
             ],
             "responseFields": [
@@ -5810,6 +5845,88 @@ export const API_MODULES: ApiModule[] = [
                 "type": "string",
                 "required": true,
                 "description": ""
+              }
+            ]
+          },
+          {
+            "method": "PUT",
+            "path": "/api/v1/third-party-clients/{clientId}/policy",
+            "summary": "更新第三方客户端网关访问策略（允许访问的 API 路由分组与每分钟限流配额）。",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "clientId",
+                "cnName": "",
+                "type": "string",
+                "required": true,
+                "description": ""
+              }
+            ],
+            "requestBody": [
+              {
+                "name": "allowedGroupIds",
+                "cnName": "",
+                "type": "Guid[]",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "rateLimitPerMinute",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "description": "唯一标识",
+                "nullable": false
+              },
+              {
+                "name": "clientId",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "displayName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "scopes",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "allowedGroupIds",
+                "cnName": "",
+                "type": "Guid[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "rateLimitPerMinute",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "creationTime",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "创建时间",
+                "nullable": true
               }
             ]
           },

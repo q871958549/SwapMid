@@ -185,6 +185,7 @@ public sealed partial class EtlTargetReceiptStore
             {
                 1 => EtlWriteMode.Append,
                 2 => EtlWriteMode.Truncate,
+                3 => EtlWriteMode.Upsert,
                 _ => throw EtlPipelineRunner.InvalidInput(),
             },
             Convert.ToInt64(reader.GetValue(11)));
@@ -210,7 +211,7 @@ public sealed partial class EtlTargetReceiptStore
             probe,
             evidence,
             ProtocolVersion,
-            evidence.WriteMode == EtlWriteMode.Append ? 1 : 2,
+            EtlReceiptHashes.EncodeWriteMode(evidence.WriteMode),
             commandTimeoutSeconds,
             cancellationToken);
 

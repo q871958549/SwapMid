@@ -64,7 +64,7 @@ CREATE TABLE [swapmid_etl].[ExecutionReceiptV1]
     CONSTRAINT [CK_swapmid_etl_ExecutionReceiptV1_ProtocolVersion]
         CHECK ([ProtocolVersion] = 1),
     CONSTRAINT [CK_swapmid_etl_ExecutionReceiptV1_WriteMode]
-        CHECK ([WriteMode] IN (1, 2)),
+        CHECK ([WriteMode] IN (1, 2, 3)),
     CONSTRAINT [CK_swapmid_etl_ExecutionReceiptV1_ProcessedRows]
         CHECK ([ProcessedRows] >= 0)
 );

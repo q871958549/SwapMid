@@ -16,4 +16,7 @@ public static class ExternalHttpConfigurationKeys
 
     public const string NotificationWebhookAllowedHosts = "Notification:Webhook:AllowedHosts";
     public const string NotificationWebhookAllowedPrivateNetworks = "Notification:Webhook:AllowedPrivateNetworks";
+
+    public const string ApiGatewayAllowedHosts = "ApiGateway:AllowedHosts";
+    public const string ApiGatewayAllowedPrivateNetworks = "ApiGateway:AllowedPrivateNetworks";
 }

@@ -80,6 +80,7 @@ services:
       StringEncryption__DefaultPassPhrase: "${STRING_ENCRYPTION_PASSPHRASE:?Set STRING_ENCRYPTION_PASSPHRASE in .env}"
       OpenIddict__Applications__SwapMid_App__RootUrl: "${PUBLIC_WEB_URL:-http://localhost:13000}"
       OpenIddict__Applications__SwapMid_Swagger__RootUrl: "${PUBLIC_API_URL:-http://localhost:18080}"
+      ApiGateway__DemoUpstreamBaseUrl: "http://api:8080"
 
   api:
     build:
@@ -107,6 +108,8 @@ services:
       App__CorsOrigins: "${PUBLIC_WEB_URL:-http://localhost:13000}"
       App__RedirectAllowedUrls: "${PUBLIC_WEB_URL:-http://localhost:13000}"
       ApiGateway__Enabled: "${API_GATEWAY_ENABLED:-false}"
+      ApiGateway__AllowedHosts: "${API_GATEWAY_ALLOWED_HOSTS:-}"
+      ApiGateway__AllowedPrivateNetworks: "${API_GATEWAY_ALLOWED_PRIVATE_NETWORKS:-}"
       ConnectionStrings__Default: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-swapmid};Username=${POSTGRES_USER:-swapmid};Password=${POSTGRES_PASSWORD};SSL Mode=Disable;GSS Encryption Mode=Disable"
       Redis__Configuration: "redis:6379"
       Redis__IsEnabled: "true"

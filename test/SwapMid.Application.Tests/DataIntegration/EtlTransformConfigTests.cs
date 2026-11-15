@@ -51,11 +51,40 @@ public class EtlTransformConfigTests
         config.ReconciliationStrategy.ShouldBe(expectedStrategy);
     }
 
+    [Fact]
+    public void Upsert与UpsertReceiptV1_解析唯一键与可选水位线列()
+    {
+        var manualUpsert = EtlTransformConfig.Parse(
+            """{"sourceQuery":"SELECT id, name, updated_at FROM src","targetTable":"public.users","mode":"upsert","keyColumns":["id"],"watermarkColumn":"updated_at"}""");
+        manualUpsert.Mode.ShouldBe(EtlWriteMode.Upsert);
+        manualUpsert.ReconciliationStrategy.ShouldBe(EtlReconciliationStrategy.ManualV0);
+        manualUpsert.KeyColumns.ShouldBe(["id"]);
+        manualUpsert.WatermarkColumn.ShouldBe("updated_at");
+
+        var receiptUpsert = EtlTransformConfig.Parse(
+            """{"sourceQuery":"SELECT tenant_id, code, qty FROM src","targetTable":"dbo.stock","mode":"upsert-receipt-v1","keyColumns":["tenant_id","code"]}""");
+        receiptUpsert.Mode.ShouldBe(EtlWriteMode.Upsert);
+        receiptUpsert.ReconciliationStrategy.ShouldBe(EtlReconciliationStrategy.TargetReceiptV1);
+        receiptUpsert.KeyColumns.ShouldBe(["tenant_id", "code"]);
+        receiptUpsert.WatermarkColumn.ShouldBeNull();
+    }
+
+    [Theory]
+    [InlineData("""{"sourceQuery":"SELECT 1","targetTable":"t","mode":"upsert","keyColumns":[]}""")]
+    [InlineData("""{"sourceQuery":"SELECT 1","targetTable":"t","mode":"upsert","keyColumns":["id","ID"]}""")]
+    [InlineData("""{"sourceQuery":"SELECT 1","targetTable":"t","mode":"upsert","keyColumns":["bad-col"]}""")]
+    [InlineData("""{"sourceQuery":"SELECT 1","targetTable":"t","mode":"upsert","keyColumns":["id"],"watermarkColumn":"id"}""")]
+    [InlineData("""{"sourceQuery":"SELECT 1","targetTable":"t","mode":"append","keyColumns":["id"]}""")]
+    [InlineData("""{"sourceQuery":"SELECT 1","targetTable":"t","mode":"merge","keyColumns":["id"]}""")]
+    public void 非法Upsert配置或未知模式必须失败关闭(string invalidJson)
+        => Should.Throw<BusinessException>(() => EtlTransformConfig.Parse(invalidJson));
+
     [Theory]
     [InlineData("upsert")]
+    [InlineData("upsert-receipt-v1")]
     [InlineData("append-receipt-v2")]
     [InlineData("receipt-v1")]
-    public void 未知模式必须失败关闭防止新协议被旧语义静默降级(string mode)
+    public void 未知模式或缺少keyColumns的Upsert必须失败关闭防止静默降级(string mode)
         => Should.Throw<BusinessException>(() =>
             EtlTransformConfig.Parse(
                 $$"""{"sourceQuery":"SELECT 1","targetTable":"t","mode":"{{mode}}"}"""));

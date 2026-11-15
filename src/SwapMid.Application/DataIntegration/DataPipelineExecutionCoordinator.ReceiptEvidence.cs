@@ -15,9 +15,13 @@ public sealed partial class DataPipelineExecutionCoordinator
             return false;
         }
 
-        var expectedWriteMode = evidence.WriteMode == EtlWriteMode.Truncate
-            ? "truncate"
-            : "append";
+        var expectedWriteMode = evidence.WriteMode switch
+        {
+            EtlWriteMode.Append => "append",
+            EtlWriteMode.Truncate => "truncate",
+            EtlWriteMode.Upsert => "upsert",
+            _ => string.Empty,
+        };
         if (evidence.ProcessedRows < 0 ||
             !IsSha256Hex(evidence.LegacyTargetResourceHash) ||
             !IsSha256Hex(evidence.VerifiedTargetResourceHash) ||

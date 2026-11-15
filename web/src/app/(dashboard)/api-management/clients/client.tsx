@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Copy, KeyRound, ShieldCheck } from 'lucide-react'
+import { Copy, KeyRound, ShieldCheck, SlidersHorizontal } from 'lucide-react'
 import { DataTable } from '@/components/data-table/data-table'
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header'
 import { PageHeader } from '@/components/data-table/page-header'
@@ -16,6 +16,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { IconButton } from '@/components/ui/icon-button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -25,8 +26,15 @@ import { getApiErrorMessage } from '@/lib/api-error'
 
 export interface ThirdPartyClient {
   clientId: string
-  displayName?: string
+  displayName?: string | null
   scopes: string[]
+  allowedGroupIds?: string[]
+  rateLimitPerMinute?: number | null
+}
+
+export interface ApiGroupOption {
+  id: string
+  name: string
 }
 
 interface Credential {
@@ -35,8 +43,16 @@ interface Credential {
 }
 
 const BASE = '/api/proxy/third-party-clients'
+const MIN_RATE_LIMIT = 1
+const MAX_RATE_LIMIT = 60_000
 
-export function ThirdPartyClientsClient({ initial }: { initial: ThirdPartyClient[] }) {
+export function ThirdPartyClientsClient({
+  initial,
+  groups = [],
+}: {
+  initial: ThirdPartyClient[]
+  groups?: ApiGroupOption[]
+}) {
   const t = useTranslations('ApiManagement.clients')
   const tc = useTranslations('Common')
   const router = useRouter()
@@ -50,11 +66,19 @@ export function ThirdPartyClientsClient({ initial }: { initial: ThirdPartyClient
 
   const [credential, setCredential] = useState<Credential | null>(null)
 
+  const [policyTarget, setPolicyTarget] = useState<ThirdPartyClient | null>(null)
+  const [rateLimitText, setRateLimitText] = useState('')
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
+  const [policyError, setPolicyError] = useState<string | null>(null)
+  const [savingPolicy, setSavingPolicy] = useState(false)
+
   const [resetTarget, setResetTarget] = useState<string | null>(null)
   const [resetting, setResetting] = useState(false)
 
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  const groupNameMap = new Map(groups.map(group => [group.id, group.name]))
 
   async function reload() {
     try {
@@ -64,6 +88,55 @@ export function ThirdPartyClientsClient({ initial }: { initial: ThirdPartyClient
       /* 保留当前列表；写操作已各自 toast */
     }
     router.refresh() // 失效 Router Cache，切页签返回不显旧列表
+  }
+
+  function openPolicyDialog(client: ThirdPartyClient) {
+    setPolicyTarget(client)
+    setRateLimitText(client.rateLimitPerMinute ? String(client.rateLimitPerMinute) : '')
+    setSelectedGroupIds([...(client.allowedGroupIds ?? [])])
+    setPolicyError(null)
+  }
+
+  function toggleAllowedGroup(groupId: string, checked: boolean) {
+    setSelectedGroupIds((prev) => {
+      if (checked) return prev.includes(groupId) ? prev : [...prev, groupId]
+      return prev.filter(item => item !== groupId)
+    })
+  }
+
+  async function handleSavePolicy() {
+    if (!policyTarget) return
+    const trimmedRate = rateLimitText.trim()
+    let parsedRate: number | null = null
+    if (trimmedRate.length > 0) {
+      const num = Number(trimmedRate)
+      if (!Number.isInteger(num) || num < MIN_RATE_LIMIT || num > MAX_RATE_LIMIT) {
+        setPolicyError(t('policyRateInvalid'))
+        return
+      }
+      parsedRate = num
+    }
+
+    setSavingPolicy(true)
+    setPolicyError(null)
+    try {
+      const res = await fetch(`${BASE}/${encodeURIComponent(policyTarget.clientId)}/policy`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          allowedGroupIds: selectedGroupIds,
+          rateLimitPerMinute: parsedRate,
+        }),
+      })
+      if (!res.ok) throw new Error(await res.text())
+      setPolicyTarget(null)
+      toast({ variant: 'success', title: t('policySavedTitle') })
+      void reload()
+    } catch (e) {
+      setPolicyError(getApiErrorMessage(e, tc('tryAgainLater')))
+    } finally {
+      setSavingPolicy(false)
+    }
   }
 
   async function handleCreate() {
@@ -154,13 +227,42 @@ export function ThirdPartyClientsClient({ initial }: { initial: ThirdPartyClient
         </div>
       ),
     },
+    {
+      id: 'gatewayPolicy',
+      header: ({ column }) => <DataTableColumnHeader column={column} title={t('columnGatewayPolicy')} />,
+      enableSorting: false,
+      cell: ({ row }) => {
+        const rate = row.original.rateLimitPerMinute
+        const allowed = row.original.allowedGroupIds ?? []
+        return (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge variant="outline">
+              {rate ? t('policyRateBadge', { count: rate }) : t('policyRateDefaultBadge')}
+            </Badge>
+            <Badge variant={allowed.length > 0 ? 'secondary' : 'outline'}>
+              {allowed.length > 0
+                ? allowed.length === 1 && groupNameMap.has(allowed[0])
+                  ? groupNameMap.get(allowed[0])
+                  : t('policyGroupCountBadge', { count: allowed.length })
+                : t('policyAllGroupsBadge')}
+            </Badge>
+          </div>
+        )
+      },
+    },
     actionsColumn<ThirdPartyClient>({
       onDelete: (row) => setDeleteTarget(row.clientId),
       extraItems: (row) => (
-        <DropdownMenuItem onClick={() => setResetTarget(row.clientId)}>
-          <KeyRound className="mr-2 size-4" />
-          {t('resetSecretMenuItem')}
-        </DropdownMenuItem>
+        <>
+          <DropdownMenuItem onClick={() => openPolicyDialog(row)}>
+            <SlidersHorizontal className="mr-2 size-4" />
+            {t('gatewayPolicyMenuItem')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setResetTarget(row.clientId)}>
+            <KeyRound className="mr-2 size-4" />
+            {t('resetSecretMenuItem')}
+          </DropdownMenuItem>
+        </>
       ),
     }),
   ]
@@ -209,6 +311,82 @@ export function ThirdPartyClientsClient({ initial }: { initial: ThirdPartyClient
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={submitting}>{tc('cancel')}</Button>
             <Button onClick={handleCreate} disabled={submitting}>{submitting ? t('creating') : t('createButton')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 网关访问策略（限流与路由分组 ACL） */}
+      <Dialog
+        open={!!policyTarget}
+        onOpenChange={(o) => {
+          if (!savingPolicy && !o) {
+            setPolicyTarget(null)
+            setPolicyError(null)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>{t('policyDialogTitle')}</DialogTitle>
+            <DialogDescription>
+              {t('policyDialogDescription', { clientId: policyTarget?.clientId ?? '' })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>{t('policyRateFieldLabel')}</Label>
+              <Input
+                type="number"
+                min={MIN_RATE_LIMIT}
+                max={MAX_RATE_LIMIT}
+                value={rateLimitText}
+                onChange={(e) => setRateLimitText(e.target.value)}
+                placeholder={t('policyRatePlaceholder')}
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground">{t('policyRateHint')}</p>
+            </div>
+            <div className="space-y-2">
+              <Label>{t('policyGroupsFieldLabel')}</Label>
+              <p className="text-xs text-muted-foreground">{t('policyGroupsHint')}</p>
+              {groups.length === 0 ? (
+                <p className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                  {t('policyGroupsEmptyHint')}
+                </p>
+              ) : (
+                <div className="max-h-44 space-y-2 overflow-y-auto rounded-md border p-3">
+                  {groups.map((group) => {
+                    const checked = selectedGroupIds.includes(group.id)
+                    const checkboxId = `gw-group-${group.id}`
+                    return (
+                      <div key={group.id} className="flex items-center gap-2">
+                        <Checkbox
+                          id={checkboxId}
+                          checked={checked}
+                          onCheckedChange={(val) => toggleAllowedGroup(group.id, val === true)}
+                        />
+                        <Label htmlFor={checkboxId} className="cursor-pointer text-sm font-normal">
+                          {group.name}
+                        </Label>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+            {policyError && (
+              <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {policyError}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPolicyTarget(null)} disabled={savingPolicy}>
+              {tc('cancel')}
+            </Button>
+            <Button onClick={handleSavePolicy} disabled={savingPolicy}>
+              {savingPolicy ? tc('saving') : tc('save')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

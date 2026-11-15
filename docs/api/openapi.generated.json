@@ -399,17 +399,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -1405,17 +1405,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.RolePermissionChangeDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.RolePermissionChangeDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.RolePermissionChangeDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.RolePermissionChangeDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.RolePermissionChangeDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.RolePermissionChangeDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -2279,17 +2279,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountUserDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountUserDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountUserDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountUserDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountUserDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountUserDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -3397,17 +3397,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -3546,17 +3546,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountUserLiteDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountUserLiteDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountUserLiteDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountUserLiteDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountUserLiteDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountUserLiteDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -4584,17 +4584,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiGroupDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiGroupDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiGroupDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiGroupDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiGroupDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiGroupDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -5458,17 +5458,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiRouteDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiRouteDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiRouteDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiRouteDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiRouteDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiRouteDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -6634,17 +6634,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.AuditLogDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.AuditLogDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.AuditLogDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.AuditLogDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.AuditLogDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.AuditLogDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -6963,17 +6963,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AuditUserLookupDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AuditUserLookupDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AuditUserLookupDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AuditUserLookupDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AuditUserLookupDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AuditUserLookupDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -7584,17 +7584,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.CodeRuleDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.CodeRuleDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.CodeRuleDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.CodeRuleDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.CodeRuleDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.CodeRuleDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -8787,17 +8787,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.CompanyDepartmentDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.CompanyDepartmentDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.CompanyDepartmentDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.CompanyDepartmentDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.CompanyDepartmentDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.CompanyDepartmentDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -10274,17 +10274,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.DataDictionaryDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.DataDictionaryDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.DataDictionaryDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.DataDictionaryDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.DataDictionaryDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.DataDictionaryDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -11081,17 +11081,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -11731,17 +11731,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -11958,17 +11958,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataPipelineDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataPipelineDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataPipelineDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataPipelineDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataPipelineDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataPipelineDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -13284,17 +13284,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataSourceDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataSourceDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataSourceDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataSourceDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataSourceDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataSourceDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -15696,17 +15696,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EmployeeDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EmployeeDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EmployeeDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EmployeeDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EmployeeDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EmployeeDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -17233,17 +17233,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EnterpriseDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EnterpriseDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EnterpriseDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EnterpriseDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EnterpriseDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EnterpriseDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -19207,17 +19207,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageRecordDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageRecordDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageRecordDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageRecordDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageRecordDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageRecordDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -20069,17 +20069,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageSubscriptionDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageSubscriptionDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageSubscriptionDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageSubscriptionDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageSubscriptionDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageSubscriptionDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -20934,17 +20934,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageTopicDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageTopicDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageTopicDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageTopicDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageTopicDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageTopicDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -22217,17 +22217,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationLogDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationLogDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationLogDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationLogDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationLogDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationLogDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -22395,17 +22395,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationRecipientDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationRecipientDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationRecipientDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationRecipientDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationRecipientDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationRecipientDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -24056,17 +24056,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.PipelineExecutionDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.PipelineExecutionDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.PipelineExecutionDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.PipelineExecutionDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.PipelineExecutionDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.PipelineExecutionDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -25042,17 +25042,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.PositionDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.PositionDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.PositionDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.PositionDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.PositionDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.PositionDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -26254,17 +26254,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Scheduling.ScheduledJobExecutionDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Scheduling.ScheduledJobExecutionDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Scheduling.ScheduledJobExecutionDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Scheduling.ScheduledJobExecutionDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Scheduling.ScheduledJobExecutionDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Scheduling.ScheduledJobExecutionDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -26897,6 +26897,185 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SwapMid.ApiManagement.ThirdPartyClientCredentialDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not Implemented",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/third-party-clients/{clientId}/policy": {
+      "put": {
+        "tags": [
+          "ThirdPartyClient"
+        ],
+        "summary": "更新第三方客户端网关访问策略（允许访问的 API 路由分组与每分钟限流配额）。",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapMid.ApiManagement.UpdateThirdPartyClientPolicyDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapMid.ApiManagement.UpdateThirdPartyClientPolicyDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapMid.ApiManagement.UpdateThirdPartyClientPolicyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapMid.ApiManagement.ThirdPartyClientDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapMid.ApiManagement.ThirdPartyClientDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapMid.ApiManagement.ThirdPartyClientDto"
                 }
               }
             }
@@ -28626,6 +28805,21 @@
             "maxLength": 128,
             "minLength": 0,
             "type": "string"
+          },
+          "allowedGroupIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          },
+          "rateLimitPerMinute": {
+            "maximum": 60000,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -28680,6 +28874,26 @@
             "type": "string",
             "nullable": true
           },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "allowedGroupIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          },
+          "rateLimitPerMinute": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
           "creationTime": {
             "type": "string",
             "format": "date-time",
@@ -28688,6 +28902,27 @@
         },
         "additionalProperties": false,
         "description": "第三方调用方客户端（用于 client_credentials 获取受限 scope=external-integration 的 token）"
+      },
+      "SwapMid.ApiManagement.UpdateThirdPartyClientPolicyDto": {
+        "type": "object",
+        "properties": {
+          "allowedGroupIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          },
+          "rateLimitPerMinute": {
+            "maximum": 60000,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "SwapMid.DataIntegration.DataPipelineCreateUpdateDto": {
         "required": [
@@ -32180,7 +32415,7 @@
         "additionalProperties": false,
         "description": "系统体检总报告。总状态 = 所有检查项里最差的一项（Unknown 不拉低总状态）。"
       },
-      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32193,7 +32428,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountUserLiteDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountUserLiteDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32206,7 +32441,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AuditUserLookupDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AuditUserLookupDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32219,7 +32454,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32232,7 +32467,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32249,7 +32484,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountUserDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountUserDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32266,7 +32501,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.RolePermissionChangeDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.RolePermissionChangeDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32283,7 +32518,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiGroupDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiGroupDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32300,7 +32535,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiRouteDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiRouteDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32317,7 +32552,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataPipelineDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataPipelineDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32334,7 +32569,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataSourceDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataSourceDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32351,7 +32586,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.PipelineExecutionDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.PipelineExecutionDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32368,7 +32603,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.CompanyDepartmentDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.CompanyDepartmentDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32385,7 +32620,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EmployeeDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EmployeeDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32402,7 +32637,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EnterpriseDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EnterpriseDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32419,7 +32654,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.PositionDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.PositionDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32436,7 +32671,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageRecordDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageRecordDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32453,7 +32688,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageSubscriptionDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageSubscriptionDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32470,7 +32705,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageTopicDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageTopicDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32487,7 +32722,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationLogDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationLogDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32504,7 +32739,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationRecipientDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationRecipientDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32521,7 +32756,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Scheduling.ScheduledJobExecutionDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Scheduling.ScheduledJobExecutionDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32538,7 +32773,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.AuditLogDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.AuditLogDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32555,7 +32790,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.CodeRuleDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.CodeRuleDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -32572,7 +32807,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.DataDictionaryDto, SwapMid.Application.Contracts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.DataDictionaryDto, SwapMid.Application.Contracts, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {

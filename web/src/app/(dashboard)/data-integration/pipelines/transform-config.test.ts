@@ -1,13 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import {
   ETL_WRITE_MODES,
+  isReceiptMode,
+  isUpsertConfigValid,
+  isUpsertMode,
   parseEtlTransformConfig,
+  parseKeyColumnsText,
   serializeEtlTransformConfig,
   supportsTargetReceipt,
 } from './transform-config'
 
+const NON_UPSERT_MODES = ETL_WRITE_MODES.filter(mode => !isUpsertMode(mode))
+const UPSERT_MODES = ETL_WRITE_MODES.filter(mode => isUpsertMode(mode))
+
 describe('ETL transform config', () => {
-  it.each(ETL_WRITE_MODES)('完整往返受支持 mode %s', (mode) => {
+  it.each(NON_UPSERT_MODES)('完整往返受支持非 Upsert mode %s', (mode) => {
     const parsed = parseEtlTransformConfig(JSON.stringify({
       sourceQuery: ' SELECT 1 ',
       targetTable: 'dbo.Output',
@@ -21,10 +28,56 @@ describe('ETL transform config', () => {
     }))
   })
 
+  it.each(UPSERT_MODES)('完整往返受支持 Upsert mode %s（含 keyColumns 与 watermarkColumn）', (mode) => {
+    const parsed = parseEtlTransformConfig(JSON.stringify({
+      sourceQuery: ' SELECT id, updated_at, amount FROM orders ',
+      targetTable: 'public.orders_mirror',
+      mode,
+      keyColumns: ['id'],
+      watermarkColumn: 'updated_at',
+    }))
+    expect(parsed).toMatchObject({
+      mode,
+      keyColumnsText: 'id',
+      watermarkColumn: 'updated_at',
+      transformConfigValid: true,
+    })
+    expect(isReceiptMode(mode)).toBe(mode === 'upsert-receipt-v1')
+    expect(serializeEtlTransformConfig(parsed)).toBe(JSON.stringify({
+      sourceQuery: 'SELECT id, updated_at, amount FROM orders',
+      targetTable: 'public.orders_mirror',
+      mode,
+      keyColumns: ['id'],
+      watermarkColumn: 'updated_at',
+    }))
+  })
+
+  it('校验逗号分隔业务主键与水位线合法性', () => {
+    expect(parseKeyColumnsText(' tenant_id , external_code ')).toEqual(['tenant_id', 'external_code'])
+    expect(parseKeyColumnsText('id, ID')).toBeNull()
+    expect(parseKeyColumnsText('1bad_col')).toBeNull()
+    expect(isUpsertConfigValid({
+      mode: 'upsert',
+      keyColumnsText: 'order_id',
+      watermarkColumn: 'updated_at',
+    })).toBe(true)
+    expect(isUpsertConfigValid({
+      mode: 'upsert',
+      keyColumnsText: 'order_id',
+      watermarkColumn: 'ORDER_ID',
+    })).toBe(false)
+  })
+
   it.each([
     '',
     '{bad-json',
     JSON.stringify({ mode: 'future-receipt-v2' }),
+    JSON.stringify({ mode: 'upsert' }),
+    JSON.stringify({ mode: 'upsert', keyColumns: [] }),
+    JSON.stringify({ mode: 'upsert', keyColumns: ['id', 'ID'] }),
+    JSON.stringify({ mode: 'upsert', keyColumns: ['id'], watermarkColumn: 'id' }),
+    JSON.stringify({ mode: 'append', keyColumns: ['id'] }),
+    JSON.stringify({ mode: 'truncate', watermarkColumn: 'updated_at' }),
     JSON.stringify({ sourceQuery: 42, targetTable: 'dbo.Output' }),
     JSON.stringify({ sourceQuery: null, targetTable: 'dbo.Output' }),
     JSON.stringify({ sourceQuery: 'SELECT 1', targetTable: null }),
@@ -40,7 +93,7 @@ describe('ETL transform config', () => {
       .toMatchObject({ mode: 'append', transformConfigValid: true })
   })
 
-  it.each(ETL_WRITE_MODES.filter(mode => mode !== 'append'))(
+  it.each(NON_UPSERT_MODES.filter(mode => mode !== 'append'))(
     '非默认 mode %s 即使查询和目标表为空也必须持久化，不能静默降级为 append',
     (mode) => {
       const serialized = serializeEtlTransformConfig({

@@ -86,6 +86,7 @@ public sealed partial class DataPipelineExecutionCoordinator
         {
             "append" => EtlWriteMode.Append,
             "truncate" => EtlWriteMode.Truncate,
+            "upsert" => EtlWriteMode.Upsert,
             _ => (EtlWriteMode?)null,
         };
         if (execution.EvidenceProtocol != 1 ||

@@ -146,7 +146,10 @@ public sealed class SwapMidDemoDataSeedContributor : IDataSeedContributor, ITran
 
         if (!await _apiRouteRepository.PathAndMethodExistsAsync(demoRoutePath, HttpMethodType.GET))
         {
-            var selfUrl = (_configuration["App:SelfUrl"] ?? "https://localhost:44362").TrimEnd('/');
+            var selfUrl = (
+                _configuration["ApiGateway:DemoUpstreamBaseUrl"]
+                ?? _configuration["App:SelfUrl"]
+                ?? "https://localhost:44362").TrimEnd('/');
             var route = new ApiRoute(
                 _guidGenerator.Create(),
                 "Platform Liveness Probe",

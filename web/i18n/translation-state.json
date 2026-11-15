@@ -6316,16 +6316,16 @@
       "traditionalHash": "af792318371fc79153a86f08"
     },
     "DataIntegration.pipeline.writeModeAppendReceipt": {
-      "sourceHash": "752fc7645aae5399c4a54284",
-      "englishHash": "8beb035d957c1a8ff08864f5",
-      "traditionalSourceHash": "0a96a08f30cd22c5ff0d5593",
-      "traditionalHash": "86cf67f343aa191bc6ebc429"
+      "sourceHash": "7f946fb75599641bb8a98513",
+      "englishHash": "1c88bf19f05435cc4db45b2a",
+      "traditionalSourceHash": "e8b40d3d7a502b4ce85eed78",
+      "traditionalHash": "3d1442c3047905c65c23c619"
     },
     "DataIntegration.pipeline.writeModeTruncateReceipt": {
-      "sourceHash": "379b69b842e30edd8e6d6992",
-      "englishHash": "70f5eb073efaf2f4e621385d",
-      "traditionalSourceHash": "764ae9a874e43448cfbab4ce",
-      "traditionalHash": "51ebfda5389bb368597a3ed6"
+      "sourceHash": "db3c1a22344f9a7246299b81",
+      "englishHash": "58c84ba4dc33f31b8e112901",
+      "traditionalSourceHash": "7dd1ca43a160f05f767d569b",
+      "traditionalHash": "2cfb71dea10b1c889a02ce9d"
     },
     "DataIntegration.pipeline.writeModeUnsupported": {
       "sourceHash": "71b36b18f981bad77bf282ad",
@@ -6340,10 +6340,10 @@
       "traditionalHash": "09c4f1918f4f9e513be7c2f1"
     },
     "DataIntegration.pipeline.receiptTargetUnsupportedHint": {
-      "sourceHash": "b63528a877f9b1f9a9a87b09",
-      "englishHash": "66e957e32ef65f7a95cebbf9",
-      "traditionalSourceHash": "103a89c5daa1c357f64afea6",
-      "traditionalHash": "b0d0bcc1a3c3787b040ca366"
+      "sourceHash": "cbbf68832cda95e6c348a3ee",
+      "englishHash": "e95c381cc014e28fe9291d28",
+      "traditionalSourceHash": "0cd2b98a67dec325ee0e5833",
+      "traditionalHash": "6799de70229bb933d706c48e"
     },
     "DataIntegration.pipeline.receiptModeHint": {
       "sourceHash": "1369becb01417a1e5e33d5f6",
@@ -6362,6 +6362,42 @@
       "englishHash": "b2d9e82298cf64a8039ec0e9",
       "traditionalSourceHash": "1b86cc0abe5c07582fcc38d1",
       "traditionalHash": "ab5bc655a2a271b236db1c04"
+    },
+    "DataIntegration.pipeline.writeModeUpsert": {
+      "sourceHash": "27d854fd24e987b8262defa4",
+      "englishHash": "4baf0cc4675e5458528d65f0",
+      "traditionalSourceHash": "47e0b2266408d0e442ae1290",
+      "traditionalHash": "5d85cdfa69e94ef9c9b7118c"
+    },
+    "DataIntegration.pipeline.writeModeUpsertReceipt": {
+      "sourceHash": "17b43db996c7b5e6ef574374",
+      "englishHash": "43ba359f2a22fce13d78c4a5",
+      "traditionalSourceHash": "c15cab6ec69e8acd2bd3b26f",
+      "traditionalHash": "cc28b6be823b5a8491a66495"
+    },
+    "DataIntegration.pipeline.keyColumnsFieldLabel": {
+      "sourceHash": "004b1d430b73307988fda85a",
+      "englishHash": "c4ccb9559d91bb6cd36dcca7",
+      "traditionalSourceHash": "ef4fdf436bb4a861ca0f7ea2",
+      "traditionalHash": "63a527ab3de88885ccdcaac3"
+    },
+    "DataIntegration.pipeline.watermarkColumnFieldLabel": {
+      "sourceHash": "0487d4325f71dae05af38b5c",
+      "englishHash": "2b81763ef118db9fd0d90f5a",
+      "traditionalSourceHash": "4b561e98139e2cb4902e883d",
+      "traditionalHash": "c55043d6d48501944545d987"
+    },
+    "DataIntegration.pipeline.upsertConfigInvalidHint": {
+      "sourceHash": "c2bd5dde2c020129b21272b7",
+      "englishHash": "a676ac6201f96adb1b0a469b",
+      "traditionalSourceHash": "46afc7a98412fa7a3c4db366",
+      "traditionalHash": "8130a3b52dd2f13c4acc561e"
+    },
+    "DataIntegration.pipeline.upsertModeHint": {
+      "sourceHash": "490cad7ff1c2ba6cb43412ff",
+      "englishHash": "519d04ba6449be0d6533cb17",
+      "traditionalSourceHash": "d75664efb7d9a8682bf17043",
+      "traditionalHash": "d81f44625551678c2cdcd1b9"
     },
     "DataIntegration.execution.loadFailedTitle": {
       "sourceHash": "1e96be66a71bb7cad2f63dad",
@@ -9238,10 +9274,10 @@
       "traditionalHash": "475e51fbd8f49a26af7867b2"
     },
     "ApiManagement.clients.pageDescription": {
-      "sourceHash": "02b248fc7893b5ae46a6b503",
-      "englishHash": "8cf0ef0e5424defade430d64",
-      "traditionalSourceHash": "0bcb9b5d4c0772a62a3c7e0b",
-      "traditionalHash": "0e9fa53da6002db4da53405c"
+      "sourceHash": "47c1d1a66839df909e0728b5",
+      "englishHash": "ee9d66a6a671afcdeb5e5b83",
+      "traditionalSourceHash": "6f4e0128bfe8de58f57c58b7",
+      "traditionalHash": "a4707f63ed56b014781307d7"
     },
     "ApiManagement.clients.createLabel": {
       "sourceHash": "c1d83268801b9650ae4e63a2",
@@ -9262,16 +9298,16 @@
       "traditionalHash": "1fef34037aea027236272a71"
     },
     "ApiManagement.clients.namePlaceholder": {
-      "sourceHash": "ee0445789b234b7bbe946f84",
-      "englishHash": "ab46173140e44b55c18c215e",
-      "traditionalSourceHash": "d7ea45e0629afa82ed14069f",
-      "traditionalHash": "dd4de60be40fb8b6d011fca9"
+      "sourceHash": "8c0006893adbc9dc0a535654",
+      "englishHash": "1050ea5258e707bf470acea4",
+      "traditionalSourceHash": "8b7f59697302386a7c73b7cc",
+      "traditionalHash": "f32c9973bdb2525d27d602a1"
     },
     "ApiManagement.clients.issueHint": {
-      "sourceHash": "cea0f412f16cc8e23a516821",
-      "englishHash": "38d0911389567e0f099f6145",
-      "traditionalSourceHash": "fd0c70e180f6d9167c8869d6",
-      "traditionalHash": "f871d023350a37b1c44bf21d"
+      "sourceHash": "b5d3bfae1af9312989167905",
+      "englishHash": "927032ab27ff859d9cf5b463",
+      "traditionalSourceHash": "e7bf8fc6834c394a0e5f81a0",
+      "traditionalHash": "1b96b1bea77ee1aff78d7e70"
     },
     "ApiManagement.clients.creating": {
       "sourceHash": "bdff0f1e577b7d57986b940a",
@@ -9304,16 +9340,16 @@
       "traditionalHash": "0971feee9c8644952b63c857"
     },
     "ApiManagement.clients.usageStep1": {
-      "sourceHash": "edc5476b68fe795279e4aca4",
-      "englishHash": "f37b8ea3983c50a775820270",
-      "traditionalSourceHash": "befb772f28e6c70fe1ef0aa0",
-      "traditionalHash": "17eaa85f6900e2766f0098ef"
+      "sourceHash": "be501020f0504c4b86c13ae5",
+      "englishHash": "94306963a7c6ee094ce846fd",
+      "traditionalSourceHash": "f5bcd43566a54f62f6fbef48",
+      "traditionalHash": "86ad056f6337eb64f58254d0"
     },
     "ApiManagement.clients.usageStep2": {
-      "sourceHash": "e48164383debedec9e94b0b5",
-      "englishHash": "299d5dbd89feed7dd863375e",
-      "traditionalSourceHash": "8a6e06c9fdf9e23c93f2e657",
-      "traditionalHash": "51dcf4ad666d54cb9c569e97"
+      "sourceHash": "b8c3b0afcf3bcc7dfdec7665",
+      "englishHash": "301db2094f2e07b198830072",
+      "traditionalSourceHash": "9ad12f017fc35b9151a9fbfc",
+      "traditionalHash": "9af8860a75dc23e20c684aa2"
     },
     "ApiManagement.clients.savedConfirmButton": {
       "sourceHash": "0e16eb7e24a7b38a9944bc3a",
@@ -9362,6 +9398,102 @@
       "englishHash": "63ba394601c5c4aa8d14e853",
       "traditionalSourceHash": "e3803a5aa304c9bba28d43f1",
       "traditionalHash": "0c04031dacee52bffd3e9954"
+    },
+    "ApiManagement.clients.columnGatewayPolicy": {
+      "sourceHash": "057c4a2d002132a0d6c0edec",
+      "englishHash": "02bfc81f1218bc8d7a8c72e5",
+      "traditionalSourceHash": "33dca36c36edb1b13782c094",
+      "traditionalHash": "63917fa2d61b3deaebbac21d"
+    },
+    "ApiManagement.clients.gatewayPolicyMenuItem": {
+      "sourceHash": "38c7b94c65654045c9e85bc3",
+      "englishHash": "ec9bbe738537f664e78e20d8",
+      "traditionalSourceHash": "90a610544ca7fc155d7be551",
+      "traditionalHash": "a24cc6c2ec69d99ef2016e15"
+    },
+    "ApiManagement.clients.policyRateBadge": {
+      "sourceHash": "fc516f8a34cc1bca4f658ad9",
+      "englishHash": "0e7df0d714ab90bde9870887",
+      "traditionalSourceHash": "9a8a8c73eaea5b174e3ac0c1",
+      "traditionalHash": "4a58855386edb7d3de2f2bf8"
+    },
+    "ApiManagement.clients.policyRateDefaultBadge": {
+      "sourceHash": "cf26f29a802f78aaeeb88d86",
+      "englishHash": "ad725070aae2318e7f5ad83d",
+      "traditionalSourceHash": "f0ffe15bc302026a7f93f851",
+      "traditionalHash": "fd2233f351c196b6e5b0affa"
+    },
+    "ApiManagement.clients.policyGroupCountBadge": {
+      "sourceHash": "48aea5af61fc28dc6d86c1fd",
+      "englishHash": "2f871a4e2bb8b19f6e94df67",
+      "traditionalSourceHash": "371cc0f81454688d55cf1343",
+      "traditionalHash": "32a59534b11b9428a911e79d"
+    },
+    "ApiManagement.clients.policyAllGroupsBadge": {
+      "sourceHash": "4f620dabdd63ac0fc3b47820",
+      "englishHash": "1b3fb9d22b193559b83b5751",
+      "traditionalSourceHash": "9e38560d9cfd671b18051bfa",
+      "traditionalHash": "efa91b44bf5883029c79600e"
+    },
+    "ApiManagement.clients.policyDialogTitle": {
+      "sourceHash": "e5607c6e14acebd9b1c29294",
+      "englishHash": "e4c05130f2d2d0f407dc3f09",
+      "traditionalSourceHash": "7cf2e5a96e47001d77b85af3",
+      "traditionalHash": "ae546859d3883e96129e6a2a"
+    },
+    "ApiManagement.clients.policyDialogDescription": {
+      "sourceHash": "989dc6c475793d3c42f3f5b5",
+      "englishHash": "44a7b9205bbaa0863a1a5419",
+      "traditionalSourceHash": "8b669bb8313361d63f5390b3",
+      "traditionalHash": "f6b9ccbd7cdaa5443fed5236"
+    },
+    "ApiManagement.clients.policyRateFieldLabel": {
+      "sourceHash": "a064254c17db27479d51dc5f",
+      "englishHash": "aa6d477fff29576b99b380ae",
+      "traditionalSourceHash": "857ca91c7dd19449b586067a",
+      "traditionalHash": "7c8de56d8fef4ab88b2b0cb5"
+    },
+    "ApiManagement.clients.policyRatePlaceholder": {
+      "sourceHash": "c9c646b93ec179009c7ccd39",
+      "englishHash": "1ea8cdf287d48f99947b148e",
+      "traditionalSourceHash": "7f461e21613a74c6e6506eee",
+      "traditionalHash": "a2ccfa2ea74f2e7da82d8a73"
+    },
+    "ApiManagement.clients.policyRateHint": {
+      "sourceHash": "35161a89072913deddfb4858",
+      "englishHash": "f49cb17c01ee32c1c8df654f",
+      "traditionalSourceHash": "c363089926308a5d538c395f",
+      "traditionalHash": "576a62eb7d91ac1584ce7893"
+    },
+    "ApiManagement.clients.policyRateInvalid": {
+      "sourceHash": "d3dcf9b700cb683dd554603f",
+      "englishHash": "87cb6400346b719a4e4ca6d2",
+      "traditionalSourceHash": "e9bf5502839b0cc116010e54",
+      "traditionalHash": "e88e545eb6371f231a90d9ec"
+    },
+    "ApiManagement.clients.policyGroupsFieldLabel": {
+      "sourceHash": "2b6ee91d92074be4602d9e09",
+      "englishHash": "0ec9ec9c0d184209a9eb2f58",
+      "traditionalSourceHash": "aeccd5ca08efecf2655c99de",
+      "traditionalHash": "e27153a0c343468171fc592d"
+    },
+    "ApiManagement.clients.policyGroupsHint": {
+      "sourceHash": "eacfb01d71fa89529cb9f11d",
+      "englishHash": "fd7a3b9b11d06636bb29ad2d",
+      "traditionalSourceHash": "7cb246e38eafb851fb227790",
+      "traditionalHash": "3e6ba92adb24081791674da1"
+    },
+    "ApiManagement.clients.policyGroupsEmptyHint": {
+      "sourceHash": "d9c6a974d168c959a5d23928",
+      "englishHash": "6ffd7ef2d887779cacf75707",
+      "traditionalSourceHash": "0a93a02e39a041449e0a4f04",
+      "traditionalHash": "3e0d20790223ac77dd31e5da"
+    },
+    "ApiManagement.clients.policySavedTitle": {
+      "sourceHash": "e9056fdf8f85eb8a5f09eb55",
+      "englishHash": "bd285899f8084d496e1fca01",
+      "traditionalSourceHash": "8c8853be1e0acf69dda88b8f",
+      "traditionalHash": "1279657cfc80e6c94e32eda9"
     },
     "ApiManagement.groups.loadErrorTitle": {
       "sourceHash": "e835a697050c802a16ca29c7",

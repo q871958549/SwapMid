@@ -1,97 +1,208 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using SwapMid.ApiManagement;
-using SwapMid.Permissions;
+using SwapMid.Infrastructure;
+using SwapMid.Monitoring;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.Uow;
 
 namespace SwapMid.ApiGateway;
 
 /// <summary>
-/// API 网关休眠骨架：按「API 管理」中的路径、方法和上游地址转发请求。
-/// 默认由 <c>ApiGateway:Enabled=false</c> 关闭；当前实现不得视为安全反向代理。
-/// 在完成 SSRF/DNS 重绑定防护、头与重定向策略、资源边界和短事务拆分前禁止启用。
+/// 生产加固型受管 API 网关：
+/// 1. 默认由 <c>ApiGateway:Enabled=false</c> 关闭（Fail-Closed）；
+/// 2. 支持平台权限与第三方 <c>client_credentials</c>（<c>external-integration</c>）双主体鉴权；
+/// 3. 强制执行客户端路由分组 ACL、滑动窗口动态限流、载荷预算上限、SSRF / DNS Rebinding 防护与无环境事务转发。
 /// </summary>
-[Authorize(SwapMidPermissions.ApiManagement.ApiRoutes.Default)]
-[ApiExplorerSettings(IgnoreApi = true)]   // 网关入口不进 Swagger API 文档
+[Authorize(GatewayAuthorizationPolicies.GatewayAccessPolicy)]
+[ApiExplorerSettings(IgnoreApi = true)]
 [Route("api/gateway")]
 public class GatewayController : AbpController
 {
-    /// <summary>逐跳(hop-by-hop)头 + Host,不在代理两端透传(RFC 9110 §7.6.1)。</summary>
+    public const int DefaultRateLimitPerMinute = 120;
+    public const long DefaultMaxPayloadBytes = 10L * 1024 * 1024;
+
     private static readonly HashSet<string> HopByHopHeaders = new(StringComparer.OrdinalIgnoreCase)
     {
         "Connection", "Keep-Alive", "Proxy-Authenticate", "Proxy-Authorization",
         "TE", "Trailer", "Transfer-Encoding", "Upgrade", "Host",
     };
 
+    private static readonly HashSet<string> SensitiveInboundHeaders = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Authorization", "Cookie",
+    };
+
     private readonly IApiRouteRepository _routes;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<GatewayController> _logger;
 
     public GatewayController(
         IApiRouteRepository routes,
         IHttpClientFactory httpClientFactory,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IServiceProvider serviceProvider,
+        ILogger<GatewayController> logger)
     {
         _routes = routes;
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
+        _serviceProvider = serviceProvider;
+        _logger = logger;
     }
 
+    [UnitOfWork(IsDisabled = true)]
     [AcceptVerbs("GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS")]
     [Route("{**path}")]
-    public async Task ForwardAsync(string? path, CancellationToken cancellationToken)
+    public async Task<IActionResult> ForwardAsync(string? path, CancellationToken cancellationToken)
     {
         if (!bool.TryParse(_configuration["ApiGateway:Enabled"], out var enabled) || !enabled)
         {
-            await WriteErrorAsync(StatusCodes.Status404NotFound, "Not Found", cancellationToken);
-            return;
+            return await WriteErrorAsync(StatusCodes.Status404NotFound, "SwapMid:GW:Disabled", "Not Found", cancellationToken);
+        }
+
+        var externalClientId = GatewayAuthorizationPolicies.ExtractExternalClientId(User);
+        GatewayClientPolicySnapshot? clientPolicy = null;
+        if (externalClientId != null)
+        {
+            var governanceReader = _serviceProvider.GetService<IGatewayClientGovernanceReader>();
+            if (governanceReader != null)
+            {
+                clientPolicy = await governanceReader.FindPolicyAsync(externalClientId, cancellationToken);
+            }
+        }
+
+        var defaultPermit = _configuration.GetValue<int?>("ApiGateway:DefaultRateLimitPerMinute") ?? DefaultRateLimitPerMinute;
+        var effectivePermit = clientPolicy?.RateLimitPerMinute ?? defaultPermit;
+        var rateLimiter = _serviceProvider.GetService<IGatewayRateLimiter>();
+        if (rateLimiter != null)
+        {
+            var partitionKey = BuildPartitionKey(externalClientId, User, HttpContext);
+            var lease = rateLimiter.TryAcquire(partitionKey, effectivePermit);
+            if (!lease.Allowed)
+            {
+                PlatformMetrics.OutRateLimitRejections.WithLabels("api_gateway", "request").Inc();
+                PlatformMetrics.ApiGatewayRequestsTotal.WithLabels("rate_limited", "4xx").Inc();
+                Response.Headers.RetryAfter = lease.RetryAfterSeconds.ToString(CultureInfo.InvariantCulture);
+                return await WriteErrorAsync(
+                    StatusCodes.Status429TooManyRequests,
+                    "SwapMid:GW:RateLimited",
+                    "网关调用速率超出客户端配额，请按 Retry-After 稍后重试",
+                    cancellationToken);
+            }
+        }
+
+        var maxPayloadBytes = _configuration.GetValue<long?>("ApiGateway:MaxPayloadBytes") ?? DefaultMaxPayloadBytes;
+        if (Request.ContentLength is { } declaredLength && declaredLength > maxPayloadBytes)
+        {
+            PlatformMetrics.ApiGatewayRequestsTotal.WithLabels("payload_too_large", "4xx").Inc();
+            return await WriteErrorAsync(
+                StatusCodes.Status413PayloadTooLarge,
+                "SwapMid:GW:PayloadTooLarge",
+                "网关请求体超出允许上限",
+                cancellationToken);
         }
 
         var incomingPath = "/" + (path ?? string.Empty).TrimStart('/');
-        var method = Enum.TryParse<HttpMethodType>(Request.Method, ignoreCase: true, out var m)
-            ? m
-            : HttpMethodType.ALL;   // HEAD/OPTIONS 等未枚举的方法只命中 ALL 通配路由
+        var method = Enum.TryParse<HttpMethodType>(Request.Method, ignoreCase: true, out var parsedMethod)
+            ? parsedMethod
+            : HttpMethodType.ALL;
 
-        var route = await _routes.FindEnabledMatchAsync(incomingPath, method, cancellationToken);
+        var route = await FindEnabledRouteShortAsync(incomingPath, method, cancellationToken);
         if (route is null)
         {
-            await WriteErrorAsync(StatusCodes.Status404NotFound,
-                $"无匹配的网关路由：{Request.Method} {incomingPath}（请在「API 管理 → 路由」配置并启用对应路由）",
+            PlatformMetrics.ApiGatewayRequestsTotal.WithLabels("route_not_found", "4xx").Inc();
+            return await WriteErrorAsync(
+                StatusCodes.Status404NotFound,
+                "SwapMid:GW:RouteNotFound",
+                $"无匹配的网关路由：{Request.Method} {incomingPath}",
                 cancellationToken);
-            return;
         }
 
-        using var proxyRequest = new HttpRequestMessage(
-            new HttpMethod(Request.Method),
-            route.UpstreamUrl + Request.QueryString.Value);
+        if (clientPolicy is { AllowedGroupIds.Count: > 0 } &&
+            (route.GroupId is not { } routeGroupId || !clientPolicy.AllowedGroupIds.Contains(routeGroupId)))
+        {
+            PlatformMetrics.ApiGatewayRequestsTotal.WithLabels("acl_denied", "4xx").Inc();
+            return await WriteErrorAsync(
+                StatusCodes.Status403Forbidden,
+                "SwapMid:GW:GroupAccessDenied",
+                "当前客户端未被授权访问该 API 路由所属分组",
+                cancellationToken);
+        }
 
-        // 请求体透传(GET/HEAD 一般无体)
+        var targetUrl = route.UpstreamUrl + Request.QueryString.Value;
+        if (!ApiGatewayUpstreamEndpointPolicy.TryValidateUpstreamUrl(
+                targetUrl,
+                _configuration,
+                out var validatedUri,
+                out var failureCode))
+        {
+            PlatformMetrics.ApiGatewayRequestsTotal.WithLabels("ssrf_blocked", "5xx").Inc();
+            _logger.LogWarning(
+                "API 网关拦截未授权上游地址 routeId={RouteId} code={FailureCode}",
+                route.Id,
+                failureCode);
+            return await WriteErrorAsync(
+                StatusCodes.Status502BadGateway,
+                failureCode,
+                "上游地址未通过网关安全白名单校验",
+                cancellationToken);
+        }
+
+        byte[]? bufferedRequestBody = null;
         if (Request.ContentLength is > 0 || Request.Headers.ContainsKey("Transfer-Encoding"))
         {
-            proxyRequest.Content = new StreamContent(Request.Body);
+            bufferedRequestBody = await ReadBoundedStreamAsync(Request.Body, maxPayloadBytes, cancellationToken);
+            if (bufferedRequestBody is null)
+            {
+                PlatformMetrics.ApiGatewayRequestsTotal.WithLabels("payload_too_large", "4xx").Inc();
+                return await WriteErrorAsync(
+                    StatusCodes.Status413PayloadTooLarge,
+                    "SwapMid:GW:PayloadTooLarge",
+                    "网关请求体超出允许上限",
+                    cancellationToken);
+            }
         }
 
-        // 头透传:实体头(Content-*)归 Content.Headers,其余归 Request.Headers;剔除逐跳头与 Host
+        using var proxyRequest = new HttpRequestMessage(new HttpMethod(Request.Method), validatedUri);
+        if (bufferedRequestBody is not null)
+        {
+            proxyRequest.Content = new ByteArrayContent(bufferedRequestBody);
+        }
+
+        var forwardCredentials = _configuration.GetValue<bool>("ApiGateway:ForwardCredentials");
         foreach (var header in Request.Headers)
         {
-            if (HopByHopHeaders.Contains(header.Key))
+            if (HopByHopHeaders.Contains(header.Key) ||
+                (!forwardCredentials && SensitiveInboundHeaders.Contains(header.Key)))
             {
                 continue;
             }
 
             if (header.Key.StartsWith("Content-", StringComparison.OrdinalIgnoreCase))
             {
-                proxyRequest.Content?.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
+                if (!string.Equals(header.Key, "Content-Length", StringComparison.OrdinalIgnoreCase))
+                {
+                    proxyRequest.Content?.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
+                }
             }
             else
             {
@@ -99,24 +210,57 @@ public class GatewayController : AbpController
             }
         }
 
-        var client = _httpClientFactory.CreateClient("ApiGateway");
+        proxyRequest.Headers.TryAddWithoutValidation("X-SwapMid-Gateway-Route", route.Id.ToString("D"));
+        if (externalClientId != null)
+        {
+            proxyRequest.Headers.TryAddWithoutValidation("X-SwapMid-Client-Id", externalClientId);
+        }
+
+        var client = _httpClientFactory.CreateClient(ExternalHttpClientNames.ApiGateway);
+        var stopwatch = Stopwatch.StartNew();
         HttpResponseMessage upstream;
         try
         {
-            upstream = await client.SendAsync(proxyRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            upstream = await client.SendAsync(
+                proxyRequest,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
         {
-            Logger.LogWarning(ex, "API 网关转发失败 {Method} {Path} → {Upstream}",
-                Request.Method, incomingPath, route.UpstreamUrl);
-            await WriteErrorAsync(StatusCodes.Status502BadGateway,
-                $"上游服务不可达：{route.UpstreamUrl}（{ex.Message}）", cancellationToken);
-            return;
+            stopwatch.Stop();
+            PlatformMetrics.ApiGatewayUpstreamDuration.Observe(stopwatch.Elapsed.TotalSeconds);
+            PlatformMetrics.ApiGatewayRequestsTotal.WithLabels("upstream_error", "5xx").Inc();
+            _logger.LogWarning(
+                "API 网关转发失败 method={Method} path={Path} routeId={RouteId} exceptionType={ExceptionType}",
+                Request.Method,
+                incomingPath,
+                route.Id,
+                ex.GetType().Name);
+            return await WriteErrorAsync(
+                StatusCodes.Status502BadGateway,
+                "SwapMid:GW:UpstreamUnavailable",
+                "上游服务不可达或未通过建连安全护栏",
+                cancellationToken);
         }
 
         using (upstream)
         {
-            Response.StatusCode = (int)upstream.StatusCode;
+            if (upstream.Content.Headers.ContentLength is { } upstreamLength &&
+                upstreamLength > maxPayloadBytes)
+            {
+                stopwatch.Stop();
+                PlatformMetrics.ApiGatewayUpstreamDuration.Observe(stopwatch.Elapsed.TotalSeconds);
+                PlatformMetrics.ApiGatewayRequestsTotal.WithLabels("upstream_too_large", "5xx").Inc();
+                return await WriteErrorAsync(
+                    StatusCodes.Status502BadGateway,
+                    "SwapMid:GW:UpstreamResponseTooLarge",
+                    "上游响应体超出网关安全预算",
+                    cancellationToken);
+            }
+
+            var statusCode = (int)upstream.StatusCode;
+            Response.StatusCode = statusCode;
 
             foreach (var header in upstream.Headers)
             {
@@ -134,19 +278,126 @@ public class GatewayController : AbpController
                 }
             }
 
-            // Transfer-Encoding 交给 Kestrel 决定,避免与实际响应体冲突
             Response.Headers.Remove("transfer-encoding");
-
-            await upstream.Content.CopyToAsync(Response.Body, cancellationToken);
+            await CopyBoundedAsync(upstream.Content, Response.Body, maxPayloadBytes, cancellationToken);
+            await Response.Body.FlushAsync(cancellationToken);
+            stopwatch.Stop();
+            PlatformMetrics.ApiGatewayUpstreamDuration.Observe(stopwatch.Elapsed.TotalSeconds);
+            PlatformMetrics.ApiGatewayRequestsTotal
+                .WithLabels("forwarded", $"{statusCode / 100}xx")
+                .Inc();
+            return new EmptyResult();
         }
     }
 
-    private async Task WriteErrorAsync(int statusCode, string message, CancellationToken cancellationToken)
+    private async Task<ApiRoute?> FindEnabledRouteShortAsync(
+        string incomingPath,
+        HttpMethodType method,
+        CancellationToken cancellationToken)
+    {
+        var uowManager = _serviceProvider.GetService<IUnitOfWorkManager>();
+        if (uowManager is null)
+        {
+            return await _routes.FindEnabledMatchAsync(incomingPath, method, cancellationToken);
+        }
+
+        using var uow = uowManager.Begin(requiresNew: true, isTransactional: false);
+        var route = await _routes.FindEnabledMatchAsync(incomingPath, method, cancellationToken);
+        await uow.CompleteAsync(cancellationToken);
+        return route;
+    }
+
+    internal static string BuildPartitionKey(
+        string? externalClientId,
+        ClaimsPrincipal user,
+        HttpContext httpContext)
+    {
+        if (!string.IsNullOrWhiteSpace(externalClientId))
+        {
+            return $"client:{externalClientId}";
+        }
+
+        var subject = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? user.FindFirst("sub")?.Value;
+        if (!string.IsNullOrWhiteSpace(subject))
+        {
+            return $"user:{subject}";
+        }
+
+        return $"ip:{httpContext.Connection.RemoteIpAddress}";
+    }
+
+    internal static async Task<byte[]?> ReadBoundedStreamAsync(
+        Stream stream,
+        long maxBytes,
+        CancellationToken cancellationToken)
+    {
+        await using var ms = new MemoryStream();
+        var buffer = ArrayPool<byte>.Shared.Rent(16 * 1024);
+        try
+        {
+            long total = 0;
+            int read;
+            while ((read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken)) > 0)
+            {
+                total += read;
+                if (total > maxBytes)
+                {
+                    return null;
+                }
+
+                ms.Write(buffer, 0, read);
+            }
+
+            return ms.ToArray();
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+    }
+
+    private static async Task CopyBoundedAsync(
+        HttpContent content,
+        Stream destination,
+        long maxBytes,
+        CancellationToken cancellationToken)
+    {
+        await using var source = await content.ReadAsStreamAsync(cancellationToken);
+        var buffer = ArrayPool<byte>.Shared.Rent(16 * 1024);
+        try
+        {
+            long total = 0;
+            int read;
+            while ((read = await source.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken)) > 0)
+            {
+                total += read;
+                if (total > maxBytes)
+                {
+                    break;
+                }
+
+                await destination.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+            }
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+    }
+
+    private async Task<IActionResult> WriteErrorAsync(
+        int statusCode,
+        string code,
+        string message,
+        CancellationToken cancellationToken)
     {
         Response.StatusCode = statusCode;
         Response.ContentType = "application/json; charset=utf-8";
         await Response.WriteAsync(
-            JsonSerializer.Serialize(new { error = new { code = statusCode, message } }),
+            JsonSerializer.Serialize(new { error = new { code, message } }),
             cancellationToken);
+        await Response.Body.FlushAsync(cancellationToken);
+        return new EmptyResult();
     }
 }

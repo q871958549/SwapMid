@@ -75,6 +75,19 @@ public static partial class PlatformMetrics
         "ETL 执行状态结算结果（固定低基数标签 result）",
         new CounterConfiguration { LabelNames = ["result"] });
 
+    public static readonly Counter ApiGatewayRequestsTotal = Metrics.CreateCounter(
+        "swapmid_gateway_requests_total",
+        "API 网关转发与事件接入计数（固定低基数标签 outcome/status_class）",
+        new CounterConfiguration { LabelNames = ["outcome", "status_class"] });
+
+    public static readonly Histogram ApiGatewayUpstreamDuration = Metrics.CreateHistogram(
+        "swapmid_gateway_upstream_duration_seconds",
+        "API 网关上游转发耗时（秒）",
+        new HistogramConfiguration
+        {
+            Buckets = Histogram.ExponentialBuckets(0.005, 2, 12),
+        });
+
     private static readonly string[] EtlExecutionAdmissionOutcomes =
     [
         "acquired", "busy", "idempotent_replay", "coordination_failure",

@@ -49,6 +49,14 @@ internal static class ExternalHttpClientRegistration
             ExternalHttpConfigurationKeys.NotificationWebhookAllowedHosts,
             ExternalHttpConfigurationKeys.NotificationWebhookAllowedPrivateNetworks,
             builtInAllowedHosts: OutboundEndpointConnectionGuard.DefaultBotWebhookHosts);
+
+        AddTimeoutOnlyClient(
+            services,
+            configuration,
+            ExternalHttpClientNames.ApiGateway,
+            DefaultMessageDeliveryTimeoutSeconds,
+            ExternalHttpConfigurationKeys.ApiGatewayAllowedHosts,
+            ExternalHttpConfigurationKeys.ApiGatewayAllowedPrivateNetworks);
     }
 
     private static void AddTimeoutOnlyClient(

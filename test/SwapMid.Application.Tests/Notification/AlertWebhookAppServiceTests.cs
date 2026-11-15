@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using SwapMid.Settings;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Shouldly;
@@ -93,5 +94,65 @@ public class AlertWebhookAppServiceTests
         sent[0].Level.ShouldBe(NotificationLevel.Critical);
         sent[0].Source.ShouldBe(NotificationSources.Alertmanager);
         sent[0].Title.ShouldContain("[FIRING] API 5xx spike");
+    }
+
+    [Fact]
+    public async Task Configuration_Fallback_Token_Should_Work_When_Setting_Is_Empty()
+    {
+        var settings = Substitute.For<ISettingProvider>();
+        settings.GetOrNullAsync(SwapMidSettings.NotificationAlertWebhookToken).Returns((string?)null);
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["NotificationCenter:AlertWebhookToken"] = "env-alert-token",
+            })
+            .Build();
+        var notifications = Substitute.For<INotificationService>();
+        using var sp = new ServiceCollection()
+            .AddLogging()
+            .AddSingleton(settings)
+            .BuildServiceProvider();
+
+        var sut = new AlertWebhookAppService(notifications, config)
+        {
+            LazyServiceProvider = new AbpLazyServiceProvider(sp),
+        };
+
+        var res = await sut.ReceiveAsync("env-alert-token", new AlertmanagerWebhookInput());
+        res.Accepted.ShouldBeTrue();
+
+        var ex = await Should.ThrowAsync<BusinessException>(() =>
+            sut.ReceiveAsync("wrong-env-token", new AlertmanagerWebhookInput()));
+        ex.Code.ShouldBe(SwapMidDomainErrorCodes.NotificationCenter.InvalidWebhookToken);
+    }
+
+    [Fact]
+    public async Task Explicit_Setting_Should_Override_Configuration_Fallback_Token()
+    {
+        var settings = Substitute.For<ISettingProvider>();
+        settings.GetOrNullAsync(SwapMidSettings.NotificationAlertWebhookToken).Returns("db-setting-token");
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["NotificationCenter:AlertWebhookToken"] = "env-alert-token",
+            })
+            .Build();
+        var notifications = Substitute.For<INotificationService>();
+        using var sp = new ServiceCollection()
+            .AddLogging()
+            .AddSingleton(settings)
+            .BuildServiceProvider();
+
+        var sut = new AlertWebhookAppService(notifications, config)
+        {
+            LazyServiceProvider = new AbpLazyServiceProvider(sp),
+        };
+
+        var ex = await Should.ThrowAsync<BusinessException>(() =>
+            sut.ReceiveAsync("env-alert-token", new AlertmanagerWebhookInput()));
+        ex.Code.ShouldBe(SwapMidDomainErrorCodes.NotificationCenter.InvalidWebhookToken);
+
+        var ok = await sut.ReceiveAsync("db-setting-token", new AlertmanagerWebhookInput());
+        ok.Accepted.ShouldBeTrue();
     }
 }

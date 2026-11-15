@@ -116,8 +116,15 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Validate docker-compose.yml
-        run: docker compose -f docker/docker-compose.yml --env-file docker/.env.example config --quiet
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Validate docker-compose manifests & Helm chart
+        run: |
+          docker compose -f docker/docker-compose.yml --env-file docker/.env.example config --quiet
+          GRAFANA_ADMIN_PASSWORD=ci-placeholder docker compose -f docker/docker-compose.yml -f docker/docker-compose.observability.yml --env-file docker/.env.example config --quiet
+          helm lint charts/swapmid
+          helm template swapmid charts/swapmid >/dev/null
 
       - name: Build production container images (migrator, api, web)
         run: |

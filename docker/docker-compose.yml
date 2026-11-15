@@ -125,6 +125,7 @@ services:
       AuthServer__ExternalOidc__Enabled: "${EXTERNAL_OIDC_ENABLED:-false}"
       AuthServer__ExternalOidc__DisplayName: "${EXTERNAL_OIDC_DISPLAY_NAME:-Enterprise SSO}"
       AuthServer__ExternalOidc__Authority: "${EXTERNAL_OIDC_AUTHORITY:-}"
+      AuthServer__ExternalOidc__AuthorizationEndpoint: "${EXTERNAL_OIDC_AUTHORIZATION_ENDPOINT:-}"
       AuthServer__ExternalOidc__ClientId: "${EXTERNAL_OIDC_CLIENT_ID:-}"
       AuthServer__ExternalOidc__ClientSecret: "${EXTERNAL_OIDC_CLIENT_SECRET:-}"
       AuthServer__ExternalOidc__RequireHttpsMetadata: "${EXTERNAL_OIDC_REQUIRE_HTTPS:-true}"

@@ -190,7 +190,10 @@
     "DataIntegration.pipeline.preflightNoIssuesHint": "Source projection, target schema, key constraints, and write mode checks all passed.",
     "DataIntegration.pipeline.preflightFailedFallback": "Schema pre-flight request failed; check network connectivity or permissions",
     "Login.ssoDivider": "or enterprise federation",
-    "Login.ssoButton": "Sign in with {provider}"
+    "Login.ssoButton": "Sign in with {provider}",
+    "Login.ssoErrorInvalidState": "Enterprise SSO verification state expired or was invalid; please try again",
+    "Login.ssoErrorExchangeFailed": "External identity verification failed, or your platform account is not enabled",
+    "Login.ssoErrorSessionFailed": "Failed to establish a platform session; please try again later or contact an administrator"
   },
   "traditionalOverrides": {
     "Account.user.batchRemoveDoneTitle": "批次移除角色完成",

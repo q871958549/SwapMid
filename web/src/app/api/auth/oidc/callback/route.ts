@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { fetchAbpUserConfig } from '@/lib/abp-config'
 import {
   OIDC_FLOW_COOKIE_NAME,
+  resolveOidcPublicOrigin,
   unsealOidcFlowCookie,
 } from '@/lib/oidc-flow-cookie'
 import { isSafeInternalPath } from '@/lib/safe-internal-path'
@@ -13,8 +14,8 @@ import {
 import { createSession } from '@/lib/session'
 import { getWebOAuthClientId } from '@/lib/site-instance'
 
-function redirectToLoginWithError(req: NextRequest, reason: string): NextResponse {
-  const url = new URL('/login', req.url)
+function redirectToLoginWithError(publicOrigin: string, reason: string): NextResponse {
+  const url = new URL('/login', publicOrigin)
   url.searchParams.set('sso_error', reason)
   const res = NextResponse.redirect(url)
   res.cookies.delete({ name: OIDC_FLOW_COOKIE_NAME, path: '/api/auth/oidc' })
@@ -22,17 +23,18 @@ function redirectToLoginWithError(req: NextRequest, reason: string): NextRespons
 }
 
 export async function GET(req: NextRequest) {
+  const publicOrigin = resolveOidcPublicOrigin(req.headers, req.nextUrl.origin)
   const code = req.nextUrl.searchParams.get('code')
   const state = req.nextUrl.searchParams.get('state')
   const rawCookie = req.cookies.get(OIDC_FLOW_COOKIE_NAME)?.value
   const flow = unsealOidcFlowCookie(rawCookie, state)
 
   if (!code || !flow) {
-    return redirectToLoginWithError(req, 'invalid_state')
+    return redirectToLoginWithError(publicOrigin, 'invalid_state')
   }
 
   try {
-    const callbackUri = new URL('/api/auth/oidc/callback', req.url).toString()
+    const callbackUri = new URL('/api/auth/oidc/callback', publicOrigin).toString()
     const tokenRes = await serverBackendFetch('/connect/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -49,7 +51,7 @@ export async function GET(req: NextRequest) {
     })
 
     if (!tokenRes.ok) {
-      return redirectToLoginWithError(req, 'exchange_failed')
+      return redirectToLoginWithError(publicOrigin, 'exchange_failed')
     }
 
     const tokenJson = (await tokenRes.json()) as {
@@ -72,11 +74,11 @@ export async function GET(req: NextRequest) {
     })
 
     const destination = isSafeInternalPath(flow.redirect) ? flow.redirect : '/dashboard'
-    const res = NextResponse.redirect(new URL(destination, req.url))
+    const res = NextResponse.redirect(new URL(destination, publicOrigin))
     res.cookies.delete({ name: OIDC_FLOW_COOKIE_NAME, path: '/api/auth/oidc' })
     return res
   } catch (err) {
     console.error('[oidc/callback] failed to complete BFF session establishment', err)
-    return redirectToLoginWithError(req, 'session_failed')
+    return redirectToLoginWithError(publicOrigin, 'session_failed')
   }
 }

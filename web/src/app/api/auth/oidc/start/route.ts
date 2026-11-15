@@ -3,8 +3,10 @@ import type { ExternalAuthProvidersDto } from '@/lib/api/types'
 import {
   createOidcStateNonce,
   createPkcePair,
+  isSecureCookieEnabled,
   OIDC_FLOW_COOKIE_NAME,
   OIDC_FLOW_MAX_AGE_SECONDS,
+  resolveOidcPublicOrigin,
   sealOidcFlowCookie,
 } from '@/lib/oidc-flow-cookie'
 import { isSafeInternalPath } from '@/lib/safe-internal-path'
@@ -15,7 +17,8 @@ import {
 } from '@/lib/server-backend-fetch'
 
 export async function GET(req: NextRequest) {
-  const loginFallback = new URL('/login', req.url)
+  const publicOrigin = resolveOidcPublicOrigin(req.headers, req.nextUrl.origin)
+  const loginFallback = new URL('/login', publicOrigin)
 
   try {
     const providerRes = await serverBackendFetch('/api/v1/auth-providers', {
@@ -41,7 +44,7 @@ export async function GET(req: NextRequest) {
     const redirect = isSafeInternalPath(rawRedirect) ? rawRedirect : '/dashboard'
     const state = createOidcStateNonce()
     const { codeVerifier, codeChallenge } = createPkcePair()
-    const callbackUri = new URL('/api/auth/oidc/callback', req.url).toString()
+    const callbackUri = new URL('/api/auth/oidc/callback', publicOrigin).toString()
 
     const idpUrl = new URL(provider.authorizationEndpoint)
     idpUrl.searchParams.set('response_type', 'code')
@@ -56,7 +59,7 @@ export async function GET(req: NextRequest) {
     response.cookies.set(OIDC_FLOW_COOKIE_NAME, sealOidcFlowCookie({ state, codeVerifier, redirect }), {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.COOKIE_SECURE === 'true',
+      secure: isSecureCookieEnabled(),
       path: '/api/auth/oidc',
       maxAge: OIDC_FLOW_MAX_AGE_SECONDS,
     })

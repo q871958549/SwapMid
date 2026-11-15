@@ -117,6 +117,7 @@ public class SwapMidHttpApiHostModule : AbpModule
         PreConfigure<OpenIddictServerBuilder>(serverBuilder =>
         {
             serverBuilder.AllowCustomFlow(ImpersonationTokenExtensionGrant.ExtensionGrantName);
+            serverBuilder.AllowCustomFlow(ExternalOidcTokenExtensionGrant.ExtensionGrantName);
         });
 
         if (!hostingEnvironment.IsDevelopment())

@@ -288,6 +288,9 @@
     "errorChangePasswordNetworkError": "網絡連接失敗，請稍後再試",
     "ssoDivider": "或企業身份聯邦",
     "ssoButton": "使用 {provider} 單點登錄",
+    "ssoErrorInvalidState": "企業單點登錄狀態校驗已過期或無效，請重試",
+    "ssoErrorExchangeFailed": "外部身份驗證未通過，或當前賬號未在平臺啟用",
+    "ssoErrorSessionFailed": "建立平臺會話失敗，請稍後重試或聯繫管理員",
     "techSupportFooter": "技術支持：IT 部 · © 2026 {brand} · {version}"
   },
   "PasswordPolicy": {

@@ -4,6 +4,23 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-11-15
+
+### Fixed
+- **Alertmanager Closed-Loop Token Fallback (`Notification` / `docker/observability/`)**:
+  - Updated `AlertWebhookAppService` and `NotificationSettingsAppService` so `NotificationCenter:AlertWebhookToken` (used by `docker/docker-compose.observability.yml`) works seamlessly as a fallback when no database setting override exists, while database settings continue to take precedence.
+- **External OIDC Custom Flow Registration, BFF Public Origin & Split-Horizon Discovery (`OpenIddict` / `web/` / `docker/` / `charts/`)**:
+  - Registered `OpenIddictServerBuilder.AllowCustomFlow(ExternalOidcTokenExtensionGrant.ExtensionGrantName)` in `SwapMidHttpApiHostModule` so `/connect/token` (`grant_type=external_oidc`) passes OpenIddict core grant validation instead of failing with `ID2032 (unsupported_grant_type)`, and added startup container assertions in `HostStartupSmokeTests`.
+  - Added reverse-proxy-safe `resolveOidcPublicOrigin` (`X-Forwarded-Proto` / `X-Forwarded-Host` / `Host`) and consistent `isSecureCookieEnabled` handling across `/api/auth/oidc/start` and `/api/auth/oidc/callback`.
+  - Wired `EXTERNAL_OIDC_AUTHORIZATION_ENDPOINT` (`AuthServer:ExternalOidc:AuthorizationEndpoint` / `externalOidc.authorizationEndpoint`) across Docker Compose and Helm manifests for split-horizon container/Kubernetes deployments.
+  - Surfaced localized OIDC failure banners (`?sso_error=...`) and preserved deep-link `?redirect=...` targets across Enterprise SSO login flows (`zh-Hans`, `zh-Hant`, `en`).
+
+### Changed
+- **Open-Source Release & Cloud-Native Distribution Polish**:
+  - Updated `SECURITY.md` supported versions table for the `1.0.x` LTS release line.
+  - Aligned `charts/swapmid/values.yaml` container image repositories with GHCR owner conventions (`q871958549/swapmid-*`), added Helm Chart linting & observability Compose validation to `.github/workflows/ci.yml`, and added automated Helm OCI publishing (`oci://ghcr.io/<owner>/charts`) to `.github/workflows/release.yml`.
+  - Documented `v1.1+` post-LTS ecosystem evolution priorities in `docs/roadmap.md`.
+
 ## [1.0.0] - 2026-11-15
 
 ### Added

@@ -288,6 +288,9 @@
     "errorChangePasswordNetworkError": "Network connection failed, please try again later",
     "ssoDivider": "or enterprise federation",
     "ssoButton": "Sign in with {provider}",
+    "ssoErrorInvalidState": "Enterprise SSO verification state expired or was invalid; please try again",
+    "ssoErrorExchangeFailed": "External identity verification failed, or your platform account is not enabled",
+    "ssoErrorSessionFailed": "Failed to establish a platform session; please try again later or contact an administrator",
     "techSupportFooter": "Tech Support: IT Dept · © 2026 {brand} · {version}"
   },
   "PasswordPolicy": {

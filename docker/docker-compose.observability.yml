@@ -6,6 +6,7 @@ services:
   api:
     environment:
       Prometheus__BaseUrl: "http://prometheus:9090"
+      # Fallback Alertmanager token (if customized, also update alertmanager.yml ?token=...)
       NotificationCenter__AlertWebhookToken: "${ALERT_WEBHOOK_TOKEN:-swapmid-local-alert-token}"
 
   prometheus:

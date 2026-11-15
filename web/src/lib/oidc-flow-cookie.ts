@@ -11,6 +11,44 @@ export interface OidcFlowState {
   redirect: string
 }
 
+function firstHeaderValue(value: string | null): string | null {
+  if (!value) return null
+  const first = value.split(',')[0]?.trim()
+  return first ? first : null
+}
+
+function isValidHostHeader(host: string): boolean {
+  return host.length > 0
+    && host.length <= 253
+    && !/[\s/@\\?#]/.test(host)
+}
+
+export function isSecureCookieEnabled(): boolean {
+  return process.env.COOKIE_SECURE !== undefined
+    ? process.env.COOKIE_SECURE !== 'false'
+    : process.env.NODE_ENV === 'production'
+}
+
+export function resolveOidcPublicOrigin(headers: Headers, fallbackOrigin: string): string {
+  const fallbackUrl = new URL(fallbackOrigin)
+  const forwardedProto = firstHeaderValue(headers.get('x-forwarded-proto'))?.toLowerCase()
+  const protocol = forwardedProto === 'http' || forwardedProto === 'https'
+    ? `${forwardedProto}:`
+    : fallbackUrl.protocol
+
+  const forwardedHost = firstHeaderValue(headers.get('x-forwarded-host'))
+  if (forwardedHost && isValidHostHeader(forwardedHost)) {
+    return `${protocol}//${forwardedHost}`
+  }
+
+  const host = firstHeaderValue(headers.get('host'))
+  if (host && isValidHostHeader(host)) {
+    return `${protocol}//${host}`
+  }
+
+  return `${protocol}//${fallbackUrl.host}`
+}
+
 function getSigningSecret(): string {
   return process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY?.trim() || PROCESS_EPHEMERAL_SECRET
 }

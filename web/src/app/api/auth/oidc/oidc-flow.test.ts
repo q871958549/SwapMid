@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createOidcStateNonce,
   createPkcePair,
+  resolveOidcPublicOrigin,
   sealOidcFlowCookie,
   unsealOidcFlowCookie,
 } from '@/lib/oidc-flow-cookie'
@@ -40,5 +41,35 @@ describe('oidc-flow-cookie PKCE & HMAC state protection', () => {
     expect(unsealOidcFlowCookie(sealed, 'wrong-state', 'unit-test-secret')).toBeNull()
     expect(unsealOidcFlowCookie(`${sealed}tamper`, state, 'unit-test-secret')).toBeNull()
     expect(unsealOidcFlowCookie(sealed, state, 'wrong-secret')).toBeNull()
+  })
+
+  it('resolves public OIDC origin safely from forwarded proxy headers or Host header', () => {
+    expect(
+      resolveOidcPublicOrigin(
+        new Headers({
+          'x-forwarded-proto': 'https',
+          'x-forwarded-host': 'swapmid.example.com, internal-hop:3000',
+          host: '0.0.0.0:3000',
+        }),
+        'http://0.0.0.0:3000',
+      ),
+    ).toBe('https://swapmid.example.com')
+
+    expect(
+      resolveOidcPublicOrigin(
+        new Headers({ host: 'localhost:33000' }),
+        'http://0.0.0.0:3000',
+      ),
+    ).toBe('http://localhost:33000')
+
+    expect(
+      resolveOidcPublicOrigin(
+        new Headers({
+          'x-forwarded-proto': 'javascript',
+          'x-forwarded-host': 'evil.com/path@victim',
+        }),
+        'http://localhost:33000',
+      ),
+    ).toBe('http://localhost:33000')
   })
 })

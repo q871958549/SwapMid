@@ -14,7 +14,7 @@ publicUrls:
 api:
   replicaCount: 2
   image:
-    repository: swapmid/swapmid-api
+    repository: q871958549/swapmid-api
     tag: ""
     pullPolicy: IfNotPresent
   service:
@@ -40,7 +40,7 @@ api:
 web:
   replicaCount: 2
   image:
-    repository: swapmid/swapmid-web
+    repository: q871958549/swapmid-web
     tag: ""
     pullPolicy: IfNotPresent
   service:
@@ -66,7 +66,7 @@ web:
 migrator:
   enabled: true
   image:
-    repository: swapmid/swapmid-migrator
+    repository: q871958549/swapmid-migrator
     tag: ""
     pullPolicy: IfNotPresent
   backoffLimit: 3
@@ -91,6 +91,7 @@ externalOidc:
   enabled: false
   displayName: "Enterprise SSO"
   authority: ""
+  authorizationEndpoint: ""
   clientId: ""
   requireHttpsMetadata: true
 

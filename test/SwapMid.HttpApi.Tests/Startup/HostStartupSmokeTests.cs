@@ -1,13 +1,17 @@
 using SwapMid.EntityFrameworkCore;
 using SwapMid.Monitoring;
+using SwapMid.OpenIddict;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using OpenIddict.Server;
 using Shouldly;
 using Volo.Abp.Autofac;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
+using Volo.Abp.OpenIddict.ExtensionGrantTypes;
 
 namespace SwapMid.HttpApi.Tests.Startup;
 
@@ -65,6 +69,16 @@ public class HostStartupSmokeTests
         AssertDbContextOptionsShape<SwapMidDbContext>(scope.ServiceProvider);
         // ABP 内置 DbContext：当时的第一现场（后台作业轮询最先触发，日志里刷的就是它）。
         AssertDbContextOptionsShape<BackgroundJobsDbContext>(scope.ServiceProvider);
+
+        // 自定义 OpenIddict Extension Grant 必须在 ServerBuilder (AllowCustomFlow) 与
+        // AbpOpenIddictExtensionGrantsOptions.Grants 两处成对登记，否则 /connect/token 返回 ID2032。
+        var oidcServerOptions = scope.ServiceProvider.GetRequiredService<IOptionsMonitor<OpenIddictServerOptions>>().CurrentValue;
+        oidcServerOptions.GrantTypes.ShouldContain(ImpersonationTokenExtensionGrant.ExtensionGrantName);
+        oidcServerOptions.GrantTypes.ShouldContain(ExternalOidcTokenExtensionGrant.ExtensionGrantName);
+
+        var extensionGrants = scope.ServiceProvider.GetRequiredService<IOptions<AbpOpenIddictExtensionGrantsOptions>>().Value;
+        extensionGrants.Grants.Keys.ShouldContain(ImpersonationTokenExtensionGrant.ExtensionGrantName);
+        extensionGrants.Grants.Keys.ShouldContain(ExternalOidcTokenExtensionGrant.ExtensionGrantName);
     }
 
     /// <summary>

@@ -1671,6 +1671,24 @@
       "traditionalSourceHash": "bb241471a71ad4d28aa90900",
       "traditionalHash": "d004919cc7efb255d4c564ef"
     },
+    "Login.ssoErrorInvalidState": {
+      "sourceHash": "e1d762a475ea9e90256f92f8",
+      "englishHash": "6d784107eea182c1a2a82186",
+      "traditionalSourceHash": "87d375cf1dc86a2356d0fe59",
+      "traditionalHash": "5bcb4c1aaab6340d2516dc71"
+    },
+    "Login.ssoErrorExchangeFailed": {
+      "sourceHash": "82de42e33c66bb6818d75863",
+      "englishHash": "7248e2b6713edec83eb7f003",
+      "traditionalSourceHash": "3b1f7af899885773a0476982",
+      "traditionalHash": "140bddbe81cad719a2969308"
+    },
+    "Login.ssoErrorSessionFailed": {
+      "sourceHash": "3118e85de93beef4fa9d96d5",
+      "englishHash": "c602be49c6f074259925c4c7",
+      "traditionalSourceHash": "5d88d4c14659b9f3101e6f81",
+      "traditionalHash": "c3f01df145eff30a43ccab63"
+    },
     "Login.techSupportFooter": {
       "sourceHash": "955ca24451ffd9009dcb9db9",
       "englishHash": "9c1c5bc06c1a432bfac94ad6",

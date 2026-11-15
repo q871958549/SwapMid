@@ -37,6 +37,10 @@ public class NotificationSettingsAppService : SwapMidAppService, INotificationSe
         var webhookSecret = await SettingProvider.GetOrNullAsync(SwapMidSettings.NotificationWebhookSecret);
         var webhookMentions = await SettingProvider.GetOrNullAsync(SwapMidSettings.NotificationWebhookMentionUsers);
         var alertToken = await SettingProvider.GetOrNullAsync(SwapMidSettings.NotificationAlertWebhookToken);
+        if (string.IsNullOrWhiteSpace(alertToken))
+        {
+            alertToken = _configuration["NotificationCenter:AlertWebhookToken"]?.Trim();
+        }
 
         var emailEnabled = await SettingProvider.GetOrNullAsync(SwapMidSettings.NotificationEmailEnabled);
         var smtpHost = await SettingProvider.GetOrNullAsync(SwapMidSettings.NotificationEmailSmtpHost);

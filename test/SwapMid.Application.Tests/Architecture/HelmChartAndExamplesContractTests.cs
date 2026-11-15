@@ -46,8 +46,19 @@ public class HelmChartAndExamplesContractTests
         valuesYaml.ShouldContain("apiGateway:\n  enabled: false", Case.Sensitive);
         valuesYaml.ShouldContain("mcp:\n  enabled: false", Case.Sensitive);
         valuesYaml.ShouldContain("externalOidc:\n  enabled: false", Case.Sensitive);
+        valuesYaml.ShouldContain("authorizationEndpoint: \"\"");
         valuesYaml.ShouldContain("postgresPassword: \"\"");
         valuesYaml.ShouldContain("stringEncryptionPassphrase: \"\"");
+
+        var chartYaml = File.ReadAllText(Path.Combine(chartDir, "Chart.yaml"));
+        var configMapYaml = File.ReadAllText(Path.Combine(chartDir, "templates", "configmap.yaml"));
+        configMapYaml.ShouldContain("AuthServer__ExternalOidc__AuthorizationEndpoint");
+        if (chartYaml.Contains("github.com/q871958549/SwapMid", StringComparison.OrdinalIgnoreCase))
+        {
+            valuesYaml.ShouldContain("repository: q871958549/swapmid-api");
+            valuesYaml.ShouldContain("repository: q871958549/swapmid-web");
+            valuesYaml.ShouldContain("repository: q871958549/swapmid-migrator");
+        }
 
         var migratorJob = File.ReadAllText(Path.Combine(chartDir, "templates", "migrator-job.yaml"));
         migratorJob.ShouldContain("\"helm.sh/hook\": pre-install,pre-upgrade");

@@ -57,6 +57,30 @@ public class ExternalOidcContractTests
             .ShouldBe("https://sso.partner.example/realms/main/protocol/openid-connect/auth");
     }
 
+    [Fact]
+    public async Task Explicit_authorization_endpoint_skips_oidc_discovery_request()
+    {
+        using var host = new ContractTestHost(
+            extraSettings: new Dictionary<string, string?>
+            {
+                ["AuthServer:ExternalOidc:Enabled"] = "true",
+                ["AuthServer:ExternalOidc:DisplayName"] = "Split-Horizon SSO",
+                ["AuthServer:ExternalOidc:Authority"] = "http://idp.internal:8080/realms/main",
+                ["AuthServer:ExternalOidc:AuthorizationEndpoint"] = "https://sso.public.example/realms/main/protocol/openid-connect/auth",
+                ["AuthServer:ExternalOidc:ClientId"] = "swapmid-web-sso",
+            });
+        using var anonymous = host.CreateClient(authenticated: false);
+
+        var res = await anonymous.GetAsync("/api/v1/auth-providers");
+        res.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        using var doc = JsonDocument.Parse(await res.Content.ReadAsStringAsync());
+        doc.RootElement.GetProperty("externalOidcEnabled").GetBoolean().ShouldBeTrue();
+        doc.RootElement.GetProperty("authorizationEndpoint").GetString()
+            .ShouldBe("https://sso.public.example/realms/main/protocol/openid-connect/auth");
+        host.HttpClientFactory.DidNotReceiveWithAnyArgs().CreateClient(default!);
+    }
+
     private sealed class StubDiscoveryHandler(string authorizationEndpoint) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(

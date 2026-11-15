@@ -86,9 +86,42 @@ jobs:
           cache-from: type=gha,scope=swapmid-${{ matrix.component }}
           cache-to: type=gha,mode=max,scope=swapmid-${{ matrix.component }}
 
+  helm-chart:
+    name: Package & Push Helm Chart (GHCR OCI)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Normalize lowercase repository owner
+        id: meta_owner
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "owner=${OWNER_LC}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username "${{ github.actor }}" --password-stdin
+
+      - name: Lint, package & push Helm chart
+        run: |
+          helm lint charts/swapmid
+          RAW_TAG="${{ github.event_name == 'workflow_dispatch' && (inputs.tag || '0.0.0-edge') || github.ref_name }}"
+          CHART_VERSION="${RAW_TAG#v}"
+          if [[ "${CHART_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            helm package charts/swapmid --version "${CHART_VERSION}" --app-version "${CHART_VERSION}" --destination /tmp/charts
+          else
+            helm package charts/swapmid --destination /tmp/charts
+          fi
+          helm push /tmp/charts/swapmid-*.tgz "oci://ghcr.io/${{ steps.meta_owner.outputs.owner }}/charts"
+
   github-release:
     name: Create GitHub Release
-    needs: [images]
+    needs: [images, helm-chart]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 10

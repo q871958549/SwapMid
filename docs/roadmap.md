@@ -55,3 +55,15 @@ Every milestone adheres to five non-negotiable engineering invariants:
   - Optional enterprise IdP sign-in (Keycloak, Microsoft Entra ID, Casdoor, GitLab) integrated with SwapMid's `HttpOnly` BFF session store.
 - **Observability & Operations**:
   - Pre-built Grafana dashboards and Prometheus/Alertmanager configurations in `docker/observability/`, API v1 backward-compatibility contract tests, and `docs/operations-and-upgrade.md`.
+
+---
+
+## Next Evolution (`v1.1+` Post-LTS Backlog)
+
+1. **`v1.1.0` — Visual ETL Field Mapper & Cloud-Native OCI Chart**:
+   - Interactive drag/map column transformation UI built directly on `preflight-schema` source/target column introspection (`web/`).
+   - Multi-arch container + OCI Helm chart (`oci://ghcr.io/<owner>/charts/swapmid`) single-command cluster deployment verification.
+2. **`v1.2.0` — Analytical & Event-Stream Sinks (`Kafka` / `ClickHouse` / `S3 Parquet`)**:
+   - Pluggable sink adapters under `ConnectorCapabilityCatalog` with capability negotiation and bounded-memory streaming batch writers.
+3. **`v1.3.0` — Lightweight PostgreSQL Logical Replication (`pgoutput`) CDC**:
+   - Continuous LSN-checkpointed incremental capture feeding either `MessageBus` CloudEvents or `Upsert-Receipt-V1` ETL targets.

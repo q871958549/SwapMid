@@ -18,6 +18,7 @@ data:
   AuthServer__ExternalOidc__Enabled: {{ .Values.externalOidc.enabled | quote }}
   AuthServer__ExternalOidc__DisplayName: {{ .Values.externalOidc.displayName | quote }}
   AuthServer__ExternalOidc__Authority: {{ .Values.externalOidc.authority | quote }}
+  AuthServer__ExternalOidc__AuthorizationEndpoint: {{ .Values.externalOidc.authorizationEndpoint | quote }}
   AuthServer__ExternalOidc__ClientId: {{ .Values.externalOidc.clientId | quote }}
   AuthServer__ExternalOidc__RequireHttpsMetadata: {{ .Values.externalOidc.requireHttpsMetadata | quote }}
   Redis__Configuration: {{ .Values.externalRedis.configuration | quote }}

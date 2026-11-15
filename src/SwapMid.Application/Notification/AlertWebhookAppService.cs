@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using SwapMid.Settings;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Volo.Abp;
 using Volo.Abp.Auditing;
@@ -13,15 +14,24 @@ namespace SwapMid.Notification;
 public class AlertWebhookAppService : SwapMidAppService, IAlertWebhookAppService
 {
     private readonly INotificationService _notificationService;
+    private readonly IConfiguration? _configuration;
 
-    public AlertWebhookAppService(INotificationService notificationService)
+    public AlertWebhookAppService(
+        INotificationService notificationService,
+        IConfiguration? configuration = null)
     {
         _notificationService = notificationService;
+        _configuration = configuration;
     }
 
     public async Task<AlertWebhookReceiveResultDto> ReceiveAsync(string? token, AlertmanagerWebhookInput payload)
     {
         var expected = await SettingProvider.GetOrNullAsync(SwapMidSettings.NotificationAlertWebhookToken);
+        if (string.IsNullOrWhiteSpace(expected))
+        {
+            expected = _configuration?["NotificationCenter:AlertWebhookToken"]?.Trim();
+        }
+
         if (!FixedTimeEquals(expected, token))
         {
             throw new BusinessException(SwapMidDomainErrorCodes.NotificationCenter.InvalidWebhookToken);

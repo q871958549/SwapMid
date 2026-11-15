@@ -47,10 +47,14 @@ export function LoginClient({
   initialPasswordPolicy,
   externalAuth = null,
   releaseTag = '',
+  initialSsoError = null,
+  initialRedirect = null,
 }: {
   initialPasswordPolicy: PasswordPolicy | null
   externalAuth?: ExternalAuthProvidersDto | null
   releaseTag?: string
+  initialSsoError?: string | null
+  initialRedirect?: string | null
 }) {
   const t = useTranslations('Login')
   const tc = useTranslations('Common')
@@ -336,14 +340,20 @@ export function LoginClient({
                   )}
                 </div>
 
-                {(state?.error || changeState?.error) && (
+                {(state?.error || changeState?.error || (initialSsoError && !state && !changeState)) && (
                   <motion.p
                     role="alert"
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2"
                   >
-                    {state?.error ?? changeState?.error}
+                    {state?.error ??
+                      changeState?.error ??
+                      (initialSsoError === 'invalid_state'
+                        ? t('ssoErrorInvalidState')
+                        : initialSsoError === 'exchange_failed'
+                          ? t('ssoErrorExchangeFailed')
+                          : t('ssoErrorSessionFailed'))}
                   </motion.p>
                 )}
 
@@ -372,7 +382,13 @@ export function LoginClient({
                       <div className="border-border w-full border-t" />
                     </div>
                     <Button asChild type="button" variant="outline" className="w-full">
-                      <a href="/api/auth/oidc/start">
+                      <a
+                        href={
+                          initialRedirect
+                            ? `/api/auth/oidc/start?redirect=${encodeURIComponent(initialRedirect)}`
+                            : '/api/auth/oidc/start'
+                        }
+                      >
                         {t('ssoButton', { provider: externalAuth.displayName || 'SSO' })}
                       </a>
                     </Button>

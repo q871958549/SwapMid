@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { type ColumnDef, type SortingState } from '@tanstack/react-table'
 import { CheckCircle2, Loader2, PlugZap, XCircle } from 'lucide-react'
@@ -18,7 +18,10 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CrudFormDialog } from '@/components/data-table/crud-form-dialog'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { toast } from '@/components/ui/use-toast'
 import { type PagedResult } from '@/lib/api-client'
+import { getApiErrorMessage } from '@/lib/api-error'
 import { cn } from '@/lib/utils'
 import { useCrudForm } from '@/lib/crud/use-crud-form'
 import { useCrudResource } from '@/lib/crud/use-crud-resource'
@@ -59,12 +62,46 @@ function getSourceTypes(t: ReturnType<typeof useTranslations>) {
   ]
 }
 
+interface ConnectionProbeOutcome {
+  success: boolean
+  message: string
+  elapsedMs: number
+}
+
+async function executeConnectionProbe(
+  targetId: string | null,
+  type: number,
+  config: string,
+  fallbackMessage: string,
+): Promise<ConnectionProbeOutcome> {
+  const url = targetId
+    ? `/api/proxy/data-sources/${targetId}/test-connection`
+    : '/api/proxy/data-sources/test-connection'
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, config }),
+    })
+    if (!res.ok) throw new Error(await res.text())
+    return await res.json() as ConnectionProbeOutcome
+  } catch (e) {
+    return {
+      success: false,
+      message: getApiErrorMessage(e, fallbackMessage),
+      elapsedMs: 0,
+    }
+  }
+}
+
 export function DataSourcesClient({
   data,
   initialPage = 0, initialPageSize = 15, initialSorting = [], initialSearch = '',
+  canUpdate = false,
 }: {
   data: PagedResult<DataSource>
   initialPage?: number; initialPageSize?: number; initialSorting?: SortingState; initialSearch?: string
+  canUpdate?: boolean
 }) {
   const t = useTranslations('DataIntegration.source')
   const rc = useTranslations('DataIntegration.common')
@@ -72,7 +109,9 @@ export function DataSourcesClient({
   const locale = useLocale()
   const SOURCE_TYPES = useMemo(() => getSourceTypes(t), [t])
   const [testing, setTesting] = useState(false)
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string; elapsedMs: number } | null>(null)
+  const [testingRowId, setTestingRowId] = useState<string | null>(null)
+  const testingRowRef = useRef<string | null>(null)
+  const [testResult, setTestResult] = useState<ConnectionProbeOutcome | null>(null)
   const [defaultForm] = useState(createDefaultDataSourceForm)
 
   const list = useCrudResource<DataSource>({
@@ -132,24 +171,51 @@ export function DataSourcesClient({
   }
 
   async function testConnection() {
-    setTesting(true); setTestResult(null)
+    setTesting(true)
+    setTestResult(null)
     try {
-      const url = crud.mode === 'edit' && crud.target
-        ? `/api/proxy/data-sources/${crud.target.id}/test-connection`
-        : '/api/proxy/data-sources/test-connection'
-      const res = await fetch(url, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: Number(crud.form.type),
-          config: buildDataSourceConfig(crud.form),
-        }),
-      })
-      if (!res.ok) throw new Error(await res.text())
-      setTestResult(await res.json())
-    } catch (e) {
-      setTestResult({ success: false, message: e instanceof Error ? e.message : t('testFailedFallback'), elapsedMs: 0 })
-    } finally { setTesting(false) }
+      const outcome = await executeConnectionProbe(
+        crud.mode === 'edit' && crud.target ? crud.target.id : null,
+        Number(crud.form.type),
+        buildDataSourceConfig(crud.form),
+        t('testFailedFallback'),
+      )
+      setTestResult(outcome)
+    } finally {
+      setTesting(false)
+    }
   }
+
+  const handleRowTestConnection = useCallback(async (row: DataSource) => {
+    if (!canUpdate || testingRowRef.current) return
+    testingRowRef.current = row.id
+    setTestingRowId(row.id)
+    try {
+      const form = toDataSourceForm(row)
+      const outcome = await executeConnectionProbe(
+        row.id,
+        row.type,
+        buildDataSourceConfig(form),
+        t('testFailedFallback'),
+      )
+      if (outcome.success) {
+        toast({
+          variant: 'success',
+          title: t('testSuccessResult', { ms: outcome.elapsedMs }),
+          description: row.name,
+        })
+      } else {
+        toast({
+          variant: 'destructive',
+          title: t('testFailedFallback'),
+          description: `${row.name}: ${outcome.message}`,
+        })
+      }
+    } finally {
+      testingRowRef.current = null
+      setTestingRowId(null)
+    }
+  }, [canUpdate, t])
 
   const columns = useMemo<ColumnDef<DataSource, unknown>[]>(() => [
     primaryColumn<DataSource>('name', tc('name'), { size: 180, onOpen: crud.openEdit }),
@@ -173,9 +239,22 @@ export function DataSourcesClient({
       size: 160,
       cell: ({ row }) => <span className="text-sm text-muted-foreground">{new Date(row.original.creationTime).toLocaleDateString(locale)}</span>,
     },
-    actionsColumn<DataSource>({ onEdit: crud.openEdit, onDelete: crud.askDelete }),
+    actionsColumn<DataSource>({
+      onEdit: crud.openEdit,
+      onDelete: crud.askDelete,
+      extraItems: (row) => {
+        if (!canUpdate || !isDataSourceTestable(toDataSourceForm(row), row)) return null
+        const probing = testingRowId === row.id
+        return (
+          <DropdownMenuItem disabled={testingRowId !== null} onClick={() => void handleRowTestConnection(row)}>
+            {probing ? <Loader2 className="mr-2 size-3.5 animate-spin" /> : <PlugZap className="mr-2 size-3.5" />}
+            {probing ? t('testingConnectionMenuItem') : t('testConnectionButton')}
+          </DropdownMenuItem>
+        )
+      },
+    }),
   ],
-    [SOURCE_TYPES, crud.askDelete, crud.openEdit, locale, rc, tc],
+    [SOURCE_TYPES, canUpdate, crud.askDelete, crud.openEdit, handleRowTestConnection, locale, rc, t, tc, testingRowId],
   )
 
   return (

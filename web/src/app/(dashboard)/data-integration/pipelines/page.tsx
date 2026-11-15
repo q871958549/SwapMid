@@ -25,7 +25,7 @@ async function fetchAll(pageIndex: number, pageSize: number, q?: string, abpSort
 export default async function DataPipelinesPage({ searchParams }: { searchParams: Promise<DataPipelinesSearch> }) {
   const title = await resolvePageShellTitle('/data-integration/pipelines')
   return (
-    <Suspense fallback={<ListPageSkeleton title={title} columns={6} />}>
+    <Suspense fallback={<ListPageSkeleton title={title} columns={7} />}>
       <DataPipelinesPageData searchParams={searchParams} />
     </Suspense>
   )
@@ -37,6 +37,7 @@ async function DataPipelinesPageData({ searchParams }: { searchParams: Promise<D
   const pageIndex = Math.max(0, (Number(sp.page) || 1) - 1) // URL page 为 1-based，内部 0-based
   const sorting = parseSortParam(sp.sort)
   const { pipelines, sources } = await fetchAll(pageIndex, pageSize, sp.q, toAbpSorting(sorting))
+  const grantedPolicies = session?.grantedPolicies ?? {}
   return (
     <DataPipelinesClient
       data={pipelines}
@@ -46,8 +47,12 @@ async function DataPipelinesPageData({ searchParams }: { searchParams: Promise<D
       initialSorting={sorting}
       initialSearch={sp.q ?? ''}
       canExecute={hasPermission(
-        session?.grantedPolicies ?? {},
+        grantedPolicies,
         Permissions.DataIntegration.DataPipelinesExecute,
+      )}
+      canUpdate={hasPermission(
+        grantedPolicies,
+        Permissions.DataIntegration.DataPipelinesUpdate,
       )}
     />
   )

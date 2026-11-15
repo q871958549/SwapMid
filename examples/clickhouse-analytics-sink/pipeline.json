@@ -1,0 +1,9 @@
+{
+  "name": "Orders Fact -> ClickHouse",
+  "description": "Streams analytical order rows into ClickHouse via HTTP JSONEachRow batches.",
+  "sourceId": "00000000-0000-0000-0000-000000000001",
+  "targetId": "00000000-0000-0000-0000-000000000004",
+  "transformConfig": "{\"version\":1,\"sourceQuery\":\"SELECT order_id, order_no, total_amount, order_status, ordered_at_utc FROM public.etl_demo_source_orders ORDER BY order_id\",\"targetTable\":\"analytics.fact_orders\",\"mode\":\"append\"}",
+  "scheduleCron": "0 */15 * * * ?",
+  "scheduleEnabled": false
+}

@@ -581,3 +581,37 @@ describe('PipelineExecutionsClient · Target Receipt v1 对账入口', () => {
     }))
   })
 })
+
+describe('PipelineExecutionsClient · 成功执行详情投递目标快照', () => {
+  it('成功执行的详情弹窗展示外部 Sink 目标端点、前缀与写入模式而不显示高风险告警', () => {
+    renderClient({
+      execution: {
+        ...receiptExecution,
+        status: 2,
+        errorCode: null,
+        errorMessage: null,
+        processedRows: 12,
+        finishedAt: '2026-08-12T08:00:01Z',
+        durationSeconds: 0.1,
+        sourceDataSourceName: 'Local Demo PostgreSQL',
+        targetDataSourceName: 'MinIO-Lake',
+        targetProvider: 'MinIO',
+        targetEndpoint: 'http://minio:9000',
+        targetDatabase: 'swapmid-lake',
+        targetTable: 'e2e/orders/daily_snapshot',
+        targetResourceGroup: 'minio-verify-lake',
+        writeMode: 'append',
+      },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /查看详情/ }))
+
+    const summary = screen.getByRole('region', { name: '投递目标与源快照' })
+    expect(summary).toHaveTextContent('MinIO-Lake')
+    expect(summary).toHaveTextContent('MinIO')
+    expect(summary).toHaveTextContent('http://minio:9000')
+    expect(summary).toHaveTextContent('swapmid-lake')
+    expect(summary).toHaveTextContent('e2e/orders/daily_snapshot')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+})

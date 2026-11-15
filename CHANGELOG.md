@@ -4,6 +4,15 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-11-15
+
+### Added
+- **Data Integration UI Lifecycle Closure & Reference Blueprints (`web/` / `examples/`)**:
+  - Added pipeline lifecycle `Status` column (`StatusBadge`: `Draft` / `Active` / `Paused` / `Archived`) and RBAC-gated **Activate** (`PUT /api/v1/data-pipelines/{id}/activate`) / **Pause** (`PUT /api/v1/data-pipelines/{id}/pause`) actions in `/data-integration/pipelines`, disabling `Execute` on non-active pipelines until activated.
+  - Added row-level one-click **Test Connection** probing in `/data-integration/sources` (`POST /api/v1/data-sources/{id}/test-connection`, reusing stored encrypted secrets safely when connection scope is unchanged).
+  - Rendered **Target Delivery & Source Snapshot** summary inside normal `/data-integration/executions` detail dialogs so operators can directly inspect target provider, endpoint, bucket/database, destination prefix/topic/table, resource group, and write mode without leaving execution history.
+  - Added turnkey reference examples [`examples/s3-parquet-lakehouse/`](./examples/s3-parquet-lakehouse/), [`examples/clickhouse-analytics-sink/`](./examples/clickhouse-analytics-sink/), and [`examples/kafka-event-stream-sink/`](./examples/kafka-event-stream-sink/).
+
 ## [1.2.0] - 2026-11-15
 
 ### Added

@@ -105,19 +105,22 @@ const pipeline: DataPipeline = {
   transformConfig: null,
   scheduleCron: null,
   scheduleEnabled: false,
+  status: 1,
   isEnabled: true,
   lastRunAt: null,
   lastRunStatus: null,
   creationTime: '2026-08-13T00:00:00Z',
 }
 
-function renderClient() {
+function renderClient(overrides?: Partial<DataPipeline>, props?: { canExecute?: boolean; canUpdate?: boolean }) {
+  const row = { ...pipeline, ...overrides }
   return render(
     <NextIntlClientProvider locale="zh-Hans" messages={zhHansMessages}>
       <DataPipelinesClient
-        data={{ items: [pipeline], totalCount: 1 }}
+        data={{ items: [row], totalCount: 1 }}
         sources={[]}
-        canExecute
+        canExecute={props?.canExecute ?? true}
+        canUpdate={props?.canUpdate ?? false}
       />
     </NextIntlClientProvider>,
   )
@@ -272,5 +275,44 @@ describe('DataPipelinesClient · 恢复保护清理结果', () => {
     expect(mocks.verifyRun).not.toHaveBeenCalled()
     expect(mocks.toast).toHaveBeenCalledOnce()
     expect(mocks.toast).toHaveBeenCalledWith(expectedToast)
+  })
+})
+
+describe('DataPipelinesClient · 生命周期激活与暂停', () => {
+  it('草稿管道显示激活操作且在激活前禁用执行', async () => {
+    mocks.fetch.mockResolvedValue(new Response(null, { status: 204 }))
+    renderClient({ status: 0, isEnabled: false }, { canExecute: true, canUpdate: true })
+
+    expect(screen.getByRole('button', { name: '激活后可执行' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: '激活' }))
+
+    await waitFor(() => expect(mocks.reloadAndRefresh).toHaveBeenCalledOnce())
+    expect(mocks.fetch).toHaveBeenCalledWith(
+      `/api/proxy/data-pipelines/${PIPELINE_ID}/activate`,
+      { method: 'PUT' },
+    )
+    expect(mocks.toast).toHaveBeenCalledWith({
+      variant: 'success',
+      title: pipelineMessages.activateSuccessTitle,
+      description: pipeline.name,
+    })
+  })
+
+  it('启用管道支持一键暂停并刷新列表', async () => {
+    mocks.fetch.mockResolvedValue(new Response(null, { status: 204 }))
+    renderClient({ status: 1 }, { canExecute: true, canUpdate: true })
+
+    fireEvent.click(screen.getByRole('button', { name: '暂停' }))
+
+    await waitFor(() => expect(mocks.reloadAndRefresh).toHaveBeenCalledOnce())
+    expect(mocks.fetch).toHaveBeenCalledWith(
+      `/api/proxy/data-pipelines/${PIPELINE_ID}/pause`,
+      { method: 'PUT' },
+    )
+    expect(mocks.toast).toHaveBeenCalledWith({
+      variant: 'success',
+      title: pipelineMessages.pauseSuccessTitle,
+      description: pipeline.name,
+    })
   })
 })

@@ -1,0 +1,9 @@
+{
+  "name": "Orders Snapshot -> MinIO Parquet",
+  "description": "Streams read-only order projections from PostgreSQL into deterministic RunId-keyed Apache Parquet objects.",
+  "sourceId": "00000000-0000-0000-0000-000000000001",
+  "targetId": "00000000-0000-0000-0000-000000000005",
+  "transformConfig": "{\"version\":1,\"sourceQuery\":\"SELECT order_id, order_no, total_amount, order_status, ordered_at_utc FROM public.etl_demo_source_orders ORDER BY order_id\",\"targetTable\":\"daily_snapshot\",\"mode\":\"append\",\"columnMappings\":[{\"sourceColumn\":\"order_id\",\"targetColumn\":\"order_id\"},{\"sourceColumn\":\"order_no\",\"targetColumn\":\"order_no\"},{\"sourceColumn\":\"total_amount\",\"targetColumn\":\"total_amount\"},{\"sourceColumn\":\"order_status\",\"targetColumn\":\"order_status\"},{\"sourceColumn\":\"ordered_at_utc\",\"targetColumn\":\"ordered_at_utc\"}]}",
+  "scheduleCron": "0 0 * * * ?",
+  "scheduleEnabled": false
+}

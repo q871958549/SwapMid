@@ -1,0 +1,7 @@
+{
+  "name": "Kafka Events Broker",
+  "description": "Kafka sink using SASL_SSL or Plaintext bootstrap endpoints.",
+  "type": 3,
+  "config": "{\"bootstrapServers\":\"kafka:9092\",\"clientId\":\"swapmid-etl\",\"securityProtocol\":\"Plaintext\",\"saslMechanism\":\"Plain\",\"saslUsername\":\"\",\"saslPassword\":\"\",\"acks\":\"all\",\"compression\":\"zstd\",\"targetResourceGroup\":\"kafka-events-primary\"}",
+  "isEnabled": true
+}

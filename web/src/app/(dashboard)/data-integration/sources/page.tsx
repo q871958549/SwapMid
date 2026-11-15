@@ -2,6 +2,8 @@ import { resolvePageShellTitle } from '@/components/data-table/page-shell'
 import { ListPageSkeleton } from '@/components/data-table/list-page-skeleton'
 import { Suspense } from 'react'
 import { apiFetch, rethrowApiFetchControlFlow, type PagedResult } from '@/lib/api-client'
+import { hasPermission, Permissions } from '@/lib/permissions'
+import { getSession } from '@/lib/session'
 import { DataSourcesClient, type DataSource } from './client'
 import { parseSortParam, toAbpSorting } from '@/lib/crud/list-sort'
 
@@ -19,7 +21,7 @@ export default async function DataSourcesPage({ searchParams }: { searchParams: 
 }
 
 async function DataSourcesPageData({ searchParams }: { searchParams: Promise<DataSourcesSearch> }) {
-  const sp = await searchParams
+  const [sp, session] = await Promise.all([searchParams, getSession()])
   const pageSize = Math.max(1, Number(sp.size) || 15)
   const pageIndex = Math.max(0, (Number(sp.page) || 1) - 1) // URL page 为 1-based，内部 0-based
   const qs = new URLSearchParams({ maxResultCount: String(pageSize), skipCount: String(pageIndex * pageSize) })
@@ -36,6 +38,10 @@ async function DataSourcesPageData({ searchParams }: { searchParams: Promise<Dat
       initialPageSize={pageSize}
       initialSorting={sorting}
       initialSearch={sp.q ?? ''}
+      canUpdate={hasPermission(
+        session?.grantedPolicies ?? {},
+        Permissions.DataIntegration.DataSourcesUpdate,
+      )}
     />
   )
 }

@@ -1,0 +1,7 @@
+{
+  "name": "ClickHouse Analytics Cluster",
+  "description": "ClickHouse HTTP sink configured for analytics fact tables.",
+  "type": 4,
+  "config": "{\"endpoint\":\"http://clickhouse:8123\",\"database\":\"analytics\",\"username\":\"default\",\"password\":\"REPLACE_WITH_CLICKHOUSE_PASSWORD\",\"targetResourceGroup\":\"clickhouse-analytics-primary\"}",
+  "isEnabled": true
+}

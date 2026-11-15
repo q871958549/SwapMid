@@ -1,0 +1,9 @@
+{
+  "name": "Orders Stream -> Kafka Topic",
+  "description": "Publishes projected order records into the orders.snapshot Kafka topic.",
+  "sourceId": "00000000-0000-0000-0000-000000000001",
+  "targetId": "00000000-0000-0000-0000-000000000003",
+  "transformConfig": "{\"version\":1,\"sourceQuery\":\"SELECT order_id, order_no, total_amount, order_status, ordered_at_utc FROM public.etl_demo_source_orders ORDER BY order_id\",\"targetTable\":\"orders.snapshot\",\"mode\":\"append\"}",
+  "scheduleCron": "0 */10 * * * ?",
+  "scheduleEnabled": false
+}

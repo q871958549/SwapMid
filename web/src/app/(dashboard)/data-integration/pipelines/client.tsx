@@ -3,7 +3,6 @@
 import { useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { type ColumnDef, type SortingState } from '@tanstack/react-table'
-import { AlertTriangle, Loader2, Play, RotateCcw } from 'lucide-react'
 import { DataTable } from '@/components/data-table/data-table'
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header'
 import { PageHeader } from '@/components/data-table/page-header'
@@ -17,7 +16,6 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Combobox } from '@/components/ui/combobox'
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { toast } from '@/components/ui/use-toast'
 import { type PagedResult } from '@/lib/api-client'
 import { getApiErrorMessage } from '@/lib/api-error'
@@ -32,6 +30,12 @@ import {
 import { isEtlExecutionRunPayload } from './execution-recovery'
 import { useEtlExecutionRecovery } from './use-etl-execution-recovery'
 import { PipelineEtlConfigSection } from './etl-config-section'
+import {
+  PipelineRowExtraActions,
+  PipelineStatusBadge,
+  resolvePipelineStatus,
+  type PipelineLifecycleAction,
+} from './pipeline-row-actions'
 import {
   isReceiptMode,
   isUpsertConfigValid,
@@ -62,7 +66,8 @@ export interface DataPipeline {
   targetId: string | null; targetName: string | null
   transformConfig: string | null
   scheduleCron: string | null; scheduleEnabled: boolean
-  isEnabled: boolean; lastRunAt: string | null; lastRunStatus?: number | null; creationTime: string
+  status?: number | null; isEnabled?: boolean
+  lastRunAt: string | null; lastRunStatus?: number | null; creationTime: string
 }
 
 export interface DataSourceOption {
@@ -87,10 +92,12 @@ export function DataPipelinesClient({
   data, sources,
   initialPage = 0, initialPageSize = 15, initialSorting = [], initialSearch = '',
   canExecute = false,
+  canUpdate = false,
 }: {
   data: PagedResult<DataPipeline>; sources: DataSourceOption[]
   initialPage?: number; initialPageSize?: number; initialSorting?: SortingState; initialSearch?: string
   canExecute?: boolean
+  canUpdate?: boolean
 }) {
   const t = useTranslations('DataIntegration.pipeline')
   const rc = useTranslations('DataIntegration.common')
@@ -109,8 +116,10 @@ export function DataPipelinesClient({
     verifyRun,
   } = useEtlExecutionRecovery()
   const [executingPipelines, setExecutingPipelines] = useState<Record<string, true>>({})
+  const [statusChangingPipelines, setStatusChangingPipelines] = useState<Record<string, true>>({})
   // ref 是同步裁决源，堵住双击发生在 React state 提交前时发起第二次请求；state 只负责重绘。
   const executingPipelinesRef = useRef<Record<string, true>>({})
+  const statusChangingRef = useRef<Record<string, true>>({})
   // 服务端分页：翻页/搜索下推后端。数据源参照保持全量供下拉。
   // page/pageSize/search 经 urlSync 镜像到 URL，切走再切回/刷新可恢复（初值来自 page.tsx 的 searchParams）。
   const list = useCrudResource<DataPipeline>({
@@ -328,6 +337,42 @@ export function DataPipelinesClient({
     }
   }
 
+  async function handleTransitionStatus(p: DataPipeline, action: PipelineLifecycleAction) {
+    if (!canUpdate || statusChangingRef.current[p.id]) return
+    statusChangingRef.current[p.id] = true
+    setStatusChangingPipelines(current => ({ ...current, [p.id]: true }))
+    try {
+      const res = await fetch(`/api/proxy/data-pipelines/${p.id}/${action}`, {
+        method: 'PUT',
+      })
+      if (!res.ok) {
+        const text = await res.text()
+        notify.error(
+          action === 'activate' ? t('activateFailedTitle') : t('pauseFailedTitle'),
+          getApiErrorMessage(new Error(text), t('statusTransitionFailedFallback')),
+        )
+        return
+      }
+      notify.success(
+        action === 'activate' ? t('activateSuccessTitle') : t('pauseSuccessTitle'),
+        p.name,
+      )
+      await list.reloadAndRefresh()
+    } catch (e) {
+      notify.error(
+        action === 'activate' ? t('activateFailedTitle') : t('pauseFailedTitle'),
+        getApiErrorMessage(e, t('statusTransitionFailedFallback')),
+      )
+    } finally {
+      delete statusChangingRef.current[p.id]
+      setStatusChangingPipelines((current) => {
+        const next = { ...current }
+        delete next[p.id]
+        return next
+      })
+    }
+  }
+
   const columns: ColumnDef<DataPipeline, unknown>[] = [
     primaryColumn<DataPipeline>('name', t('columnName'), { size: 180, onOpen: crud.openEdit }),
     {
@@ -344,6 +389,12 @@ export function DataPipelinesClient({
       size: 160,
       enableSorting: false,
       cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.targetName ?? '—'}</span>,
+    },
+    {
+      accessorKey: 'status',
+      header: ({ column }) => <DataTableColumnHeader column={column} title={tc('status')} />,
+      size: 100,
+      cell: ({ row }) => <PipelineStatusBadge status={resolvePipelineStatus(row.original)} />,
     },
     {
       accessorKey: 'scheduleCron',
@@ -366,48 +417,21 @@ export function DataPipelinesClient({
     actionsColumn<DataPipeline>({
       onEdit: crud.openEdit,
       onDelete: crud.askDelete,
-      extraItems: (row) => {
-        if (!canExecute) return null
-        const blocked = blockedPipelines[row.id]
-          || Number(row.lastRunStatus) === OUTCOME_UNKNOWN_STATUS
-        const executing = executingPipelines[row.id]
-        const retainedRunId = pendingRunIds[row.id]
-
-        if (!recoveryReady) {
-          return (
-            <DropdownMenuItem disabled>
-              {recoveryStatus === 'unavailable'
-                ? <AlertTriangle className="mr-2 size-3.5 text-destructive" />
-                : <Loader2 className="mr-2 size-3.5 animate-spin" />}
-              {recoveryStatus === 'unavailable'
-                ? rc('recoveryStorageUnavailableTitle')
-                : t('executionRecoveryLoadingMenuItem')}
-            </DropdownMenuItem>
-          )
-        }
-        if (blocked) {
-          return (
-            <DropdownMenuItem disabled>
-              <AlertTriangle className="mr-2 size-3.5 text-destructive" />
-              {t('executeOutcomeUnknownMenuItem')}
-            </DropdownMenuItem>
-          )
-        }
-        return (
-          <DropdownMenuItem disabled={executing} onClick={() => handleExecute(row)}>
-            {executing
-              ? <Loader2 className="mr-2 size-3.5 animate-spin" />
-              : retainedRunId
-                ? <RotateCcw className="mr-2 size-3.5" />
-                : <Play className="mr-2 size-3.5" />}
-            {executing
-              ? t('executingMenuItem')
-              : retainedRunId
-                ? t('retrySameRunMenuItem')
-                : t('executeMenuItem')}
-          </DropdownMenuItem>
-        )
-      },
+      extraItems: (row) => (
+        <PipelineRowExtraActions
+          row={row}
+          canExecute={canExecute}
+          canUpdate={canUpdate}
+          recoveryReady={recoveryReady}
+          recoveryStatus={recoveryStatus}
+          blocked={Boolean(blockedPipelines[row.id] || Number(row.lastRunStatus) === OUTCOME_UNKNOWN_STATUS)}
+          executing={Boolean(executingPipelines[row.id])}
+          statusChanging={Boolean(statusChangingPipelines[row.id])}
+          retainedRunId={pendingRunIds[row.id]}
+          onExecute={() => void handleExecute(row)}
+          onTransitionStatus={action => void handleTransitionStatus(row, action)}
+        />
+      ),
     }),
   ]
 

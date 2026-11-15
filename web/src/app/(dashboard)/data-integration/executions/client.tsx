@@ -28,6 +28,7 @@ import { useUrlListState } from '@/lib/crud/use-url-list-state'
 import { classifyEtlExecutionPayload } from '../pipelines/execution-recovery'
 import { useEtlExecutionRecovery } from '../pipelines/use-etl-execution-recovery'
 import { ExecutionEvidenceCard } from './execution-evidence-card'
+import { ExecutionTargetSummary } from './execution-target-summary'
 import {
   OutcomeResolutionDialog,
   type OutcomeResolutionSubmission,
@@ -503,6 +504,9 @@ export function PipelineExecutionsClient({
                   </>
                 )}
               </dl>
+              {Number(detail.status) !== OUTCOME_UNKNOWN_STATUS && (
+                <ExecutionTargetSummary execution={detail} />
+              )}
               {detail.errorMessage && (
                 <div>
                   <p className="mb-1 text-xs text-muted-foreground">{t('errorMessageLabel')}</p>

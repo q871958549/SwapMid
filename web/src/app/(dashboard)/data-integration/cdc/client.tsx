@@ -16,7 +16,6 @@ import { FilterBar, type FilterBarChip } from '@/components/data-table/filter-ba
 import { ListPageShell } from '@/components/data-table/list-page-shell'
 import { PageHeader } from '@/components/data-table/page-header'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { toast } from '@/components/ui/use-toast'
 import type { PagedResult } from '@/lib/api-client'
 import { getApiErrorMessage } from '@/lib/api-error'
@@ -25,6 +24,7 @@ import type {
   CdcDropSlotResultDto,
   CdcPreflightResultDto,
   CdcSinkTemplateDto,
+  CdcSnapshotResultDto,
   CdcStreamDto,
 } from '@/lib/api/types'
 import { useCrudForm } from '@/lib/crud/use-crud-form'
@@ -48,31 +48,11 @@ import {
   type CdcTopicOption,
 } from './cdc-form-dialog'
 import {
-  CDC_STATUS_ACTIVE,
-  CDC_STATUS_ERROR,
-  CDC_STATUS_PAUSED,
   CdcRowActions,
+  CdcStatusCell,
   CdcTargetCell,
+  getCdcStatusMeta,
 } from './cdc-row-actions'
-
-function getStatusMeta(
-  status: number | undefined,
-  t: ReturnType<typeof useTranslations>,
-  rc: ReturnType<typeof useTranslations>,
-): { label: string; tone: StatusTone } {
-  switch (Number(status)) {
-    case 0:
-      return { label: t('statusDraft'), tone: 'draft' }
-    case CDC_STATUS_ACTIVE:
-      return { label: t('statusActive'), tone: 'success' }
-    case CDC_STATUS_PAUSED:
-      return { label: t('statusPaused'), tone: 'warning' }
-    case CDC_STATUS_ERROR:
-      return { label: t('statusError'), tone: 'danger' }
-    default:
-      return { label: rc('unknown'), tone: 'neutral' }
-  }
-}
 
 export function CdcStreamsClient({
   data,
@@ -121,6 +101,7 @@ export function CdcStreamsClient({
   const [dropSlotSubmitting, setDropSlotSubmitting] = useState(false)
   const [dropSlotError, setDropSlotError] = useState<string | null>(null)
   const [sinkTemplateState, setSinkTemplateState] = useState<CdcSinkTemplateState | null>(null)
+  const [provisionSubmitting, setProvisionSubmitting] = useState(false)
 
   const list = useCrudResource<CdcStreamDto>({
     endpoint: 'cdc-streams',
@@ -162,64 +143,57 @@ export function CdcStreamsClient({
     setBusyActions(prev => ({ ...prev, [id]: kind }))
   }, [])
 
-  const handlePreflight = useCallback(async (row: CdcStreamDto) => {
+  const runStreamAction = useCallback(async <T,>(
+    row: CdcStreamDto,
+    kind: string,
+    url: string,
+    method: 'GET' | 'POST' | 'PUT',
+    failTitle: string,
+    failFallback: string,
+    onOk: (data: T) => void | Promise<void>,
+  ) => {
     if (busyActionsRef.current[row.id]) return
-    setBusy(row.id, 'preflight')
+    setBusy(row.id, kind)
     try {
-      const res = await fetch(`/api/proxy/cdc-streams/${row.id}/preflight`, { method: 'POST' })
+      const res = method === 'GET' ? await fetch(url) : await fetch(url, { method })
       if (!res.ok) {
         toast({
           variant: 'destructive',
-          title: t('preflightFailedTitle'),
-          description: await getApiErrorMessage(res, t('preflightFailedFallback')),
+          title: failTitle,
+          description: await getApiErrorMessage(res, failFallback),
         })
         return
       }
-      const result = await res.json() as CdcPreflightResultDto
-      setPreflightState({ stream: row, result })
+      const data = (typeof res.json === 'function' ? await res.json() : undefined) as T
+      await onOk(data)
     } finally {
       setBusy(row.id, null)
     }
-  }, [setBusy, t])
+  }, [setBusy])
 
-  const handleLifecycle = useCallback(async (row: CdcStreamDto, action: 'activate' | 'pause') => {
-    if (busyActionsRef.current[row.id]) return
-    setBusy(row.id, action)
-    try {
-      const res = await fetch(`/api/proxy/cdc-streams/${row.id}/${action}`, { method: 'PUT' })
-      if (!res.ok) {
-        toast({
-          variant: 'destructive',
-          title: action === 'activate' ? t('activateFailedTitle') : t('pauseFailedTitle'),
-          description: await getApiErrorMessage(res, t('lifecycleFailedFallback')),
-        })
-        return
-      }
+  const handlePreflight = useCallback((row: CdcStreamDto) => runStreamAction<CdcPreflightResultDto>(
+    row, 'preflight', `/api/proxy/cdc-streams/${row.id}/preflight`, 'POST',
+    t('preflightFailedTitle'), t('preflightFailedFallback'),
+    result => setPreflightState({ stream: row, result }),
+  ), [runStreamAction, t])
+
+  const handleLifecycle = useCallback((row: CdcStreamDto, action: 'activate' | 'pause') => runStreamAction<void>(
+    row, action, `/api/proxy/cdc-streams/${row.id}/${action}`, 'PUT',
+    action === 'activate' ? t('activateFailedTitle') : t('pauseFailedTitle'), t('lifecycleFailedFallback'),
+    async () => {
       toast({
         variant: 'success',
         title: action === 'activate' ? t('activateSuccessTitle') : t('pauseSuccessTitle'),
         description: row.name,
       })
       await list.reloadAndRefresh()
-    } finally {
-      setBusy(row.id, null)
-    }
-  }, [list, setBusy, t])
+    },
+  ), [list, runStreamAction, t])
 
-  const handleCaptureNow = useCallback(async (row: CdcStreamDto) => {
-    if (busyActionsRef.current[row.id]) return
-    setBusy(row.id, 'capture')
-    try {
-      const res = await fetch(`/api/proxy/cdc-streams/${row.id}/capture`, { method: 'POST' })
-      if (!res.ok) {
-        toast({
-          variant: 'destructive',
-          title: t('captureFailedTitle'),
-          description: await getApiErrorMessage(res, t('captureFailedFallback')),
-        })
-        return
-      }
-      const result = await res.json() as CdcCaptureResultDto
+  const handleCaptureNow = useCallback((row: CdcStreamDto) => runStreamAction<CdcCaptureResultDto>(
+    row, 'capture', `/api/proxy/cdc-streams/${row.id}/capture`, 'POST',
+    t('captureFailedTitle'), t('captureFailedFallback'),
+    async (result) => {
       toast({
         variant: 'success',
         title: t('captureSuccessTitle'),
@@ -230,10 +204,8 @@ export function CdcStreamsClient({
         }),
       })
       await list.reloadAndRefresh()
-    } finally {
-      setBusy(row.id, null)
-    }
-  }, [list, setBusy, t])
+    },
+  ), [list, runStreamAction, t])
 
   const openCheckpointDialog = useCallback((row: CdcStreamDto) => {
     setCheckpointTarget(row)
@@ -295,25 +267,55 @@ export function CdcStreamsClient({
     }
   }, [dropSlotTarget, list, t])
 
-  const handleSinkTemplate = useCallback(async (row: CdcStreamDto) => {
-    if (busyActionsRef.current[row.id]) return
-    setBusy(row.id, 'sink-template')
+  const handleSinkTemplate = useCallback((row: CdcStreamDto) => runStreamAction<CdcSinkTemplateDto>(
+    row, 'sink-template', `/api/proxy/cdc-streams/${row.id}/sink-template`, 'GET',
+    t('sinkTemplateFailedTitle'), t('sinkTemplateFailedFallback'),
+    template => setSinkTemplateState({ stream: row, template }),
+  ), [runStreamAction, t])
+
+  const handleSnapshot = useCallback((row: CdcStreamDto) => runStreamAction<CdcSnapshotResultDto>(
+    row, 'snapshot', `/api/proxy/cdc-streams/${row.id}/snapshot`, 'POST',
+    t('snapshotFailedTitle'), t('snapshotFailedFallback'),
+    async (result) => {
+      toast({
+        variant: 'success',
+        title: t('snapshotSuccessTitle'),
+        description: t('snapshotSuccessDesc', {
+          rows: result.snapshotRowCount ?? 0,
+          delivered: result.deliveredCount ?? 0,
+          lsn: result.consistentPointLsn || '-',
+        }),
+      })
+      await list.reloadAndRefresh()
+    },
+  ), [list, runStreamAction, t])
+
+  const handleProvisionSink = useCallback(async () => {
+    if (!sinkTemplateState) return
+    setProvisionSubmitting(true)
     try {
-      const res = await fetch(`/api/proxy/cdc-streams/${row.id}/sink-template`)
+      const res = await fetch(`/api/proxy/cdc-streams/${sinkTemplateState.stream.id}/provision-sink`, {
+        method: 'POST',
+      })
       if (!res.ok) {
         toast({
           variant: 'destructive',
-          title: t('sinkTemplateFailedTitle'),
-          description: await getApiErrorMessage(res, t('sinkTemplateFailedFallback')),
+          title: t('provisionClickHouseFailedTitle'),
+          description: await getApiErrorMessage(res, t('provisionClickHouseFailedFallback')),
         })
         return
       }
-      const template = await res.json() as CdcSinkTemplateDto
-      setSinkTemplateState({ stream: row, template })
+      const updated = await res.json() as CdcSinkTemplateDto
+      setSinkTemplateState({ stream: sinkTemplateState.stream, template: updated })
+      toast({
+        variant: 'success',
+        title: t('provisionClickHouseSuccessTitle'),
+        description: updated.destination,
+      })
     } finally {
-      setBusy(row.id, null)
+      setProvisionSubmitting(false)
     }
-  }, [setBusy, t])
+  }, [sinkTemplateState, t])
 
   const columns: ColumnDef<CdcStreamDto, unknown>[] = useMemo(() => [
     primaryColumn<CdcStreamDto>('name', t('colName'), {
@@ -362,10 +364,7 @@ export function CdcStreamsClient({
     {
       accessorKey: 'status',
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('colStatus')} />,
-      cell: ({ row }) => {
-        const meta = getStatusMeta(row.original.status, t, rc)
-        return <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
-      },
+      cell: ({ row }) => <CdcStatusCell stream={row.original} />,
     },
     {
       accessorKey: 'lastCapturedAt',
@@ -387,6 +386,7 @@ export function CdcStreamsClient({
           onPreflight={item => void handlePreflight(item)}
           onLifecycle={(item, action) => void handleLifecycle(item, action)}
           onCaptureNow={item => void handleCaptureNow(item)}
+          onSnapshot={item => void handleSnapshot(item)}
           onCheckpointReset={openCheckpointDialog}
           onDropSlot={openDropSlotDialog}
         />
@@ -402,10 +402,10 @@ export function CdcStreamsClient({
     handleLifecycle,
     handlePreflight,
     handleSinkTemplate,
+    handleSnapshot,
     locale,
     openCheckpointDialog,
     openDropSlotDialog,
-    rc,
     t,
   ])
 
@@ -413,7 +413,7 @@ export function CdcStreamsClient({
     ? []
     : [{
         key: 'status',
-        label: `${t('colStatus')}: ${getStatusMeta(Number(statusFilter), t, rc).label}`,
+        label: `${t('colStatus')}: ${getCdcStatusMeta(Number(statusFilter), t, rc).label}`,
         onRemove: () => setStatusFilter('all'),
       }]
 
@@ -474,7 +474,13 @@ export function CdcStreamsClient({
         onClose={() => setDropSlotTarget(null)}
         onSubmit={() => void submitDropSlot()}
       />
-      <CdcSinkTemplateDialog state={sinkTemplateState} onClose={() => setSinkTemplateState(null)} />
+      <CdcSinkTemplateDialog
+        state={sinkTemplateState}
+        canManage={canManage}
+        provisioning={provisionSubmitting}
+        onProvision={() => void handleProvisionSink()}
+        onClose={() => setSinkTemplateState(null)}
+      />
       <DeleteConfirm
         crud={crud}
         entityName={t('entityName')}

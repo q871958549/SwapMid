@@ -253,5 +253,44 @@ public class McpServerSecurityAndToolsTests
         capturedDraft.ShouldNotBeNull();
         capturedDraft!.TargetId.ShouldBe(kafkaTargetId);
         capturedDraft.ScheduleEnabled.ShouldBeFalse();
+
+        // 4. CDC reader user -> diagnose_cdc_streams returns sanitized stream + snapshot state
+        var cdcService = host.Services.GetRequiredService<ICdcStreamAppService>();
+        cdcService.GetListAsync(Arg.Any<GetCdcStreamListInput>())
+            .Returns(new PagedResultDto<CdcStreamDto>(
+                1,
+                [
+                    new CdcStreamDto
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "orders-pg-cdc",
+                        Status = CdcStreamStatus.Active,
+                        TargetMode = CdcTargetMode.ExternalSink,
+                        TargetSinkName = "ClickHouse Analytics",
+                        TargetSinkDestination = "analytics.cdc_orders",
+                        TargetSinkKeyColumns = "order_id",
+                        CheckpointLsn = "0/1E40000",
+                        InitialSnapshotEnabled = true,
+                        SnapshotStatus = CdcSnapshotStatus.Completed,
+                        SnapshotRowCount = 12,
+                        TotalCapturedCount = 15,
+                    },
+                ]));
+
+        using var cdcReaderClient = host.CreateClient(
+            authenticated: true,
+            SwapMidPermissions.DataIntegration.CdcStreams.Default);
+        var cdcCallRes = await cdcReaderClient.PostAsJsonAsync("/api/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = 8,
+            method = "tools/call",
+            @params = new { name = McpToolCatalog.DiagnoseCdcStreams, arguments = new { limit = 5 } },
+        });
+        cdcCallRes.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var cdcBody = await cdcCallRes.Content.ReadAsStringAsync();
+        cdcBody.ShouldContain("orders-pg-cdc");
+        cdcBody.ShouldContain("0/1E40000");
+        cdcBody.ShouldContain("order_id");
     }
 }

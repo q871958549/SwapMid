@@ -26,6 +26,10 @@ public class CdcStreamDto : FullAuditedEntityDto<Guid>
     public DataSourceType? TargetSinkType { get; set; }
     public string? TargetSinkDestination { get; set; }
     public string? TargetSinkKeyColumns { get; set; }
+    public bool InitialSnapshotEnabled { get; set; }
+    public CdcSnapshotStatus SnapshotStatus { get; set; }
+    public DateTime? SnapshotCompletedAt { get; set; }
+    public long SnapshotRowCount { get; set; }
     public CdcStreamStatus Status { get; set; }
     public string? CheckpointLsn { get; set; }
     public DateTime? LastCapturedAt { get; set; }
@@ -80,6 +84,8 @@ public class CdcStreamCreateUpdateDto
 
     [StringLength(256)]
     public string? TargetSinkKeyColumns { get; set; }
+
+    public bool InitialSnapshotEnabled { get; set; }
 }
 
 public class GetCdcStreamListInput : PagedAndSortedResultRequestDto
@@ -158,4 +164,15 @@ public class CdcSinkTemplateDto
     public string? ClickHouseDdl { get; set; }
     public string SamplePayloadJson { get; set; } = null!;
     public string Summary { get; set; } = null!;
+}
+
+public class CdcSnapshotResultDto
+{
+    public Guid StreamId { get; set; }
+    public string? ConsistentPointLsn { get; set; }
+    public long SnapshotRowCount { get; set; }
+    public long DeliveredCount { get; set; }
+    public bool UsedExportedSnapshot { get; set; }
+    public DateTime CompletedAtUtc { get; set; }
+    public string Message { get; set; } = null!;
 }

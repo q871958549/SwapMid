@@ -25,3 +25,13 @@ public enum CdcTargetMode
     /// <summary>直接流式写入外部分析或事件接收端（Kafka / ClickHouse / 对象存储）。</summary>
     ExternalSink = 2,
 }
+
+/// <summary>
+/// CDC 初始一致全量快照执行状态。
+/// </summary>
+public enum CdcSnapshotStatus
+{
+    NotStarted = 0,
+    Completed = 1,
+    Failed = 2,
+}

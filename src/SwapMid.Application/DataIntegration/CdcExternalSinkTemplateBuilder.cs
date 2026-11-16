@@ -41,7 +41,7 @@ internal static class CdcExternalSinkTemplateBuilder
             var (dbName, tableName) = DataIntegrationSinkProbeService.SplitClickHouseTable(
                 cfg.Database,
                 destination);
-            clickHouseDdl = BuildClickHouseDdl(dbName, tableName);
+            clickHouseDdl = BuildClickHouseDdl(dbName, tableName, keyColumns);
 
             if (probeService != null)
             {
@@ -70,7 +70,9 @@ internal static class CdcExternalSinkTemplateBuilder
         {
             DataSourceType.ClickHouse => targetExists == true
                 ? "ClickHouse 目标表已存在，已生成对应的 11 列 CDC 变更日志建表契约。"
-                : "请在 ClickHouse 目标库执行下方 MergeTree 建表语句后再激活实时投递。",
+                : keyColumns.Count > 0
+                    ? "请执行下方 ClickHouse ReplacingMergeTree 按主键排序建表语句（或一键建表）后再激活投递。"
+                    : "请在 ClickHouse 目标库执行下方 MergeTree 建表语句后再激活实时投递。",
             DataSourceType.Kafka => keyColumns.Count > 0
                 ? $"Kafka 将按主键（{string.Join(", ", keyColumns)}）构造分区 Message Key 保证同实体严格有序。"
                 : "Kafka 将投递 11 列标准 JSON 事件（建议配置分区主键列以保持实体更新有序）。",
@@ -92,10 +94,62 @@ internal static class CdcExternalSinkTemplateBuilder
         };
     }
 
-    internal static string BuildClickHouseDdl(string database, string table)
+    internal static async Task<CdcSinkTemplateDto> ProvisionClickHouseAsync(
+        CdcStreamDefinition stream,
+        DataSource targetSink,
+        DataIntegrationSinkProbeService? probeService,
+        CancellationToken cancellationToken)
+    {
+        if (targetSink.Type != DataSourceType.ClickHouse)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", "仅 ClickHouse 外部接收端支持自动执行建表 DDL 初始化。");
+        }
+
+        if (probeService == null)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", "未注册外部接收端探测与 DDL 执行服务。");
+        }
+
+        var destination = stream.TargetSinkDestination?.Trim() ?? string.Empty;
+        var cfg = ClickHouseSinkConfigContract.ParseForWrite(targetSink.Config);
+        var (dbName, tableName) = DataIntegrationSinkProbeService.SplitClickHouseTable(cfg.Database, destination);
+        var keyColumns = CdcProtocolHelpers.ParseSinkKeyColumns(stream.TargetSinkKeyColumns);
+        var ddl = BuildClickHouseDdl(dbName, tableName, keyColumns);
+
+        try
+        {
+            await probeService.ExecuteClickHouseDdlAsync(cfg, destination, ddl, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (BusinessException)
+        {
+            throw;
+        }
+        catch
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
+                .WithData("Reason", "自动初始化 ClickHouse 目标表失败，请检查网络白名单、凭据与目标表名格式。");
+        }
+
+        return await BuildAsync(stream, targetSink, probeService, cancellationToken);
+    }
+
+    internal static string BuildClickHouseDdl(
+        string database,
+        string table,
+        IReadOnlyList<string>? keyColumns = null)
     {
         var db = database.Replace("`", "``", StringComparison.Ordinal);
         var tbl = table.Replace("`", "``", StringComparison.Ordinal);
+        var engineClause = keyColumns is { Count: > 0 }
+            ? BuildKeyedReplacingMergeTreeClause(keyColumns)
+            : "ENGINE = MergeTree()\nORDER BY (`stream_id`, `source_schema`, `source_table`, `commit_timestamp_utc`, `event_id`);";
+
         return
             $"""
             CREATE TABLE IF NOT EXISTS `{db}`.`{tbl}`
@@ -112,9 +166,24 @@ internal static class CdcExternalSinkTemplateBuilder
                 `after_json` Nullable(String),
                 `before_json` Nullable(String)
             )
-            ENGINE = MergeTree()
-            ORDER BY (`stream_id`, `source_schema`, `source_table`, `commit_timestamp_utc`, `event_id`);
+            {engineClause}
             """;
+    }
+
+    private static string BuildKeyedReplacingMergeTreeClause(IReadOnlyList<string> keyColumns)
+    {
+        var orderParts = new List<string>(keyColumns.Count + 3)
+        {
+            "`stream_id`",
+            "`source_schema`",
+            "`source_table`",
+        };
+        foreach (var col in keyColumns)
+        {
+            orderParts.Add($"JSONExtractRaw(coalesce(`after_json`, `before_json`, '{{}}'), '{col}')");
+        }
+
+        return $"ENGINE = ReplacingMergeTree(`commit_timestamp_utc`)\nORDER BY ({string.Join(", ", orderParts)});";
     }
 
     private static List<CdcSinkColumnTemplateDto> BuildColumnDefinitions() =>

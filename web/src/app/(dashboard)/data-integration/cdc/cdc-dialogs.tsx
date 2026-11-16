@@ -241,9 +241,15 @@ export function CdcDropSlotDialog({
 
 export function CdcSinkTemplateDialog({
   state,
+  canManage = false,
+  provisioning = false,
+  onProvision,
   onClose,
 }: {
   state: CdcSinkTemplateState | null
+  canManage?: boolean
+  provisioning?: boolean
+  onProvision?: () => void
   onClose: () => void
 }) {
   const t = useTranslations('DataIntegration.cdc')
@@ -285,16 +291,28 @@ export function CdcSinkTemplateDialog({
 
             {state.template.clickHouseDdl && (
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-muted-foreground">{t('sinkTemplateDdlTitle')}</span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => void copyDdl(state.template.clickHouseDdl!)}
-                  >
-                    {copiedDdl ? <Check className="mr-1.5 size-3.5" /> : <Copy className="mr-1.5 size-3.5" />}
-                    {copiedDdl ? t('copiedDdlButton') : t('copyDdlButton')}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {state.template.targetType === 4 && state.template.targetExists === false && canManage && onProvision && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={provisioning}
+                        onClick={onProvision}
+                      >
+                        {provisioning ? tc('processing') : t('provisionClickHouseButton')}
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void copyDdl(state.template.clickHouseDdl!)}
+                    >
+                      {copiedDdl ? <Check className="mr-1.5 size-3.5" /> : <Copy className="mr-1.5 size-3.5" />}
+                      {copiedDdl ? t('copiedDdlButton') : t('copyDdlButton')}
+                    </Button>
+                  </div>
                 </div>
                 <pre className="max-h-52 overflow-auto rounded-md border bg-muted/40 p-3 font-mono text-xs">
                   {state.template.clickHouseDdl}

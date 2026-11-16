@@ -3410,6 +3410,34 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "initialSnapshotEnabled",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "snapshotStatus",
+                "cnName": "",
+                "type": "CdcSnapshotStatus",
+                "description": "取值：0=NotStarted；1=Completed；2=Failed",
+                "nullable": false
+              },
+              {
+                "name": "snapshotCompletedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "snapshotRowCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
                 "name": "status",
                 "cnName": "",
                 "type": "CdcStreamStatus",
@@ -3598,6 +3626,13 @@ export const API_MODULES: ApiModule[] = [
                 "type": "string",
                 "description": "",
                 "required": false
+              },
+              {
+                "name": "initialSnapshotEnabled",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "required": false
               }
             ],
             "responseFields": [
@@ -3740,6 +3775,34 @@ export const API_MODULES: ApiModule[] = [
                 "type": "string",
                 "description": "",
                 "nullable": true
+              },
+              {
+                "name": "initialSnapshotEnabled",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "snapshotStatus",
+                "cnName": "",
+                "type": "CdcSnapshotStatus",
+                "description": "取值：0=NotStarted；1=Completed；2=Failed",
+                "nullable": false
+              },
+              {
+                "name": "snapshotCompletedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "snapshotRowCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
               },
               {
                 "name": "status",
@@ -3976,6 +4039,34 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "initialSnapshotEnabled",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "snapshotStatus",
+                "cnName": "",
+                "type": "CdcSnapshotStatus",
+                "description": "取值：0=NotStarted；1=Completed；2=Failed",
+                "nullable": false
+              },
+              {
+                "name": "snapshotCompletedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "snapshotRowCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
                 "name": "status",
                 "cnName": "",
                 "type": "CdcStreamStatus",
@@ -4173,6 +4264,13 @@ export const API_MODULES: ApiModule[] = [
                 "type": "string",
                 "description": "",
                 "required": false
+              },
+              {
+                "name": "initialSnapshotEnabled",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "required": false
               }
             ],
             "responseFields": [
@@ -4315,6 +4413,34 @@ export const API_MODULES: ApiModule[] = [
                 "type": "string",
                 "description": "",
                 "nullable": true
+              },
+              {
+                "name": "initialSnapshotEnabled",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "snapshotStatus",
+                "cnName": "",
+                "type": "CdcSnapshotStatus",
+                "description": "取值：0=NotStarted；1=Completed；2=Failed",
+                "nullable": false
+              },
+              {
+                "name": "snapshotCompletedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "snapshotRowCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
               },
               {
                 "name": "status",
@@ -4656,6 +4782,34 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "initialSnapshotEnabled",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "snapshotStatus",
+                "cnName": "",
+                "type": "CdcSnapshotStatus",
+                "description": "取值：0=NotStarted；1=Completed；2=Failed",
+                "nullable": false
+              },
+              {
+                "name": "snapshotCompletedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "snapshotRowCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
                 "name": "status",
                 "cnName": "",
                 "type": "CdcStreamStatus",
@@ -4924,6 +5078,121 @@ export const API_MODULES: ApiModule[] = [
             ]
           },
           {
+            "method": "POST",
+            "path": "/api/v1/cdc-streams/{id}/provision-sink",
+            "summary": "针对 ClickHouse 外部接收端自动创建标准 CDC 变更日志表",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "targetType",
+                "cnName": "",
+                "type": "DataSourceType",
+                "description": "取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）",
+                "nullable": false
+              },
+              {
+                "name": "destination",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetExists",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "partitionKeyExpression",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "columns",
+                "cnName": "",
+                "type": "CdcSinkColumnTemplateDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "columns[].name",
+                "cnName": "",
+                "type": "string",
+                "description": "名称",
+                "nullable": true
+              },
+              {
+                "name": "columns[].logicalType",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "columns[].clickHouseType",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "columns[].nullable",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "columns[].description",
+                "cnName": "",
+                "type": "string",
+                "description": "描述",
+                "nullable": true
+              },
+              {
+                "name": "clickHouseDdl",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "samplePayloadJson",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "summary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
             "method": "GET",
             "path": "/api/v1/cdc-streams/{id}/sink-template",
             "summary": "获取外部接收端（ClickHouse / Kafka / ObjectStorage）标准结构与建表 DDL 模板",
@@ -5031,6 +5300,72 @@ export const API_MODULES: ApiModule[] = [
               },
               {
                 "name": "summary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/cdc-streams/{id}/snapshot",
+            "summary": "执行一次 PostgreSQL 一致性全量基线快照（EXPORT_SNAPSHOT）并投递下游",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "consistentPointLsn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "snapshotRowCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "deliveredCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "usedExportedSnapshot",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "completedAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "message",
                 "cnName": "",
                 "type": "string",
                 "description": "",

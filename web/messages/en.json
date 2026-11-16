@@ -1341,6 +1341,8 @@
       "monitoredTablesHint": "Use schema.table format separated by commas; leave blank to use an existing Publication.",
       "autoCreateSwitchLabel": "Auto-create Publication and Replication Slot",
       "autoCreateHint": "Creates the logical replication objects automatically during preflight or activation when missing.",
+      "initialSnapshotSwitchLabel": "Run Consistent Initial Snapshot Before Streaming",
+      "initialSnapshotHint": "Exports a repeatable-read snapshot at slot creation (PG EXPORT_SNAPSHOT) before streaming subsequent WAL changes.",
       "pollIntervalFieldLabel": "Poll Interval (seconds, 5–3600) *",
       "maxBatchSizeFieldLabel": "Max Batch Size (1–5000) *",
       "targetModeFieldLabel": "Downstream Target *",
@@ -1383,6 +1385,7 @@
       "activateMenuItem": "Activate",
       "pauseMenuItem": "Pause",
       "captureNowMenuItem": "Capture Now",
+      "snapshotMenuItem": "Initial Snapshot",
       "captureRequiresActiveMenuItem": "Activate to Capture",
       "resetCheckpointMenuItem": "Reset Checkpoint",
       "dropSlotMenuItem": "Drop Slot",
@@ -1434,7 +1437,18 @@
       "copyDdlButton": "Copy DDL",
       "copiedDdlButton": "Copied",
       "sinkTemplateColumnsTitle": "CDC Envelope Columns & Types",
-      "sinkTemplateSampleTitle": "Sample Event Payload JSON"
+      "sinkTemplateSampleTitle": "Sample Event Payload JSON",
+      "snapshotFailedTitle": "Initial snapshot failed",
+      "snapshotFailedFallback": "Could not run PostgreSQL consistent initial snapshot.",
+      "snapshotSuccessTitle": "Initial snapshot completed",
+      "snapshotSuccessDesc": "Exported {rows} rows ({delivered} delivered) at consistent LSN {lsn}",
+      "snapshotCompletedBadge": "Snapshot · {count} rows",
+      "snapshotPendingBadge": "Snapshot pending",
+      "snapshotFailedBadge": "Snapshot failed",
+      "provisionClickHouseButton": "Create Table",
+      "provisionClickHouseSuccessTitle": "ClickHouse target table created",
+      "provisionClickHouseFailedTitle": "Failed to create ClickHouse table",
+      "provisionClickHouseFailedFallback": "Check ClickHouse credentials, network allowlist, and CREATE TABLE privilege."
     }
   },
   "System": {

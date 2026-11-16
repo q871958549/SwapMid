@@ -103,7 +103,7 @@ public class McpController : AbpController
             }
 
             var hasId = root.TryGetProperty("id", out var idElem);
-            object? rpcId = hasId ? ExtractRpcId(idElem) : null;
+            object? rpcId = hasId ? McpJsonRpcHelpers.ExtractRpcId(idElem) : null;
             var jsonrpc = root.TryGetProperty("jsonrpc", out var vElem) && vElem.ValueKind == JsonValueKind.String
                 ? vElem.GetString()
                 : null;
@@ -215,6 +215,8 @@ public class McpController : AbpController
                 McpToolCatalog.DiagnoseFailedExecutions => await ExecuteDiagnoseExecutionsAsync(args),
                 McpToolCatalog.DiagnoseDeadLetters => await ExecuteDiagnoseDeadLettersAsync(args),
                 McpToolCatalog.DraftDataPipeline => await ExecuteDraftPipelineAsync(args),
+                McpToolCatalog.DiagnoseCdcStreams => await McpCdcDiagnosticsHandler.ExecuteAsync(
+                    _serviceProvider, _authorizationService, User, args, cancellationToken),
                 _ => throw new InvalidOperationException("Unhandled tool"),
             };
 
@@ -280,8 +282,8 @@ public class McpController : AbpController
     private async Task<object> ExecuteListDatasourcesAsync(JsonElement args)
     {
         var service = _serviceProvider.GetRequiredService<IDataSourceAppService>();
-        var limit = ReadClampedInt(args, "limit", defaultValue: 20, min: 1, max: 100);
-        var filter = ReadOptionalString(args, "filter");
+        var limit = McpJsonRpcHelpers.ReadClampedInt(args, "limit", defaultValue: 20, min: 1, max: 100);
+        var filter = McpJsonRpcHelpers.ReadOptionalString(args, "filter");
         var page = await service.GetListAsync(new GetDataSourceListInput
         {
             Filter = filter,
@@ -306,9 +308,9 @@ public class McpController : AbpController
     private async Task<object> ExecutePreflightSchemaAsync(JsonElement args, CancellationToken cancellationToken)
     {
         var service = _serviceProvider.GetRequiredService<IDataPipelineSchemaPreflightAppService>();
-        var sourceId = ReadRequiredGuid(args, "sourceId");
-        var targetId = ReadOptionalGuid(args, "targetId");
-        var transformConfig = ReadOptionalString(args, "transformConfig") ?? string.Empty;
+        var sourceId = McpJsonRpcHelpers.ReadRequiredGuid(args, "sourceId");
+        var targetId = McpJsonRpcHelpers.ReadOptionalGuid(args, "targetId");
+        var transformConfig = McpJsonRpcHelpers.ReadOptionalString(args, "transformConfig") ?? string.Empty;
         return await service.PreflightSchemaAsync(
             new PreflightPipelineSchemaInput
             {
@@ -322,8 +324,8 @@ public class McpController : AbpController
     private async Task<object> ExecuteDiagnoseExecutionsAsync(JsonElement args)
     {
         var service = _serviceProvider.GetRequiredService<IPipelineExecutionAppService>();
-        var pipelineId = ReadOptionalGuid(args, "pipelineId");
-        var limit = ReadClampedInt(args, "limit", defaultValue: 10, min: 1, max: 50);
+        var pipelineId = McpJsonRpcHelpers.ReadOptionalGuid(args, "pipelineId");
+        var limit = McpJsonRpcHelpers.ReadClampedInt(args, "limit", defaultValue: 10, min: 1, max: 50);
 
         var outcomeUnknown = await service.GetListAsync(new GetPipelineExecutionListInput
         {
@@ -351,8 +353,8 @@ public class McpController : AbpController
     private async Task<object> ExecuteDiagnoseDeadLettersAsync(JsonElement args)
     {
         var service = _serviceProvider.GetRequiredService<IMessageRecordAppService>();
-        var topicId = ReadOptionalGuid(args, "topicId");
-        var limit = ReadClampedInt(args, "limit", defaultValue: 10, min: 1, max: 30);
+        var topicId = McpJsonRpcHelpers.ReadOptionalGuid(args, "topicId");
+        var limit = McpJsonRpcHelpers.ReadClampedInt(args, "limit", defaultValue: 10, min: 1, max: 30);
 
         var deadLetters = await service.GetListAsync(new GetMessageRecordListInput
         {
@@ -396,15 +398,15 @@ public class McpController : AbpController
 
     private async Task<object> ExecuteDraftPipelineAsync(JsonElement args)
     {
-        var name = ReadOptionalString(args, "name")?.Trim();
+        var name = McpJsonRpcHelpers.ReadOptionalString(args, "name")?.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.PipelineExecutionInputInvalid);
         }
 
-        var sourceId = ReadRequiredGuid(args, "sourceId");
-        var targetId = ReadOptionalGuid(args, "targetId");
-        var transformConfig = ReadOptionalString(args, "transformConfig") ?? string.Empty;
+        var sourceId = McpJsonRpcHelpers.ReadRequiredGuid(args, "sourceId");
+        var targetId = McpJsonRpcHelpers.ReadOptionalGuid(args, "targetId");
+        var transformConfig = McpJsonRpcHelpers.ReadOptionalString(args, "transformConfig") ?? string.Empty;
         var targetType = targetId.HasValue && (await _authorizationService.AuthorizeAsync(User, null, SwapMidPermissions.DataIntegration.DataSources.Default)).Succeeded
             ? (await _serviceProvider.GetRequiredService<IDataSourceAppService>().GetAsync(targetId.Value))?.Type ?? DataSourceType.RelationalDatabase
             : DataSourceType.RelationalDatabase;
@@ -414,7 +416,7 @@ public class McpController : AbpController
         var created = await service.CreateAsync(new DataPipelineCreateUpdateDto
         {
             Name = name,
-            Description = ReadOptionalString(args, "description"),
+            Description = McpJsonRpcHelpers.ReadOptionalString(args, "description"),
             SourceId = sourceId,
             TargetId = targetId,
             TransformConfig = transformConfig,
@@ -430,42 +432,6 @@ public class McpController : AbpController
             scheduleEnabled = created.ScheduleEnabled,
             note = "Created strictly in Draft state with scheduling disabled. Operator review and explicit activation are required before execution.",
         };
-    }
-
-    private static object? ExtractRpcId(JsonElement elem) => elem.ValueKind switch
-    {
-        JsonValueKind.String => elem.GetString(),
-        JsonValueKind.Number when elem.TryGetInt64(out var l) => l,
-        JsonValueKind.Number => elem.GetDouble(),
-        _ => null,
-    };
-
-    private static string? ReadOptionalString(JsonElement obj, string prop)
-        => obj.ValueKind == JsonValueKind.Object && obj.TryGetProperty(prop, out var e) && e.ValueKind == JsonValueKind.String
-            ? e.GetString()
-            : null;
-
-    private static Guid ReadRequiredGuid(JsonElement obj, string prop)
-        => Guid.TryParse(ReadOptionalString(obj, prop), out var g)
-            ? g
-            : throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.PipelineExecutionInputInvalid);
-
-    private static Guid? ReadOptionalGuid(JsonElement obj, string prop)
-    {
-        var raw = ReadOptionalString(obj, prop);
-        if (string.IsNullOrWhiteSpace(raw)) return null;
-        return Guid.TryParse(raw, out var g)
-            ? g
-            : throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.PipelineExecutionInputInvalid);
-    }
-
-    private static int ReadClampedInt(JsonElement obj, string prop, int defaultValue, int min, int max)
-    {
-        if (obj.ValueKind == JsonValueKind.Object && obj.TryGetProperty(prop, out var e) && e.TryGetInt32(out var v))
-        {
-            return Math.Clamp(v, min, max);
-        }
-        return defaultValue;
     }
 
     private Task<IActionResult> WriteRpcResultAsync(object? id, object result, CancellationToken cancellationToken)

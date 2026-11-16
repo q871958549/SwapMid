@@ -226,6 +226,9 @@ namespace SwapMid.Migrations
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<bool>("InitialSnapshotEnabled")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -278,6 +281,15 @@ namespace SwapMid.Migrations
                         .IsRequired()
                         .HasMaxLength(63)
                         .HasColumnType("character varying(63)");
+
+                    b.Property<DateTime?>("SnapshotCompletedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<long>("SnapshotRowCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("SnapshotStatus")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("SourceId")
                         .HasColumnType("uuid");

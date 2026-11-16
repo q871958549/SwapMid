@@ -211,9 +211,13 @@ public class CdcStreamAppServiceTests : SwapMidEntityFrameworkCoreTestBase
             TargetSinkId = chSink.Id,
             TargetSinkDestination = "cdc_orders_changelog",
             TargetSinkKeyColumns = "order_id, customer_code",
+            InitialSnapshotEnabled = true,
         });
 
         chStream.TargetSinkKeyColumns.ShouldBe("order_id, customer_code");
+        chStream.InitialSnapshotEnabled.ShouldBeTrue();
+        chStream.SnapshotStatus.ShouldBe(CdcSnapshotStatus.NotStarted);
+        chStream.SnapshotRowCount.ShouldBe(0);
 
         var template = await _cdcAppService.GetSinkTemplateAsync(chStream.Id);
         template.TargetType.ShouldBe(DataSourceType.ClickHouse);
@@ -222,6 +226,8 @@ public class CdcStreamAppServiceTests : SwapMidEntityFrameworkCoreTestBase
         template.PartitionKeyExpression.ShouldBe("public.etl_demo_source_orders:order_id=<value>|customer_code=<value>");
         template.ClickHouseDdl.ShouldNotBeNull();
         template.ClickHouseDdl.ShouldContain("CREATE TABLE IF NOT EXISTS `analytics`.`cdc_orders_changelog`");
+        template.ClickHouseDdl.ShouldContain("ENGINE = ReplacingMergeTree(`commit_timestamp_utc`)");
+        template.ClickHouseDdl.ShouldContain("JSONExtractRaw(coalesce(`after_json`, `before_json`, '{}'), 'order_id')");
         template.SamplePayloadJson.ShouldContain("etl_demo_source_orders");
     }
 }

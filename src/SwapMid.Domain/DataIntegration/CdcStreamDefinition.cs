@@ -55,6 +55,18 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
     /// <summary>当 TargetMode = ExternalSink 时的分区主键列名列表（逗号分隔，用于 Kafka 同主键保序投递）。</summary>
     public string? TargetSinkKeyColumns { get; private set; }
 
+    /// <summary>是否在首次复制前自动通过 PG EXPORT_SNAPSHOT 执行一次全量一致性基线快照。</summary>
+    public bool InitialSnapshotEnabled { get; private set; }
+
+    /// <summary>初始全量快照执行状态。</summary>
+    public CdcSnapshotStatus SnapshotStatus { get; private set; }
+
+    /// <summary>最近一次全量一致性快照完成时间（UTC）。</summary>
+    public DateTime? SnapshotCompletedAt { get; private set; }
+
+    /// <summary>累计通过初始/重同步快照导出的记录总数。</summary>
+    public long SnapshotRowCount { get; private set; }
+
     /// <summary>运行状态（草稿 / 启用 / 暂停 / 异常）。</summary>
     public CdcStreamStatus Status { get; private set; }
 
@@ -94,7 +106,8 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         string? description = null,
         Guid? targetSinkId = null,
         string? targetSinkDestination = null,
-        string? targetSinkKeyColumns = null)
+        string? targetSinkKeyColumns = null,
+        bool initialSnapshotEnabled = false)
         : base(id)
     {
         ApplyConfiguration(
@@ -112,8 +125,10 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             autoCreatePublicationAndSlot,
             pollIntervalSeconds,
             maxBatchSize,
-            description);
+            description,
+            initialSnapshotEnabled);
         Status = CdcStreamStatus.Draft;
+        SnapshotStatus = CdcSnapshotStatus.NotStarted;
     }
 
     public void Update(
@@ -131,7 +146,8 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         string? description,
         Guid? targetSinkId = null,
         string? targetSinkDestination = null,
-        string? targetSinkKeyColumns = null)
+        string? targetSinkKeyColumns = null,
+        bool initialSnapshotEnabled = false)
     {
         ApplyConfiguration(
             name,
@@ -148,7 +164,8 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             autoCreatePublicationAndSlot,
             pollIntervalSeconds,
             maxBatchSize,
-            description);
+            description,
+            initialSnapshotEnabled);
     }
 
     public void Activate()
@@ -208,6 +225,40 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         }
     }
 
+    public void MarkSnapshotSucceeded(string? consistentPointLsn, long rowCount, DateTime completedAtUtc)
+    {
+        if (!string.IsNullOrWhiteSpace(consistentPointLsn) && string.IsNullOrWhiteSpace(CheckpointLsn))
+        {
+            CheckpointLsn = Truncate(consistentPointLsn.Trim(), CdcStreamConsts.MaxCheckpointLsnLength);
+        }
+
+        SnapshotStatus = CdcSnapshotStatus.Completed;
+        SnapshotCompletedAt = completedAtUtc;
+        if (rowCount > 0)
+        {
+            SnapshotRowCount += rowCount;
+            TotalCapturedCount += rowCount;
+        }
+
+        LastCapturedAt = completedAtUtc;
+        LastCapturedCount = rowCount;
+        LastErrorCode = null;
+        LastErrorMessage = null;
+    }
+
+    public void MarkSnapshotFailed(string errorCode, string errorMessage)
+    {
+        SnapshotStatus = CdcSnapshotStatus.Failed;
+        LastErrorCode = Truncate(errorCode, CdcStreamConsts.MaxErrorCodeLength);
+        LastErrorMessage = Truncate(errorMessage, CdcStreamConsts.MaxErrorMessageLength);
+    }
+
+    public void ResetSnapshot()
+    {
+        SnapshotStatus = CdcSnapshotStatus.NotStarted;
+        SnapshotCompletedAt = null;
+    }
+
     private void ApplyConfiguration(
         string name,
         Guid sourceId,
@@ -223,7 +274,8 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         bool autoCreatePublicationAndSlot,
         int pollIntervalSeconds,
         int maxBatchSize,
-        string? description)
+        string? description,
+        bool initialSnapshotEnabled)
     {
         Name = Check.NotNullOrWhiteSpace(name, nameof(name), CdcStreamConsts.MaxNameLength).Trim();
         SourceId = sourceId;
@@ -239,6 +291,7 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             ? null
             : Check.Length(monitoredTables.Trim(), nameof(monitoredTables), CdcStreamConsts.MaxMonitoredTablesLength);
         AutoCreatePublicationAndSlot = autoCreatePublicationAndSlot;
+        InitialSnapshotEnabled = initialSnapshotEnabled;
         PollIntervalSeconds = Math.Clamp(
             pollIntervalSeconds,
             CdcStreamConsts.MinPollIntervalSeconds,

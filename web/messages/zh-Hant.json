@@ -1341,6 +1341,8 @@
       "monitoredTablesHint": "格式為 schema.table，多張表以英文逗號分隔；留空時由預置 Publication 決定。",
       "autoCreateSwitchLabel": "自動創建 Publication 與 Replication Slot",
       "autoCreateHint": "預檢或激活時若源庫尚無同名邏輯複製對象，自動執行創建語句。",
+      "initialSnapshotSwitchLabel": "首次複製前執行一致性全量快照",
+      "initialSnapshotHint": "創建複製槽時通過 PG EXPORT_SNAPSHOT 在一致 LSN 點先同步存量表，再無縫銜接 WAL 增量。",
       "pollIntervalFieldLabel": "輪詢週期（秒，5–3600）*",
       "maxBatchSizeFieldLabel": "單批上限（條，1–5000）*",
       "targetModeFieldLabel": "下游投遞目標 *",
@@ -1383,6 +1385,7 @@
       "activateMenuItem": "激活",
       "pauseMenuItem": "暫停",
       "captureNowMenuItem": "立即捕獲",
+      "snapshotMenuItem": "全量快照",
       "captureRequiresActiveMenuItem": "激活後可捕獲",
       "resetCheckpointMenuItem": "重置位點",
       "dropSlotMenuItem": "釋放槽位",
@@ -1434,7 +1437,18 @@
       "copyDdlButton": "複製DDL",
       "copiedDdlButton": "已複製",
       "sinkTemplateColumnsTitle": "CDC Envelope 字段與推薦列類型",
-      "sinkTemplateSampleTitle": "示例事件 Payload JSON"
+      "sinkTemplateSampleTitle": "示例事件 Payload JSON",
+      "snapshotFailedTitle": "全量快照匯出失敗",
+      "snapshotFailedFallback": "執行 PostgreSQL 一致性基線快照失敗，請檢查前置條件或源表權限。",
+      "snapshotSuccessTitle": "全量基線快照完成",
+      "snapshotSuccessDesc": "匯出 {rows} 行存量記錄並投遞 {delivered} 項（一致位點 {lsn}）",
+      "snapshotCompletedBadge": "快照完成 · {count} 行",
+      "snapshotPendingBadge": "待全量快照",
+      "snapshotFailedBadge": "快照異常",
+      "provisionClickHouseButton": "一鍵建表",
+      "provisionClickHouseSuccessTitle": "ClickHouse 目標表已創建",
+      "provisionClickHouseFailedTitle": "自動創建 ClickHouse 目標表失敗",
+      "provisionClickHouseFailedFallback": "請確認 ClickHouse 連接串、網絡白名單與建表權限。"
     }
   },
   "System": {

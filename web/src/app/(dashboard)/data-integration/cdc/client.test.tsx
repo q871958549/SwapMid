@@ -43,6 +43,7 @@ vi.mock('@/lib/crud/use-crud-form', () => ({
       slotName: 'swapmid_cdc_slot',
       monitoredTables: 'public.orders',
       autoCreatePublicationAndSlot: true,
+      initialSnapshotEnabled: false,
       pollIntervalSeconds: '15',
       maxBatchSize: '500',
       targetMode: '0',
@@ -261,32 +262,44 @@ describe('CdcStreamsClient', () => {
     })
   })
 
-  it('loads external sink DDL template and renders columns and partition key expression', async () => {
-    mocks.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        streamId: STREAM_ID,
-        sinkId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
-        sinkName: 'ClickHouse Analytics',
-        sinkType: 8,
-        destination: 'analytics.cdc_orders_changelog',
-        partitionKeyColumns: 'order_id',
-        partitionKeyExpression: 'table:order_id=<value>',
-        targetExists: false,
-        clickHouseDdl: 'CREATE TABLE IF NOT EXISTS `analytics`.`cdc_orders_changelog` ... ORDER BY (`schema`, `table`, `lsn`, `ts_ms`)',
-        columns: [
-          {
-            name: 'op',
-            logicalType: 'string',
-            clickHouseType: "LowCardinality(String)",
-            nullable: false,
-            description: 'Event operation',
-          },
-        ],
-        samplePayloadJson: '{"op":"insert","payload":{"order_id":1001}}',
-        summary: 'Generated ClickHouse DDL template for analytics.cdc_orders_changelog',
-      }),
-    })
+  it('loads external sink DDL template and provisions ClickHouse table on click', async () => {
+    mocks.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          targetType: 4,
+          destination: 'analytics.cdc_orders_changelog',
+          partitionKeyExpression: 'table:order_id=<value>',
+          targetExists: false,
+          clickHouseDdl: 'CREATE TABLE IF NOT EXISTS `analytics`.`cdc_orders_changelog` ... ENGINE = ReplacingMergeTree(`commit_timestamp_utc`)',
+          columns: [
+            {
+              name: 'op',
+              logicalType: 'string',
+              clickHouseType: 'LowCardinality(String)',
+              nullable: false,
+              description: 'Event operation',
+            },
+          ],
+          samplePayloadJson: '{"op":"insert","payload":{"order_id":1001}}',
+          summary: 'Generated ClickHouse DDL template for analytics.cdc_orders_changelog',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          targetType: 4,
+          destination: 'analytics.cdc_orders_changelog',
+          partitionKeyExpression: 'table:order_id=<value>',
+          targetExists: true,
+          clickHouseDdl: 'CREATE TABLE IF NOT EXISTS `analytics`.`cdc_orders_changelog` ... ENGINE = ReplacingMergeTree(`commit_timestamp_utc`)',
+          columns: [],
+          samplePayloadJson: '{"op":"insert"}',
+          summary: 'ClickHouse target ready',
+        }),
+      })
 
     renderClient(makeStream({
       status: 0,
@@ -305,5 +318,32 @@ describe('CdcStreamsClient', () => {
     expect(await screen.findByText(/CREATE TABLE IF NOT EXISTS `analytics`.`cdc_orders_changelog`/)).toBeTruthy()
     expect(screen.getByText('Key: table:order_id=<value>')).toBeTruthy()
     expect(screen.getByText('LowCardinality(String)')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '一键建表' }))
+    await waitFor(() => {
+      expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/provision-sink`, { method: 'POST' })
+    })
+    expect(await screen.findByText('目标已就绪')).toBeTruthy()
+  })
+
+  it('runs consistent initial snapshot and refreshes stream list', async () => {
+    mocks.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        streamId: STREAM_ID,
+        consistentPointLsn: '0/1F00000',
+        snapshotRowCount: 12,
+        deliveredCount: 12,
+        usedExportedSnapshot: true,
+      }),
+    })
+
+    renderClient(makeStream({ status: 0, initialSnapshotEnabled: true }))
+    fireEvent.click(screen.getByRole('button', { name: '全量快照' }))
+
+    await waitFor(() => {
+      expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/snapshot`, { method: 'POST' })
+      expect(mocks.reloadAndRefresh).toHaveBeenCalledOnce()
+    })
   })
 })

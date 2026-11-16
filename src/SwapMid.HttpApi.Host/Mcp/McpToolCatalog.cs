@@ -16,6 +16,7 @@ public static class McpToolCatalog
     public const string DiagnoseFailedExecutions = "diagnose_failed_executions";
     public const string DiagnoseDeadLetters = "diagnose_dead_letters";
     public const string DraftDataPipeline = "draft_data_pipeline";
+    public const string DiagnoseCdcStreams = "diagnose_cdc_streams";
 
     public static IReadOnlyList<McpToolDescriptor> All { get; } =
     [
@@ -92,6 +93,21 @@ public static class McpToolCatalog
                     sourceId = new { type = "string", format = "uuid" },
                     targetId = new { type = "string", format = "uuid" },
                     transformConfig = new { type = "string", description = "Validated ETL transform JSON." },
+                },
+                additionalProperties = false,
+            }),
+        new McpToolDescriptor(
+            Name: DiagnoseCdcStreams,
+            RequiredPermission: SwapMidPermissions.DataIntegration.CdcStreams.Default,
+            Description: "Inspect configured PostgreSQL logical replication CDC streams, LSN checkpoints, initial snapshot status, and optional live WAL lag pre-flight diagnostics.",
+            InputSchema: new
+            {
+                type = "object",
+                properties = new
+                {
+                    filter = new { type = "string", description = "Optional CDC stream name/slot substring filter." },
+                    limit = new { type = "integer", minimum = 1, maximum = 50, description = "Max CDC streams to inspect (default 20)." },
+                    includePreflight = new { type = "boolean", description = "When true (requires CdcStreams.Manage), runs live pre-flight to inspect WAL lag bytes and table REPLICA IDENTITY." },
                 },
                 additionalProperties = false,
             }),

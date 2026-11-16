@@ -268,11 +268,14 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
             long deliveredCount = 0;
             if (readOutcome.Changes.Count > 0)
             {
-                deliveredCount = await DeliverChangesAsync(
+                deliveredCount = await CdcStreamDeliveryDispatcher.DeliverAsync(
                     stream,
                     targetSink,
                     readOutcome.Changes,
                     readOutcome.LastCommittedLsn,
+                    _integrationEventPublisher,
+                    _executionCoordinator,
+                    _sinkWriters,
                     cancellationToken);
             }
 
@@ -330,104 +333,43 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
         }
     }
 
-    private async Task<long> DeliverChangesAsync(
+    internal Task<PgOutputSnapshotBatchResult> SnapshotAsync(
+        DataSource source,
         CdcStreamDefinition stream,
         DataSource? targetSink,
-        IReadOnlyList<PgOutputCapturedChange> changes,
-        NpgsqlLogSequenceNumber? batchEndLsn,
         CancellationToken cancellationToken)
     {
-        if (stream.TargetMode == CdcTargetMode.MessageBusTopic)
-        {
-            var topicName = string.IsNullOrWhiteSpace(stream.TargetTopicName)
-                ? IntegrationTopicNames.CdcEvents
-                : stream.TargetTopicName.Trim();
-
-            long published = 0;
-            for (var i = 0; i < changes.Count; i++)
+        EnsurePostgreSqlSource(source);
+        return PgOutputCdcSnapshotReader.CaptureConsistentSnapshotAsync(
+            _connectionFactory,
+            source,
+            stream,
+            async (chunk, lsn, seqOffset, idempotencyKey, flushPipeline, ct) =>
             {
-                var change = changes[i];
-                var eventId = CdcProtocolHelpers.BuildDeterministicEventId(
-                    stream.Id,
-                    change.Lsn,
-                    i,
-                    change.Operation,
-                    change.Schema,
-                    change.Table);
-                var subject = CdcProtocolHelpers.BuildEventSubject(change.Schema, change.Table, change.Operation);
-                var payloadJson = CdcProtocolHelpers.BuildEventPayloadJson(
-                    stream.Id,
-                    stream.Name,
-                    change.Schema,
-                    change.Table,
-                    change.Operation,
-                    change.Lsn,
-                    change.CommitTimestampUtc,
-                    change.Data,
-                    change.OldData);
-
-                var accepted = await _integrationEventPublisher.PublishIfTopicActiveAsync(
-                    new IntegrationEventEnvelope(eventId, topicName, subject, payloadJson),
-                    cancellationToken);
-                if (accepted)
+                if (flushPipeline)
                 {
-                    published++;
+                    return stream.TargetMode == CdcTargetMode.DataPipeline
+                        ? await CdcStreamDeliveryDispatcher.DeliverAsync(
+                            stream, targetSink, chunk, lsn, _integrationEventPublisher, _executionCoordinator, _sinkWriters, ct, seqOffset, idempotencyKey, triggerPipeline: true)
+                        : 0;
                 }
-            }
 
-            PlatformMetrics.CdcDeliveriesTotal.WithLabels("message_bus_topic").Inc();
-            return published;
-        }
+                var delivered = stream.TargetMode == CdcTargetMode.DataPipeline
+                    ? 0
+                    : await CdcStreamDeliveryDispatcher.DeliverAsync(
+                        stream, targetSink, chunk, lsn, _integrationEventPublisher, _executionCoordinator, _sinkWriters, ct, seqOffset, idempotencyKey, triggerPipeline: false);
+                foreach (var change in chunk)
+                {
+                    PlatformMetrics.CdcEventsCapturedTotal.WithLabels(change.Operation).Inc();
+                }
 
-        if (stream.TargetMode == CdcTargetMode.DataPipeline)
-        {
-            if (!stream.TargetPipelineId.HasValue)
-            {
-                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-                    .WithData("Reason", "DataPipeline 目标模式下必须选择关联的数据管道。");
-            }
-
-            var endLsnText = batchEndLsn?.ToString() ?? changes[^1].Lsn;
-            var runId = CdcProtocolHelpers.BuildDeterministicPipelineRunId(stream.Id, endLsnText);
-            await _executionCoordinator.ExecuteAsync(
-                stream.TargetPipelineId.Value,
-                runId,
-                TriggerType.Scheduled,
-                cancellationToken);
-            PlatformMetrics.CdcDeliveriesTotal.WithLabels("data_pipeline").Inc();
-            return 1;
-        }
-
-        if (stream.TargetMode == CdcTargetMode.ExternalSink)
-        {
-            if (targetSink == null)
-            {
-                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-                    .WithData("Reason", "ExternalSink 目标模式下未找到目标外部接收端数据源。");
-            }
-
-            var written = await CdcExternalSinkDeliveryAdapter.DeliverAsync(
-                stream,
-                targetSink,
-                changes,
-                batchEndLsn,
-                _sinkWriters,
-                cancellationToken);
-            var label = targetSink.Type switch
-            {
-                DataSourceType.Kafka => "kafka",
-                DataSourceType.ClickHouse => "clickhouse",
-                DataSourceType.ObjectStorage => "object_storage",
-                _ => "external_sink",
-            };
-            PlatformMetrics.CdcDeliveriesTotal.WithLabels(label).Inc();
-            return written;
-        }
-
-        return 0;
+                return delivered;
+            },
+            _logger,
+            cancellationToken);
     }
 
-    private static async Task<PgServerReplicationState> EnsureReplicationPreconditionsAsync(
+    internal static async Task<PgServerReplicationState> EnsureReplicationPreconditionsAsync(
         NpgsqlConnection adminConn,
         CdcStreamDefinition stream,
         string publicationName,

@@ -23,6 +23,7 @@ export interface CdcFormState {
   slotName: string
   monitoredTables: string
   autoCreatePublicationAndSlot: boolean
+  initialSnapshotEnabled: boolean
   pollIntervalSeconds: string
   maxBatchSize: string
   targetMode: '0' | '1' | '2'
@@ -43,6 +44,7 @@ export const defaultCdcForm: CdcFormState = {
   slotName: 'swapmid_cdc_slot',
   monitoredTables: '',
   autoCreatePublicationAndSlot: true,
+  initialSnapshotEnabled: false,
   pollIntervalSeconds: '15',
   maxBatchSize: '500',
   targetMode: '0',
@@ -68,6 +70,7 @@ export function toCdcForm(item: CdcStreamDto): CdcFormState {
     slotName: item.slotName,
     monitoredTables: item.monitoredTables ?? '',
     autoCreatePublicationAndSlot: item.autoCreatePublicationAndSlot,
+    initialSnapshotEnabled: item.initialSnapshotEnabled ?? false,
     pollIntervalSeconds: String(item.pollIntervalSeconds || 15),
     maxBatchSize: String(item.maxBatchSize || 500),
     targetMode: normalizeTargetMode(item.targetMode),
@@ -91,6 +94,7 @@ export function toCdcBody(form: CdcFormState) {
     slotName: form.slotName.trim(),
     monitoredTables: form.monitoredTables.trim() || null,
     autoCreatePublicationAndSlot: form.autoCreatePublicationAndSlot,
+    initialSnapshotEnabled: form.initialSnapshotEnabled,
     pollIntervalSeconds: Number.isFinite(poll) ? poll : 15,
     maxBatchSize: Number.isFinite(batch) ? batch : 500,
     targetMode: mode,
@@ -234,6 +238,18 @@ export function CdcFormDialog({
           id="cdc-auto-create"
           checked={crud.form.autoCreatePublicationAndSlot}
           onCheckedChange={v => crud.set({ autoCreatePublicationAndSlot: v })}
+        />
+      </div>
+
+      <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/30 px-3 py-2">
+        <div className="space-y-0.5">
+          <Label htmlFor="cdc-initial-snapshot">{t('initialSnapshotSwitchLabel')}</Label>
+          <p className="text-xs text-muted-foreground">{t('initialSnapshotHint')}</p>
+        </div>
+        <Switch
+          id="cdc-initial-snapshot"
+          checked={crud.form.initialSnapshotEnabled}
+          onCheckedChange={v => crud.set({ initialSnapshotEnabled: v })}
         />
       </div>
 

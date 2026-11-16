@@ -184,6 +184,7 @@ public static class DataIntegrationEntityTypeConfigurations
             b.Property(x => x.LastErrorCode).HasMaxLength(CdcStreamConsts.MaxErrorCodeLength);
             b.Property(x => x.LastErrorMessage).HasMaxLength(CdcStreamConsts.MaxErrorMessageLength);
             b.Property(x => x.TargetMode).HasConversion<int>();
+            b.Property(x => x.SnapshotStatus).HasConversion<int>();
             b.Property(x => x.Status).HasConversion<int>();
             b.HasIndex(x => x.Name).IsUnique();
             b.HasIndex(x => x.Status);

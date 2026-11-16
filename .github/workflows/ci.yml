@@ -47,11 +47,33 @@ jobs:
       - name: Build (warnings as errors)
         run: dotnet build SwapMid.slnx --no-restore -c Release --nologo
 
+      - name: Start PostgreSQL 18 logical replication container for CDC contracts
+        run: |
+          docker run -d --name postgres-cdc \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=SwapMidCiOnly_2026! \
+            -e POSTGRES_DB=postgres \
+            -p 55432:5432 \
+            postgres:18-alpine \
+            -c wal_level=logical -c max_replication_slots=4 -c max_wal_senders=4
+          for i in $(seq 1 30); do
+            if docker exec postgres-cdc pg_isready -U postgres -d postgres >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+
       - name: Run unit, architecture & PostgreSQL 18 contract test suites
         env:
           SWAPMID_POSTGRES_TEST_CONNECTION: Host=127.0.0.1;Port=5432;Database=postgres;Username=postgres;Password=SwapMidCiOnly_2026!
           SWAPMID_RUN_POSTGRES_CONTRACT_TESTS: '1'
+          SWAPMID_POSTGRES_CDC_TEST_CONNECTION: Host=127.0.0.1;Port=55432;Database=postgres;Username=postgres;Password=SwapMidCiOnly_2026!
+          SWAPMID_RUN_POSTGRES_CDC_CONTRACT_TESTS: '1'
         run: dotnet test SwapMid.slnx --no-build -c Release --nologo --verbosity normal
+
+      - name: Stop CDC PostgreSQL container
+        if: always()
+        run: docker rm -f postgres-cdc >/dev/null 2>&1 || true
 
   frontend:
     name: Frontend (Next.js 16)

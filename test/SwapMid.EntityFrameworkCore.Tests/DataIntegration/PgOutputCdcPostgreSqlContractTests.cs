@@ -145,6 +145,91 @@ public sealed class PgOutputCdcPostgreSqlContractTests
         }
     }
 
+    [PostgreSqlLogicalReplicationFact]
+    public async Task SnapshotAsync_WithExportSnapshot_Should_Capture_Baseline_And_Hand_Off_To_Wal_Without_Duplicates()
+    {
+        var connStr = Environment.GetEnvironmentVariable(ConnectionEnvVar)
+                      ?? Environment.GetEnvironmentVariable("SWAPMID_POSTGRES_TEST_CONNECTION");
+        connStr.ShouldNotBeNullOrWhiteSpace("Missing PostgreSQL logical replication connection string.");
+
+        var schemaTable = $"cdc_snap_{Guid.NewGuid():N}"[..24];
+        var pubName = $"pub_{schemaTable}";
+        var slotName = $"slot_{schemaTable}";
+
+        await using var conn = new NpgsqlConnection(connStr);
+        await conn.OpenAsync();
+
+        await ExecuteNonQueryAsync(conn, $"""
+            CREATE TABLE public."{schemaTable}" (
+                id bigint PRIMARY KEY,
+                payload text NOT NULL
+            );
+            ALTER TABLE public."{schemaTable}" REPLICA IDENTITY FULL;
+            INSERT INTO public."{schemaTable}" (id, payload) VALUES (101, 'existing-a'), (102, 'existing-b');
+            """);
+
+        try
+        {
+            var builder = new NpgsqlConnectionStringBuilder(connStr);
+            var source = new DataSource(
+                Guid.NewGuid(),
+                "cdc-snap-contract-pg",
+                DataSourceType.RelationalDatabase,
+                $$"""{"provider":"postgresql","host":"{{builder.Host}}","port":{{builder.Port}},"database":"{{builder.Database}}","username":"{{builder.Username}}","password":"{{builder.Password}}","encrypt":false,"trustServerCertificate":true}""");
+
+            var stream = new CdcStreamDefinition(
+                Guid.NewGuid(),
+                "pgoutput-snapshot-contract",
+                source.Id,
+                pubName,
+                slotName,
+                CdcTargetMode.MessageBusTopic,
+                targetTopicName: IntegrationTopicNames.CdcEvents,
+                monitoredTables: $"public.{schemaTable}",
+                autoCreatePublicationAndSlot: true,
+                maxBatchSize: 1,
+                initialSnapshotEnabled: true);
+
+            var publisher = new RecordingIntegrationEventPublisher();
+            var service = new PgOutputCdcCaptureService(
+                new EtlRelationalConnectionFactory(),
+                publisher,
+                null!,
+                NullLogger<PgOutputCdcCaptureService>.Instance);
+
+            var snapshot = await service.SnapshotAsync(source, stream, null, CancellationToken.None);
+            snapshot.UsedExportedSnapshot.ShouldBeTrue();
+            snapshot.SnapshotRowCount.ShouldBe(2);
+            snapshot.DeliveredCount.ShouldBe(2);
+            snapshot.ConsistentPointLsn.ShouldNotBeNullOrWhiteSpace();
+            stream.MarkSnapshotSucceeded(snapshot.ConsistentPointLsn, snapshot.SnapshotRowCount, snapshot.CompletedAtUtc);
+
+            publisher.Envelopes.Count.ShouldBe(2);
+            publisher.Envelopes.Select(e => e.Subject).ShouldAllBe(s => s == $"cdc.public.{schemaTable}.snapshot");
+            publisher.Envelopes.Select(e => e.EventId).Distinct().Count().ShouldBe(2);
+
+            await ExecuteNonQueryAsync(conn, $"""
+                INSERT INTO public."{schemaTable}" (id, payload) VALUES (103, 'delta-c');
+                UPDATE public."{schemaTable}" SET payload = 'existing-a-v2' WHERE id = 101;
+                """);
+
+            var delta = await service.CaptureBatchAsync(source, stream, CancellationToken.None);
+            delta.CapturedEventCount.ShouldBe(2);
+            publisher.Envelopes.Count.ShouldBe(4);
+            publisher.Envelopes[2].Subject.ShouldBe($"cdc.public.{schemaTable}.insert");
+            publisher.Envelopes[3].Subject.ShouldBe($"cdc.public.{schemaTable}.update");
+        }
+        finally
+        {
+            await ExecuteNonQueryAsync(conn, $"""
+                SELECT CASE WHEN EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = '{slotName}')
+                    THEN pg_drop_replication_slot('{slotName}') END;
+                DROP PUBLICATION IF EXISTS "{pubName}";
+                DROP TABLE IF EXISTS public."{schemaTable}";
+                """);
+        }
+    }
+
     private static async Task ExecuteNonQueryAsync(NpgsqlConnection conn, string sql)
     {
         await using var cmd = new NpgsqlCommand(sql, conn);

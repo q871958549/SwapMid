@@ -25,7 +25,8 @@ Every milestone adheres to five non-negotiable engineering invariants:
 | **`v1.2.1`** *(Released)* | **UI Lifecycle Closure & Reference Blueprints** | Pipeline `StatusBadge` (`Draft`/`Active`/`Paused`/`Archived`), UI Activate/Pause actions, per-row `Test Connection` probe, `ExecutionTargetSummary` in execution history, and `s3-parquet-lakehouse` / `clickhouse-analytics-sink` / `kafka-event-stream-sink` recipes |
 | **`v1.3.0`** *(Released)* | **PostgreSQL Logical Replication (`pgoutput`) CDC** | Native `Npgsql` `pgoutput` WAL reader with strict identifier validation, pre-flight `wal_level=logical` / Publication / Slot provisioning, post-delivery `ConfirmedFlushLsn` advancement, Hangfire polling, CloudEvents (`integration.cdc.events`) & pipeline fanout, and `/data-integration/cdc` console |
 | **`v1.4.0`** *(Released)* | **CDC-to-Sink Streaming, `REPLICA IDENTITY` Diffs & Operational Hardening** | Direct `CdcTargetMode.ExternalSink` streaming (`Kafka` / `ClickHouse` / `S3 Parquet`), `changedColumns` old/new diff computation, pre-flight `TableReplicaIdentities` + `WalLagBytes` inspection, safe `drop-slot` WAL retention release, `swapmid_cdc_wal_lag_bytes` telemetry, and no-tracking concurrent `MessageBus` delivery hardening |
-| **`v1.5.0`** *(Current)* | **Deterministic Kafka Key Ordering, Sink DDL Templates & Batch Replay** | Per-event Kafka partition keys (`TargetSinkKeyColumns` + `EtlSourceBatch.PartitionKeys`), one-click ClickHouse DDL & CDC schema template dialog (`GET /api/v1/cdc-streams/{id}/sink-template`), set-based `POST /api/v1/message-records/batch-replay`, and Prometheus `SwapMidCdcCaptureFailures` / `SwapMidCdcWalLagHigh` alert rules |
+| **`v1.5.0`** *(Released)* | **Deterministic Kafka Key Ordering, Sink DDL Templates & Batch Replay** | Per-event Kafka partition keys (`TargetSinkKeyColumns` + `EtlSourceBatch.PartitionKeys`), one-click ClickHouse DDL & CDC schema template dialog (`GET /api/v1/cdc-streams/{id}/sink-template`), set-based `POST /api/v1/message-records/batch-replay`, and Prometheus `SwapMidCdcCaptureFailures` / `SwapMidCdcWalLagHigh` alert rules |
+| **`v1.6.0`** *(Current)* | **Consistent CDC Initial Snapshot, Keyed ClickHouse Auto-DDL, Grafana CDC & MCP** | PostgreSQL `EXPORT_SNAPSHOT` + `REPEATABLE READ` baseline snapshot (`InitialSnapshotEnabled` + `/snapshot`), keyed ClickHouse `ReplacingMergeTree` DDL & `/provision-sink`, MCP `diagnose_cdc_streams` tool, Grafana CDC dashboard panels, and active CI PG 18 `wal_level=logical` contracts |
 
 ---
 
@@ -79,7 +80,11 @@ Every milestone adheres to five non-negotiable engineering invariants:
 
 ---
 
-## Next Evolution (`v1.3+` Post-LTS Backlog)
+## Next Evolution (`v1.7+` Post-LTS Backlog)
 
-1. **`v1.3.0` — Lightweight PostgreSQL Logical Replication (`pgoutput`) CDC**:
-   - Continuous LSN-checkpointed incremental capture feeding either `MessageBus` CloudEvents or `Upsert-Receipt-V1` ETL targets.
+1. **CDC-to-Relational Row-Level `Upsert` Materialization**:
+   - Reuse existing `columnMappings` and Staging `Upsert-Receipt-V1` writers so PG WAL changes can materialize directly into typed relational target tables alongside event-log sinks.
+2. **Schema Drift Detection & Guardrails**:
+   - Detect upstream DDL column/type shifts during capture and pause affected streams/pipelines with Alertmanager / Bot notifications before silent downstream data corruption.
+3. **Additional Heterogeneous CDC Sources (MySQL Binlog / SQL Server Change Tracking)**:
+   - Extend the `ICdcStreamAppService` and `CdcStreamCaptureCoordinator` abstraction beyond PostgreSQL `pgoutput` as needed.

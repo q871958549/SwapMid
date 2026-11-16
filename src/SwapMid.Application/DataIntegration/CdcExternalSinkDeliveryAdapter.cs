@@ -50,7 +50,9 @@ internal static class CdcExternalSinkDeliveryAdapter
         IReadOnlyList<PgOutputCapturedChange> changes,
         NpgsqlLogSequenceNumber? batchEndLsn,
         IReadOnlyDictionary<DataSourceType, IEtlSinkWriter> sinkWriters,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        long eventSequenceOffset = 0,
+        string? idempotencyKeyOverride = null)
     {
         if (targetSink.Type is not (DataSourceType.Kafka or DataSourceType.ClickHouse or DataSourceType.ObjectStorage))
         {
@@ -78,9 +80,9 @@ internal static class CdcExternalSinkDeliveryAdapter
             Mode = EtlWriteMode.Append,
         };
 
-        var endLsnText = batchEndLsn?.ToString() ?? changes[^1].Lsn;
+        var endLsnText = idempotencyKeyOverride ?? batchEndLsn?.ToString() ?? changes[^1].Lsn;
         var runId = CdcProtocolHelpers.BuildDeterministicPipelineRunId(stream.Id, endLsnText);
-        var rows = BuildRows(stream, changes);
+        var rows = BuildRows(stream, changes, eventSequenceOffset);
         var partitionKeys = BuildPartitionKeys(stream, changes);
 
         return await writer.WriteAsync(
@@ -123,7 +125,8 @@ internal static class CdcExternalSinkDeliveryAdapter
 
     internal static List<object?[]> BuildRows(
         CdcStreamDefinition stream,
-        IReadOnlyList<PgOutputCapturedChange> changes)
+        IReadOnlyList<PgOutputCapturedChange> changes,
+        long eventSequenceOffset = 0)
     {
         var rows = new List<object?[]>(changes.Count);
         var streamIdText = stream.Id.ToString("D");
@@ -131,10 +134,11 @@ internal static class CdcExternalSinkDeliveryAdapter
         for (var i = 0; i < changes.Count; i++)
         {
             var change = changes[i];
+            var seq = (int)((eventSequenceOffset + i) & 0x7FFF_FFFF);
             var eventId = CdcProtocolHelpers.BuildDeterministicEventId(
                 stream.Id,
                 change.Lsn,
-                i,
+                seq,
                 change.Operation,
                 change.Schema,
                 change.Table);

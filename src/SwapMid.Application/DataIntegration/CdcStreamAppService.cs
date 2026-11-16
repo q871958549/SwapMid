@@ -97,7 +97,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         {
             var src = sources.GetValueOrDefault(x.SourceId);
             var sink = x.TargetSinkId.HasValue ? sources.GetValueOrDefault(x.TargetSinkId.Value) : null;
-            return MapToDto(
+            return CdcStreamMappingHelpers.MapToDto(
                 x,
                 src?.Name,
                 x.TargetPipelineId.HasValue ? pipelines.GetValueOrDefault(x.TargetPipelineId.Value) : null,
@@ -124,7 +124,12 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             base.CurrentTenant.Id,
             SwapMidPermissions.DataIntegration.CdcStreams.Create);
 
-        var normalized = await ValidateAndNormalizeInputAsync(input, excludeId: null);
+        var normalized = await CdcStreamMappingHelpers.ValidateAndNormalizeInputAsync(
+            input,
+            excludeId: null,
+            _streamRepository,
+            _sourceRepository,
+            _pipelineRepository);
         var stream = new CdcStreamDefinition(
             GuidGenerator.Create(),
             normalized.Name,
@@ -141,7 +146,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             input.Description,
             normalized.TargetSinkId,
             normalized.TargetSinkDestination,
-            normalized.TargetSinkKeyColumns);
+            normalized.TargetSinkKeyColumns,
+            input.InitialSnapshotEnabled);
 
         await _streamRepository.InsertAsync(stream, autoSave: true);
         return await EnrichDtoAsync(stream);
@@ -155,7 +161,12 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             SwapMidPermissions.DataIntegration.CdcStreams.Update);
 
         var stream = await _streamRepository.GetAsync(id);
-        var normalized = await ValidateAndNormalizeInputAsync(input, excludeId: id);
+        var normalized = await CdcStreamMappingHelpers.ValidateAndNormalizeInputAsync(
+            input,
+            excludeId: id,
+            _streamRepository,
+            _sourceRepository,
+            _pipelineRepository);
 
         stream.Update(
             normalized.Name,
@@ -172,7 +183,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             input.Description,
             normalized.TargetSinkId,
             normalized.TargetSinkDestination,
-            normalized.TargetSinkKeyColumns);
+            normalized.TargetSinkKeyColumns,
+            input.InitialSnapshotEnabled);
 
         await _streamRepository.UpdateAsync(stream, autoSave: true);
         await _scheduleSynchronizer.SyncAsync(stream.Id, stream.Status, stream.PollIntervalSeconds);
@@ -299,6 +311,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         if (result.Dropped)
         {
             stream.ResetCheckpoint(null);
+            stream.ResetSnapshot();
             await _streamRepository.UpdateAsync(stream, autoSave: true, cancellationToken: cancellationToken);
         }
 
@@ -324,118 +337,37 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         return await CdcExternalSinkTemplateBuilder.BuildAsync(stream, sink, _sinkProbeService, cancellationToken);
     }
 
-    private sealed record NormalizedCdcInput(
-        string Name,
-        string PublicationName,
-        string SlotName,
-        string? MonitoredTables,
-        string? TargetTopicName,
-        Guid? TargetPipelineId,
-        Guid? TargetSinkId,
-        string? TargetSinkDestination,
-        string? TargetSinkKeyColumns);
-
-    private async Task<NormalizedCdcInput> ValidateAndNormalizeInputAsync(
-        CdcStreamCreateUpdateDto input,
-        Guid? excludeId)
+    [UnitOfWork(IsDisabled = true)]
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    public Task<CdcSnapshotResultDto> RunSnapshotAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
     {
-        var name = input.Name.Trim();
-        if (await _streamRepository.NameExistsAsync(name, excludeId))
-        {
-            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamNameAlreadyExists);
-        }
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
+            base.CurrentTenant.Id,
+            SwapMidPermissions.DataIntegration.CdcStreams.Manage);
 
-        var source = await _sourceRepository.FindAsync(input.SourceId);
-        if (source == null)
-        {
-            throw new EntityNotFoundException(typeof(DataSource), input.SourceId);
-        }
+        return _captureCoordinator.SnapshotAsync(id, cancellationToken);
+    }
 
-        PgOutputCdcCaptureService.EnsurePostgreSqlSource(source);
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    public async Task<CdcSinkTemplateDto> ProvisionExternalSinkAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
+            base.CurrentTenant.Id,
+            SwapMidPermissions.DataIntegration.CdcStreams.Manage);
 
-        var pub = CdcProtocolHelpers.ValidateReplicationIdentifier(input.PublicationName, "PublicationName");
-        var slot = CdcProtocolHelpers.ValidateReplicationIdentifier(input.SlotName, "SlotName");
-        var parsedTables = CdcProtocolHelpers.ParseMonitoredTables(input.MonitoredTables);
-        var normalizedTables = parsedTables.Count > 0
-            ? string.Join(", ", parsedTables.Select(t => t.FullName))
-            : null;
-
-        string? topicName = null;
-        Guid? pipelineId = null;
-        Guid? sinkId = null;
-        string? sinkDestination = null;
-        string? sinkKeyColumns = null;
-
-        if (input.TargetMode == CdcTargetMode.MessageBusTopic)
-        {
-            topicName = string.IsNullOrWhiteSpace(input.TargetTopicName)
-                ? IntegrationTopicNames.CdcEvents
-                : input.TargetTopicName.Trim();
-        }
-        else if (input.TargetMode == CdcTargetMode.DataPipeline)
-        {
-            if (!input.TargetPipelineId.HasValue)
-            {
-                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-                    .WithData("Reason", "联动管道模式下必须选择关联的目标数据管道。");
-            }
-
-            var pipeline = await _pipelineRepository.FindAsync(input.TargetPipelineId.Value);
-            if (pipeline == null)
-            {
-                throw new EntityNotFoundException(typeof(DataPipeline), input.TargetPipelineId.Value);
-            }
-
-            pipelineId = pipeline.Id;
-        }
-        else if (input.TargetMode == CdcTargetMode.ExternalSink)
-        {
-            if (!input.TargetSinkId.HasValue)
-            {
-                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-                    .WithData("Reason", "外部接收端模式下必须选择目标接收端数据源。");
-            }
-
-            var sink = await _sourceRepository.FindAsync(input.TargetSinkId.Value);
-            if (sink == null)
-            {
-                throw new EntityNotFoundException(typeof(DataSource), input.TargetSinkId.Value);
-            }
-
-            if (sink.Type is not (DataSourceType.Kafka or DataSourceType.ClickHouse or DataSourceType.ObjectStorage))
-            {
-                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-                    .WithData("Reason", $"目标数据源仅支持 Kafka / ClickHouse / ObjectStorage，当前为 {sink.Type}。");
-            }
-
-            var dest = input.TargetSinkDestination?.Trim();
-            if (string.IsNullOrWhiteSpace(dest) || !EtlTransformConfig.IsValidDestinationFor(sink.Type, dest))
-            {
-                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-                    .WithData("Reason", "外部接收端目标标识（Topic / 库表 / 对象前缀）缺失或格式不合法。");
-            }
-
-            var keyCols = CdcProtocolHelpers.ParseSinkKeyColumns(input.TargetSinkKeyColumns);
-            sinkId = sink.Id;
-            sinkDestination = dest;
-            sinkKeyColumns = keyCols.Count > 0 ? string.Join(", ", keyCols) : null;
-        }
-        else
+        var stream = await _streamRepository.GetAsync(id, cancellationToken: cancellationToken);
+        if (stream.TargetMode != CdcTargetMode.ExternalSink || !stream.TargetSinkId.HasValue)
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-                .WithData("Reason", "不支持的 CDC 下游投递模式。");
+                .WithData("Reason", "仅外部接收端（ExternalSink）模式的 CDC 流支持自动初始化下游目标表。");
         }
 
-        return new NormalizedCdcInput(
-            name,
-            pub,
-            slot,
-            normalizedTables,
-            topicName,
-            pipelineId,
-            sinkId,
-            sinkDestination,
-            sinkKeyColumns);
+        var sink = await _sourceRepository.GetAsync(stream.TargetSinkId.Value, cancellationToken: cancellationToken);
+        return await CdcExternalSinkTemplateBuilder.ProvisionClickHouseAsync(stream, sink, _sinkProbeService, cancellationToken);
     }
 
     private async Task<CdcStreamDto> EnrichDtoAsync(CdcStreamDefinition stream)
@@ -447,48 +379,6 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         var sink = stream.TargetSinkId.HasValue
             ? await _sourceRepository.FindAsync(stream.TargetSinkId.Value)
             : null;
-        return MapToDto(stream, source?.Name, pipeline?.Name, sink);
+        return CdcStreamMappingHelpers.MapToDto(stream, source?.Name, pipeline?.Name, sink);
     }
-
-    private static CdcStreamDto MapToDto(
-        CdcStreamDefinition stream,
-        string? sourceName,
-        string? targetPipelineName,
-        DataSource? targetSink) => new()
-    {
-        Id = stream.Id,
-        CreationTime = stream.CreationTime,
-        CreatorId = stream.CreatorId,
-        LastModificationTime = stream.LastModificationTime,
-        LastModifierId = stream.LastModifierId,
-        IsDeleted = stream.IsDeleted,
-        DeleterId = stream.DeleterId,
-        DeletionTime = stream.DeletionTime,
-        Name = stream.Name,
-        Description = stream.Description,
-        SourceId = stream.SourceId,
-        SourceName = sourceName,
-        PublicationName = stream.PublicationName,
-        SlotName = stream.SlotName,
-        MonitoredTables = stream.MonitoredTables,
-        AutoCreatePublicationAndSlot = stream.AutoCreatePublicationAndSlot,
-        PollIntervalSeconds = stream.PollIntervalSeconds,
-        MaxBatchSize = stream.MaxBatchSize,
-        TargetMode = stream.TargetMode,
-        TargetTopicName = stream.TargetTopicName,
-        TargetPipelineId = stream.TargetPipelineId,
-        TargetPipelineName = targetPipelineName,
-        TargetSinkId = stream.TargetSinkId,
-        TargetSinkName = targetSink?.Name,
-        TargetSinkType = targetSink?.Type,
-        TargetSinkDestination = stream.TargetSinkDestination,
-        TargetSinkKeyColumns = stream.TargetSinkKeyColumns,
-        Status = stream.Status,
-        CheckpointLsn = stream.CheckpointLsn,
-        LastCapturedAt = stream.LastCapturedAt,
-        LastCapturedCount = stream.LastCapturedCount,
-        TotalCapturedCount = stream.TotalCapturedCount,
-        LastErrorCode = stream.LastErrorCode,
-        LastErrorMessage = stream.LastErrorMessage,
-    };
 }

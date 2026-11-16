@@ -217,6 +217,11 @@ public class CdcProtocolHelpersTests
         ddl.ShouldContain("CREATE TABLE IF NOT EXISTS `analytics`.`cdc_orders`");
         ddl.ShouldContain("`event_id` String");
         ddl.ShouldContain("ENGINE = MergeTree()");
+
+        var keyedDdl = CdcExternalSinkTemplateBuilder.BuildClickHouseDdl("analytics", "cdc_orders_keyed", ["order_id", "tenant_id"]);
+        keyedDdl.ShouldContain("ENGINE = ReplacingMergeTree(`commit_timestamp_utc`)");
+        keyedDdl.ShouldContain("JSONExtractRaw(coalesce(`after_json`, `before_json`, '{}'), 'order_id')");
+        keyedDdl.ShouldContain("JSONExtractRaw(coalesce(`after_json`, `before_json`, '{}'), 'tenant_id')");
     }
 
     [Fact]
@@ -229,7 +234,16 @@ public class CdcProtocolHelpersTests
             "swapmid_orders_pub",
             "swapmid_orders_slot",
             CdcTargetMode.MessageBusTopic,
-            targetTopicName: "integration.cdc.events");
+            targetTopicName: "integration.cdc.events",
+            initialSnapshotEnabled: true);
+
+        stream.InitialSnapshotEnabled.ShouldBeTrue();
+        stream.SnapshotStatus.ShouldBe(CdcSnapshotStatus.NotStarted);
+        stream.MarkSnapshotSucceeded("0/1500050", 12, DateTime.UtcNow);
+        stream.SnapshotStatus.ShouldBe(CdcSnapshotStatus.Completed);
+        stream.SnapshotRowCount.ShouldBe(12);
+        stream.TotalCapturedCount.ShouldBe(12);
+        stream.CheckpointLsn.ShouldBe("0/1500050");
 
         stream.Status.ShouldBe(CdcStreamStatus.Draft);
         stream.Activate();
@@ -238,21 +252,23 @@ public class CdcProtocolHelpersTests
         stream.MarkCaptureSucceeded("0/1500100", 5, DateTime.UtcNow);
         stream.CheckpointLsn.ShouldBe("0/1500100");
         stream.LastCapturedCount.ShouldBe(5);
-        stream.TotalCapturedCount.ShouldBe(5);
+        stream.TotalCapturedCount.ShouldBe(17);
 
         stream.MarkCaptureFailed(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed, "TransientFailure");
         stream.Status.ShouldBe(CdcStreamStatus.Error);
-        stream.TotalCapturedCount.ShouldBe(5);
+        stream.TotalCapturedCount.ShouldBe(17);
 
         stream.MarkCaptureSucceeded("0/1500200", 3, DateTime.UtcNow);
         stream.Status.ShouldBe(CdcStreamStatus.Active);
         stream.CheckpointLsn.ShouldBe("0/1500200");
         stream.LastCapturedCount.ShouldBe(3);
-        stream.TotalCapturedCount.ShouldBe(8);
+        stream.TotalCapturedCount.ShouldBe(20);
 
         stream.Pause();
         stream.Status.ShouldBe(CdcStreamStatus.Paused);
         stream.ResetCheckpoint("0/1400000");
         stream.CheckpointLsn.ShouldBe("0/1400000");
+        stream.ResetSnapshot();
+        stream.SnapshotStatus.ShouldBe(CdcSnapshotStatus.NotStarted);
     }
 }

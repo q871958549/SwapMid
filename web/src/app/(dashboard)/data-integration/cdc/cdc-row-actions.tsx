@@ -1,8 +1,9 @@
 'use client'
 
-import { Activity, FileCode2, Loader2, PauseCircle, Play, Power, RotateCcw, Unplug } from 'lucide-react'
+import { Activity, DatabaseBackup, FileCode2, Loader2, PauseCircle, Play, Power, RotateCcw, Unplug } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import type { CdcStreamDto } from '@/lib/api/types'
 
 export const CDC_STATUS_ACTIVE = 1
@@ -10,6 +11,45 @@ export const CDC_STATUS_PAUSED = 2
 export const CDC_STATUS_ERROR = 3
 export const CDC_TARGET_PIPELINE = 1
 export const CDC_TARGET_EXTERNAL_SINK = 2
+
+export function getCdcStatusMeta(
+  status: number | undefined,
+  t: ReturnType<typeof useTranslations>,
+  rc: ReturnType<typeof useTranslations>,
+): { label: string; tone: StatusTone } {
+  switch (Number(status)) {
+    case 0:
+      return { label: t('statusDraft'), tone: 'draft' }
+    case CDC_STATUS_ACTIVE:
+      return { label: t('statusActive'), tone: 'success' }
+    case CDC_STATUS_PAUSED:
+      return { label: t('statusPaused'), tone: 'warning' }
+    case CDC_STATUS_ERROR:
+      return { label: t('statusError'), tone: 'danger' }
+    default:
+      return { label: rc('unknown'), tone: 'neutral' }
+  }
+}
+
+export function CdcStatusCell({ stream }: { stream: CdcStreamDto }) {
+  const t = useTranslations('DataIntegration.cdc')
+  const rc = useTranslations('DataIntegration.common')
+  const meta = getCdcStatusMeta(stream.status, t, rc)
+  const snapStatus = Number(stream.snapshotStatus ?? 0)
+  const showSnap = stream.initialSnapshotEnabled || snapStatus > 0
+  const snapLabel = snapStatus === 1
+    ? t('snapshotCompletedBadge', { count: stream.snapshotRowCount ?? 0 })
+    : snapStatus === 2
+      ? t('snapshotFailedBadge')
+      : t('snapshotPendingBadge')
+
+  return (
+    <div className="space-y-1">
+      <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
+      {showSnap && <div className="text-xs text-muted-foreground">{snapLabel}</div>}
+    </div>
+  )
+}
 
 export function CdcTargetCell({ stream }: { stream: CdcStreamDto }) {
   const t = useTranslations('DataIntegration.cdc')
@@ -57,6 +97,7 @@ export function CdcRowActions({
   onPreflight,
   onLifecycle,
   onCaptureNow,
+  onSnapshot,
   onCheckpointReset,
   onDropSlot,
 }: {
@@ -68,6 +109,7 @@ export function CdcRowActions({
   onPreflight: (row: CdcStreamDto) => void
   onLifecycle: (row: CdcStreamDto, action: 'activate' | 'pause') => void
   onCaptureNow: (row: CdcStreamDto) => void
+  onSnapshot: (row: CdcStreamDto) => void
   onCheckpointReset: (row: CdcStreamDto) => void
   onDropSlot: (row: CdcStreamDto) => void
 }) {
@@ -119,6 +161,12 @@ export function CdcRowActions({
               ? <Loader2 className="mr-2 size-3.5 animate-spin" />
               : <Play className="mr-2 size-3.5" />}
             {isActive ? t('captureNowMenuItem') : t('captureRequiresActiveMenuItem')}
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled={busy} onClick={() => onSnapshot(row)}>
+            {busyKind === 'snapshot'
+              ? <Loader2 className="mr-2 size-3.5 animate-spin" />
+              : <DatabaseBackup className="mr-2 size-3.5" />}
+            {t('snapshotMenuItem')}
           </DropdownMenuItem>
           <DropdownMenuItem disabled={busy} onClick={() => onCheckpointReset(row)}>
             <RotateCcw className="mr-2 size-3.5" />

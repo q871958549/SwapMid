@@ -104,4 +104,21 @@ public class CdcStreamController : SwapMidController, ICdcStreamAppService
         Guid id,
         CancellationToken cancellationToken = default)
         => _service.GetSinkTemplateAsync(id, cancellationToken);
+
+    /// <summary>执行一次 PostgreSQL 一致性全量基线快照（EXPORT_SNAPSHOT）并投递下游</summary>
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    [HttpPost("{id}/snapshot")]
+    [UnitOfWork(IsDisabled = true)]
+    public Task<CdcSnapshotResultDto> RunSnapshotAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+        => _service.RunSnapshotAsync(id, cancellationToken);
+
+    /// <summary>针对 ClickHouse 外部接收端自动创建标准 CDC 变更日志表</summary>
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    [HttpPost("{id}/provision-sink")]
+    public Task<CdcSinkTemplateDto> ProvisionExternalSinkAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+        => _service.ProvisionExternalSinkAsync(id, cancellationToken);
 }

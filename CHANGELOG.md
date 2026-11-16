@@ -4,6 +4,19 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-11-16
+
+### Added
+- **Consistent Initial CDC Snapshot + WAL LSN Handshake (`DataIntegration` / `EntityFrameworkCore` / `web/`)**:
+  - Extended `CdcStreamDefinition` (`InitialSnapshotEnabled`, `SnapshotStatus`, `SnapshotCompletedAt`, `SnapshotRowCount`, EF Core migration `AddCdcInitialSnapshot`) and implemented `PgOutputCdcSnapshotReader` using PostgreSQL `LogicalSlotSnapshotInitMode.Export` (`SET TRANSACTION SNAPSHOT` under `REPEATABLE READ`), guaranteeing gapless & duplicate-free baseline table export seamlessly anchored to `slot.ConsistentPoint` before WAL streaming begins.
+  - Added automatic initial snapshot execution on first capture when enabled, explicit `POST /api/v1/cdc-streams/{id}/snapshot` (`RunSnapshotAsync`), per-chunk deterministic `RunId` & `event_id` deduplication, and `/data-integration/cdc` UI switch + snapshot status badge + `全量快照` / `Initial Snapshot` row action.
+- **Keyed ClickHouse `ReplacingMergeTree` Templates & One-Click Provisioning (`DataIntegration` / `web/`)**:
+  - Upgraded `CdcExternalSinkTemplateBuilder.BuildClickHouseDdl` to emit `ENGINE = ReplacingMergeTree(commit_timestamp_utc)` keyed on `JSONExtractRaw(coalesce(after_json, before_json, '{}'), '<key>')` when `targetSinkKeyColumns` is configured, and added `POST /api/v1/cdc-streams/{id}/provision-sink` (`ProvisionExternalSinkAsync`) paired with the UI `一键建表` / `Create Table` button inside `CdcSinkTemplateDialog`.
+- **AI MCP CDC Diagnostics, Grafana CDC Dashboard & CI Logical Replication Gate (`Mcp` / `docker/observability/` / `.github/workflows/`)**:
+  - Added RBAC-gated `diagnose_cdc_streams` MCP tool (`SwapMid.DataIntegration.CdcStreams.Default`, redacted secrets, optional live WAL lag preflight via `McpCdcDiagnosticsHandler`).
+  - Added Prometheus-backed Grafana CDC panels (`swapmid_cdc_captures_total`, `swapmid_cdc_events_captured_total`, `swapmid_cdc_deliveries_total`, `swapmid_cdc_wal_lag_bytes`) in `docker/observability/grafana/dashboards/swapmid-overview.json`.
+  - Activated PostgreSQL 18 `wal_level=logical` container + `SWAPMID_RUN_POSTGRES_CDC_CONTRACT_TESTS=1` in `.github/workflows/ci.yml`.
+
 ## [1.5.0] - 2026-11-16
 
 ### Added

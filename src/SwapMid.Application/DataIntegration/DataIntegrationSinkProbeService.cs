@@ -144,6 +144,45 @@ public class DataIntegrationSinkProbeService : ITransientDependency
         return ParseClickHouseSystemColumns(body);
     }
 
+    internal async Task ExecuteClickHouseDdlAsync(
+        ClickHouseSinkConfig config,
+        string destination,
+        string ddlSql,
+        CancellationToken cancellationToken)
+    {
+        await DataIntegrationSinkEndpointPolicy.ValidateHttpEndpointAsync(
+            config.BuildBaseUri(),
+            _configuration,
+            cancellationToken);
+
+        var (dbName, _) = SplitClickHouseTable(config.Database, destination);
+        var escapedDb = dbName.Replace("`", "``", StringComparison.Ordinal);
+        var baseUri = config.BuildBaseUri();
+        var client = _httpClientFactory.CreateClient(ExternalHttpClientNames.DataIntegrationSink);
+
+        using (var createDbReq = CreateClickHousePostRequest(
+            baseUri,
+            config,
+            $"CREATE DATABASE IF NOT EXISTS `{escapedDb}`"))
+        using (var createDbRes = await client.SendAsync(createDbReq, HttpCompletionOption.ResponseContentRead, cancellationToken))
+        {
+            if (!createDbRes.IsSuccessStatusCode)
+            {
+                var err = await createDbRes.Content.ReadAsStringAsync(cancellationToken);
+                throw new InvalidOperationException($"ClickHouse create database failed ({(int)createDbRes.StatusCode}): {TruncateError(err)}");
+            }
+        }
+
+        var queryUri = new Uri(baseUri, $"?database={Uri.EscapeDataString(dbName)}");
+        using var ddlReq = CreateClickHousePostRequest(queryUri, config, ddlSql);
+        using var ddlRes = await client.SendAsync(ddlReq, HttpCompletionOption.ResponseContentRead, cancellationToken);
+        if (!ddlRes.IsSuccessStatusCode)
+        {
+            var err = await ddlRes.Content.ReadAsStringAsync(cancellationToken);
+            throw new InvalidOperationException($"ClickHouse DDL execution failed ({(int)ddlRes.StatusCode}): {TruncateError(err)}");
+        }
+    }
+
     internal static HttpRequestMessage CreateClickHousePostRequest(
         Uri requestUri,
         ClickHouseSinkConfig config,

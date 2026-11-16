@@ -4,6 +4,21 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-11-16
+
+### Added
+- **Direct Analytical & Event-Stream CDC Sink Delivery (`CdcTargetMode.ExternalSink = 2`)**:
+  - Extended `CdcStreamDefinition` (`TargetSinkId`, `TargetSinkDestination`, EF Core migration `AddCdcExternalSinkAndWalGovernance`) so captured PostgreSQL `pgoutput` WAL batches stream directly to configured `Kafka`, `ClickHouse`, or `ObjectStorage` (`S3/MinIO` Parquet / JSONL) sinks via `CdcExternalSinkDeliveryAdapter` and pluggable `IEtlSinkWriter` implementations while keeping SSRF guards, deterministic `RunId` idempotency, and post-delivery `ConfirmedFlushLsn` advancement.
+  - Updated `/data-integration/cdc` (`CdcFormDialog`, `CdcStreamsClient`) to create, edit, and display External Sink CDC streams alongside Message Bus and Data Pipeline targets.
+- **`REPLICA IDENTITY` Diffs, WAL Lag Governance & Replication Slot Drop (`DataIntegration` / `web/`)**:
+  - Added `CdcProtocolHelpers.ComputeChangedColumns` (`changedColumns` in `integration.cdc.events` JSON payloads and `changed_columns` in External Sink rows, excluding `__toast_unchanged__` markers).
+  - Upgraded `PgOutputReplicationMetadataReader` and `CdcPreflightResultDto` to report `WalLagBytes` (`pg_wal_lsn_diff`) and per-table `TableReplicaIdentities` (`default` / `full` / `index` / `nothing`), exposed in the UI Pre-flight dialog (`WalLagBytes` formatting & per-table `StatusBadge` chips) and Prometheus telemetry (`swapmid_cdc_wal_lag_bytes`, `swapmid_cdc_deliveries_total`).
+  - Added `POST /api/v1/cdc-streams/{id}/drop-slot` (`ICdcStreamAppService.DropSlotAsync`) and the paused-stream UI `释放槽位` / `Drop Slot` confirmation workflow to safely release idle upstream replication slots and stop WAL retention.
+
+### Fixed
+- **Concurrent `MessageBus` Delivery Tracking Contention**:
+  - Added no-tracking topic lookups (`IMessageTopicRepository.FindNoTrackingAsync` / `FindByNameNoTrackingAsync`) across `MessageDeliveryBackgroundJob`, `MessageBusIntegrationEventPublisher`, `PlatformMessagePublisher`, and `MessageRecordAppService`, eliminating optimistic concurrency exceptions (`MessageTopic Modified`) under concurrent delivery jobs.
+
 ## [1.3.0] - 2026-11-16
 
 ### Added

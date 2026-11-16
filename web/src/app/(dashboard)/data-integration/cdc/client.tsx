@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { type ColumnDef, type SortingState } from '@tanstack/react-table'
-import { Activity, Loader2, PauseCircle, Play, Power, RotateCcw } from 'lucide-react'
+import { Activity, Loader2, PauseCircle, Play, Power, RotateCcw, Unplug } from 'lucide-react'
 import {
   actionsColumn,
   numberColumn,
@@ -24,12 +24,13 @@ import type { PagedResult } from '@/lib/api-client'
 import { getApiErrorMessage } from '@/lib/api-error'
 import type {
   CdcCaptureResultDto,
+  CdcDropSlotResultDto,
   CdcPreflightResultDto,
   CdcStreamDto,
 } from '@/lib/api/types'
 import { useCrudForm } from '@/lib/crud/use-crud-form'
 import { useCrudResource } from '@/lib/crud/use-crud-resource'
-import { CdcCheckpointDialog, CdcPreflightDialog, type CdcPreflightState } from './cdc-dialogs'
+import { CdcCheckpointDialog, CdcDropSlotDialog, CdcPreflightDialog, type CdcPreflightState } from './cdc-dialogs'
 import {
   CdcFormDialog,
   defaultCdcForm,
@@ -45,6 +46,7 @@ const CDC_STATUS_ACTIVE = 1
 const CDC_STATUS_PAUSED = 2
 const CDC_STATUS_ERROR = 3
 const CDC_TARGET_PIPELINE = 1
+const CDC_TARGET_EXTERNAL_SINK = 2
 
 function getStatusMeta(
   status: number | undefined,
@@ -68,6 +70,7 @@ function getStatusMeta(
 export function CdcStreamsClient({
   data,
   sources,
+  sinks = [],
   pipelines,
   topics,
   initialPage = 0,
@@ -82,6 +85,7 @@ export function CdcStreamsClient({
 }: {
   data: PagedResult<CdcStreamDto>
   sources: CdcSourceOption[]
+  sinks?: CdcSourceOption[]
   pipelines: CdcPipelineOption[]
   topics: CdcTopicOption[]
   initialPage?: number
@@ -106,6 +110,9 @@ export function CdcStreamsClient({
   const [checkpointInput, setCheckpointInput] = useState('')
   const [checkpointSubmitting, setCheckpointSubmitting] = useState(false)
   const [checkpointError, setCheckpointError] = useState<string | null>(null)
+  const [dropSlotTarget, setDropSlotTarget] = useState<CdcStreamDto | null>(null)
+  const [dropSlotSubmitting, setDropSlotSubmitting] = useState(false)
+  const [dropSlotError, setDropSlotError] = useState<string | null>(null)
 
   const list = useCrudResource<CdcStreamDto>({
     endpoint: 'cdc-streams',
@@ -252,6 +259,34 @@ export function CdcStreamsClient({
     }
   }, [checkpointInput, checkpointTarget, list, t])
 
+  const openDropSlotDialog = useCallback((row: CdcStreamDto) => {
+    setDropSlotTarget(row)
+    setDropSlotError(null)
+  }, [])
+
+  const submitDropSlot = useCallback(async () => {
+    if (!dropSlotTarget) return
+    setDropSlotSubmitting(true)
+    setDropSlotError(null)
+    try {
+      const res = await fetch(`/api/proxy/cdc-streams/${dropSlotTarget.id}/drop-slot`, { method: 'POST' })
+      if (!res.ok) {
+        setDropSlotError(await getApiErrorMessage(res, t('dropSlotFailedFallback')))
+        return
+      }
+      const result = await res.json() as CdcDropSlotResultDto
+      toast({
+        variant: 'success',
+        title: t('dropSlotSuccessTitle'),
+        description: result.message || result.slotName,
+      })
+      setDropSlotTarget(null)
+      await list.reloadAndRefresh()
+    } finally {
+      setDropSlotSubmitting(false)
+    }
+  }, [dropSlotTarget, list, t])
+
   const columns: ColumnDef<CdcStreamDto, unknown>[] = useMemo(() => [
     primaryColumn<CdcStreamDto>('name', t('colName'), {
       onOpen: canUpdate ? crud.openEdit : undefined,
@@ -279,15 +314,29 @@ export function CdcStreamsClient({
       enableSorting: false,
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('colTarget')} />,
       cell: ({ row }) => {
-        const isPipeline = Number(row.original.targetMode) === CDC_TARGET_PIPELINE
+        const mode = Number(row.original.targetMode)
+        if (mode === CDC_TARGET_PIPELINE) {
+          return (
+            <div className="space-y-0.5 text-xs">
+              <div className="font-medium">{t('targetModePipeline')}</div>
+              <div className="font-mono text-muted-foreground">{row.original.targetPipelineName || '-'}</div>
+            </div>
+          )
+        }
+        if (mode === CDC_TARGET_EXTERNAL_SINK) {
+          return (
+            <div className="space-y-0.5 text-xs">
+              <div className="font-medium">{t('targetModeExternalSink')}</div>
+              <div className="font-mono text-muted-foreground">
+                {`${row.original.targetSinkName || '-'} · ${row.original.targetSinkDestination || '-'}`}
+              </div>
+            </div>
+          )
+        }
         return (
           <div className="space-y-0.5 text-xs">
-            <div className="font-medium">
-              {isPipeline ? t('targetModePipeline') : t('targetModeTopic')}
-            </div>
-            <div className="font-mono text-muted-foreground">
-              {isPipeline ? (row.original.targetPipelineName || '-') : (row.original.targetTopicName || '-')}
-            </div>
+            <div className="font-medium">{t('targetModeTopic')}</div>
+            <div className="font-mono text-muted-foreground">{row.original.targetTopicName || '-'}</div>
           </div>
         )
       },
@@ -367,6 +416,12 @@ export function CdcStreamsClient({
                   <RotateCcw className="mr-2 size-3.5" />
                   {t('resetCheckpointMenuItem')}
                 </DropdownMenuItem>
+                {canDelete && !isActive && (
+                  <DropdownMenuItem disabled={busy} onClick={() => openDropSlotDialog(row)}>
+                    <Unplug className="mr-2 size-3.5" />
+                    {t('dropSlotMenuItem')}
+                  </DropdownMenuItem>
+                )}
               </>
             )
           }
@@ -383,6 +438,7 @@ export function CdcStreamsClient({
     handlePreflight,
     locale,
     openCheckpointDialog,
+    openDropSlotDialog,
     rc,
     t,
   ])
@@ -434,7 +490,7 @@ export function CdcStreamsClient({
         )}
       />
 
-      <CdcFormDialog crud={crud} sources={sources} pipelines={pipelines} topics={topics} />
+      <CdcFormDialog crud={crud} sources={sources} sinks={sinks} pipelines={pipelines} topics={topics} />
       <CdcPreflightDialog state={preflightState} onClose={() => setPreflightState(null)} />
       <CdcCheckpointDialog
         target={checkpointTarget}
@@ -444,6 +500,13 @@ export function CdcStreamsClient({
         onValueChange={setCheckpointInput}
         onClose={() => setCheckpointTarget(null)}
         onSubmit={() => void submitCheckpointReset()}
+      />
+      <CdcDropSlotDialog
+        target={dropSlotTarget}
+        submitting={dropSlotSubmitting}
+        error={dropSlotError}
+        onClose={() => setDropSlotTarget(null)}
+        onSubmit={() => void submitDropSlot()}
       />
       <DeleteConfirm
         crud={crud}

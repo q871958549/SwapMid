@@ -21,4 +21,7 @@ public enum CdcTargetMode
 
     /// <summary>触发已激活的数据管道同步批/分析型 Sink。</summary>
     DataPipeline = 1,
+
+    /// <summary>直接流式写入外部分析或事件接收端（Kafka / ClickHouse / 对象存储）。</summary>
+    ExternalSink = 2,
 }

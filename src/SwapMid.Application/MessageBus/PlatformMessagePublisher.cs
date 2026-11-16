@@ -32,7 +32,7 @@ public class PlatformMessagePublisher : IPlatformMessagePublisher, ITransientDep
     public async Task PublishAsync(string topicName, string subject, string payload)
     {
         // 主题缺失 / 禁用 → 静默跳过,不打断业务(D4)。
-        var topic = await _topicRepository.FirstOrDefaultAsync(x => x.Name == topicName);
+        var topic = await _topicRepository.FindByNameNoTrackingAsync(topicName);
         if (topic is null || !topic.IsEnabled)
         {
             _logger.LogWarning(

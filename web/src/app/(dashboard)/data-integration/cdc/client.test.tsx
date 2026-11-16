@@ -48,6 +48,8 @@ vi.mock('@/lib/crud/use-crud-form', () => ({
       targetMode: '0',
       targetTopicName: 'integration.cdc.events',
       targetPipelineId: '',
+      targetSinkId: '',
+      targetSinkDestination: '',
     },
     openEdit: mocks.openEdit,
     openCreate: mocks.openCreate,
@@ -172,6 +174,10 @@ describe('CdcStreamsClient', () => {
         slotPlugin: 'pgoutput',
         confirmedFlushLsn: '0/16B6C50',
         currentWalLsn: '0/16B6D00',
+        walLagBytes: 2097152,
+        tableReplicaIdentities: [
+          { schema: 'public', table: 'etl_demo_source_orders', replicaIdentity: 'full' },
+        ],
         diagnostics: [],
         summary: 'Ready for logical replication',
       }),
@@ -185,6 +191,30 @@ describe('CdcStreamsClient', () => {
     })
     expect(await screen.findByText('logical')).toBeTruthy()
     expect(screen.getByText('0/16B6C50')).toBeTruthy()
+    expect(screen.getByText('2.00 MB')).toBeTruthy()
+    expect(screen.getByText('public.etl_demo_source_orders · full')).toBeTruthy()
+  })
+
+  it('drops an idle replication slot after confirmation', async () => {
+    mocks.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        streamId: STREAM_ID,
+        slotName: 'swapmid_orders_slot',
+        dropped: true,
+        message: 'Dropped slot swapmid_orders_slot',
+      }),
+    })
+
+    renderClient(makeStream({ status: 2 }))
+    fireEvent.click(screen.getByRole('button', { name: '释放槽位' }))
+    const buttons = await screen.findAllByRole('button', { name: '释放槽位' })
+    fireEvent.click(buttons[buttons.length - 1])
+
+    await waitFor(() => {
+      expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/drop-slot`, { method: 'POST' })
+      expect(mocks.reloadAndRefresh).toHaveBeenCalledOnce()
+    })
   })
 
   it('activates a Draft stream and refreshes list', async () => {

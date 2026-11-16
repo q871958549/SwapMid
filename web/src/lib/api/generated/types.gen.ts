@@ -840,6 +840,13 @@ export type SwapMidDataIntegrationCdcCaptureResultDto = {
     message?: string | null;
 };
 
+export type SwapMidDataIntegrationCdcDropSlotResultDto = {
+    streamId?: string;
+    slotName?: string | null;
+    dropped?: boolean;
+    message?: string | null;
+};
+
 export type SwapMidDataIntegrationCdcPreflightResultDto = {
     isReady?: boolean;
     walLevel?: string | null;
@@ -850,6 +857,8 @@ export type SwapMidDataIntegrationCdcPreflightResultDto = {
     slotPlugin?: string | null;
     confirmedFlushLsn?: string | null;
     currentWalLsn?: string | null;
+    walLagBytes?: number | null;
+    tableReplicaIdentities?: Array<SwapMidDataIntegrationCdcTableReplicaIdentityDto> | null;
     diagnostics?: Array<string> | null;
     summary?: string | null;
 };
@@ -871,6 +880,8 @@ export type SwapMidDataIntegrationCdcStreamCreateUpdateDto = {
     targetMode?: SwapMidDataIntegrationCdcTargetMode;
     targetTopicName?: string | null;
     targetPipelineId?: string | null;
+    targetSinkId?: string | null;
+    targetSinkDestination?: string | null;
 };
 
 export type SwapMidDataIntegrationCdcStreamDto = {
@@ -896,6 +907,10 @@ export type SwapMidDataIntegrationCdcStreamDto = {
     targetTopicName?: string | null;
     targetPipelineId?: string | null;
     targetPipelineName?: string | null;
+    targetSinkId?: string | null;
+    targetSinkName?: string | null;
+    targetSinkType?: SwapMidDataIntegrationDataSourceType;
+    targetSinkDestination?: string | null;
     status?: SwapMidDataIntegrationCdcStreamStatus;
     checkpointLsn?: string | null;
     lastCapturedAt?: string | null;
@@ -910,10 +925,16 @@ export type SwapMidDataIntegrationCdcStreamDto = {
  */
 export type SwapMidDataIntegrationCdcStreamStatus = 0 | 1 | 2 | 3;
 
+export type SwapMidDataIntegrationCdcTableReplicaIdentityDto = {
+    schema?: string | null;
+    table?: string | null;
+    replicaIdentity?: string | null;
+};
+
 /**
- * 0=MessageBusTopic；1=DataPipeline
+ * 0=MessageBusTopic；1=DataPipeline；2=ExternalSink
  */
-export type SwapMidDataIntegrationCdcTargetMode = 0 | 1;
+export type SwapMidDataIntegrationCdcTargetMode = 0 | 1 | 2;
 
 /**
  * 数据源连接器能力声明。
@@ -3056,128 +3077,128 @@ export type SwapMidSystemManagementSystemHealthDto = {
     items?: Array<SwapMidSystemManagementHealthItemDto> | null;
 };
 
-export type VoloAbpApplicationDtosListResultDto1SwapMidAccountManagementAccountRoleDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosListResultDto1SwapMidAccountManagementAccountRoleDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidAccountManagementAccountRoleDto> | null;
 };
 
-export type VoloAbpApplicationDtosListResultDto1SwapMidAccountManagementAccountUserLiteDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosListResultDto1SwapMidAccountManagementAccountUserLiteDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidAccountManagementAccountUserLiteDto> | null;
 };
 
-export type VoloAbpApplicationDtosListResultDto1SwapMidAccountManagementAuditUserLookupDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosListResultDto1SwapMidAccountManagementAuditUserLookupDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidAccountManagementAuditUserLookupDto> | null;
 };
 
-export type VoloAbpApplicationDtosListResultDto1SwapMidSystemManagementDataDictionaryItemDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosListResultDto1SwapMidSystemManagementDataDictionaryItemDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidSystemManagementDataDictionaryItemDto> | null;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidAccountManagementAccountRoleDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidAccountManagementAccountRoleDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidAccountManagementAccountRoleDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidAccountManagementAccountUserDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidAccountManagementAccountUserDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidAccountManagementAccountUserDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidAccountManagementRolePermissionChangeDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidAccountManagementRolePermissionChangeDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidAccountManagementRolePermissionChangeDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidApiManagementApiGroupDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidApiManagementApiGroupDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidApiManagementApiGroupDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidApiManagementApiRouteDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidApiManagementApiRouteDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidApiManagementApiRouteDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidDataIntegrationCdcStreamDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidDataIntegrationCdcStreamDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidDataIntegrationCdcStreamDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidDataIntegrationDataPipelineDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidDataIntegrationDataPipelineDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidDataIntegrationDataPipelineDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidDataIntegrationDataSourceDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidDataIntegrationDataSourceDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidDataIntegrationDataSourceDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidDataIntegrationPipelineExecutionDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidDataIntegrationPipelineExecutionDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidDataIntegrationPipelineExecutionDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidEnterpriseManagementCompanyDepartmentDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidEnterpriseManagementCompanyDepartmentDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidEnterpriseManagementCompanyDepartmentDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidEnterpriseManagementEmployeeDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidEnterpriseManagementEmployeeDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidEnterpriseManagementEmployeeDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidEnterpriseManagementEnterpriseDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidEnterpriseManagementEnterpriseDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidEnterpriseManagementEnterpriseDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidEnterpriseManagementPositionDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidEnterpriseManagementPositionDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidEnterpriseManagementPositionDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidMessageBusMessageRecordDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidMessageBusMessageRecordDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidMessageBusMessageRecordDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidMessageBusMessageSubscriptionDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidMessageBusMessageSubscriptionDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidMessageBusMessageSubscriptionDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidMessageBusMessageTopicDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidMessageBusMessageTopicDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidMessageBusMessageTopicDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidNotificationNotificationLogDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidNotificationNotificationLogDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidNotificationNotificationLogDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidNotificationNotificationRecipientDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidNotificationNotificationRecipientDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidNotificationNotificationRecipientDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidSchedulingScheduledJobExecutionDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidSchedulingScheduledJobExecutionDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidSchedulingScheduledJobExecutionDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidSystemManagementAuditLogDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidSystemManagementAuditLogDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidSystemManagementAuditLogDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidSystemManagementCodeRuleDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidSystemManagementCodeRuleDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidSystemManagementCodeRuleDto> | null;
     totalCount?: number;
 };
 
-export type VoloAbpApplicationDtosPagedResultDto1SwapMidSystemManagementDataDictionaryDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null = {
+export type VoloAbpApplicationDtosPagedResultDto1SwapMidSystemManagementDataDictionaryDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null = {
     items?: Array<SwapMidSystemManagementDataDictionaryDto> | null;
     totalCount?: number;
 };
@@ -3353,7 +3374,7 @@ export type GetApiV1AccountRolesResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidAccountManagementAccountRoleDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidAccountManagementAccountRoleDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1AccountRolesResponse = GetApiV1AccountRolesResponses[keyof GetApiV1AccountRolesResponses];
@@ -3640,7 +3661,7 @@ export type GetApiV1AccountRolesByRoleNamePermissionChangesResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidAccountManagementRolePermissionChangeDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidAccountManagementRolePermissionChangeDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1AccountRolesByRoleNamePermissionChangesResponse = GetApiV1AccountRolesByRoleNamePermissionChangesResponses[keyof GetApiV1AccountRolesByRoleNamePermissionChangesResponses];
@@ -3895,7 +3916,7 @@ export type GetApiV1AccountUsersResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidAccountManagementAccountUserDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidAccountManagementAccountUserDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1AccountUsersResponse = GetApiV1AccountUsersResponses[keyof GetApiV1AccountUsersResponses];
@@ -4228,7 +4249,7 @@ export type GetApiV1AccountUsersAssignableRolesResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosListResultDto1SwapMidAccountManagementAccountRoleDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosListResultDto1SwapMidAccountManagementAccountRoleDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1AccountUsersAssignableRolesResponse = GetApiV1AccountUsersAssignableRolesResponses[keyof GetApiV1AccountUsersAssignableRolesResponses];
@@ -4273,7 +4294,7 @@ export type GetApiV1AccountUsersForAssignmentResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosListResultDto1SwapMidAccountManagementAccountUserLiteDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosListResultDto1SwapMidAccountManagementAccountUserLiteDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1AccountUsersForAssignmentResponse = GetApiV1AccountUsersForAssignmentResponses[keyof GetApiV1AccountUsersForAssignmentResponses];
@@ -4570,7 +4591,7 @@ export type GetApiV1ApiGroupsResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidApiManagementApiGroupDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidApiManagementApiGroupDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1ApiGroupsResponse = GetApiV1ApiGroupsResponses[keyof GetApiV1ApiGroupsResponses];
@@ -4827,7 +4848,7 @@ export type GetApiV1ApiRoutesResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidApiManagementApiRouteDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidApiManagementApiRouteDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1ApiRoutesResponse = GetApiV1ApiRoutesResponses[keyof GetApiV1ApiRoutesResponses];
@@ -5196,7 +5217,7 @@ export type GetApiV1AuditLogsResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidSystemManagementAuditLogDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidSystemManagementAuditLogDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1AuditLogsResponse = GetApiV1AuditLogsResponses[keyof GetApiV1AuditLogsResponses];
@@ -5288,7 +5309,7 @@ export type PostApiV1AuditUsersLookupResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosListResultDto1SwapMidAccountManagementAuditUserLookupDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosListResultDto1SwapMidAccountManagementAuditUserLookupDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type PostApiV1AuditUsersLookupResponse = PostApiV1AuditUsersLookupResponses[keyof PostApiV1AuditUsersLookupResponses];
@@ -5513,7 +5534,7 @@ export type GetApiV1CdcStreamsResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidDataIntegrationCdcStreamDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidDataIntegrationCdcStreamDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1CdcStreamsResponse = GetApiV1CdcStreamsResponses[keyof GetApiV1CdcStreamsResponses];
@@ -5951,6 +5972,53 @@ export type PutApiV1CdcStreamsByIdCheckpointResponses = {
 
 export type PutApiV1CdcStreamsByIdCheckpointResponse = PutApiV1CdcStreamsByIdCheckpointResponses[keyof PutApiV1CdcStreamsByIdCheckpointResponses];
 
+export type PostApiV1CdcStreamsByIdDropSlotData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/cdc-streams/{id}/drop-slot';
+};
+
+export type PostApiV1CdcStreamsByIdDropSlotErrors = {
+    /**
+     * Bad Request
+     */
+    400: VoloAbpHttpRemoteServiceErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: VoloAbpHttpRemoteServiceErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: VoloAbpHttpRemoteServiceErrorResponse;
+    /**
+     * Not Found
+     */
+    404: VoloAbpHttpRemoteServiceErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: VoloAbpHttpRemoteServiceErrorResponse;
+    /**
+     * Not Implemented
+     */
+    501: VoloAbpHttpRemoteServiceErrorResponse;
+};
+
+export type PostApiV1CdcStreamsByIdDropSlotError = PostApiV1CdcStreamsByIdDropSlotErrors[keyof PostApiV1CdcStreamsByIdDropSlotErrors];
+
+export type PostApiV1CdcStreamsByIdDropSlotResponses = {
+    /**
+     * OK
+     */
+    200: SwapMidDataIntegrationCdcDropSlotResultDto;
+};
+
+export type PostApiV1CdcStreamsByIdDropSlotResponse = PostApiV1CdcStreamsByIdDropSlotResponses[keyof PostApiV1CdcStreamsByIdDropSlotResponses];
+
 export type GetApiV1CodeRulesData = {
     body?: never;
     path?: never;
@@ -6003,7 +6071,7 @@ export type GetApiV1CodeRulesResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidSystemManagementCodeRuleDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidSystemManagementCodeRuleDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1CodeRulesResponse = GetApiV1CodeRulesResponses[keyof GetApiV1CodeRulesResponses];
@@ -6345,7 +6413,7 @@ export type GetApiV1DepartmentsResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidEnterpriseManagementCompanyDepartmentDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidEnterpriseManagementCompanyDepartmentDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1DepartmentsResponse = GetApiV1DepartmentsResponses[keyof GetApiV1DepartmentsResponses];
@@ -6774,7 +6842,7 @@ export type GetApiV1DataDictionariesResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidSystemManagementDataDictionaryDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidSystemManagementDataDictionaryDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1DataDictionariesResponse = GetApiV1DataDictionariesResponses[keyof GetApiV1DataDictionariesResponses];
@@ -7011,7 +7079,7 @@ export type GetApiV1DataDictionariesByDictionaryIdItemsResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosListResultDto1SwapMidSystemManagementDataDictionaryItemDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosListResultDto1SwapMidSystemManagementDataDictionaryItemDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1DataDictionariesByDictionaryIdItemsResponse = GetApiV1DataDictionariesByDictionaryIdItemsResponses[keyof GetApiV1DataDictionariesByDictionaryIdItemsResponses];
@@ -7201,7 +7269,7 @@ export type GetApiV1DataDictionariesByCodeByCodeItemsResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosListResultDto1SwapMidSystemManagementDataDictionaryItemDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosListResultDto1SwapMidSystemManagementDataDictionaryItemDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1DataDictionariesByCodeByCodeItemsResponse = GetApiV1DataDictionariesByCodeByCodeItemsResponses[keyof GetApiV1DataDictionariesByCodeByCodeItemsResponses];
@@ -7268,7 +7336,7 @@ export type GetApiV1DataPipelinesResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidDataIntegrationDataPipelineDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidDataIntegrationDataPipelineDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1DataPipelinesResponse = GetApiV1DataPipelinesResponses[keyof GetApiV1DataPipelinesResponses];
@@ -7762,7 +7830,7 @@ export type GetApiV1DataSourcesResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidDataIntegrationDataSourceDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidDataIntegrationDataSourceDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1DataSourcesResponse = GetApiV1DataSourcesResponses[keyof GetApiV1DataSourcesResponses];
@@ -8447,7 +8515,7 @@ export type GetApiV1EmployeesResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidEnterpriseManagementEmployeeDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidEnterpriseManagementEmployeeDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1EmployeesResponse = GetApiV1EmployeesResponses[keyof GetApiV1EmployeesResponses];
@@ -8877,7 +8945,7 @@ export type GetApiV1EnterprisesResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidEnterpriseManagementEnterpriseDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidEnterpriseManagementEnterpriseDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1EnterprisesResponse = GetApiV1EnterprisesResponses[keyof GetApiV1EnterprisesResponses];
@@ -9461,7 +9529,7 @@ export type GetApiV1MessageRecordsResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidMessageBusMessageRecordDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidMessageBusMessageRecordDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1MessageRecordsResponse = GetApiV1MessageRecordsResponses[keyof GetApiV1MessageRecordsResponses];
@@ -9714,7 +9782,7 @@ export type GetApiV1MessageSubscriptionsResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidMessageBusMessageSubscriptionDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidMessageBusMessageSubscriptionDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1MessageSubscriptionsResponse = GetApiV1MessageSubscriptionsResponses[keyof GetApiV1MessageSubscriptionsResponses];
@@ -9967,7 +10035,7 @@ export type GetApiV1MessageTopicsResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidMessageBusMessageTopicDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidMessageBusMessageTopicDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1MessageTopicsResponse = GetApiV1MessageTopicsResponses[keyof GetApiV1MessageTopicsResponses];
@@ -10355,7 +10423,7 @@ export type GetApiV1NotificationLogsResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidNotificationNotificationLogDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidNotificationNotificationLogDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1NotificationLogsResponse = GetApiV1NotificationLogsResponses[keyof GetApiV1NotificationLogsResponses];
@@ -10404,7 +10472,7 @@ export type GetApiV1NotificationRecipientsResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidNotificationNotificationRecipientDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidNotificationNotificationRecipientDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1NotificationRecipientsResponse = GetApiV1NotificationRecipientsResponses[keyof GetApiV1NotificationRecipientsResponses];
@@ -10894,7 +10962,7 @@ export type GetApiV1PipelineExecutionsResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidDataIntegrationPipelineExecutionDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidDataIntegrationPipelineExecutionDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1PipelineExecutionsResponse = GetApiV1PipelineExecutionsResponses[keyof GetApiV1PipelineExecutionsResponses];
@@ -11167,7 +11235,7 @@ export type GetApiV1PositionsResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidEnterpriseManagementPositionDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidEnterpriseManagementPositionDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1PositionsResponse = GetApiV1PositionsResponses[keyof GetApiV1PositionsResponses];
@@ -11520,7 +11588,7 @@ export type GetApiV1SchedulingExecutionsResponses = {
     /**
      * OK
      */
-    200: VoloAbpApplicationDtosPagedResultDto1SwapMidSchedulingScheduledJobExecutionDto_SwapMidApplicationContracts_Version_1300_Culture_neutral_PublicKeyToken_null;
+    200: VoloAbpApplicationDtosPagedResultDto1SwapMidSchedulingScheduledJobExecutionDto_SwapMidApplicationContracts_Version_1400_Culture_neutral_PublicKeyToken_null;
 };
 
 export type GetApiV1SchedulingExecutionsResponse = GetApiV1SchedulingExecutionsResponses[keyof GetApiV1SchedulingExecutionsResponses];

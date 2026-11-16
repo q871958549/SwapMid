@@ -122,8 +122,8 @@ GRAFANA_ADMIN_PASSWORD="ChangeMe_Grafana!2026" \
    - Enable `wal_level = logical`, `max_replication_slots >= 4`, and `max_wal_senders >= 4` (restart PostgreSQL when changing `wal_level`).
    - Grant `REPLICATION` (or DBA-precreated Publication + Slot ownership) and `SELECT` on monitored tables to the SwapMid DataSource user.
 2. **Pre-flight & Least-Privilege Provisioning**:
-   - Use **Pre-flight** (`/data-integration/cdc` or `POST /api/v1/cdc-streams/{id}/preflight`) to verify `wal_level = logical`, Publication/Slot existence, and current WAL position before activation.
+   - Use **Pre-flight** (`/data-integration/cdc` or `POST /api/v1/cdc-streams/{id}/preflight`) to verify `wal_level = logical`, Publication/Slot existence, per-table `REPLICA IDENTITY` mode (`full` / `index` / `default` / `nothing`), retained WAL lag (`walLagBytes`), and current WAL position before activation.
    - Disable `autoCreatePublicationAndSlot` in locked-down environments after DBA pre-creation (`CREATE PUBLICATION ... FOR TABLE ...` and `SELECT pg_create_logical_replication_slot(..., 'pgoutput')`).
 3. **Replication Slot Retention & Disk Monitoring**:
-   - Monitor PostgreSQL inactive replication slots (`SELECT slot_name, active, confirmed_flush_lsn, pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)) AS retained_wal FROM pg_replication_slots;`) alongside Prometheus metric `swapmid_cdc_captures_total` and System Health item **PostgreSQL CDC 捕获失败率**.
-   - Always **Pause** or **Delete** retired CDC streams and drop unused PostgreSQL replication slots so retained WAL cannot exhaust disk space.
+   - Monitor PostgreSQL inactive replication slots (`SELECT slot_name, active, confirmed_flush_lsn, pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)) AS retained_wal FROM pg_replication_slots;`) alongside Prometheus metrics (`swapmid_cdc_captures_total`, `swapmid_cdc_wal_lag_bytes`, `swapmid_cdc_deliveries_total`) and System Health item **PostgreSQL CDC 捕获失败率**.
+   - Always **Pause** retired CDC streams and run **Drop Slot** (`POST /api/v1/cdc-streams/{id}/drop-slot` or row menu **释放槽位**) to release unused upstream PostgreSQL replication slots so retained WAL cannot exhaust disk space.

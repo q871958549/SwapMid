@@ -46,6 +46,12 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
     /// <summary>当 TargetMode = DataPipeline 时联动触发的数据管道 Id。</summary>
     public Guid? TargetPipelineId { get; private set; }
 
+    /// <summary>当 TargetMode = ExternalSink 时的外部接收端数据源 Id（Kafka / ClickHouse / 对象存储）。</summary>
+    public Guid? TargetSinkId { get; private set; }
+
+    /// <summary>当 TargetMode = ExternalSink 时的下游目标标识（Kafka Topic / ClickHouse 库表 / 对象前缀）。</summary>
+    public string? TargetSinkDestination { get; private set; }
+
     /// <summary>运行状态（草稿 / 启用 / 暂停 / 异常）。</summary>
     public CdcStreamStatus Status { get; private set; }
 
@@ -82,7 +88,9 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         bool autoCreatePublicationAndSlot = true,
         int pollIntervalSeconds = CdcStreamConsts.DefaultPollIntervalSeconds,
         int maxBatchSize = CdcStreamConsts.DefaultBatchSize,
-        string? description = null)
+        string? description = null,
+        Guid? targetSinkId = null,
+        string? targetSinkDestination = null)
         : base(id)
     {
         ApplyConfiguration(
@@ -93,6 +101,8 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             targetMode,
             targetTopicName,
             targetPipelineId,
+            targetSinkId,
+            targetSinkDestination,
             monitoredTables,
             autoCreatePublicationAndSlot,
             pollIntervalSeconds,
@@ -113,7 +123,9 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         bool autoCreatePublicationAndSlot,
         int pollIntervalSeconds,
         int maxBatchSize,
-        string? description)
+        string? description,
+        Guid? targetSinkId = null,
+        string? targetSinkDestination = null)
     {
         ApplyConfiguration(
             name,
@@ -123,6 +135,8 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             targetMode,
             targetTopicName,
             targetPipelineId,
+            targetSinkId,
+            targetSinkDestination,
             monitoredTables,
             autoCreatePublicationAndSlot,
             pollIntervalSeconds,
@@ -195,6 +209,8 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         CdcTargetMode targetMode,
         string? targetTopicName,
         Guid? targetPipelineId,
+        Guid? targetSinkId,
+        string? targetSinkDestination,
         string? monitoredTables,
         bool autoCreatePublicationAndSlot,
         int pollIntervalSeconds,
@@ -228,6 +244,13 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             ? null
             : Check.Length(targetTopicName.Trim(), nameof(targetTopicName), CdcStreamConsts.MaxTargetTopicNameLength);
         TargetPipelineId = targetPipelineId;
+        TargetSinkId = targetSinkId;
+        TargetSinkDestination = string.IsNullOrWhiteSpace(targetSinkDestination)
+            ? null
+            : Check.Length(
+                targetSinkDestination.Trim(),
+                nameof(targetSinkDestination),
+                CdcStreamConsts.MaxTargetSinkDestinationLength);
         Description = string.IsNullOrWhiteSpace(description)
             ? null
             : Check.Length(description.Trim(), nameof(description), CdcStreamConsts.MaxDescriptionLength);

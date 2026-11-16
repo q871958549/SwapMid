@@ -7,12 +7,32 @@ import { Dialog } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ScrollableDialogContent } from '@/components/ui/scrollable-dialog'
-import { StatusBadge } from '@/components/ui/status-badge'
+import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import type { CdcPreflightResultDto, CdcStreamDto } from '@/lib/api/types'
 
 export interface CdcPreflightState {
   stream: CdcStreamDto
   result: CdcPreflightResultDto
+}
+
+function formatWalBytes(bytes: number | null | undefined): string {
+  if (bytes === null || bytes === undefined) return '-'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
+}
+
+function getReplicaIdentityTone(mode: string | null | undefined): StatusTone {
+  switch (mode) {
+    case 'full':
+      return 'success'
+    case 'index':
+      return 'info'
+    case 'nothing':
+      return 'danger'
+    default:
+      return 'warning'
+  }
 }
 
 function MetricField({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
@@ -76,7 +96,28 @@ export function CdcPreflightDialog({
                 value={state.result.currentWalLsn || '-'}
                 mono
               />
+              <MetricField
+                label={t('preflightWalLagLabel')}
+                value={formatWalBytes(state.result.walLagBytes)}
+                mono
+              />
             </div>
+
+            {state.result.tableReplicaIdentities && state.result.tableReplicaIdentities.length > 0 && (
+              <div className="space-y-1.5 rounded-md border bg-muted/30 px-3 py-2.5">
+                <div className="text-xs text-muted-foreground">{t('preflightReplicaIdentityLabel')}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {state.result.tableReplicaIdentities.map(item => (
+                    <StatusBadge
+                      key={`${item.schema}.${item.table}`}
+                      tone={getReplicaIdentityTone(item.replicaIdentity)}
+                    >
+                      {`${item.schema}.${item.table} · ${item.replicaIdentity}`}
+                    </StatusBadge>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {state.result.diagnostics && state.result.diagnostics.length > 0 && (
               <div className="space-y-1.5 rounded-md border border-warning/35 bg-warning-soft p-3 text-xs text-warning">
@@ -147,6 +188,45 @@ export function CdcCheckpointDialog({
             </div>
             {error && <p className="text-xs text-destructive">{error}</p>}
           </div>
+        </ScrollableDialogContent>
+      )}
+    </Dialog>
+  )
+}
+
+export function CdcDropSlotDialog({
+  target,
+  submitting,
+  error,
+  onClose,
+  onSubmit,
+}: {
+  target: CdcStreamDto | null
+  submitting: boolean
+  error: string | null
+  onClose: () => void
+  onSubmit: () => void
+}) {
+  const t = useTranslations('DataIntegration.cdc')
+  const tc = useTranslations('Common')
+
+  return (
+    <Dialog open={!!target} onOpenChange={(open) => { if (!open) onClose() }}>
+      {target && (
+        <ScrollableDialogContent
+          title={t('dropSlotDialogTitle', { slot: target.slotName })}
+          description={t('dropSlotDialogDesc', { name: target.name, slot: target.slotName })}
+          className="sm:max-w-md"
+          footer={(
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" disabled={submitting} onClick={onClose}>{tc('cancel')}</Button>
+              <Button variant="destructive" disabled={submitting} onClick={onSubmit}>
+                {submitting ? tc('processing') : t('dropSlotConfirmButton')}
+              </Button>
+            </div>
+          )}
+        >
+          {error && <p className="text-xs text-destructive">{error}</p>}
         </ScrollableDialogContent>
       )}
     </Dialog>

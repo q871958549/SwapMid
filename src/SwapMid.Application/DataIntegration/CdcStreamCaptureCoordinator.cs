@@ -59,6 +59,7 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
 
         CdcStreamDefinition stream;
         DataSource source;
+        DataSource? targetSink = null;
         using (var readUow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: false))
         {
             stream = await _streamRepository.GetAsync(id, cancellationToken: cancellationToken);
@@ -68,12 +69,19 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
             }
 
             source = await _sourceRepository.GetAsync(stream.SourceId, cancellationToken: cancellationToken);
+            if (stream.TargetMode == CdcTargetMode.ExternalSink && stream.TargetSinkId.HasValue)
+            {
+                targetSink = await _sourceRepository.FindAsync(
+                    stream.TargetSinkId.Value,
+                    cancellationToken: cancellationToken);
+            }
+
             await readUow.CompleteAsync(cancellationToken);
         }
 
         try
         {
-            var batch = await _captureService.CaptureBatchAsync(source, stream, cancellationToken);
+            var batch = await _captureService.CaptureBatchAsync(source, stream, targetSink, cancellationToken);
 
             using (var writeUow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: true))
             {

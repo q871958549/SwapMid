@@ -128,4 +128,70 @@ public class CdcStreamAppServiceTests : SwapMidEntityFrameworkCoreTestBase
                 _cdcAppService.GetListAsync(new GetCdcStreamListInput()));
         }
     }
+
+    [Fact]
+    public async Task Should_Validate_And_Enrich_ExternalSink_TargetMode()
+    {
+        var pgSource = await _dataSourceAppService.CreateAsync(new DataSourceCreateUpdateDto
+        {
+            Name = $"pg-src-{Guid.NewGuid():N}"[..32],
+            Type = DataSourceType.RelationalDatabase,
+            Config = """{"provider":"postgresql","host":"127.0.0.1","port":5432,"database":"swapmid","username":"postgres"}""",
+        });
+        var s3Sink = await _dataSourceAppService.CreateAsync(new DataSourceCreateUpdateDto
+        {
+            Name = $"minio-cdc-sink-{Guid.NewGuid():N}"[..32],
+            Type = DataSourceType.ObjectStorage,
+            Config = """{"endpoint":"http://127.0.0.1:9000","region":"us-east-1","bucket":"datalake","prefix":"cdc","format":"parquet","usePathStyle":true,"accessKey":"minioadmin","secretKey":"minioadmin"}""",
+        });
+
+        var invalidSinkEx = await Should.ThrowAsync<BusinessException>(() =>
+            _cdcAppService.CreateAsync(new CdcStreamCreateUpdateDto
+            {
+                Name = $"bad-sink-{Guid.NewGuid():N}"[..32],
+                SourceId = pgSource.Id,
+                PublicationName = "pub_bad",
+                SlotName = "slot_bad",
+                TargetMode = CdcTargetMode.ExternalSink,
+                TargetSinkId = pgSource.Id,
+                TargetSinkDestination = "orders",
+            }));
+        invalidSinkEx.Code.ShouldBe(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid);
+
+        var invalidDestEx = await Should.ThrowAsync<BusinessException>(() =>
+            _cdcAppService.CreateAsync(new CdcStreamCreateUpdateDto
+            {
+                Name = $"bad-dest-{Guid.NewGuid():N}"[..32],
+                SourceId = pgSource.Id,
+                PublicationName = "pub_bad2",
+                SlotName = "slot_bad2",
+                TargetMode = CdcTargetMode.ExternalSink,
+                TargetSinkId = s3Sink.Id,
+                TargetSinkDestination = "../escape",
+            }));
+        invalidDestEx.Code.ShouldBe(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid);
+
+        var created = await _cdcAppService.CreateAsync(new CdcStreamCreateUpdateDto
+        {
+            Name = $"pg-to-parquet-{Guid.NewGuid():N}"[..32],
+            SourceId = pgSource.Id,
+            PublicationName = "pub_parquet",
+            SlotName = "slot_parquet",
+            MonitoredTables = "public.etl_demo_source_orders",
+            TargetMode = CdcTargetMode.ExternalSink,
+            TargetSinkId = s3Sink.Id,
+            TargetSinkDestination = "cdc/orders",
+        });
+
+        created.TargetMode.ShouldBe(CdcTargetMode.ExternalSink);
+        created.TargetSinkId.ShouldBe(s3Sink.Id);
+        created.TargetSinkName.ShouldBe(s3Sink.Name);
+        created.TargetSinkType.ShouldBe(DataSourceType.ObjectStorage);
+        created.TargetSinkDestination.ShouldBe("cdc/orders");
+
+        var list = await _cdcAppService.GetListAsync(new GetCdcStreamListInput { Filter = "pub_parquet" });
+        list.TotalCount.ShouldBe(1);
+        list.Items[0].TargetSinkName.ShouldBe(s3Sink.Name);
+        list.Items[0].TargetSinkType.ShouldBe(DataSourceType.ObjectStorage);
+    }
 }

@@ -3350,7 +3350,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetMode",
                 "cnName": "",
                 "type": "CdcTargetMode",
-                "description": "取值：0=MessageBusTopic；1=DataPipeline",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink",
                 "nullable": false
               },
               {
@@ -3369,6 +3369,34 @@ export const API_MODULES: ApiModule[] = [
               },
               {
                 "name": "targetPipelineName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkType",
+                "cnName": "",
+                "type": "DataSourceType",
+                "description": "取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）",
+                "nullable": false
+              },
+              {
+                "name": "targetSinkDestination",
                 "cnName": "",
                 "type": "string",
                 "description": "",
@@ -3526,7 +3554,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetMode",
                 "cnName": "",
                 "type": "CdcTargetMode",
-                "description": "取值：0=MessageBusTopic；1=DataPipeline",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink",
                 "required": false
               },
               {
@@ -3540,6 +3568,20 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetPipelineId",
                 "cnName": "",
                 "type": "Guid",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "targetSinkId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "targetSinkDestination",
+                "cnName": "",
+                "type": "string",
                 "description": "",
                 "required": false
               }
@@ -3626,7 +3668,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetMode",
                 "cnName": "",
                 "type": "CdcTargetMode",
-                "description": "取值：0=MessageBusTopic；1=DataPipeline",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink",
                 "nullable": false
               },
               {
@@ -3645,6 +3687,34 @@ export const API_MODULES: ApiModule[] = [
               },
               {
                 "name": "targetPipelineName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkType",
+                "cnName": "",
+                "type": "DataSourceType",
+                "description": "取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）",
+                "nullable": false
+              },
+              {
+                "name": "targetSinkDestination",
                 "cnName": "",
                 "type": "string",
                 "description": "",
@@ -3825,7 +3895,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetMode",
                 "cnName": "",
                 "type": "CdcTargetMode",
-                "description": "取值：0=MessageBusTopic；1=DataPipeline",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink",
                 "nullable": false
               },
               {
@@ -3844,6 +3914,34 @@ export const API_MODULES: ApiModule[] = [
               },
               {
                 "name": "targetPipelineName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkType",
+                "cnName": "",
+                "type": "DataSourceType",
+                "description": "取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）",
+                "nullable": false
+              },
+              {
+                "name": "targetSinkDestination",
                 "cnName": "",
                 "type": "string",
                 "description": "",
@@ -4010,7 +4108,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetMode",
                 "cnName": "",
                 "type": "CdcTargetMode",
-                "description": "取值：0=MessageBusTopic；1=DataPipeline",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink",
                 "required": false
               },
               {
@@ -4024,6 +4122,20 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetPipelineId",
                 "cnName": "",
                 "type": "Guid",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "targetSinkId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "targetSinkDestination",
+                "cnName": "",
+                "type": "string",
                 "description": "",
                 "required": false
               }
@@ -4110,7 +4222,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetMode",
                 "cnName": "",
                 "type": "CdcTargetMode",
-                "description": "取值：0=MessageBusTopic；1=DataPipeline",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink",
                 "nullable": false
               },
               {
@@ -4129,6 +4241,34 @@ export const API_MODULES: ApiModule[] = [
               },
               {
                 "name": "targetPipelineName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkType",
+                "cnName": "",
+                "type": "DataSourceType",
+                "description": "取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）",
+                "nullable": false
+              },
+              {
+                "name": "targetSinkDestination",
                 "cnName": "",
                 "type": "string",
                 "description": "",
@@ -4414,7 +4554,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetMode",
                 "cnName": "",
                 "type": "CdcTargetMode",
-                "description": "取值：0=MessageBusTopic；1=DataPipeline",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink",
                 "nullable": false
               },
               {
@@ -4433,6 +4573,34 @@ export const API_MODULES: ApiModule[] = [
               },
               {
                 "name": "targetPipelineName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkType",
+                "cnName": "",
+                "type": "DataSourceType",
+                "description": "取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）",
+                "nullable": false
+              },
+              {
+                "name": "targetSinkDestination",
                 "cnName": "",
                 "type": "string",
                 "description": "",
@@ -4513,6 +4681,51 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "Guid",
                 "description": "最后修改人 ID",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/cdc-streams/{id}/drop-slot",
+            "summary": "安全释放闲置的 PostgreSQL 逻辑复制槽并清空检查点位点",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "slotName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "dropped",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "message",
+                "cnName": "",
+                "type": "string",
+                "description": "",
                 "nullable": true
               }
             ]
@@ -4605,6 +4818,41 @@ export const API_MODULES: ApiModule[] = [
               },
               {
                 "name": "currentWalLsn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "walLagBytes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "tableReplicaIdentities",
+                "cnName": "",
+                "type": "CdcTableReplicaIdentityDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "tableReplicaIdentities[].schema",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "tableReplicaIdentities[].table",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "tableReplicaIdentities[].replicaIdentity",
                 "cnName": "",
                 "type": "string",
                 "description": "",

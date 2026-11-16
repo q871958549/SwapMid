@@ -103,7 +103,56 @@ public class CdcProtocolHelpersTests
 
         json.ShouldContain("\"operation\":\"update\"");
         json.ShouldContain("\"lsn\":\"0/1500000\"");
+        json.ShouldContain("\"changedColumns\":[\"status\"]");
         json.ShouldContain("\"status\":\"paid\"");
+    }
+
+    [Fact]
+    public void ComputeChangedColumns_And_ExternalSinkAdapter_Should_Exclude_Toast_Unchanged_And_Map_Rows()
+    {
+        var changed = CdcProtocolHelpers.ComputeChangedColumns(
+            new Dictionary<string, object?> { ["id"] = 1, ["status"] = "SHIPPED", ["notes"] = "__toast_unchanged__" },
+            new Dictionary<string, object?> { ["id"] = 1, ["status"] = "PAID", ["notes"] = "large-text" });
+        changed.ShouldBe(["status"]);
+
+        CdcProtocolHelpers.ComputeChangedColumns(new Dictionary<string, object?> { ["id"] = 1 }, null).ShouldBeNull();
+        CdcProtocolHelpers.MapReplicaIdentityCode("d").ShouldBe("default");
+        CdcProtocolHelpers.MapReplicaIdentityCode("f").ShouldBe("full");
+        CdcProtocolHelpers.MapReplicaIdentityCode("i").ShouldBe("index");
+        CdcProtocolHelpers.MapReplicaIdentityCode("n").ShouldBe("nothing");
+
+        var stream = new CdcStreamDefinition(
+            Guid.NewGuid(),
+            "pg-orders-kafka",
+            Guid.NewGuid(),
+            "swapmid_orders_pub",
+            "swapmid_orders_slot",
+            CdcTargetMode.ExternalSink,
+            targetSinkId: Guid.NewGuid(),
+            targetSinkDestination: "cdc.orders.events");
+
+        var rows = CdcExternalSinkDeliveryAdapter.BuildRows(
+            stream,
+            [
+                new PgOutputCapturedChange(
+                    "public",
+                    "orders",
+                    "update",
+                    "0/1600000",
+                    new DateTime(2026, 11, 16, 1, 2, 3, DateTimeKind.Utc),
+                    new Dictionary<string, object?> { ["order_id"] = 99L, ["status"] = "SHIPPED" },
+                    new Dictionary<string, object?> { ["order_id"] = 99L, ["status"] = "PAID" }),
+            ]);
+
+        rows.Count.ShouldBe(1);
+        rows[0].Length.ShouldBe(11);
+        rows[0][4].ShouldBe("orders");
+        rows[0][5].ShouldBe("update");
+        rows[0][8].ShouldBe("[\"status\"]");
+        var afterJson = rows[0][9].ShouldBeOfType<string>();
+        var beforeJson = rows[0][10].ShouldBeOfType<string>();
+        afterJson.ShouldContain("SHIPPED");
+        beforeJson.ShouldContain("PAID");
     }
 
     [Fact]

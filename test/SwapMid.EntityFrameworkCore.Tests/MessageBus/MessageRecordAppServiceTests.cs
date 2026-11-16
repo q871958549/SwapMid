@@ -389,6 +389,46 @@ public class MessageRecordAppServiceTests : SwapMidEntityFrameworkCoreTestBase
         _recorder.ScheduledDeliveries.Count.ShouldBe(1);
     }
 
+    [Fact]
+    public async Task Should_Deliver_When_Topic_Updated_Concurrently_Between_Read_And_Record_Save()
+    {
+        var topic = await CreateTopicAsync(TopicType.Broadcast);
+        await CreateSubscriptionAsync(topic.Id, "orders-webhook");
+
+        var first = await _recordAppService.PublishAsync(new PublishMessageDto
+        {
+            TopicId = topic.Id,
+            Subject = "cdc.public.orders.insert",
+            Payload = "{\"order_id\":90001}"
+        });
+        var second = await _recordAppService.PublishAsync(new PublishMessageDto
+        {
+            TopicId = topic.Id,
+            Subject = "cdc.public.orders.update",
+            Payload = "{\"order_id\":90001}"
+        });
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            // Simulate concurrent modification of the topic while delivery job holds topic snapshot in UoW.
+            await ExecuteDeliveryJobAsync(first.Id);
+            await _topicAppService.UpdateAsync(topic.Id, new MessageTopicCreateUpdateDto
+            {
+                Name = topic.Name,
+                Type = topic.Type,
+                Description = "Updated while delivery active",
+                RetryCount = 5,
+                RetryIntervalSeconds = 10,
+            });
+            await ExecuteDeliveryJobAsync(second.Id);
+        });
+
+        var delivered1 = await _recordAppService.GetAsync(first.Id);
+        var delivered2 = await _recordAppService.GetAsync(second.Id);
+        delivered1.Status.ShouldBe(MessageStatus.Delivered);
+        delivered2.Status.ShouldBe(MessageStatus.Delivered);
+    }
+
     private int RequestsTo(string subscriptionName)
         => _recorder.Requests.Count(r => r.SubscriptionName == subscriptionName);
 

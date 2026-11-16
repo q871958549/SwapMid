@@ -21,6 +21,10 @@ public class CdcStreamDto : FullAuditedEntityDto<Guid>
     public string? TargetTopicName { get; set; }
     public Guid? TargetPipelineId { get; set; }
     public string? TargetPipelineName { get; set; }
+    public Guid? TargetSinkId { get; set; }
+    public string? TargetSinkName { get; set; }
+    public DataSourceType? TargetSinkType { get; set; }
+    public string? TargetSinkDestination { get; set; }
     public CdcStreamStatus Status { get; set; }
     public string? CheckpointLsn { get; set; }
     public DateTime? LastCapturedAt { get; set; }
@@ -67,6 +71,11 @@ public class CdcStreamCreateUpdateDto
     public string? TargetTopicName { get; set; }
 
     public Guid? TargetPipelineId { get; set; }
+
+    public Guid? TargetSinkId { get; set; }
+
+    [StringLength(256)]
+    public string? TargetSinkDestination { get; set; }
 }
 
 public class GetCdcStreamListInput : PagedAndSortedResultRequestDto
@@ -74,6 +83,13 @@ public class GetCdcStreamListInput : PagedAndSortedResultRequestDto
     public string? Filter { get; set; }
     public Guid? SourceId { get; set; }
     public CdcStreamStatus? Status { get; set; }
+}
+
+public class CdcTableReplicaIdentityDto
+{
+    public string Schema { get; set; } = null!;
+    public string Table { get; set; } = null!;
+    public string ReplicaIdentity { get; set; } = null!;
 }
 
 public class CdcPreflightResultDto
@@ -87,8 +103,18 @@ public class CdcPreflightResultDto
     public string? SlotPlugin { get; set; }
     public string? ConfirmedFlushLsn { get; set; }
     public string? CurrentWalLsn { get; set; }
+    public long? WalLagBytes { get; set; }
+    public List<CdcTableReplicaIdentityDto> TableReplicaIdentities { get; set; } = new();
     public List<string> Diagnostics { get; set; } = new();
     public string Summary { get; set; } = null!;
+}
+
+public class CdcDropSlotResultDto
+{
+    public Guid StreamId { get; set; }
+    public string SlotName { get; set; } = null!;
+    public bool Dropped { get; set; }
+    public string Message { get; set; } = null!;
 }
 
 public class CdcCaptureResultDto

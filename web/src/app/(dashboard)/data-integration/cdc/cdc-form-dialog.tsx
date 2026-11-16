@@ -25,9 +25,11 @@ export interface CdcFormState {
   autoCreatePublicationAndSlot: boolean
   pollIntervalSeconds: string
   maxBatchSize: string
-  targetMode: '0' | '1'
+  targetMode: '0' | '1' | '2'
   targetTopicName: string
   targetPipelineId: string
+  targetSinkId: string
+  targetSinkDestination: string
 }
 
 export const DEFAULT_CDC_TOPIC = 'integration.cdc.events'
@@ -45,6 +47,14 @@ export const defaultCdcForm: CdcFormState = {
   targetMode: '0',
   targetTopicName: DEFAULT_CDC_TOPIC,
   targetPipelineId: '',
+  targetSinkId: '',
+  targetSinkDestination: '',
+}
+
+function normalizeTargetMode(mode: number | undefined): '0' | '1' | '2' {
+  if (Number(mode) === 1) return '1'
+  if (Number(mode) === 2) return '2'
+  return '0'
 }
 
 export function toCdcForm(item: CdcStreamDto): CdcFormState {
@@ -58,16 +68,18 @@ export function toCdcForm(item: CdcStreamDto): CdcFormState {
     autoCreatePublicationAndSlot: item.autoCreatePublicationAndSlot,
     pollIntervalSeconds: String(item.pollIntervalSeconds || 15),
     maxBatchSize: String(item.maxBatchSize || 500),
-    targetMode: Number(item.targetMode) === 1 ? '1' : '0',
+    targetMode: normalizeTargetMode(item.targetMode),
     targetTopicName: item.targetTopicName ?? DEFAULT_CDC_TOPIC,
     targetPipelineId: item.targetPipelineId ?? '',
+    targetSinkId: item.targetSinkId ?? '',
+    targetSinkDestination: item.targetSinkDestination ?? '',
   }
 }
 
 export function toCdcBody(form: CdcFormState) {
   const poll = Number.parseInt(form.pollIntervalSeconds, 10)
   const batch = Number.parseInt(form.maxBatchSize, 10)
-  const mode = form.targetMode === '1' ? 1 : 0
+  const mode = Number(form.targetMode) === 1 ? 1 : (Number(form.targetMode) === 2 ? 2 : 0)
   return {
     name: form.name.trim(),
     description: form.description.trim() || null,
@@ -81,6 +93,8 @@ export function toCdcBody(form: CdcFormState) {
     targetMode: mode,
     targetTopicName: mode === 0 ? (form.targetTopicName.trim() || null) : null,
     targetPipelineId: mode === 1 ? (form.targetPipelineId || null) : null,
+    targetSinkId: mode === 2 ? (form.targetSinkId || null) : null,
+    targetSinkDestination: mode === 2 ? (form.targetSinkDestination.trim() || null) : null,
   }
 }
 
@@ -95,17 +109,35 @@ export function isCdcFormValid(form: CdcFormState): boolean {
   if (form.targetMode === '0') {
     return form.targetTopicName.trim().length > 0
   }
-  return form.targetPipelineId.trim().length > 0
+  if (form.targetMode === '1') {
+    return form.targetPipelineId.trim().length > 0
+  }
+  return form.targetSinkId.trim().length > 0 && form.targetSinkDestination.trim().length > 0
+}
+
+function getSinkTypeTag(type: number): string {
+  switch (type) {
+    case 3:
+      return 'Kafka'
+    case 4:
+      return 'ClickHouse'
+    case 5:
+      return 'S3/MinIO'
+    default:
+      return 'Sink'
+  }
 }
 
 export function CdcFormDialog({
   crud,
   sources,
+  sinks = [],
   pipelines,
   topics,
 }: {
   crud: ReturnType<typeof useCrudForm<CdcFormState, CdcStreamDto>>
   sources: CdcSourceOption[]
+  sinks?: CdcSourceOption[]
   pipelines: CdcPipelineOption[]
   topics: CdcTopicOption[]
 }) {
@@ -114,9 +146,19 @@ export function CdcFormDialog({
   const tc = useTranslations('Common')
 
   const sourceOptions: ComboboxOption[] = sources.map(s => ({ value: s.id, label: s.name }))
+  const sinkOptions: ComboboxOption[] = sinks.map(s => ({
+    value: s.id,
+    label: `${s.name} (${getSinkTypeTag(s.type)})`,
+  }))
   const pipelineOptions: ComboboxOption[] = pipelines.map(p => ({ value: p.id, label: p.name }))
   const topicNames = Array.from(new Set([DEFAULT_CDC_TOPIC, ...topics.map(item => item.name).filter(Boolean)]))
   const topicOptions: ComboboxOption[] = topicNames.map(name => ({ value: name, label: name }))
+  const selectedSink = sinks.find(s => s.id === crud.form.targetSinkId)
+  const sinkDestPlaceholder = selectedSink?.type === 3
+    ? t('sinkDestKafkaPlaceholder')
+    : selectedSink?.type === 4
+      ? t('sinkDestClickHousePlaceholder')
+      : t('sinkDestObjectStoragePlaceholder')
 
   return (
     <CrudFormDialog
@@ -221,12 +263,13 @@ export function CdcFormDialog({
           <Label>{t('targetModeFieldLabel')}</Label>
           <Select
             value={crud.form.targetMode}
-            onValueChange={v => crud.set({ targetMode: v === '1' ? '1' : '0' })}
+            onValueChange={v => crud.set({ targetMode: v === '1' ? '1' : (v === '2' ? '2' : '0') })}
           >
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="0">{t('targetModeTopic')}</SelectItem>
               <SelectItem value="1">{t('targetModePipeline')}</SelectItem>
+              <SelectItem value="2">{t('targetModeExternalSink')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -243,7 +286,7 @@ export function CdcFormDialog({
               emptyText={t('topicEmptyText')}
             />
           </div>
-        ) : (
+        ) : crud.form.targetMode === '1' ? (
           <div className="space-y-1.5">
             <Label>{t('targetPipelineFieldLabel')}</Label>
             <Combobox
@@ -255,8 +298,33 @@ export function CdcFormDialog({
               emptyText={t('pipelineEmptyText')}
             />
           </div>
+        ) : (
+          <div className="space-y-1.5">
+            <Label>{t('targetSinkFieldLabel')}</Label>
+            <Combobox
+              options={sinkOptions}
+              value={crud.form.targetSinkId}
+              onChange={v => crud.set({ targetSinkId: v })}
+              placeholder={t('sinkPlaceholder')}
+              searchPlaceholder={t('sinkSearchPlaceholder')}
+              emptyText={t('sinkEmptyText')}
+            />
+          </div>
         )}
       </div>
+
+      {crud.form.targetMode === '2' && (
+        <div className="space-y-1.5">
+          <Label>{t('targetSinkDestFieldLabel')}</Label>
+          <Input
+            value={crud.form.targetSinkDestination}
+            onChange={e => crud.set({ targetSinkDestination: e.target.value })}
+            placeholder={sinkDestPlaceholder}
+            className="font-mono"
+          />
+          <p className="text-xs text-muted-foreground">{t('targetSinkDestHint')}</p>
+        </div>
+      )}
 
       <div className="space-y-1.5">
         <Label>{tc('description')}</Label>

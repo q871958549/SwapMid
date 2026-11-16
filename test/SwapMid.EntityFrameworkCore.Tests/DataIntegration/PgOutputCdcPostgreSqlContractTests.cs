@@ -85,6 +85,8 @@ public sealed class PgOutputCdcPostgreSqlContractTests
             var preflight1 = await service.PreflightAsync(source, stream, CancellationToken.None);
             preflight1.IsReady.ShouldBeTrue();
             preflight1.WalLevel.ShouldBe("logical");
+            preflight1.TableReplicaIdentities.ShouldContain(
+                x => x.Schema == "public" && x.Table == schemaTable && x.ReplicaIdentity == "full");
 
             // Initial capture provisions publication & slot at current WAL point.
             var initBatch = await service.CaptureBatchAsync(source, stream, CancellationToken.None);
@@ -108,6 +110,7 @@ public sealed class PgOutputCdcPostgreSqlContractTests
             var postPreflight = await service.PreflightAsync(source, stream, CancellationToken.None);
             postPreflight.SlotExists.ShouldBeTrue();
             postPreflight.ConfirmedFlushLsn.ShouldBe(batch.NewCheckpointLsn);
+            postPreflight.WalLagBytes.ShouldNotBeNull();
 
             publisher.Envelopes.Select(e => e.Subject).ShouldBe(new[]
             {
@@ -115,6 +118,8 @@ public sealed class PgOutputCdcPostgreSqlContractTests
                 $"cdc.public.{schemaTable}.update",
                 $"cdc.public.{schemaTable}.delete",
             });
+            publisher.Envelopes[1].PayloadJson.ShouldContain("\"changedColumns\":[\"payload\"]");
+            publisher.Envelopes[1].PayloadJson.ShouldContain("\"alpha\"");
 
             CdcProtocolHelpers.CompareLsn(initBatch.NewCheckpointLsn, batch.NewCheckpointLsn).ShouldBeLessThanOrEqualTo(0);
 
@@ -123,6 +128,11 @@ public sealed class PgOutputCdcPostgreSqlContractTests
             var replayBatch = await service.CaptureBatchAsync(source, stream, CancellationToken.None);
             replayBatch.CapturedEventCount.ShouldBe(0);
             publisher.Envelopes.Count.ShouldBe(3);
+
+            var dropResult = await service.DropSlotAsync(source, stream, CancellationToken.None);
+            dropResult.Dropped.ShouldBeTrue();
+            var afterDrop = await service.PreflightAsync(source, stream, CancellationToken.None);
+            afterDrop.SlotExists.ShouldBeFalse();
         }
         finally
         {

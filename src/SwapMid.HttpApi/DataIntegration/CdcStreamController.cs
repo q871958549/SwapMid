@@ -89,4 +89,12 @@ public class CdcStreamController : SwapMidController, ICdcStreamAppService
         Guid id,
         [FromBody] CdcResetCheckpointInput input)
         => _service.ResetCheckpointAsync(id, input);
+
+    /// <summary>安全释放闲置的 PostgreSQL 逻辑复制槽并清空检查点位点</summary>
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Delete)]
+    [HttpPost("{id}/drop-slot")]
+    public Task<CdcDropSlotResultDto> DropSlotAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+        => _service.DropSlotAsync(id, cancellationToken);
 }

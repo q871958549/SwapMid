@@ -48,9 +48,9 @@ public class MessageBusIntegrationEventPublisher :
         using var hostScope = _currentTenant.Change(null);
         using var uow = _unitOfWorkManager.Begin(requiresNew: false, isTransactional: true);
 
-        var topic = await _topicRepository.FirstOrDefaultAsync(
-            x => x.Name == envelope.TopicName,
-            cancellationToken: cancellationToken);
+        var topic = await _topicRepository.FindByNameNoTrackingAsync(
+            envelope.TopicName,
+            cancellationToken);
         if (topic is null || !topic.IsEnabled)
         {
             await uow.CompleteAsync(cancellationToken);

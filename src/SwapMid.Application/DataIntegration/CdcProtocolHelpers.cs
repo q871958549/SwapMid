@@ -214,10 +214,80 @@ internal static partial class CdcProtocolHelpers
             ["operation"] = operation,
             ["lsn"] = lsn,
             ["commitTimestampUtc"] = commitTimestampUtc.ToUniversalTime().ToString("O"),
+            ["changedColumns"] = ComputeChangedColumns(data, oldData),
             ["data"] = data,
             ["old"] = oldData,
         };
 
         return JsonSerializer.Serialize(envelope);
+    }
+
+    internal static IReadOnlyList<string>? ComputeChangedColumns(
+        IReadOnlyDictionary<string, object?>? data,
+        IReadOnlyDictionary<string, object?>? oldData)
+    {
+        if (data == null || oldData == null)
+        {
+            return null;
+        }
+
+        var allKeys = new SortedSet<string>(data.Keys, StringComparer.Ordinal);
+        foreach (var oldKey in oldData.Keys)
+        {
+            allKeys.Add(oldKey);
+        }
+
+        var changed = new List<string>();
+        foreach (var key in allKeys)
+        {
+            var hasNew = data.TryGetValue(key, out var newVal);
+            var hasOld = oldData.TryGetValue(key, out var oldVal);
+
+            if (hasNew && newVal is string marker && marker == "__toast_unchanged__")
+            {
+                continue;
+            }
+
+            if (!hasNew || !hasOld)
+            {
+                changed.Add(key);
+                continue;
+            }
+
+            if (!AreSerializedValuesEqual(oldVal, newVal))
+            {
+                changed.Add(key);
+            }
+        }
+
+        return changed;
+    }
+
+    internal static string MapReplicaIdentityCode(string? code)
+        => (code ?? string.Empty).Trim().ToLowerInvariant() switch
+        {
+            "d" => "default",
+            "f" => "full",
+            "i" => "index",
+            "n" => "nothing",
+            _ => "unknown",
+        };
+
+    private static bool AreSerializedValuesEqual(object? left, object? right)
+    {
+        if (ReferenceEquals(left, right))
+        {
+            return true;
+        }
+
+        if (left is null || right is null)
+        {
+            return false;
+        }
+
+        return string.Equals(
+            JsonSerializer.Serialize(left),
+            JsonSerializer.Serialize(right),
+            StringComparison.Ordinal);
     }
 }

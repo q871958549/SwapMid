@@ -106,6 +106,16 @@ public static partial class PlatformMetrics
             Buckets = Histogram.ExponentialBuckets(0.01, 2, 10),
         });
 
+    public static readonly Gauge CdcWalLagBytes = Metrics.CreateGauge(
+        "swapmid_cdc_wal_lag_bytes",
+        "PostgreSQL CDC 逻辑复制槽当前保留的 WAL 滞留字节数（标签 stream）",
+        new GaugeConfiguration { LabelNames = ["stream"] });
+
+    public static readonly Counter CdcDeliveriesTotal = Metrics.CreateCounter(
+        "swapmid_cdc_deliveries_total",
+        "PostgreSQL CDC 下游投递批次计数（固定低基数标签 target_mode）",
+        new CounterConfiguration { LabelNames = ["target_mode"] });
+
     private static readonly string[] EtlExecutionAdmissionOutcomes =
     [
         "acquired", "busy", "idempotent_replay", "coordination_failure",
@@ -144,6 +154,7 @@ public static partial class PlatformMetrics
             EtlExecutionResultsTotal);
         PublishSingleLabelSeries(CdcEventsCapturedTotal, ["insert", "update", "delete"]);
         PublishSingleLabelSeries(CdcCapturesTotal, ["succeeded", "failed"]);
+        PublishSingleLabelSeries(CdcDeliveriesTotal, ["message_bus_topic", "data_pipeline", "kafka", "clickhouse", "object_storage"]);
     }
 
     internal static void PublishEtlExecutionSeries(

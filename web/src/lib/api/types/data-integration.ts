@@ -27,8 +27,10 @@ export type PreflightSchemaIssueDto = import('../generated').SwapMidDataIntegrat
 export type PreflightColumnDto = import('../generated').SwapMidDataIntegrationPreflightColumnDto
 export type CdcStreamStatus = import('../generated').SwapMidDataIntegrationCdcStreamStatus
 export type CdcTargetMode = import('../generated').SwapMidDataIntegrationCdcTargetMode
+export type CdcTableReplicaIdentityDto = import('../generated').SwapMidDataIntegrationCdcTableReplicaIdentityDto
 export type CdcPreflightResultDto = import('../generated').SwapMidDataIntegrationCdcPreflightResultDto
 export type CdcCaptureResultDto = import('../generated').SwapMidDataIntegrationCdcCaptureResultDto
+export type CdcDropSlotResultDto = import('../generated').SwapMidDataIntegrationCdcDropSlotResultDto
 export type CdcStreamDto = Omit<
   Require<
     import('../generated').SwapMidDataIntegrationCdcStreamDto,

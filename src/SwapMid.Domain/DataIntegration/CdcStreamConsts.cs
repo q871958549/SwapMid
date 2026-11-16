@@ -11,9 +11,12 @@ public static class CdcStreamConsts
     public const int MaxMonitoredTablesLength = 2048;
     public const int MaxMonitoredTableCount = 64;
     public const int MaxTargetTopicNameLength = 128;
+    public const int MaxTargetSinkDestinationLength = 256;
     public const int MaxCheckpointLsnLength = 32;
     public const int MaxErrorCodeLength = 64;
     public const int MaxErrorMessageLength = 2000;
+
+    public const long WalLagWarningBytes = 100L * 1024 * 1024;
 
     public const int MinPollIntervalSeconds = 5;
     public const int DefaultPollIntervalSeconds = 15;

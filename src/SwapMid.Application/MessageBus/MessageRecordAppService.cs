@@ -15,13 +15,13 @@ namespace SwapMid.MessageBus;
 public class MessageRecordAppService : SwapMidAppService, IMessageRecordAppService
 {
     private readonly IMessageRecordRepository _recordRepository;
-    private readonly IRepository<MessageTopic, Guid> _topicRepository;
+    private readonly IMessageTopicRepository _topicRepository;
     private readonly IRepository<MessageDeliveryAttempt, Guid> _attemptRepository;
     private readonly IMessageDeliveryScheduler _deliveryScheduler;
 
     public MessageRecordAppService(
         IMessageRecordRepository recordRepository,
-        IRepository<MessageTopic, Guid> topicRepository,
+        IMessageTopicRepository topicRepository,
         IRepository<MessageDeliveryAttempt, Guid> attemptRepository,
         IMessageDeliveryScheduler deliveryScheduler)
     {
@@ -71,7 +71,7 @@ public class MessageRecordAppService : SwapMidAppService, IMessageRecordAppServi
     [Authorize(SwapMidPermissions.MessageBus.Records.Publish)]
     public async Task<MessageRecordDto> PublishAsync(PublishMessageDto input)
     {
-        var topic = await _topicRepository.FindAsync(input.TopicId)
+        var topic = await _topicRepository.FindNoTrackingAsync(input.TopicId)
             ?? throw new BusinessException(SwapMidDomainErrorCodes.MessageBus.TopicNotFound);
 
         var record = new MessageRecord(GuidGenerator.Create(), topic.Id, topic.Name, input.Subject, input.Payload);
@@ -84,7 +84,7 @@ public class MessageRecordAppService : SwapMidAppService, IMessageRecordAppServi
     public async Task ReplayAsync(Guid id)
     {
         var record = await _recordRepository.GetAsync(id);
-        _ = await _topicRepository.FindAsync(record.TopicId)
+        _ = await _topicRepository.FindNoTrackingAsync(record.TopicId)
             ?? throw new BusinessException(SwapMidDomainErrorCodes.MessageBus.TopicNotFound);
 
         // 只重置未成功的订阅明细（已成功订阅不重复投递）；无 attempt 的老记录退化为整条重投。

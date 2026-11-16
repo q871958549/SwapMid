@@ -18,4 +18,5 @@ public interface ICdcStreamAppService : IApplicationService
     Task PauseAsync(Guid id);
     Task<CdcCaptureResultDto> CaptureNowAsync(Guid id, CancellationToken cancellationToken = default);
     Task<CdcStreamDto> ResetCheckpointAsync(Guid id, CdcResetCheckpointInput input);
+    Task<CdcDropSlotResultDto> DropSlotAsync(Guid id, CancellationToken cancellationToken = default);
 }

@@ -11,13 +11,13 @@ namespace SwapMid.MessageBus;
 public class MessageDeliveryBackgroundJob : AsyncBackgroundJob<MessageDeliveryJobArgs>, ITransientDependency
 {
     private readonly IMessageRecordRepository _recordRepository;
-    private readonly IRepository<MessageTopic, Guid> _topicRepository;
+    private readonly IMessageTopicRepository _topicRepository;
     private readonly IMessageDeliveryService _deliveryService;
     private readonly IMessageDeliveryScheduler _deliveryScheduler;
 
     public MessageDeliveryBackgroundJob(
         IMessageRecordRepository recordRepository,
-        IRepository<MessageTopic, Guid> topicRepository,
+        IMessageTopicRepository topicRepository,
         IMessageDeliveryService deliveryService,
         IMessageDeliveryScheduler deliveryScheduler)
     {
@@ -36,7 +36,8 @@ public class MessageDeliveryBackgroundJob : AsyncBackgroundJob<MessageDeliveryJo
             return;
         }
 
-        var topic = await _topicRepository.FindAsync(record.TopicId)
+        // 只读主题配置快照，避免并发投递作业误将只读主题卷入 EF ChangeTracker 引发 ConcurrencyStamp 冲突。
+        var topic = await _topicRepository.FindNoTrackingAsync(record.TopicId)
             ?? throw new BusinessException(SwapMidDomainErrorCodes.MessageBus.TopicNotFound);
 
         await _deliveryService.DeliverAsync(record, topic);

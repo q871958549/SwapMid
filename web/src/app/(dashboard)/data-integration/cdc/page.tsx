@@ -66,9 +66,11 @@ async function fetchInitialData(
   ])
 
   const pgSources = sources.items.filter(isPostgreSqlSource)
+  const sinks = sources.items.filter(s => s.type === 3 || s.type === 4 || s.type === 5)
   return {
     streams,
     sources: pgSources.length > 0 ? pgSources : sources.items.filter(s => s.type === 0),
+    sinks,
     pipelines: pipelines.items,
     topics: topics.items,
   }
@@ -97,7 +99,7 @@ async function CdcStreamsPageData({
   const pageIndex = Math.max(0, (Number(sp.page) || 1) - 1)
   const sorting = parseSortParam(sp.sort)
   const status = sp.status && ['0', '1', '2', '3'].includes(sp.status) ? sp.status : 'all'
-  const { streams, sources, pipelines, topics } = await fetchInitialData(
+  const { streams, sources, sinks, pipelines, topics } = await fetchInitialData(
     pageIndex,
     pageSize,
     sp.q,
@@ -110,6 +112,7 @@ async function CdcStreamsPageData({
     <CdcStreamsClient
       data={streams}
       sources={sources}
+      sinks={sinks}
       pipelines={pipelines}
       topics={topics}
       initialPage={pageIndex}

@@ -291,6 +291,13 @@ namespace SwapMid.Migrations
                     b.Property<Guid?>("TargetPipelineId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("TargetSinkDestination")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid?>("TargetSinkId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("TargetTopicName")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
@@ -308,6 +315,8 @@ namespace SwapMid.Migrations
                     b.HasIndex("Status");
 
                     b.HasIndex("TargetPipelineId");
+
+                    b.HasIndex("TargetSinkId");
 
                     b.ToTable("AppCdcStreams", (string)null);
                 });
@@ -3650,6 +3659,11 @@ namespace SwapMid.Migrations
                     b.HasOne("SwapMid.DataIntegration.DataPipeline", null)
                         .WithMany()
                         .HasForeignKey("TargetPipelineId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SwapMid.DataIntegration.DataSource", null)
+                        .WithMany()
+                        .HasForeignKey("TargetSinkId")
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 

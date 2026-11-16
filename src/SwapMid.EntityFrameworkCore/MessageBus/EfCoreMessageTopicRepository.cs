@@ -20,4 +20,16 @@ public class EfCoreMessageTopicRepository :
         var dbSet = await GetDbSetAsync();
         return await dbSet.AnyAsync(x => x.Name == name && (!excludeId.HasValue || x.Id != excludeId.Value), cancellationToken);
     }
+
+    public async Task<MessageTopic?> FindNoTrackingAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var dbSet = await GetDbSetAsync();
+        return await dbSet.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
+    public async Task<MessageTopic?> FindByNameNoTrackingAsync(string name, CancellationToken cancellationToken = default)
+    {
+        var dbSet = await GetDbSetAsync();
+        return await dbSet.AsNoTracking().FirstOrDefaultAsync(x => x.Name == name, cancellationToken);
+    }
 }

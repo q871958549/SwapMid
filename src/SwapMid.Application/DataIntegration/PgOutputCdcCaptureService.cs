@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -33,18 +34,22 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
     private readonly IEtlRelationalConnectionFactory _connectionFactory;
     private readonly IIntegrationEventPublisher _integrationEventPublisher;
     private readonly DataPipelineExecutionCoordinator _executionCoordinator;
+    private readonly IReadOnlyDictionary<DataSourceType, IEtlSinkWriter> _sinkWriters;
     private readonly ILogger<PgOutputCdcCaptureService> _logger;
 
     public PgOutputCdcCaptureService(
         IEtlRelationalConnectionFactory connectionFactory,
         IIntegrationEventPublisher integrationEventPublisher,
         DataPipelineExecutionCoordinator executionCoordinator,
-        ILogger<PgOutputCdcCaptureService> logger)
+        ILogger<PgOutputCdcCaptureService> logger,
+        IEnumerable<IEtlSinkWriter>? sinkWriters = null)
     {
         _connectionFactory = connectionFactory;
         _integrationEventPublisher = integrationEventPublisher;
         _executionCoordinator = executionCoordinator;
         _logger = logger;
+        _sinkWriters = (sinkWriters ?? Array.Empty<IEtlSinkWriter>())
+            .ToDictionary(x => x.TargetType);
     }
 
     internal static void EnsurePostgreSqlSource(DataSource source)
@@ -80,6 +85,7 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
     {
         var publicationName = CdcProtocolHelpers.ValidateReplicationIdentifier(stream.PublicationName, "PublicationName");
         var slotName = CdcProtocolHelpers.ValidateReplicationIdentifier(stream.SlotName, "SlotName");
+        var monitoredTables = CdcProtocolHelpers.ParseMonitoredTables(stream.MonitoredTables);
         EnsurePostgreSqlSource(source);
 
         await using var conn = _connectionFactory.CreateTarget(source.Config, ConnectTimeoutSeconds, 30);
@@ -97,8 +103,22 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
             };
         }
 
-        var state = await InspectServerStateAsync((NpgsqlConnection)conn, publicationName, slotName, cancellationToken);
-        var diagnostics = BuildPreflightDiagnostics(stream, publicationName, slotName, state);
+        var state = await PgOutputReplicationMetadataReader.InspectServerStateAsync(
+            (NpgsqlConnection)conn,
+            publicationName,
+            slotName,
+            monitoredTables,
+            cancellationToken);
+        var diagnostics = PgOutputReplicationMetadataReader.BuildPreflightDiagnostics(
+            stream,
+            publicationName,
+            slotName,
+            state);
+
+        if (state.WalLagBytes.HasValue)
+        {
+            PlatformMetrics.CdcWalLagBytes.WithLabels(stream.Name).Set(state.WalLagBytes.Value);
+        }
 
         var walReady = string.Equals(state.WalLevel, "logical", StringComparison.OrdinalIgnoreCase);
         var pubReady = state.PublicationExists || stream.AutoCreatePublicationAndSlot;
@@ -122,14 +142,49 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
             SlotPlugin = state.SlotPlugin,
             ConfirmedFlushLsn = state.ConfirmedFlushLsn,
             CurrentWalLsn = state.CurrentWalLsn,
+            WalLagBytes = state.WalLagBytes,
+            TableReplicaIdentities = state.TableReplicaIdentities,
             Diagnostics = diagnostics,
             Summary = isReady ? "PostgreSQL pgoutput 逻辑复制前置条件就绪。" : "逻辑复制前置条件尚未就绪，请按诊断提示处理。",
         };
     }
 
+    internal async Task<CdcDropSlotResultDto> DropSlotAsync(
+        DataSource source,
+        CdcStreamDefinition stream,
+        CancellationToken cancellationToken)
+    {
+        var slotName = CdcProtocolHelpers.ValidateReplicationIdentifier(stream.SlotName, "SlotName");
+        EnsurePostgreSqlSource(source);
+
+        await using var conn = _connectionFactory.CreateTarget(source.Config, ConnectTimeoutSeconds, 30);
+        await conn.OpenAsync(cancellationToken);
+
+        var (dropped, message) = await PgOutputReplicationMetadataReader.DropReplicationSlotAsync(
+            (NpgsqlConnection)conn,
+            slotName,
+            cancellationToken);
+        PlatformMetrics.CdcWalLagBytes.WithLabels(stream.Name).Set(0);
+
+        return new CdcDropSlotResultDto
+        {
+            StreamId = stream.Id,
+            SlotName = slotName,
+            Dropped = dropped,
+            Message = message,
+        };
+    }
+
+    internal Task<PgOutputCaptureBatchResult> CaptureBatchAsync(
+        DataSource source,
+        CdcStreamDefinition stream,
+        CancellationToken cancellationToken)
+        => CaptureBatchAsync(source, stream, targetSink: null, cancellationToken);
+
     internal async Task<PgOutputCaptureBatchResult> CaptureBatchAsync(
         DataSource source,
         CdcStreamDefinition stream,
+        DataSource? targetSink,
         CancellationToken cancellationToken)
     {
         var sw = Stopwatch.StartNew();
@@ -140,13 +195,12 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
 
         try
         {
-            ServerReplicationState serverState;
+            PgServerReplicationState serverState;
             await using (var adminConn = _connectionFactory.CreateTarget(source.Config, ConnectTimeoutSeconds, 30))
             {
                 await adminConn.OpenAsync(cancellationToken);
-                var npgsqlAdmin = (NpgsqlConnection)adminConn;
                 serverState = await EnsureReplicationPreconditionsAsync(
-                    npgsqlAdmin,
+                    (NpgsqlConnection)adminConn,
                     stream,
                     publicationName,
                     slotName,
@@ -184,7 +238,12 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
 
                     await using var refreshConn = _connectionFactory.CreateTarget(source.Config, ConnectTimeoutSeconds, 30);
                     await refreshConn.OpenAsync(cancellationToken);
-                    serverState = await InspectServerStateAsync((NpgsqlConnection)refreshConn, publicationName, slotName, cancellationToken);
+                    serverState = await PgOutputReplicationMetadataReader.InspectServerStateAsync(
+                        (NpgsqlConnection)refreshConn,
+                        publicationName,
+                        slotName,
+                        monitoredTables,
+                        cancellationToken);
                 }
                 else
                 {
@@ -211,6 +270,7 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
             {
                 deliveredCount = await DeliverChangesAsync(
                     stream,
+                    targetSink,
                     readOutcome.Changes,
                     readOutcome.LastCommittedLsn,
                     cancellationToken);
@@ -225,6 +285,20 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
                     slotName,
                     readOutcome.LastCommittedLsn.Value,
                     cancellationToken);
+                var postState = await PgOutputReplicationMetadataReader.InspectServerStateAsync(
+                    (NpgsqlConnection)advanceConn,
+                    publicationName,
+                    slotName,
+                    monitoredTables,
+                    cancellationToken);
+                if (postState.WalLagBytes.HasValue)
+                {
+                    PlatformMetrics.CdcWalLagBytes.WithLabels(stream.Name).Set(postState.WalLagBytes.Value);
+                }
+            }
+            else if (serverState.WalLagBytes.HasValue)
+            {
+                PlatformMetrics.CdcWalLagBytes.WithLabels(stream.Name).Set(serverState.WalLagBytes.Value);
             }
 
             foreach (var change in readOutcome.Changes)
@@ -258,6 +332,7 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
 
     private async Task<long> DeliverChangesAsync(
         CdcStreamDefinition stream,
+        DataSource? targetSink,
         IReadOnlyList<PgOutputCapturedChange> changes,
         NpgsqlLogSequenceNumber? batchEndLsn,
         CancellationToken cancellationToken)
@@ -300,6 +375,7 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
                 }
             }
 
+            PlatformMetrics.CdcDeliveriesTotal.WithLabels("message_bus_topic").Inc();
             return published;
         }
 
@@ -318,46 +394,40 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
                 runId,
                 TriggerType.Scheduled,
                 cancellationToken);
+            PlatformMetrics.CdcDeliveriesTotal.WithLabels("data_pipeline").Inc();
             return 1;
+        }
+
+        if (stream.TargetMode == CdcTargetMode.ExternalSink)
+        {
+            if (targetSink == null)
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", "ExternalSink 目标模式下未找到目标外部接收端数据源。");
+            }
+
+            var written = await CdcExternalSinkDeliveryAdapter.DeliverAsync(
+                stream,
+                targetSink,
+                changes,
+                batchEndLsn,
+                _sinkWriters,
+                cancellationToken);
+            var label = targetSink.Type switch
+            {
+                DataSourceType.Kafka => "kafka",
+                DataSourceType.ClickHouse => "clickhouse",
+                DataSourceType.ObjectStorage => "object_storage",
+                _ => "external_sink",
+            };
+            PlatformMetrics.CdcDeliveriesTotal.WithLabels(label).Inc();
+            return written;
         }
 
         return 0;
     }
 
-    private static List<string> BuildPreflightDiagnostics(
-        CdcStreamDefinition stream,
-        string publicationName,
-        string slotName,
-        ServerReplicationState state)
-    {
-        var diagnostics = new List<string>();
-        if (!string.Equals(state.WalLevel, "logical", StringComparison.OrdinalIgnoreCase))
-        {
-            diagnostics.Add($"当前 wal_level 为 \"{state.WalLevel}\"，需配置为 \"logical\" 并重启 PostgreSQL（ALTER SYSTEM SET wal_level = logical）。");
-        }
-
-        if (!state.PublicationExists)
-        {
-            diagnostics.Add(stream.AutoCreatePublicationAndSlot
-                ? $"发布 \"{publicationName}\" 尚未创建，将在首次捕获时自动创建。"
-                : $"发布 \"{publicationName}\" 不存在，请先手动执行 CREATE PUBLICATION 或开启自动建发布。");
-        }
-
-        if (!state.SlotExists)
-        {
-            diagnostics.Add(stream.AutoCreatePublicationAndSlot
-                ? $"逻辑复制槽 \"{slotName}\"（pgoutput）尚未创建，将在首次捕获时自动创建。"
-                : $"逻辑复制槽 \"{slotName}\" 不存在，请先创建或开启自动建槽。");
-        }
-        else if (!string.Equals(state.SlotPlugin, "pgoutput", StringComparison.OrdinalIgnoreCase))
-        {
-            diagnostics.Add($"复制槽 \"{slotName}\" 当前使用插件 \"{state.SlotPlugin}\"，并非 pgoutput。");
-        }
-
-        return diagnostics;
-    }
-
-    private static async Task<ServerReplicationState> EnsureReplicationPreconditionsAsync(
+    private static async Task<PgServerReplicationState> EnsureReplicationPreconditionsAsync(
         NpgsqlConnection adminConn,
         CdcStreamDefinition stream,
         string publicationName,
@@ -365,7 +435,12 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
         IReadOnlyList<MonitoredTableSpec> monitoredTables,
         CancellationToken cancellationToken)
     {
-        var serverState = await InspectServerStateAsync(adminConn, publicationName, slotName, cancellationToken);
+        var serverState = await PgOutputReplicationMetadataReader.InspectServerStateAsync(
+            adminConn,
+            publicationName,
+            slotName,
+            monitoredTables,
+            cancellationToken);
         if (!string.Equals(serverState.WalLevel, "logical", StringComparison.OrdinalIgnoreCase))
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
@@ -394,75 +469,4 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
 
         return serverState;
     }
-
-    private static async Task<ServerReplicationState> InspectServerStateAsync(
-        NpgsqlConnection conn,
-        string publicationName,
-        string slotName,
-        CancellationToken cancellationToken)
-    {
-        string walLevel;
-        string version;
-        string? currentWalLsn;
-
-        await using (var cmd = new NpgsqlCommand("SHOW wal_level", conn))
-        {
-            walLevel = Convert.ToString(await cmd.ExecuteScalarAsync(cancellationToken)) ?? string.Empty;
-        }
-
-        await using (var cmd = new NpgsqlCommand("SELECT version(), pg_current_wal_lsn()::text", conn))
-        await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
-        {
-            await reader.ReadAsync(cancellationToken);
-            version = reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
-            currentWalLsn = reader.IsDBNull(1) ? null : reader.GetString(1);
-        }
-
-        bool pubExists;
-        await using (var pubCmd = new NpgsqlCommand(
-            "SELECT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = @pub)", conn))
-        {
-            pubCmd.Parameters.AddWithValue("pub", publicationName);
-            pubExists = Convert.ToBoolean(await pubCmd.ExecuteScalarAsync(cancellationToken));
-        }
-
-        var slotExists = false;
-        var slotActive = false;
-        string? slotPlugin = null;
-        string? confirmedFlushLsn = null;
-
-        await using (var slotCmd = new NpgsqlCommand(
-            "SELECT plugin, active, confirmed_flush_lsn::text FROM pg_replication_slots WHERE slot_name = @slot", conn))
-        {
-            slotCmd.Parameters.AddWithValue("slot", slotName);
-            await using var reader = await slotCmd.ExecuteReaderAsync(cancellationToken);
-            if (await reader.ReadAsync(cancellationToken))
-            {
-                slotExists = true;
-                slotPlugin = reader.IsDBNull(0) ? null : reader.GetString(0);
-                slotActive = !reader.IsDBNull(1) && reader.GetBoolean(1);
-                confirmedFlushLsn = reader.IsDBNull(2) ? null : reader.GetString(2);
-            }
-        }
-
-        return new ServerReplicationState(
-            walLevel,
-            version,
-            currentWalLsn,
-            pubExists,
-            slotExists,
-            slotActive,
-            slotPlugin,
-            confirmedFlushLsn);
-    }
-
-    private sealed record ServerReplicationState(
-        string WalLevel,
-        string Version,
-        string? CurrentWalLsn,
-        bool PublicationExists,
-        bool SlotExists,
-        bool SlotActive,
-        string? SlotPlugin,
-        string? ConfirmedFlushLsn);
 }

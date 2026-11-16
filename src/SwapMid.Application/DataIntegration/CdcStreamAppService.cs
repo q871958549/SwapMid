@@ -71,11 +71,14 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             input.MaxResultCount,
             input.SkipCount);
 
-        var sourceIds = items.Select(x => x.SourceId).Distinct().ToList();
+        var sourceIds = items.SelectMany(x =>
+            x.TargetSinkId.HasValue ? new[] { x.SourceId, x.TargetSinkId.Value } : new[] { x.SourceId })
+            .Distinct()
+            .ToList();
         var sources = sourceIds.Count > 0
             ? (await _sourceRepository.GetListAsync(x => sourceIds.Contains(x.Id)))
-                .ToDictionary(x => x.Id, x => x.Name)
-            : new Dictionary<Guid, string>();
+                .ToDictionary(x => x.Id)
+            : new Dictionary<Guid, DataSource>();
 
         var pipelineIds = items
             .Where(x => x.TargetPipelineId.HasValue)
@@ -87,10 +90,16 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
                 .ToDictionary(x => x.Id, x => x.Name)
             : new Dictionary<Guid, string>();
 
-        var dtos = items.Select(x => MapToDto(
-            x,
-            sources.GetValueOrDefault(x.SourceId),
-            x.TargetPipelineId.HasValue ? pipelines.GetValueOrDefault(x.TargetPipelineId.Value) : null)).ToList();
+        var dtos = items.Select(x =>
+        {
+            var src = sources.GetValueOrDefault(x.SourceId);
+            var sink = x.TargetSinkId.HasValue ? sources.GetValueOrDefault(x.TargetSinkId.Value) : null;
+            return MapToDto(
+                x,
+                src?.Name,
+                x.TargetPipelineId.HasValue ? pipelines.GetValueOrDefault(x.TargetPipelineId.Value) : null,
+                sink);
+        }).ToList();
 
         return new PagedResultDto<CdcStreamDto>(totalCount, dtos);
     }
@@ -126,7 +135,9 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             input.AutoCreatePublicationAndSlot,
             input.PollIntervalSeconds,
             input.MaxBatchSize,
-            input.Description);
+            input.Description,
+            normalized.TargetSinkId,
+            normalized.TargetSinkDestination);
 
         await _streamRepository.InsertAsync(stream, autoSave: true);
         return await EnrichDtoAsync(stream);
@@ -154,7 +165,9 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             input.AutoCreatePublicationAndSlot,
             input.PollIntervalSeconds,
             input.MaxBatchSize,
-            input.Description);
+            input.Description,
+            normalized.TargetSinkId,
+            normalized.TargetSinkDestination);
 
         await _streamRepository.UpdateAsync(stream, autoSave: true);
         await _scheduleSynchronizer.SyncAsync(stream.Id, stream.Status, stream.PollIntervalSeconds);
@@ -260,7 +273,44 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         return await EnrichDtoAsync(stream);
     }
 
-    private async Task<(string Name, string PublicationName, string SlotName, string? MonitoredTables, string? TargetTopicName, Guid? TargetPipelineId)> ValidateAndNormalizeInputAsync(
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Delete)]
+    public async Task<CdcDropSlotResultDto> DropSlotAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
+            base.CurrentTenant.Id,
+            SwapMidPermissions.DataIntegration.CdcStreams.Delete);
+
+        var stream = await _streamRepository.GetAsync(id, cancellationToken: cancellationToken);
+        if (stream.Status == CdcStreamStatus.Active)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", "释放复制槽前请先暂停 CDC 流。");
+        }
+
+        var source = await _sourceRepository.GetAsync(stream.SourceId, cancellationToken: cancellationToken);
+        var result = await _captureService.DropSlotAsync(source, stream, cancellationToken);
+        if (result.Dropped)
+        {
+            stream.ResetCheckpoint(null);
+            await _streamRepository.UpdateAsync(stream, autoSave: true, cancellationToken: cancellationToken);
+        }
+
+        return result;
+    }
+
+    private sealed record NormalizedCdcInput(
+        string Name,
+        string PublicationName,
+        string SlotName,
+        string? MonitoredTables,
+        string? TargetTopicName,
+        Guid? TargetPipelineId,
+        Guid? TargetSinkId,
+        string? TargetSinkDestination);
+
+    private async Task<NormalizedCdcInput> ValidateAndNormalizeInputAsync(
         CdcStreamCreateUpdateDto input,
         Guid? excludeId)
     {
@@ -287,6 +337,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
 
         string? topicName = null;
         Guid? pipelineId = null;
+        Guid? sinkId = null;
+        string? sinkDestination = null;
 
         if (input.TargetMode == CdcTargetMode.MessageBusTopic)
         {
@@ -310,13 +362,51 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
 
             pipelineId = pipeline.Id;
         }
+        else if (input.TargetMode == CdcTargetMode.ExternalSink)
+        {
+            if (!input.TargetSinkId.HasValue)
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", "外部接收端模式下必须选择目标接收端数据源。");
+            }
+
+            var sink = await _sourceRepository.FindAsync(input.TargetSinkId.Value);
+            if (sink == null)
+            {
+                throw new EntityNotFoundException(typeof(DataSource), input.TargetSinkId.Value);
+            }
+
+            if (sink.Type is not (DataSourceType.Kafka or DataSourceType.ClickHouse or DataSourceType.ObjectStorage))
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", $"目标数据源仅支持 Kafka / ClickHouse / ObjectStorage，当前为 {sink.Type}。");
+            }
+
+            var dest = input.TargetSinkDestination?.Trim();
+            if (string.IsNullOrWhiteSpace(dest) || !EtlTransformConfig.IsValidDestinationFor(sink.Type, dest))
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", "外部接收端目标标识（Topic / 库表 / 对象前缀）缺失或格式不合法。");
+            }
+
+            sinkId = sink.Id;
+            sinkDestination = dest;
+        }
         else
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
                 .WithData("Reason", "不支持的 CDC 下游投递模式。");
         }
 
-        return (name, pub, slot, normalizedTables, topicName, pipelineId);
+        return new NormalizedCdcInput(
+            name,
+            pub,
+            slot,
+            normalizedTables,
+            topicName,
+            pipelineId,
+            sinkId,
+            sinkDestination);
     }
 
     private async Task<CdcStreamDto> EnrichDtoAsync(CdcStreamDefinition stream)
@@ -325,13 +415,17 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         var pipeline = stream.TargetPipelineId.HasValue
             ? await _pipelineRepository.FindAsync(stream.TargetPipelineId.Value)
             : null;
-        return MapToDto(stream, source?.Name, pipeline?.Name);
+        var sink = stream.TargetSinkId.HasValue
+            ? await _sourceRepository.FindAsync(stream.TargetSinkId.Value)
+            : null;
+        return MapToDto(stream, source?.Name, pipeline?.Name, sink);
     }
 
     private static CdcStreamDto MapToDto(
         CdcStreamDefinition stream,
         string? sourceName,
-        string? targetPipelineName) => new()
+        string? targetPipelineName,
+        DataSource? targetSink) => new()
     {
         Id = stream.Id,
         CreationTime = stream.CreationTime,
@@ -355,6 +449,10 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         TargetTopicName = stream.TargetTopicName,
         TargetPipelineId = stream.TargetPipelineId,
         TargetPipelineName = targetPipelineName,
+        TargetSinkId = stream.TargetSinkId,
+        TargetSinkName = targetSink?.Name,
+        TargetSinkType = targetSink?.Type,
+        TargetSinkDestination = stream.TargetSinkDestination,
         Status = stream.Status,
         CheckpointLsn = stream.CheckpointLsn,
         LastCapturedAt = stream.LastCapturedAt,

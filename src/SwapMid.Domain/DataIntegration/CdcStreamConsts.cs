@@ -12,6 +12,8 @@ public static class CdcStreamConsts
     public const int MaxMonitoredTableCount = 64;
     public const int MaxTargetTopicNameLength = 128;
     public const int MaxTargetSinkDestinationLength = 256;
+    public const int MaxTargetSinkKeyColumnsLength = 256;
+    public const int MaxTargetSinkKeyColumnCount = 16;
     public const int MaxCheckpointLsnLength = 32;
     public const int MaxErrorCodeLength = 64;
     public const int MaxErrorMessageLength = 2000;

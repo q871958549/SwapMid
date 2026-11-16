@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using SwapMid.SharedKernel;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
@@ -14,4 +15,5 @@ public interface IMessageRecordAppService : IApplicationService
     Task<List<MessageDeliveryAttemptDto>> GetAttemptsAsync(Guid id);
     Task<MessageRecordDto> PublishAsync(PublishMessageDto input);
     Task ReplayAsync(Guid id);
+    Task<BatchOperationResultDto> BatchReplayAsync(BatchIdsInput input);
 }

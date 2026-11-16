@@ -60,3 +60,23 @@ groups:
         annotations:
           summary: "EF Core database command failures detected"
           description: "5 or more EF Core SQL commands failed or timed out in the last 5 minutes."
+
+      - alert: SwapMidCdcCaptureFailures
+        expr: increase(swapmid_cdc_captures_total{result="failed"}[10m]) >= 2
+        for: 1m
+        labels:
+          severity: warning
+          engine: data-integration-cdc
+        annotations:
+          summary: "PostgreSQL pgoutput CDC capture failures detected"
+          description: "2 or more CDC WAL capture attempts failed within 10 minutes; inspect pre-flight diagnostics and upstream PostgreSQL replication status."
+
+      - alert: SwapMidCdcWalLagHigh
+        expr: max(swapmid_cdc_wal_lag_bytes) > 104857600
+        for: 5m
+        labels:
+          severity: warning
+          engine: data-integration-cdc
+        annotations:
+          summary: "PostgreSQL CDC replication slot retained WAL lag above 100 MiB"
+          description: "At least one pgoutput replication slot has retained more than 100 MiB of WAL; verify active polling or release unused slots."

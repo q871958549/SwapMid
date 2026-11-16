@@ -3,7 +3,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { type ColumnDef, type SortingState } from '@tanstack/react-table'
-import { Activity, Loader2, PauseCircle, Play, Power, RotateCcw, Unplug } from 'lucide-react'
 import {
   actionsColumn,
   numberColumn,
@@ -16,7 +15,6 @@ import { DeleteConfirm } from '@/components/data-table/delete-confirm'
 import { FilterBar, type FilterBarChip } from '@/components/data-table/filter-bar'
 import { ListPageShell } from '@/components/data-table/list-page-shell'
 import { PageHeader } from '@/components/data-table/page-header'
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 import { toast } from '@/components/ui/use-toast'
@@ -26,11 +24,19 @@ import type {
   CdcCaptureResultDto,
   CdcDropSlotResultDto,
   CdcPreflightResultDto,
+  CdcSinkTemplateDto,
   CdcStreamDto,
 } from '@/lib/api/types'
 import { useCrudForm } from '@/lib/crud/use-crud-form'
 import { useCrudResource } from '@/lib/crud/use-crud-resource'
-import { CdcCheckpointDialog, CdcDropSlotDialog, CdcPreflightDialog, type CdcPreflightState } from './cdc-dialogs'
+import {
+  CdcCheckpointDialog,
+  CdcDropSlotDialog,
+  CdcPreflightDialog,
+  CdcSinkTemplateDialog,
+  type CdcPreflightState,
+  type CdcSinkTemplateState,
+} from './cdc-dialogs'
 import {
   CdcFormDialog,
   defaultCdcForm,
@@ -41,12 +47,13 @@ import {
   type CdcSourceOption,
   type CdcTopicOption,
 } from './cdc-form-dialog'
-
-const CDC_STATUS_ACTIVE = 1
-const CDC_STATUS_PAUSED = 2
-const CDC_STATUS_ERROR = 3
-const CDC_TARGET_PIPELINE = 1
-const CDC_TARGET_EXTERNAL_SINK = 2
+import {
+  CDC_STATUS_ACTIVE,
+  CDC_STATUS_ERROR,
+  CDC_STATUS_PAUSED,
+  CdcRowActions,
+  CdcTargetCell,
+} from './cdc-row-actions'
 
 function getStatusMeta(
   status: number | undefined,
@@ -113,6 +120,7 @@ export function CdcStreamsClient({
   const [dropSlotTarget, setDropSlotTarget] = useState<CdcStreamDto | null>(null)
   const [dropSlotSubmitting, setDropSlotSubmitting] = useState(false)
   const [dropSlotError, setDropSlotError] = useState<string | null>(null)
+  const [sinkTemplateState, setSinkTemplateState] = useState<CdcSinkTemplateState | null>(null)
 
   const list = useCrudResource<CdcStreamDto>({
     endpoint: 'cdc-streams',
@@ -287,6 +295,26 @@ export function CdcStreamsClient({
     }
   }, [dropSlotTarget, list, t])
 
+  const handleSinkTemplate = useCallback(async (row: CdcStreamDto) => {
+    if (busyActionsRef.current[row.id]) return
+    setBusy(row.id, 'sink-template')
+    try {
+      const res = await fetch(`/api/proxy/cdc-streams/${row.id}/sink-template`)
+      if (!res.ok) {
+        toast({
+          variant: 'destructive',
+          title: t('sinkTemplateFailedTitle'),
+          description: await getApiErrorMessage(res, t('sinkTemplateFailedFallback')),
+        })
+        return
+      }
+      const template = await res.json() as CdcSinkTemplateDto
+      setSinkTemplateState({ stream: row, template })
+    } finally {
+      setBusy(row.id, null)
+    }
+  }, [setBusy, t])
+
   const columns: ColumnDef<CdcStreamDto, unknown>[] = useMemo(() => [
     primaryColumn<CdcStreamDto>('name', t('colName'), {
       onOpen: canUpdate ? crud.openEdit : undefined,
@@ -313,33 +341,7 @@ export function CdcStreamsClient({
       id: 'target',
       enableSorting: false,
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('colTarget')} />,
-      cell: ({ row }) => {
-        const mode = Number(row.original.targetMode)
-        if (mode === CDC_TARGET_PIPELINE) {
-          return (
-            <div className="space-y-0.5 text-xs">
-              <div className="font-medium">{t('targetModePipeline')}</div>
-              <div className="font-mono text-muted-foreground">{row.original.targetPipelineName || '-'}</div>
-            </div>
-          )
-        }
-        if (mode === CDC_TARGET_EXTERNAL_SINK) {
-          return (
-            <div className="space-y-0.5 text-xs">
-              <div className="font-medium">{t('targetModeExternalSink')}</div>
-              <div className="font-mono text-muted-foreground">
-                {`${row.original.targetSinkName || '-'} · ${row.original.targetSinkDestination || '-'}`}
-              </div>
-            </div>
-          )
-        }
-        return (
-          <div className="space-y-0.5 text-xs">
-            <div className="font-medium">{t('targetModeTopic')}</div>
-            <div className="font-mono text-muted-foreground">{row.original.targetTopicName || '-'}</div>
-          </div>
-        )
-      },
+      cell: ({ row }) => <CdcTargetCell stream={row.original} />,
     },
     {
       accessorKey: 'checkpointLsn',
@@ -375,57 +377,20 @@ export function CdcStreamsClient({
     actionsColumn<CdcStreamDto>({
       onEdit: canUpdate ? crud.openEdit : undefined,
       onDelete: canDelete ? crud.askDelete : undefined,
-      extraItems: canManage
-        ? (row) => {
-            const busyKind = busyActions[row.id]
-            const busy = !!busyKind
-            const isActive = Number(row.status) === CDC_STATUS_ACTIVE
-            return (
-              <>
-                <DropdownMenuItem disabled={busy} onClick={() => void handlePreflight(row)}>
-                  {busyKind === 'preflight'
-                    ? <Loader2 className="mr-2 size-3.5 animate-spin" />
-                    : <Activity className="mr-2 size-3.5" />}
-                  {t('preflightMenuItem')}
-                </DropdownMenuItem>
-                {isActive ? (
-                  <DropdownMenuItem disabled={busy} onClick={() => void handleLifecycle(row, 'pause')}>
-                    {busyKind === 'pause'
-                      ? <Loader2 className="mr-2 size-3.5 animate-spin" />
-                      : <PauseCircle className="mr-2 size-3.5" />}
-                    {t('pauseMenuItem')}
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem disabled={busy} onClick={() => void handleLifecycle(row, 'activate')}>
-                    {busyKind === 'activate'
-                      ? <Loader2 className="mr-2 size-3.5 animate-spin" />
-                      : <Power className="mr-2 size-3.5" />}
-                    {t('activateMenuItem')}
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem
-                  disabled={busy || !isActive}
-                  onClick={() => void handleCaptureNow(row)}
-                >
-                  {busyKind === 'capture'
-                    ? <Loader2 className="mr-2 size-3.5 animate-spin" />
-                    : <Play className="mr-2 size-3.5" />}
-                  {isActive ? t('captureNowMenuItem') : t('captureRequiresActiveMenuItem')}
-                </DropdownMenuItem>
-                <DropdownMenuItem disabled={busy} onClick={() => openCheckpointDialog(row)}>
-                  <RotateCcw className="mr-2 size-3.5" />
-                  {t('resetCheckpointMenuItem')}
-                </DropdownMenuItem>
-                {canDelete && !isActive && (
-                  <DropdownMenuItem disabled={busy} onClick={() => openDropSlotDialog(row)}>
-                    <Unplug className="mr-2 size-3.5" />
-                    {t('dropSlotMenuItem')}
-                  </DropdownMenuItem>
-                )}
-              </>
-            )
-          }
-        : undefined,
+      extraItems: row => (
+        <CdcRowActions
+          row={row}
+          busyKind={busyActions[row.id]}
+          canManage={canManage}
+          canDelete={canDelete}
+          onSinkTemplate={item => void handleSinkTemplate(item)}
+          onPreflight={item => void handlePreflight(item)}
+          onLifecycle={(item, action) => void handleLifecycle(item, action)}
+          onCaptureNow={item => void handleCaptureNow(item)}
+          onCheckpointReset={openCheckpointDialog}
+          onDropSlot={openDropSlotDialog}
+        />
+      ),
     }),
   ], [
     busyActions,
@@ -436,6 +401,7 @@ export function CdcStreamsClient({
     handleCaptureNow,
     handleLifecycle,
     handlePreflight,
+    handleSinkTemplate,
     locale,
     openCheckpointDialog,
     openDropSlotDialog,
@@ -508,6 +474,7 @@ export function CdcStreamsClient({
         onClose={() => setDropSlotTarget(null)}
         onSubmit={() => void submitDropSlot()}
       />
+      <CdcSinkTemplateDialog state={sinkTemplateState} onClose={() => setSinkTemplateState(null)} />
       <DeleteConfirm
         crud={crud}
         entityName={t('entityName')}

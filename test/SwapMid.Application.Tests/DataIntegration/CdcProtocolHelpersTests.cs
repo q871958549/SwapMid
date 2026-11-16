@@ -156,6 +156,70 @@ public class CdcProtocolHelpersTests
     }
 
     [Fact]
+    public void PartitionKeys_KafkaKeyResolution_And_ClickHouseDdl_Should_Be_Deterministic()
+    {
+        var cols = CdcProtocolHelpers.ParseSinkKeyColumns("order_id, tenant_id, ORDER_ID");
+        cols.ShouldBe(["order_id", "tenant_id"]);
+
+        var badKeyEx = Should.Throw<BusinessException>(() =>
+            CdcProtocolHelpers.ParseSinkKeyColumns("bad-key"));
+        badKeyEx.Code.ShouldBe(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid);
+
+        var stream = new CdcStreamDefinition(
+            Guid.NewGuid(),
+            "pg-orders-kafka",
+            Guid.NewGuid(),
+            "swapmid_orders_pub",
+            "swapmid_orders_slot",
+            CdcTargetMode.ExternalSink,
+            targetSinkId: Guid.NewGuid(),
+            targetSinkDestination: "cdc.orders.events",
+            targetSinkKeyColumns: "order_id");
+
+        var insertChange = new PgOutputCapturedChange(
+            "public",
+            "orders",
+            "insert",
+            "0/1600010",
+            new DateTime(2026, 11, 16, 1, 0, 0, DateTimeKind.Utc),
+            new Dictionary<string, object?> { ["order_id"] = 91001L, ["status"] = "CREATED" },
+            null);
+        var deleteChange = new PgOutputCapturedChange(
+            "public",
+            "orders",
+            "delete",
+            "0/1600020",
+            new DateTime(2026, 11, 16, 1, 0, 5, DateTimeKind.Utc),
+            null,
+            new Dictionary<string, object?> { ["order_id"] = 91001L, ["status"] = "DRAFT" });
+
+        var keys = CdcExternalSinkDeliveryAdapter.BuildPartitionKeys(stream, [insertChange, deleteChange]);
+        keys.ShouldNotBeNull();
+        keys![0].ShouldBe("public.orders:order_id=91001");
+        keys[1].ShouldBe("public.orders:order_id=91001");
+
+        var batchWithKeys = new EtlSourceBatch(
+            ["event_id"],
+            [typeof(string)],
+            [["e1"], ["e2"]],
+            batchIndex: 0,
+            partitionKeys: keys);
+        KafkaEtlSinkWriter.ResolveMessageKey(batchWithKeys, 0, [], Guid.Empty).ShouldBe("public.orders:order_id=91001");
+
+        var etlBatch = new EtlSourceBatch(
+            ["id", "tenant"],
+            [typeof(long), typeof(string)],
+            [[42L, "acme"]],
+            batchIndex: 0);
+        KafkaEtlSinkWriter.ResolveMessageKey(etlBatch, 0, ["tenant", "id"], Guid.Empty).ShouldBe("tenant=acme|id=42");
+
+        var ddl = CdcExternalSinkTemplateBuilder.BuildClickHouseDdl("analytics", "cdc_orders");
+        ddl.ShouldContain("CREATE TABLE IF NOT EXISTS `analytics`.`cdc_orders`");
+        ddl.ShouldContain("`event_id` String");
+        ddl.ShouldContain("ENGINE = MergeTree()");
+    }
+
+    [Fact]
     public void CdcStreamDefinition_Lifecycle_And_Counters_Should_Progress_Monotonically()
     {
         var stream = new CdcStreamDefinition(

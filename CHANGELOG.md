@@ -4,6 +4,16 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-11-16
+
+### Added
+- **Deterministic Kafka Partition Key Ordering & External Sink DDL Templates (`DataIntegration` / `web/`)**:
+  - Added `TargetSinkKeyColumns` (`CdcStreamConsts.MaxTargetSinkKeyColumnsLength = 256`, max `16` columns, EF Core migration `AddCdcSinkKeyColumns`) and `EtlSourceBatch.PartitionKeys`, enabling per-event Kafka partition keys across both CDC external sink streams (`CdcExternalSinkDeliveryAdapter` -> `schema.table:k1=v1|k2=v2`) and ETL transform `keyColumns` (`KafkaEtlSinkWriter.ResolveMessageKey`).
+  - Added `CdcExternalSinkTemplateBuilder` and `GET /api/v1/cdc-streams/{id}/sink-template` (`ICdcStreamAppService.GetSinkTemplateAsync`), generating ClickHouse `ReplacingMergeTree` DDL (respecting `targetSinkKeyColumns` / schema metadata and escaping identifiers), live target-table existence probing, CDC envelope schema columns, and sample payload previews, paired with the interactive `CdcSinkTemplateDialog` (`查看模板` / `Sink Template`) in `/data-integration/cdc`.
+- **Set-Based `MessageBus` Batch Replay & Prometheus CDC Alerting (`MessageBus` / `docker/observability/` / `web/`)**:
+  - Added `IMessageRecordAppService.BatchReplayAsync` (`POST /api/v1/message-records/batch-replay`) using `BatchOperationExecutor.LoadAsync` + `UpdateManyAsync` + `IMessageTopicRepository.GetExistingIdsNoTrackingAsync` (bounded to `BatchOperationLimits.MaxIdsPerRequest = 2000`), and switched `/message-bus/records` bulk replay to single-request chunked `submitBatchIds('message-records/batch-replay', ids)`.
+  - Added Prometheus alert rules `SwapMidCdcCaptureFailures` and `SwapMidCdcWalLagHigh` (`> 256 MiB` sustained retained WAL) in `docker/observability/prometheus/alert-rules.yml`.
+
 ## [1.4.0] - 2026-11-16
 
 ### Added

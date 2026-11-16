@@ -1363,6 +1363,8 @@
       "sinkDestClickHousePlaceholder": "analytics.cdc_orders_changelog",
       "sinkDestObjectStoragePlaceholder": "cdc/orders",
       "targetSinkDestHint": "Use Topic for Kafka, database.table for ClickHouse, or directory prefix for Object Storage.",
+      "targetSinkKeyColumnsFieldLabel": "Partition / Sort Key Columns (Optional)",
+      "targetSinkKeyColumnsHint": "Comma-separated column names (e.g. order_id or customer_id,order_id) used for Kafka partition keys, ClickHouse ORDER BY suggestions, and ObjectStorage metadata.",
       "statusAll": "All Statuses",
       "statusDraft": "Draft",
       "statusActive": "Active",
@@ -1384,6 +1386,7 @@
       "captureRequiresActiveMenuItem": "Activate to Capture",
       "resetCheckpointMenuItem": "Reset Checkpoint",
       "dropSlotMenuItem": "Drop Slot",
+      "sinkTemplateMenuItem": "Sink Template",
       "preflightFailedTitle": "Pre-flight check failed",
       "preflightFailedFallback": "Could not connect to PostgreSQL or verify logical replication readiness.",
       "activateFailedTitle": "Failed to activate CDC stream",
@@ -1421,7 +1424,17 @@
       "checkpointInputHint": "Hex high/low offset such as 0/16B6C50; leave blank to clear stored LSN.",
       "dropSlotDialogTitle": "Drop Replication Slot · {slot}",
       "dropSlotDialogDesc": "Drops upstream PostgreSQL slot \"{slot}\" and clears local checkpoint on \"{name}\" to release retained WAL.",
-      "dropSlotConfirmButton": "Drop Slot"
+      "dropSlotConfirmButton": "Drop Slot",
+      "sinkTemplateFailedTitle": "Failed to load sink template",
+      "sinkTemplateFailedFallback": "Could not build external sink schema or DDL template.",
+      "sinkTemplateDialogTitle": "External Sink Schema & DDL · {name}",
+      "sinkTargetExistsLabel": "Target Ready",
+      "sinkTargetMissingLabel": "Target Missing",
+      "sinkTemplateDdlTitle": "Recommended ClickHouse DDL",
+      "copyDdlButton": "Copy DDL",
+      "copiedDdlButton": "Copied",
+      "sinkTemplateColumnsTitle": "CDC Envelope Columns & Types",
+      "sinkTemplateSampleTitle": "Sample Event Payload JSON"
     }
   },
   "System": {

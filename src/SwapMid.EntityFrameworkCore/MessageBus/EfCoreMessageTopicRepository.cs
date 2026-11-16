@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using SwapMid.MessageBus;
@@ -31,5 +33,22 @@ public class EfCoreMessageTopicRepository :
     {
         var dbSet = await GetDbSetAsync();
         return await dbSet.AsNoTracking().FirstOrDefaultAsync(x => x.Name == name, cancellationToken);
+    }
+
+    public async Task<HashSet<Guid>> GetExistingIdsNoTrackingAsync(
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+        {
+            return new HashSet<Guid>();
+        }
+
+        var dbSet = await GetDbSetAsync();
+        var list = await dbSet.AsNoTracking()
+            .Where(x => ids.Contains(x.Id))
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
+        return list.ToHashSet();
     }
 }

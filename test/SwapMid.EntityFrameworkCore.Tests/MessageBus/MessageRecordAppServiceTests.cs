@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using SwapMid.EntityFrameworkCore;
+using SwapMid.SharedKernel;
 using Shouldly;
 using Xunit;
 
@@ -427,6 +428,52 @@ public class MessageRecordAppServiceTests : SwapMidEntityFrameworkCoreTestBase
         var delivered2 = await _recordAppService.GetAsync(second.Id);
         delivered1.Status.ShouldBe(MessageStatus.Delivered);
         delivered2.Status.ShouldBe(MessageStatus.Delivered);
+    }
+
+    [Fact]
+    public async Task Should_Batch_Replay_Records_And_Count_Missing_Ids_In_Single_Request()
+    {
+        var topic = await CreateTopicAsync(TopicType.Broadcast, retryCount: 0);
+        await CreateSubscriptionAsync(topic.Id, "batch-replay-hook");
+
+        var first = await _recordAppService.PublishAsync(new PublishMessageDto
+        {
+            TopicId = topic.Id,
+            Subject = "order.failed.1",
+            Payload = "{\"id\":1}"
+        });
+        var second = await _recordAppService.PublishAsync(new PublishMessageDto
+        {
+            TopicId = topic.Id,
+            Subject = "order.failed.2",
+            Payload = "{\"id\":2}"
+        });
+
+        _recorder.Handler = (_, _) => MessageDeliveryResponse.Failure("first failure");
+        await ExecuteDeliveryJobAsync(first.Id);
+        await ExecuteDeliveryJobAsync(second.Id);
+        (await _recordAppService.GetAsync(first.Id)).Status.ShouldBe(MessageStatus.DeadLettered);
+        (await _recordAppService.GetAsync(second.Id)).Status.ShouldBe(MessageStatus.DeadLettered);
+
+        _recorder.Handler = (_, _) => MessageDeliveryResponse.Success();
+        _recorder.ResetDeliveries();
+        _recorder.ResetSchedules();
+
+        var missingId = Guid.NewGuid();
+        var batchResult = await _recordAppService.BatchReplayAsync(new BatchIdsInput
+        {
+            Ids = [first.Id, second.Id, missingId, first.Id]
+        });
+
+        batchResult.Requested.ShouldBe(4);
+        batchResult.Succeeded.ShouldBe(2);
+        batchResult.Skipped.ShouldBe(1);
+        _recorder.ScheduledDeliveries.Select(x => x.MessageRecordId).OrderBy(x => x).ShouldBe(new[] { first.Id, second.Id }.OrderBy(x => x));
+
+        await ExecuteDeliveryJobAsync(first.Id);
+        await ExecuteDeliveryJobAsync(second.Id);
+        (await _recordAppService.GetAsync(first.Id)).Status.ShouldBe(MessageStatus.Delivered);
+        (await _recordAppService.GetAsync(second.Id)).Status.ShouldBe(MessageStatus.Delivered);
     }
 
     private int RequestsTo(string subscriptionName)

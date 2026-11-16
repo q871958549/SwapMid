@@ -1,6 +1,7 @@
 'use client'
 
-import { AlertTriangle, CheckCircle2, XCircle } from 'lucide-react'
+import { useState } from 'react'
+import { AlertTriangle, Check, CheckCircle2, Copy, XCircle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
@@ -8,11 +9,16 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ScrollableDialogContent } from '@/components/ui/scrollable-dialog'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
-import type { CdcPreflightResultDto, CdcStreamDto } from '@/lib/api/types'
+import type { CdcPreflightResultDto, CdcSinkTemplateDto, CdcStreamDto } from '@/lib/api/types'
 
 export interface CdcPreflightState {
   stream: CdcStreamDto
   result: CdcPreflightResultDto
+}
+
+export interface CdcSinkTemplateState {
+  stream: CdcStreamDto
+  template: CdcSinkTemplateDto
 }
 
 function formatWalBytes(bytes: number | null | undefined): string {
@@ -227,6 +233,97 @@ export function CdcDropSlotDialog({
           )}
         >
           {error && <p className="text-xs text-destructive">{error}</p>}
+        </ScrollableDialogContent>
+      )}
+    </Dialog>
+  )
+}
+
+export function CdcSinkTemplateDialog({
+  state,
+  onClose,
+}: {
+  state: CdcSinkTemplateState | null
+  onClose: () => void
+}) {
+  const t = useTranslations('DataIntegration.cdc')
+  const tc = useTranslations('Common')
+  const [copiedDdl, setCopiedDdl] = useState(false)
+
+  async function copyDdl(ddl: string) {
+    try {
+      await navigator.clipboard?.writeText(ddl)
+      setCopiedDdl(true)
+      setTimeout(() => setCopiedDdl(false), 1800)
+    } catch {
+      setCopiedDdl(false)
+    }
+  }
+
+  return (
+    <Dialog open={!!state} onOpenChange={(open) => { if (!open) onClose() }}>
+      {state && (
+        <ScrollableDialogContent
+          title={t('sinkTemplateDialogTitle', { name: state.stream.name })}
+          description={state.template.summary ?? undefined}
+          className="sm:max-w-2xl"
+          footer={<Button variant="outline" onClick={onClose}>{tc('close')}</Button>}
+        >
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge tone="neutral">{state.template.destination}</StatusBadge>
+              {state.template.targetExists === true && (
+                <StatusBadge tone="success">{t('sinkTargetExistsLabel')}</StatusBadge>
+              )}
+              {state.template.targetExists === false && (
+                <StatusBadge tone="warning">{t('sinkTargetMissingLabel')}</StatusBadge>
+              )}
+              {state.template.partitionKeyExpression && (
+                <StatusBadge tone="info">{`Key: ${state.template.partitionKeyExpression}`}</StatusBadge>
+              )}
+            </div>
+
+            {state.template.clickHouseDdl && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted-foreground">{t('sinkTemplateDdlTitle')}</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void copyDdl(state.template.clickHouseDdl!)}
+                  >
+                    {copiedDdl ? <Check className="mr-1.5 size-3.5" /> : <Copy className="mr-1.5 size-3.5" />}
+                    {copiedDdl ? t('copiedDdlButton') : t('copyDdlButton')}
+                  </Button>
+                </div>
+                <pre className="max-h-52 overflow-auto rounded-md border bg-muted/40 p-3 font-mono text-xs">
+                  {state.template.clickHouseDdl}
+                </pre>
+              </div>
+            )}
+
+            {state.template.columns && state.template.columns.length > 0 && (
+              <div className="space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">{t('sinkTemplateColumnsTitle')}</span>
+                <div className="divide-y rounded-md border text-xs">
+                  {state.template.columns.map(col => (
+                    <div key={col.name} className="grid grid-cols-12 items-center gap-2 px-3 py-1.5">
+                      <span className="col-span-4 font-mono font-medium">{col.name}</span>
+                      <span className="col-span-4 font-mono text-muted-foreground">{col.clickHouseType || col.logicalType}</span>
+                      <span className="col-span-4 text-muted-foreground">{col.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <span className="text-xs font-medium text-muted-foreground">{t('sinkTemplateSampleTitle')}</span>
+              <pre className="max-h-56 overflow-auto rounded-md border bg-muted/40 p-3 font-mono text-xs">
+                {state.template.samplePayloadJson}
+              </pre>
+            </div>
+          </div>
         </ScrollableDialogContent>
       )}
     </Dialog>

@@ -298,6 +298,10 @@ namespace SwapMid.Migrations
                     b.Property<Guid?>("TargetSinkId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("TargetSinkKeyColumns")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
                     b.Property<string>("TargetTopicName")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");

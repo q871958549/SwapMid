@@ -179,6 +179,7 @@ public static class DataIntegrationEntityTypeConfigurations
             b.Property(x => x.MonitoredTables).HasMaxLength(CdcStreamConsts.MaxMonitoredTablesLength);
             b.Property(x => x.TargetTopicName).HasMaxLength(CdcStreamConsts.MaxTargetTopicNameLength);
             b.Property(x => x.TargetSinkDestination).HasMaxLength(CdcStreamConsts.MaxTargetSinkDestinationLength);
+            b.Property(x => x.TargetSinkKeyColumns).HasMaxLength(CdcStreamConsts.MaxTargetSinkKeyColumnsLength);
             b.Property(x => x.CheckpointLsn).HasMaxLength(CdcStreamConsts.MaxCheckpointLsnLength);
             b.Property(x => x.LastErrorCode).HasMaxLength(CdcStreamConsts.MaxErrorCodeLength);
             b.Property(x => x.LastErrorMessage).HasMaxLength(CdcStreamConsts.MaxErrorMessageLength);

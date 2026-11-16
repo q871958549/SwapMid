@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using SwapMid.MessageBus;
+using SwapMid.SharedKernel;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -19,4 +20,7 @@ public class MessageRecordController : SwapMidController, IMessageRecordAppServi
     [HttpGet("{id}/attempts")] public Task<List<MessageDeliveryAttemptDto>> GetAttemptsAsync(Guid id) => _service.GetAttemptsAsync(id);
     [HttpPost("publish")] public Task<MessageRecordDto> PublishAsync(PublishMessageDto input) => _service.PublishAsync(input);
     [HttpPut("{id}/replay")] public Task ReplayAsync(Guid id) => _service.ReplayAsync(id);
+    /// <summary>按 Id 集合批量重投未成功消息记录</summary>
+    [HttpPost("batch-replay")]
+    public Task<BatchOperationResultDto> BatchReplayAsync(BatchIdsInput input) => _service.BatchReplayAsync(input);
 }

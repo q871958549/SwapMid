@@ -81,6 +81,7 @@ internal static class CdcExternalSinkDeliveryAdapter
         var endLsnText = batchEndLsn?.ToString() ?? changes[^1].Lsn;
         var runId = CdcProtocolHelpers.BuildDeterministicPipelineRunId(stream.Id, endLsnText);
         var rows = BuildRows(stream, changes);
+        var partitionKeys = BuildPartitionKeys(stream, changes);
 
         return await writer.WriteAsync(
             stream.Id,
@@ -89,10 +90,35 @@ internal static class CdcExternalSinkDeliveryAdapter
             transform,
             async (consumeBatchAsync, ct) =>
             {
-                var batch = new EtlSourceBatch(Columns, ClrTypes, rows, batchIndex: 0);
+                var batch = new EtlSourceBatch(Columns, ClrTypes, rows, batchIndex: 0, partitionKeys: partitionKeys);
                 await consumeBatchAsync(batch, ct);
             },
             cancellationToken);
+    }
+
+    internal static string?[]? BuildPartitionKeys(
+        CdcStreamDefinition stream,
+        IReadOnlyList<PgOutputCapturedChange> changes)
+    {
+        var keyColumns = CdcProtocolHelpers.ParseSinkKeyColumns(stream.TargetSinkKeyColumns);
+        if (keyColumns.Count == 0)
+        {
+            return null;
+        }
+
+        var keys = new string?[changes.Count];
+        for (var i = 0; i < changes.Count; i++)
+        {
+            var change = changes[i];
+            keys[i] = CdcProtocolHelpers.BuildPartitionKey(
+                change.Schema,
+                change.Table,
+                keyColumns,
+                change.Data,
+                change.OldData);
+        }
+
+        return keys;
     }
 
     internal static List<object?[]> BuildRows(

@@ -12,12 +12,14 @@ public sealed class EtlSourceBatch
         string[] targetColumns,
         Type[] targetClrTypes,
         IReadOnlyList<object?[]> rows,
-        long batchIndex)
+        long batchIndex,
+        string?[]? partitionKeys = null)
     {
         TargetColumns = targetColumns;
         TargetClrTypes = targetClrTypes;
         Rows = rows;
         BatchIndex = batchIndex;
+        PartitionKeys = partitionKeys;
     }
 
     internal string[] TargetColumns { get; }
@@ -27,6 +29,8 @@ public sealed class EtlSourceBatch
     internal IReadOnlyList<object?[]> Rows { get; }
 
     internal long BatchIndex { get; }
+
+    internal string?[]? PartitionKeys { get; }
 }
 
 /// <summary>可插拔外部数据分析/事件流接收端写入契约（ClickHouse / ObjectStorage / Kafka）。</summary>

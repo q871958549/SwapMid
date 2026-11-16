@@ -116,7 +116,7 @@ GRAFANA_ADMIN_PASSWORD="ChangeMe_Grafana!2026" \
 - **Alertmanager** (`:19093`): Routes firing/resolved alerts back into SwapMid's `/api/v1/notification/webhooks/alertmanager`, dispatching multi-channel notifications (SMTP Email / Slack / Feishu / DingTalk / WeCom).
 - **Grafana** (`:13300`): Auto-provisions the **SwapMid — Three Integration Engines Overview** dashboard (`docker/observability/grafana/dashboards/swapmid-overview.json`).
 
-## 6. PostgreSQL Logical Replication (`pgoutput`) CDC Operations (`v1.3.0+`)
+## 7. PostgreSQL Logical Replication (`pgoutput`) CDC Operations (`v1.3.0+`)
 
 1. **PostgreSQL Server Configuration**:
    - Enable `wal_level = logical`, `max_replication_slots >= 4`, and `max_wal_senders >= 4` (restart PostgreSQL when changing `wal_level`).
@@ -125,5 +125,8 @@ GRAFANA_ADMIN_PASSWORD="ChangeMe_Grafana!2026" \
    - Use **Pre-flight** (`/data-integration/cdc` or `POST /api/v1/cdc-streams/{id}/preflight`) to verify `wal_level = logical`, Publication/Slot existence, per-table `REPLICA IDENTITY` mode (`full` / `index` / `default` / `nothing`), retained WAL lag (`walLagBytes`), and current WAL position before activation.
    - Disable `autoCreatePublicationAndSlot` in locked-down environments after DBA pre-creation (`CREATE PUBLICATION ... FOR TABLE ...` and `SELECT pg_create_logical_replication_slot(..., 'pgoutput')`).
 3. **Replication Slot Retention & Disk Monitoring**:
-   - Monitor PostgreSQL inactive replication slots (`SELECT slot_name, active, confirmed_flush_lsn, pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)) AS retained_wal FROM pg_replication_slots;`) alongside Prometheus metrics (`swapmid_cdc_captures_total`, `swapmid_cdc_wal_lag_bytes`, `swapmid_cdc_deliveries_total`) and System Health item **PostgreSQL CDC 捕获失败率**.
+   - Monitor PostgreSQL inactive replication slots (`SELECT slot_name, active, confirmed_flush_lsn, pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)) AS retained_wal FROM pg_replication_slots;`) alongside Prometheus metrics (`swapmid_cdc_captures_total`, `swapmid_cdc_wal_lag_bytes`, `swapmid_cdc_deliveries_total`), alert rules (`SwapMidCdcCaptureFailures`, `SwapMidCdcWalLagHigh`), and System Health item **PostgreSQL CDC 捕获失败率**.
    - Always **Pause** retired CDC streams and run **Drop Slot** (`POST /api/v1/cdc-streams/{id}/drop-slot` or row menu **释放槽位**) to release unused upstream PostgreSQL replication slots so retained WAL cannot exhaust disk space.
+4. **External Sink Key Ordering & ClickHouse DDL Provisioning (`v1.5.0+`)**:
+   - When routing CDC changes to Kafka (`CdcTargetMode.ExternalSink = 2`), configure comma-separated **Partition / Sort Key Columns** (`targetSinkKeyColumns`, e.g. `order_id`) so events sharing an entity primary key deterministically land on the same Kafka partition (`schema.table:k1=v1|...`).
+   - For ClickHouse (`ReplacingMergeTree`) and analytical sinks, open row menu **查看模板** / **Sink Template** (`GET /api/v1/cdc-streams/{id}/sink-template`) to copy the recommended DDL with backtick-escaped identifiers and check live target table readiness before activating capture.

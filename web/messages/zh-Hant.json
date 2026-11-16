@@ -1363,6 +1363,8 @@
       "sinkDestClickHousePlaceholder": "analytics.cdc_orders_changelog",
       "sinkDestObjectStoragePlaceholder": "cdc/orders",
       "targetSinkDestHint": "Kafka 填 Topic；ClickHouse 填 database.table；對象存儲填目錄前綴。",
+      "targetSinkKeyColumnsFieldLabel": "分區 / 排序主鍵列（可選）",
+      "targetSinkKeyColumnsHint": "多列用英文逗號分隔，如 order_id 或 customer_id,order_id；用於 Kafka 分區鍵、ClickHouse ORDER BY 建議與 ObjectStorage 文件元數據。",
       "statusAll": "全部狀態",
       "statusDraft": "草稿",
       "statusActive": "啟用",
@@ -1384,6 +1386,7 @@
       "captureRequiresActiveMenuItem": "激活後可捕獲",
       "resetCheckpointMenuItem": "重置位點",
       "dropSlotMenuItem": "釋放槽位",
+      "sinkTemplateMenuItem": "查看模板",
       "preflightFailedTitle": "前置預檢失敗",
       "preflightFailedFallback": "無法連接 PostgreSQL 或檢查邏輯複製配置。",
       "activateFailedTitle": "激活 CDC 流失敗",
@@ -1421,7 +1424,17 @@
       "checkpointInputHint": "格式：十六進制高/低位，例如 0/16B6C50；留空代表清空本地位點。",
       "dropSlotDialogTitle": "釋放邏輯複製槽 · {slot}",
       "dropSlotDialogDesc": "將刪除上游 PostgreSQL 複製槽「{slot}」並清空「{name}」本地檢查點，解除 WAL 滯留。",
-      "dropSlotConfirmButton": "釋放槽位"
+      "dropSlotConfirmButton": "釋放槽位",
+      "sinkTemplateFailedTitle": "獲取接收端模板失敗",
+      "sinkTemplateFailedFallback": "無法生成外部接收端 Schema 與 DDL 模板。",
+      "sinkTemplateDialogTitle": "外部接收端 Schema 與 DDL · {name}",
+      "sinkTargetExistsLabel": "目標已就緒",
+      "sinkTargetMissingLabel": "目標表待創建",
+      "sinkTemplateDdlTitle": "推薦 ClickHouse / 落盤 DDL",
+      "copyDdlButton": "複製DDL",
+      "copiedDdlButton": "已複製",
+      "sinkTemplateColumnsTitle": "CDC Envelope 字段與推薦列類型",
+      "sinkTemplateSampleTitle": "示例事件 Payload JSON"
     }
   },
   "System": {

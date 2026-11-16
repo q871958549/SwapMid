@@ -7563,6 +7563,18 @@
       "traditionalSourceHash": "0a2350ddb8973a56103aabc6",
       "traditionalHash": "ebbb915f088e4a82cb078390"
     },
+    "DataIntegration.cdc.targetSinkKeyColumnsFieldLabel": {
+      "sourceHash": "b665c1ad78167725a7d0ae92",
+      "englishHash": "d942759639b4b618bd1dcc69",
+      "traditionalSourceHash": "80a52884ad76f11e9acedfa5",
+      "traditionalHash": "fbb11014f56ed469c73e16d8"
+    },
+    "DataIntegration.cdc.targetSinkKeyColumnsHint": {
+      "sourceHash": "ae1a69e8f15ad6b4eb8f0d94",
+      "englishHash": "5163196ec105aa4327371589",
+      "traditionalSourceHash": "4608b13886e789d9b26704d8",
+      "traditionalHash": "59ca5c2d635e764bacfcd71b"
+    },
     "DataIntegration.cdc.statusAll": {
       "sourceHash": "fe2fcfb9e2960ba26a11aeb1",
       "englishHash": "05f567125eb09680c4ba2338",
@@ -7688,6 +7700,12 @@
       "englishHash": "2652252aba418eb3afebaad8",
       "traditionalSourceHash": "a4dd74a751612beed27a2092",
       "traditionalHash": "91467c40dba26094926e4de5"
+    },
+    "DataIntegration.cdc.sinkTemplateMenuItem": {
+      "sourceHash": "074048c74c4b014fbb1e1a9f",
+      "englishHash": "f55753ef1f9bd6172d8d98f7",
+      "traditionalSourceHash": "1228847912fe19d29ad330bd",
+      "traditionalHash": "c11c5bc096b8ed1fd0864bcf"
     },
     "DataIntegration.cdc.preflightFailedTitle": {
       "sourceHash": "35529f4ed33436ce82f6113c",
@@ -7916,6 +7934,66 @@
       "englishHash": "2652252aba418eb3afebaad8",
       "traditionalSourceHash": "e167b1b81b74da9c127844f7",
       "traditionalHash": "91467c40dba26094926e4de5"
+    },
+    "DataIntegration.cdc.sinkTemplateFailedTitle": {
+      "sourceHash": "c7dfd7023a9795c0636f0767",
+      "englishHash": "41e7c044f087b7da8541432c",
+      "traditionalSourceHash": "dce1ce80b0896d3a132b6a26",
+      "traditionalHash": "8be9b84db9d719cbd36c6083"
+    },
+    "DataIntegration.cdc.sinkTemplateFailedFallback": {
+      "sourceHash": "0632d9b934103456d669b0b3",
+      "englishHash": "8a0cb90280d81f260ec679e2",
+      "traditionalSourceHash": "68c7728814a3aab634c61871",
+      "traditionalHash": "7a11e49eee320b731d6df323"
+    },
+    "DataIntegration.cdc.sinkTemplateDialogTitle": {
+      "sourceHash": "f7a25c8f35d03c5d99e4211b",
+      "englishHash": "43fb87ee29898cef35a19338",
+      "traditionalSourceHash": "3189227783434442308275f1",
+      "traditionalHash": "6b532411a94696c295a06d6e"
+    },
+    "DataIntegration.cdc.sinkTargetExistsLabel": {
+      "sourceHash": "a4102032cb8f599755a6faf9",
+      "englishHash": "9842447911015aca3c429ce4",
+      "traditionalSourceHash": "c89cbc49c6e3f831323ef36b",
+      "traditionalHash": "cca6f38bc8e434ddbc1d824d"
+    },
+    "DataIntegration.cdc.sinkTargetMissingLabel": {
+      "sourceHash": "fb5bad36919b586f39e72673",
+      "englishHash": "e0098b956fe0d6e6e6c1b37b",
+      "traditionalSourceHash": "a96ccd6b159dcfa5469edaf3",
+      "traditionalHash": "cf4934600580bc89d030a30e"
+    },
+    "DataIntegration.cdc.sinkTemplateDdlTitle": {
+      "sourceHash": "7b7d7834f67ed18c0bacf704",
+      "englishHash": "90965b364a9d6bf407301b22",
+      "traditionalSourceHash": "d036a9057b78bf99e6fc25e5",
+      "traditionalHash": "ace40eee661ac27c3800bbda"
+    },
+    "DataIntegration.cdc.copyDdlButton": {
+      "sourceHash": "d1ce2b392ab77af3271dbec9",
+      "englishHash": "12d6046d43fab2eb83634fd2",
+      "traditionalSourceHash": "cfa431b58e08712fdeaf4332",
+      "traditionalHash": "6d8a20d7b68da57569d5680f"
+    },
+    "DataIntegration.cdc.copiedDdlButton": {
+      "sourceHash": "d4814f5a3b1f3e884bf3c4f4",
+      "englishHash": "8d525e5f158b9afe05f3122a",
+      "traditionalSourceHash": "bb602a1d74d6f64fb0a5d8e0",
+      "traditionalHash": "fcce450c45f401a80a36c3b3"
+    },
+    "DataIntegration.cdc.sinkTemplateColumnsTitle": {
+      "sourceHash": "e997091cb4acb1ef1aaed0b6",
+      "englishHash": "b5221328acd3c4952f5f0007",
+      "traditionalSourceHash": "4ac051ef0c9b39659bafef46",
+      "traditionalHash": "2d40276feafa82e93a6cdd15"
+    },
+    "DataIntegration.cdc.sinkTemplateSampleTitle": {
+      "sourceHash": "fd42f67deeaf2ce278337250",
+      "englishHash": "dd480c9d1f04f535eb75c260",
+      "traditionalSourceHash": "33044512d09924dde2c62713",
+      "traditionalHash": "74bd4eb04d4ff8edf7887368"
     },
     "System.common.refresh": {
       "sourceHash": "ed94cd3ab755a61dfa2e13b4",

@@ -97,4 +97,11 @@ public class CdcStreamController : SwapMidController, ICdcStreamAppService
         Guid id,
         CancellationToken cancellationToken = default)
         => _service.DropSlotAsync(id, cancellationToken);
+
+    /// <summary>获取外部接收端（ClickHouse / Kafka / ObjectStorage）标准结构与建表 DDL 模板</summary>
+    [HttpGet("{id}/sink-template")]
+    public Task<CdcSinkTemplateDto> GetSinkTemplateAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+        => _service.GetSinkTemplateAsync(id, cancellationToken);
 }

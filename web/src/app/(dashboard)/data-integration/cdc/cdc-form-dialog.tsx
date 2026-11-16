@@ -30,6 +30,7 @@ export interface CdcFormState {
   targetPipelineId: string
   targetSinkId: string
   targetSinkDestination: string
+  targetSinkKeyColumns: string
 }
 
 export const DEFAULT_CDC_TOPIC = 'integration.cdc.events'
@@ -49,6 +50,7 @@ export const defaultCdcForm: CdcFormState = {
   targetPipelineId: '',
   targetSinkId: '',
   targetSinkDestination: '',
+  targetSinkKeyColumns: '',
 }
 
 function normalizeTargetMode(mode: number | undefined): '0' | '1' | '2' {
@@ -73,6 +75,7 @@ export function toCdcForm(item: CdcStreamDto): CdcFormState {
     targetPipelineId: item.targetPipelineId ?? '',
     targetSinkId: item.targetSinkId ?? '',
     targetSinkDestination: item.targetSinkDestination ?? '',
+    targetSinkKeyColumns: item.targetSinkKeyColumns ?? '',
   }
 }
 
@@ -95,6 +98,7 @@ export function toCdcBody(form: CdcFormState) {
     targetPipelineId: mode === 1 ? (form.targetPipelineId || null) : null,
     targetSinkId: mode === 2 ? (form.targetSinkId || null) : null,
     targetSinkDestination: mode === 2 ? (form.targetSinkDestination.trim() || null) : null,
+    targetSinkKeyColumns: mode === 2 ? (form.targetSinkKeyColumns.trim() || null) : null,
   }
 }
 
@@ -314,15 +318,27 @@ export function CdcFormDialog({
       </div>
 
       {crud.form.targetMode === '2' && (
-        <div className="space-y-1.5">
-          <Label>{t('targetSinkDestFieldLabel')}</Label>
-          <Input
-            value={crud.form.targetSinkDestination}
-            onChange={e => crud.set({ targetSinkDestination: e.target.value })}
-            placeholder={sinkDestPlaceholder}
-            className="font-mono"
-          />
-          <p className="text-xs text-muted-foreground">{t('targetSinkDestHint')}</p>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>{t('targetSinkDestFieldLabel')}</Label>
+            <Input
+              value={crud.form.targetSinkDestination}
+              onChange={e => crud.set({ targetSinkDestination: e.target.value })}
+              placeholder={sinkDestPlaceholder}
+              className="font-mono"
+            />
+            <p className="text-xs text-muted-foreground">{t('targetSinkDestHint')}</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t('targetSinkKeyColumnsFieldLabel')}</Label>
+            <Input
+              value={crud.form.targetSinkKeyColumns}
+              onChange={e => crud.set({ targetSinkKeyColumns: e.target.value })}
+              placeholder="order_id"
+              className="font-mono"
+            />
+            <p className="text-xs text-muted-foreground">{t('targetSinkKeyColumnsHint')}</p>
+          </div>
         </div>
       )}
 

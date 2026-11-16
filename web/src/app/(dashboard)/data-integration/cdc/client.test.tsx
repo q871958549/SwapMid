@@ -50,6 +50,7 @@ vi.mock('@/lib/crud/use-crud-form', () => ({
       targetPipelineId: '',
       targetSinkId: '',
       targetSinkDestination: '',
+      targetSinkKeyColumns: '',
     },
     openEdit: mocks.openEdit,
     openCreate: mocks.openCreate,
@@ -258,5 +259,51 @@ describe('CdcStreamsClient', () => {
       expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/pause`, { method: 'PUT' })
       expect(mocks.reloadAndRefresh).toHaveBeenCalledTimes(2)
     })
+  })
+
+  it('loads external sink DDL template and renders columns and partition key expression', async () => {
+    mocks.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        streamId: STREAM_ID,
+        sinkId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+        sinkName: 'ClickHouse Analytics',
+        sinkType: 8,
+        destination: 'analytics.cdc_orders_changelog',
+        partitionKeyColumns: 'order_id',
+        partitionKeyExpression: 'table:order_id=<value>',
+        targetExists: false,
+        clickHouseDdl: 'CREATE TABLE IF NOT EXISTS `analytics`.`cdc_orders_changelog` ... ORDER BY (`schema`, `table`, `lsn`, `ts_ms`)',
+        columns: [
+          {
+            name: 'op',
+            logicalType: 'string',
+            clickHouseType: "LowCardinality(String)",
+            nullable: false,
+            description: 'Event operation',
+          },
+        ],
+        samplePayloadJson: '{"op":"insert","payload":{"order_id":1001}}',
+        summary: 'Generated ClickHouse DDL template for analytics.cdc_orders_changelog',
+      }),
+    })
+
+    renderClient(makeStream({
+      status: 0,
+      targetMode: 2,
+      targetSinkId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      targetSinkName: 'ClickHouse Analytics',
+      targetSinkDestination: 'analytics.cdc_orders_changelog',
+      targetSinkKeyColumns: 'order_id',
+    }))
+
+    fireEvent.click(screen.getByRole('button', { name: '查看模板' }))
+
+    await waitFor(() => {
+      expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/sink-template`)
+    })
+    expect(await screen.findByText(/CREATE TABLE IF NOT EXISTS `analytics`.`cdc_orders_changelog`/)).toBeTruthy()
+    expect(screen.getByText('Key: table:order_id=<value>')).toBeTruthy()
+    expect(screen.getByText('LowCardinality(String)')).toBeTruthy()
   })
 })

@@ -19,6 +19,7 @@ import { numberColumn } from '@/components/data-table/column-factories'
 import { dataTableLinkClass } from '@/components/data-table/data-table-link-cell'
 import { PageHeader } from '@/components/data-table/page-header'
 import { type PagedResult } from '@/lib/api-client'
+import { submitBatchIds } from '@/lib/crud/batch-chunk'
 import { useCrudResource } from '@/lib/crud/use-crud-resource'
 import { useUrlListState } from '@/lib/crud/use-url-list-state'
 
@@ -134,28 +135,29 @@ export function MessageRecordsClient({
     },
   })
 
-  // 批量重推：逐条经现有 replay 接口（后端只重投未成功订阅）；主要给死信一键补投。
+  // 批量重推：经后端集合化 /batch-replay 分片一次性重投（保留每片 <=2000 上限与幂等跳过语义）。
   async function batchReplay(ids: string[], clearSelection: () => void) {
     setBatchReplaying(true)
-    let ok = 0
-    let fail = 0
-    for (const id of ids) {
-      try {
-        const res = await fetch(`/api/proxy/message-records/${id}/replay`, { method: 'PUT' })
-        if (res.ok) ok++
-        else fail++
-      } catch {
-        fail++
-      }
+    try {
+      const result = await submitBatchIds('message-records/batch-replay', ids)
+      clearSelection()
+      toast({
+        variant: result.skipped > 0 && result.succeeded === 0 ? 'destructive' : 'success',
+        title: t('batchReplayDoneTitle'),
+        description: t('batchReplaySucceededDesc', { ok: result.succeeded })
+          + (result.skipped > 0 ? t('batchReplayFailedSuffix', { fail: result.skipped }) : ''),
+      })
+      await list.reloadAndRefresh()
+    } catch (e) {
+      console.error(e)
+      toast({
+        variant: 'destructive',
+        title: t('replayFailedTitle'),
+        description: t('replayFailedDesc'),
+      })
+    } finally {
+      setBatchReplaying(false)
     }
-    setBatchReplaying(false)
-    clearSelection()
-    toast({
-      variant: fail ? 'destructive' : 'success',
-      title: t('batchReplayDoneTitle'),
-      description: t('batchReplaySucceededDesc', { ok }) + (fail ? t('batchReplayFailedSuffix', { fail }) : ''),
-    })
-    await list.reloadAndRefresh()
   }
 
   async function replay(record: MessageRecord) {
@@ -268,6 +270,7 @@ export function MessageRecordsClient({
         exportFileName="message-records.csv"
         tableKey="message-records"
         enableRowSelection
+        getRowId={row => row.id}
         selectedRowIds={selectedRowIds}
         onSelectedRowIdsChange={setSelectedRowIds}
         bulkActions={(_rows, clearSelection, selectedIds) => (

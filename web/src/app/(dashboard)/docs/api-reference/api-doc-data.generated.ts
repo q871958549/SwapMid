@@ -3403,6 +3403,13 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "targetSinkKeyColumns",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "status",
                 "cnName": "",
                 "type": "CdcStreamStatus",
@@ -3584,6 +3591,13 @@ export const API_MODULES: ApiModule[] = [
                 "type": "string",
                 "description": "",
                 "required": false
+              },
+              {
+                "name": "targetSinkKeyColumns",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
               }
             ],
             "responseFields": [
@@ -3715,6 +3729,13 @@ export const API_MODULES: ApiModule[] = [
               },
               {
                 "name": "targetSinkDestination",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkKeyColumns",
                 "cnName": "",
                 "type": "string",
                 "description": "",
@@ -3948,6 +3969,13 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "targetSinkKeyColumns",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "status",
                 "cnName": "",
                 "type": "CdcStreamStatus",
@@ -4138,6 +4166,13 @@ export const API_MODULES: ApiModule[] = [
                 "type": "string",
                 "description": "",
                 "required": false
+              },
+              {
+                "name": "targetSinkKeyColumns",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
               }
             ],
             "responseFields": [
@@ -4269,6 +4304,13 @@ export const API_MODULES: ApiModule[] = [
               },
               {
                 "name": "targetSinkDestination",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSinkKeyColumns",
                 "cnName": "",
                 "type": "string",
                 "description": "",
@@ -4607,6 +4649,13 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "targetSinkKeyColumns",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "status",
                 "cnName": "",
                 "type": "CdcStreamStatus",
@@ -4862,6 +4911,121 @@ export const API_MODULES: ApiModule[] = [
                 "name": "diagnostics",
                 "cnName": "",
                 "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "summary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/cdc-streams/{id}/sink-template",
+            "summary": "获取外部接收端（ClickHouse / Kafka / ObjectStorage）标准结构与建表 DDL 模板",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "targetType",
+                "cnName": "",
+                "type": "DataSourceType",
+                "description": "取值：0=RelationalDatabase（关系型数据库）；1=RestApi（REST API）；2=File（文件）；3=Kafka（Kafka）；4=ClickHouse（ClickHouse）；5=ObjectStorage（对象存储）",
+                "nullable": false
+              },
+              {
+                "name": "destination",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetExists",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "partitionKeyExpression",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "columns",
+                "cnName": "",
+                "type": "CdcSinkColumnTemplateDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "columns[].name",
+                "cnName": "",
+                "type": "string",
+                "description": "名称",
+                "nullable": true
+              },
+              {
+                "name": "columns[].logicalType",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "columns[].clickHouseType",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "columns[].nullable",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "columns[].description",
+                "cnName": "",
+                "type": "string",
+                "description": "描述",
+                "nullable": true
+              },
+              {
+                "name": "clickHouseDdl",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "samplePayloadJson",
+                "cnName": "",
+                "type": "string",
                 "description": "",
                 "nullable": true
               },
@@ -6407,6 +6571,51 @@ export const API_MODULES: ApiModule[] = [
                 "type": "Guid",
                 "required": true,
                 "description": "唯一标识"
+              }
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/message-records/batch-replay",
+            "summary": "按 Id 集合批量重投未成功消息记录",
+            "summaryDocumented": true,
+            "requestBody": [
+              {
+                "name": "ids",
+                "cnName": "",
+                "type": "Guid[]",
+                "description": "实体 Id 列表。上限见 SwapMid.SharedKernel.BatchOperationLimits.MaxIdsPerRequest——**超限整批拒绝**\r\n（400），不截断：静默只处理前 N 个会让用户以为全做完了，是比报错糟得多的失败形态。",
+                "required": true
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "requested",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "succeeded",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "skipped",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "messages",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "nullable": true
               }
             ]
           },

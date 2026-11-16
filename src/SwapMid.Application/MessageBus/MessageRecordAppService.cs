@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using SwapMid.Permissions;
+using SwapMid.SharedKernel;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -105,6 +106,82 @@ public class MessageRecordAppService : SwapMidAppService, IMessageRecordAppServi
         record.ResetForRetry();
         await _recordRepository.UpdateAsync(record, autoSave: true);
         await _deliveryScheduler.EnqueueAsync(record.Id);
+    }
+
+    [Authorize(SwapMidPermissions.MessageBus.Records.Replay)]
+    public async Task<BatchOperationResultDto> BatchReplayAsync(BatchIdsInput input)
+    {
+        var load = await BatchOperationExecutor.LoadAsync(_recordRepository, input.Ids);
+        if (load.Found.Count == 0)
+        {
+            return new BatchOperationResultDto
+            {
+                Requested = input.Ids.Count,
+                Succeeded = 0,
+                Skipped = load.MissingCount,
+            };
+        }
+
+        var foundIds = load.Found.Select(x => x.Id).ToList();
+        var topicIds = load.Found.Select(x => x.TopicId).Distinct().ToList();
+        var existingTopicIds = await _topicRepository.GetExistingIdsNoTrackingAsync(topicIds);
+        var attempts = await _attemptRepository.GetListAsync(x => foundIds.Contains(x.RecordId));
+        var attemptsByRecord = attempts.GroupBy(a => a.RecordId).ToDictionary(g => g.Key, g => g.ToList());
+
+        var recordsToUpdate = new List<MessageRecord>(load.Found.Count);
+        var attemptsToUpdate = new List<MessageDeliveryAttempt>();
+        var skippedMissingTopic = 0;
+
+        foreach (var record in load.Found)
+        {
+            if (!existingTopicIds.Contains(record.TopicId))
+            {
+                skippedMissingTopic++;
+                continue;
+            }
+
+            if (attemptsByRecord.TryGetValue(record.Id, out var recAttempts))
+            {
+                if (recAttempts.Count == 0 && record.Status == MessageStatus.Delivered)
+                {
+                    record.MarkAudienceSnapshotInitialized();
+                }
+
+                foreach (var attempt in recAttempts.Where(a => a.Status != MessageStatus.Delivered))
+                {
+                    attempt.ResetForReplay();
+                    attemptsToUpdate.Add(attempt);
+                }
+            }
+            else if (record.Status == MessageStatus.Delivered)
+            {
+                record.MarkAudienceSnapshotInitialized();
+            }
+
+            record.ResetForRetry();
+            recordsToUpdate.Add(record);
+        }
+
+        if (attemptsToUpdate.Count > 0)
+        {
+            await _attemptRepository.UpdateManyAsync(attemptsToUpdate, autoSave: false);
+        }
+
+        if (recordsToUpdate.Count > 0)
+        {
+            await _recordRepository.UpdateManyAsync(recordsToUpdate, autoSave: true);
+            foreach (var record in recordsToUpdate)
+            {
+                await _deliveryScheduler.EnqueueAsync(record.Id);
+            }
+        }
+
+        return new BatchOperationResultDto
+        {
+            Requested = input.Ids.Count,
+            Succeeded = recordsToUpdate.Count,
+            Skipped = load.MissingCount + skippedMissingTopic,
+        };
     }
 
     private static MessageRecordDto MapToDto(MessageRecord r) => new()

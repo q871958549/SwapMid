@@ -76,9 +76,10 @@ public sealed class KafkaEtlSinkWriter : IEtlSinkWriter, ITransientDependency
                     { "content-type", contentTypeHeader },
                 };
 
+                var messageKey = ResolveMessageKey(batch, i, transform.KeyColumns, runId);
                 var message = new Message<string?, byte[]>
                 {
-                    Key = $"{runId:N}:{batch.BatchIndex}:{i}",
+                    Key = messageKey,
                     Value = payload,
                     Headers = headers,
                 };
@@ -101,6 +102,55 @@ public sealed class KafkaEtlSinkWriter : IEtlSinkWriter, ITransientDependency
         }, cancellationToken);
 
         return totalWritten;
+    }
+
+    internal static string ResolveMessageKey(
+        EtlSourceBatch batch,
+        int rowIndex,
+        IReadOnlyList<string> keyColumns,
+        Guid runId)
+    {
+        if (batch.PartitionKeys is not null &&
+            rowIndex < batch.PartitionKeys.Length &&
+            !string.IsNullOrWhiteSpace(batch.PartitionKeys[rowIndex]))
+        {
+            return batch.PartitionKeys[rowIndex]!;
+        }
+
+        if (keyColumns.Count > 0 && rowIndex < batch.Rows.Count)
+        {
+            var row = batch.Rows[rowIndex];
+            var keyParts = new List<string>(keyColumns.Count);
+            foreach (var keyCol in keyColumns)
+            {
+                var colIndex = FindColumnIndex(batch.TargetColumns, keyCol);
+                if (colIndex >= 0 && colIndex < row.Length)
+                {
+                    var text = Convert.ToString(row[colIndex], CultureInfo.InvariantCulture) ?? "null";
+                    keyParts.Add($"{keyCol}={text}");
+                }
+            }
+
+            if (keyParts.Count > 0)
+            {
+                return string.Join("|", keyParts);
+            }
+        }
+
+        return $"{runId:N}:{batch.BatchIndex}:{rowIndex}";
+    }
+
+    private static int FindColumnIndex(string[] targetColumns, string columnName)
+    {
+        for (var i = 0; i < targetColumns.Length; i++)
+        {
+            if (string.Equals(targetColumns[i], columnName, StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     internal static byte[] SerializeRowJsonBytes(string[] columns, object?[] row)

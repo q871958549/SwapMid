@@ -25,6 +25,7 @@ public class CdcStreamDto : FullAuditedEntityDto<Guid>
     public string? TargetSinkName { get; set; }
     public DataSourceType? TargetSinkType { get; set; }
     public string? TargetSinkDestination { get; set; }
+    public string? TargetSinkKeyColumns { get; set; }
     public CdcStreamStatus Status { get; set; }
     public string? CheckpointLsn { get; set; }
     public DateTime? LastCapturedAt { get; set; }
@@ -76,6 +77,9 @@ public class CdcStreamCreateUpdateDto
 
     [StringLength(256)]
     public string? TargetSinkDestination { get; set; }
+
+    [StringLength(256)]
+    public string? TargetSinkKeyColumns { get; set; }
 }
 
 public class GetCdcStreamListInput : PagedAndSortedResultRequestDto
@@ -132,4 +136,26 @@ public class CdcResetCheckpointInput
 {
     [StringLength(32)]
     public string? CheckpointLsn { get; set; }
+}
+
+public class CdcSinkColumnTemplateDto
+{
+    public string Name { get; set; } = null!;
+    public string LogicalType { get; set; } = null!;
+    public string ClickHouseType { get; set; } = null!;
+    public bool Nullable { get; set; }
+    public string Description { get; set; } = null!;
+}
+
+public class CdcSinkTemplateDto
+{
+    public Guid StreamId { get; set; }
+    public DataSourceType TargetType { get; set; }
+    public string Destination { get; set; } = null!;
+    public bool? TargetExists { get; set; }
+    public string? PartitionKeyExpression { get; set; }
+    public List<CdcSinkColumnTemplateDto> Columns { get; set; } = new();
+    public string? ClickHouseDdl { get; set; }
+    public string SamplePayloadJson { get; set; } = null!;
+    public string Summary { get; set; } = null!;
 }

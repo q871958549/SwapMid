@@ -23,6 +23,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     private readonly PgOutputCdcCaptureService _captureService;
     private readonly CdcStreamCaptureCoordinator _captureCoordinator;
     private readonly ICdcScheduleSynchronizer _scheduleSynchronizer;
+    private readonly DataIntegrationSinkProbeService? _sinkProbeService;
 
     public CdcStreamAppService(
         ICdcStreamRepository streamRepository,
@@ -30,7 +31,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         IRepository<DataPipeline, Guid> pipelineRepository,
         PgOutputCdcCaptureService captureService,
         CdcStreamCaptureCoordinator captureCoordinator,
-        ICdcScheduleSynchronizer? scheduleSynchronizer = null)
+        ICdcScheduleSynchronizer? scheduleSynchronizer = null,
+        DataIntegrationSinkProbeService? sinkProbeService = null)
     {
         _streamRepository = streamRepository;
         _sourceRepository = sourceRepository;
@@ -38,6 +40,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         _captureService = captureService;
         _captureCoordinator = captureCoordinator;
         _scheduleSynchronizer = scheduleSynchronizer ?? NullCdcScheduleSynchronizer.Instance;
+        _sinkProbeService = sinkProbeService;
     }
 
     private static readonly IReadOnlyDictionary<string, string> SortingWhitelist =
@@ -137,7 +140,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             input.MaxBatchSize,
             input.Description,
             normalized.TargetSinkId,
-            normalized.TargetSinkDestination);
+            normalized.TargetSinkDestination,
+            normalized.TargetSinkKeyColumns);
 
         await _streamRepository.InsertAsync(stream, autoSave: true);
         return await EnrichDtoAsync(stream);
@@ -167,7 +171,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             input.MaxBatchSize,
             input.Description,
             normalized.TargetSinkId,
-            normalized.TargetSinkDestination);
+            normalized.TargetSinkDestination,
+            normalized.TargetSinkKeyColumns);
 
         await _streamRepository.UpdateAsync(stream, autoSave: true);
         await _scheduleSynchronizer.SyncAsync(stream.Id, stream.Status, stream.PollIntervalSeconds);
@@ -300,6 +305,25 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         return result;
     }
 
+    public async Task<CdcSinkTemplateDto> GetSinkTemplateAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
+            base.CurrentTenant.Id,
+            SwapMidPermissions.DataIntegration.CdcStreams.Default);
+
+        var stream = await _streamRepository.GetAsync(id, cancellationToken: cancellationToken);
+        if (stream.TargetMode != CdcTargetMode.ExternalSink || !stream.TargetSinkId.HasValue)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", "仅外部接收端（ExternalSink）模式的 CDC 流支持生成接收端结构与 DDL 模板。");
+        }
+
+        var sink = await _sourceRepository.GetAsync(stream.TargetSinkId.Value, cancellationToken: cancellationToken);
+        return await CdcExternalSinkTemplateBuilder.BuildAsync(stream, sink, _sinkProbeService, cancellationToken);
+    }
+
     private sealed record NormalizedCdcInput(
         string Name,
         string PublicationName,
@@ -308,7 +332,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         string? TargetTopicName,
         Guid? TargetPipelineId,
         Guid? TargetSinkId,
-        string? TargetSinkDestination);
+        string? TargetSinkDestination,
+        string? TargetSinkKeyColumns);
 
     private async Task<NormalizedCdcInput> ValidateAndNormalizeInputAsync(
         CdcStreamCreateUpdateDto input,
@@ -339,6 +364,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         Guid? pipelineId = null;
         Guid? sinkId = null;
         string? sinkDestination = null;
+        string? sinkKeyColumns = null;
 
         if (input.TargetMode == CdcTargetMode.MessageBusTopic)
         {
@@ -389,8 +415,10 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
                     .WithData("Reason", "外部接收端目标标识（Topic / 库表 / 对象前缀）缺失或格式不合法。");
             }
 
+            var keyCols = CdcProtocolHelpers.ParseSinkKeyColumns(input.TargetSinkKeyColumns);
             sinkId = sink.Id;
             sinkDestination = dest;
+            sinkKeyColumns = keyCols.Count > 0 ? string.Join(", ", keyCols) : null;
         }
         else
         {
@@ -406,7 +434,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             topicName,
             pipelineId,
             sinkId,
-            sinkDestination);
+            sinkDestination,
+            sinkKeyColumns);
     }
 
     private async Task<CdcStreamDto> EnrichDtoAsync(CdcStreamDefinition stream)
@@ -453,6 +482,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         TargetSinkName = targetSink?.Name,
         TargetSinkType = targetSink?.Type,
         TargetSinkDestination = stream.TargetSinkDestination,
+        TargetSinkKeyColumns = stream.TargetSinkKeyColumns,
         Status = stream.Status,
         CheckpointLsn = stream.CheckpointLsn,
         LastCapturedAt = stream.LastCapturedAt,

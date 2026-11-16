@@ -49,7 +49,7 @@ public class DataIntegrationCrudAuthorizationContractTests
         }
 
         contracts.Length.ShouldBe(5);
-        inspectedEntryCount.ShouldBe(38);
+        inspectedEntryCount.ShouldBe(39);
     }
 
     [Fact]
@@ -432,6 +432,7 @@ public class DataIntegrationCrudAuthorizationContractTests
                     Secured("CaptureNowAsync(Guid,CancellationToken)", CdcStreams + ".Manage"),
                     Secured("ResetCheckpointAsync(Guid,CdcResetCheckpointInput)", CdcStreams + ".Manage"),
                     Secured("DropSlotAsync(Guid,CancellationToken)", CdcStreams + ".Delete"),
+                    new("GetSinkTemplateAsync(Guid,CancellationToken)", CdcStreams + ".Default"),
                 ],
                 []),
         ];

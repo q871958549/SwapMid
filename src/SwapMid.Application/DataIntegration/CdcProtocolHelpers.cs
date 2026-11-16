@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using NpgsqlTypes;
@@ -289,5 +290,101 @@ internal static partial class CdcProtocolHelpers
             JsonSerializer.Serialize(left),
             JsonSerializer.Serialize(right),
             StringComparison.Ordinal);
+    }
+
+    internal static IReadOnlyList<string> ParseSinkKeyColumns(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return Array.Empty<string>();
+        }
+
+        var tokens = raw.Split([',', ';', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (tokens.Length > CdcStreamConsts.MaxTargetSinkKeyColumnCount)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", $"外部接收端分区键数量不能超过 {CdcStreamConsts.MaxTargetSinkKeyColumnCount} 列。");
+        }
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var columns = new List<string>(tokens.Length);
+        foreach (var token in tokens)
+        {
+            if (!EtlTransformConfig.IsValidColumnName(token))
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", $"外部接收端分区键列名无效（{token}），仅允许字母、数字和下划线。");
+            }
+
+            if (seen.Add(token))
+            {
+                columns.Add(token);
+            }
+        }
+
+        return columns;
+    }
+
+    internal static string? BuildPartitionKey(
+        string schema,
+        string table,
+        IReadOnlyList<string> keyColumns,
+        IReadOnlyDictionary<string, object?>? data,
+        IReadOnlyDictionary<string, object?>? oldData)
+    {
+        if (keyColumns.Count == 0)
+        {
+            return null;
+        }
+
+        var source = data ?? oldData;
+        if (source == null || source.Count == 0)
+        {
+            return $"{schema.ToLowerInvariant()}.{table.ToLowerInvariant()}";
+        }
+
+        var parts = new string[keyColumns.Count];
+        for (var i = 0; i < keyColumns.Count; i++)
+        {
+            var col = keyColumns[i];
+            var found = TryGetColumnValue(source, col, out var val);
+            if (!found && data != null && oldData != null)
+            {
+                TryGetColumnValue(oldData, col, out val);
+            }
+
+            var valText = val switch
+            {
+                null => "null",
+                string s when s == "__toast_unchanged__" => "__toast__",
+                _ => Convert.ToString(val, CultureInfo.InvariantCulture) ?? "null",
+            };
+            parts[i] = $"{col}={valText}";
+        }
+
+        return $"{schema.ToLowerInvariant()}.{table.ToLowerInvariant()}:{string.Join("|", parts)}";
+    }
+
+    private static bool TryGetColumnValue(
+        IReadOnlyDictionary<string, object?> source,
+        string columnName,
+        out object? value)
+    {
+        if (source.TryGetValue(columnName, out value))
+        {
+            return true;
+        }
+
+        foreach (var entry in source)
+        {
+            if (string.Equals(entry.Key, columnName, StringComparison.OrdinalIgnoreCase))
+            {
+                value = entry.Value;
+                return true;
+            }
+        }
+
+        value = null;
+        return false;
     }
 }

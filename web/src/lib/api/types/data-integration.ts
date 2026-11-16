@@ -31,6 +31,8 @@ export type CdcTableReplicaIdentityDto = import('../generated').SwapMidDataInteg
 export type CdcPreflightResultDto = import('../generated').SwapMidDataIntegrationCdcPreflightResultDto
 export type CdcCaptureResultDto = import('../generated').SwapMidDataIntegrationCdcCaptureResultDto
 export type CdcDropSlotResultDto = import('../generated').SwapMidDataIntegrationCdcDropSlotResultDto
+export type CdcSinkColumnTemplateDto = import('../generated').SwapMidDataIntegrationCdcSinkColumnTemplateDto
+export type CdcSinkTemplateDto = import('../generated').SwapMidDataIntegrationCdcSinkTemplateDto
 export type CdcStreamDto = Omit<
   Require<
     import('../generated').SwapMidDataIntegrationCdcStreamDto,

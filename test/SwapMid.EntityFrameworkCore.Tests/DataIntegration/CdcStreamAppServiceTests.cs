@@ -193,5 +193,35 @@ public class CdcStreamAppServiceTests : SwapMidEntityFrameworkCoreTestBase
         list.TotalCount.ShouldBe(1);
         list.Items[0].TargetSinkName.ShouldBe(s3Sink.Name);
         list.Items[0].TargetSinkType.ShouldBe(DataSourceType.ObjectStorage);
+
+        var chSink = await _dataSourceAppService.CreateAsync(new DataSourceCreateUpdateDto
+        {
+            Name = $"ch-cdc-sink-{Guid.NewGuid():N}"[..32],
+            Type = DataSourceType.ClickHouse,
+            Config = """{"host":"127.0.0.1","port":8123,"database":"analytics","username":"default"}""",
+        });
+        var chStream = await _cdcAppService.CreateAsync(new CdcStreamCreateUpdateDto
+        {
+            Name = $"pg-to-ch-{Guid.NewGuid():N}"[..32],
+            SourceId = pgSource.Id,
+            PublicationName = "pub_ch",
+            SlotName = "slot_ch",
+            MonitoredTables = "public.etl_demo_source_orders",
+            TargetMode = CdcTargetMode.ExternalSink,
+            TargetSinkId = chSink.Id,
+            TargetSinkDestination = "cdc_orders_changelog",
+            TargetSinkKeyColumns = "order_id, customer_code",
+        });
+
+        chStream.TargetSinkKeyColumns.ShouldBe("order_id, customer_code");
+
+        var template = await _cdcAppService.GetSinkTemplateAsync(chStream.Id);
+        template.TargetType.ShouldBe(DataSourceType.ClickHouse);
+        template.Destination.ShouldBe("cdc_orders_changelog");
+        template.Columns.Count.ShouldBe(11);
+        template.PartitionKeyExpression.ShouldBe("public.etl_demo_source_orders:order_id=<value>|customer_code=<value>");
+        template.ClickHouseDdl.ShouldNotBeNull();
+        template.ClickHouseDdl.ShouldContain("CREATE TABLE IF NOT EXISTS `analytics`.`cdc_orders_changelog`");
+        template.SamplePayloadJson.ShouldContain("etl_demo_source_orders");
     }
 }

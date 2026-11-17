@@ -26,12 +26,14 @@ export interface CdcFormState {
   initialSnapshotEnabled: boolean
   pollIntervalSeconds: string
   maxBatchSize: string
-  targetMode: '0' | '1' | '2'
+  targetMode: '0' | '1' | '2' | '3'
   targetTopicName: string
   targetPipelineId: string
   targetSinkId: string
   targetSinkDestination: string
   targetSinkKeyColumns: string
+  targetDeletePolicy: '0' | '1'
+  schemaDriftPolicy: '0' | '1' | '2'
 }
 
 export const DEFAULT_CDC_TOPIC = 'integration.cdc.events'
@@ -53,11 +55,24 @@ export const defaultCdcForm: CdcFormState = {
   targetSinkId: '',
   targetSinkDestination: '',
   targetSinkKeyColumns: '',
+  targetDeletePolicy: '0',
+  schemaDriftPolicy: '0',
 }
 
-function normalizeTargetMode(mode: number | undefined): '0' | '1' | '2' {
+function normalizeTargetMode(mode: number | undefined): '0' | '1' | '2' | '3' {
   if (Number(mode) === 1) return '1'
   if (Number(mode) === 2) return '2'
+  if (Number(mode) === 3) return '3'
+  return '0'
+}
+
+function normalizeDeletePolicy(policy: number | undefined): '0' | '1' {
+  return Number(policy) === 1 ? '1' : '0'
+}
+
+function normalizeDriftPolicy(policy: number | undefined): '0' | '1' | '2' {
+  if (Number(policy) === 1) return '1'
+  if (Number(policy) === 2) return '2'
   return '0'
 }
 
@@ -79,13 +94,17 @@ export function toCdcForm(item: CdcStreamDto): CdcFormState {
     targetSinkId: item.targetSinkId ?? '',
     targetSinkDestination: item.targetSinkDestination ?? '',
     targetSinkKeyColumns: item.targetSinkKeyColumns ?? '',
+    targetDeletePolicy: normalizeDeletePolicy(item.targetDeletePolicy),
+    schemaDriftPolicy: normalizeDriftPolicy(item.schemaDriftPolicy),
   }
 }
 
 export function toCdcBody(form: CdcFormState) {
   const poll = Number.parseInt(form.pollIntervalSeconds, 10)
   const batch = Number.parseInt(form.maxBatchSize, 10)
-  const mode = Number(form.targetMode) === 1 ? 1 : (Number(form.targetMode) === 2 ? 2 : 0)
+  const rawMode = Number(form.targetMode)
+  const mode = rawMode === 1 || rawMode === 2 || rawMode === 3 ? rawMode : 0
+  const usesSinkTarget = mode === 2 || mode === 3
   return {
     name: form.name.trim(),
     description: form.description.trim() || null,
@@ -100,9 +119,11 @@ export function toCdcBody(form: CdcFormState) {
     targetMode: mode,
     targetTopicName: mode === 0 ? (form.targetTopicName.trim() || null) : null,
     targetPipelineId: mode === 1 ? (form.targetPipelineId || null) : null,
-    targetSinkId: mode === 2 ? (form.targetSinkId || null) : null,
-    targetSinkDestination: mode === 2 ? (form.targetSinkDestination.trim() || null) : null,
-    targetSinkKeyColumns: mode === 2 ? (form.targetSinkKeyColumns.trim() || null) : null,
+    targetSinkId: usesSinkTarget ? (form.targetSinkId || null) : null,
+    targetSinkDestination: usesSinkTarget ? (form.targetSinkDestination.trim() || null) : null,
+    targetSinkKeyColumns: usesSinkTarget ? (form.targetSinkKeyColumns.trim() || null) : null,
+    targetDeletePolicy: mode === 3 && form.targetDeletePolicy === '1' ? 1 : 0,
+    schemaDriftPolicy: Number(form.schemaDriftPolicy) === 1 ? 1 : (Number(form.schemaDriftPolicy) === 2 ? 2 : 0),
   }
 }
 
@@ -119,6 +140,13 @@ export function isCdcFormValid(form: CdcFormState): boolean {
   }
   if (form.targetMode === '1') {
     return form.targetPipelineId.trim().length > 0
+  }
+  if (form.targetMode === '3') {
+    const tables = form.monitoredTables.split(/[,;\r\n]/).map(s => s.trim()).filter(Boolean)
+    return tables.length === 1
+      && form.targetSinkId.trim().length > 0
+      && form.targetSinkDestination.trim().length > 0
+      && form.targetSinkKeyColumns.trim().length > 0
   }
   return form.targetSinkId.trim().length > 0 && form.targetSinkDestination.trim().length > 0
 }
@@ -139,12 +167,14 @@ function getSinkTypeTag(type: number): string {
 export function CdcFormDialog({
   crud,
   sources,
+  relationalTargets,
   sinks = [],
   pipelines,
   topics,
 }: {
   crud: ReturnType<typeof useCrudForm<CdcFormState, CdcStreamDto>>
   sources: CdcSourceOption[]
+  relationalTargets?: CdcSourceOption[]
   sinks?: CdcSourceOption[]
   pipelines: CdcPipelineOption[]
   topics: CdcTopicOption[]
@@ -154,6 +184,8 @@ export function CdcFormDialog({
   const tc = useTranslations('Common')
 
   const sourceOptions: ComboboxOption[] = sources.map(s => ({ value: s.id, label: s.name }))
+  const relOptions: ComboboxOption[] = (relationalTargets && relationalTargets.length > 0 ? relationalTargets : sources)
+    .map(s => ({ value: s.id, label: s.name }))
   const sinkOptions: ComboboxOption[] = sinks.map(s => ({
     value: s.id,
     label: `${s.name} (${getSinkTypeTag(s.type)})`,
@@ -283,13 +315,14 @@ export function CdcFormDialog({
           <Label>{t('targetModeFieldLabel')}</Label>
           <Select
             value={crud.form.targetMode}
-            onValueChange={v => crud.set({ targetMode: v === '1' ? '1' : (v === '2' ? '2' : '0') })}
+            onValueChange={v => crud.set({ targetMode: normalizeTargetMode(Number(v)) })}
           >
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="0">{t('targetModeTopic')}</SelectItem>
               <SelectItem value="1">{t('targetModePipeline')}</SelectItem>
               <SelectItem value="2">{t('targetModeExternalSink')}</SelectItem>
+              <SelectItem value="3">{t('targetModeRelationalTable')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -318,6 +351,18 @@ export function CdcFormDialog({
               emptyText={t('pipelineEmptyText')}
             />
           </div>
+        ) : crud.form.targetMode === '3' ? (
+          <div className="space-y-1.5">
+            <Label>{t('targetRelationalDbFieldLabel')}</Label>
+            <Combobox
+              options={relOptions}
+              value={crud.form.targetSinkId}
+              onChange={v => crud.set({ targetSinkId: v })}
+              placeholder={t('relationalDbPlaceholder')}
+              searchPlaceholder={t('relationalDbSearchPlaceholder')}
+              emptyText={t('relationalDbEmptyText')}
+            />
+          </div>
         ) : (
           <div className="space-y-1.5">
             <Label>{t('targetSinkFieldLabel')}</Label>
@@ -333,20 +378,30 @@ export function CdcFormDialog({
         )}
       </div>
 
-      {crud.form.targetMode === '2' && (
+      {(crud.form.targetMode === '2' || crud.form.targetMode === '3') && (
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label>{t('targetSinkDestFieldLabel')}</Label>
+            <Label>
+              {crud.form.targetMode === '3'
+                ? t('targetRelationalTableFieldLabel')
+                : t('targetSinkDestFieldLabel')}
+            </Label>
             <Input
               value={crud.form.targetSinkDestination}
               onChange={e => crud.set({ targetSinkDestination: e.target.value })}
-              placeholder={sinkDestPlaceholder}
+              placeholder={crud.form.targetMode === '3' ? 'public.etl_demo_orders_mirror' : sinkDestPlaceholder}
               className="font-mono"
             />
-            <p className="text-xs text-muted-foreground">{t('targetSinkDestHint')}</p>
+            <p className="text-xs text-muted-foreground">
+              {crud.form.targetMode === '3' ? t('targetRelationalTableHint') : t('targetSinkDestHint')}
+            </p>
           </div>
           <div className="space-y-1.5">
-            <Label>{t('targetSinkKeyColumnsFieldLabel')}</Label>
+            <Label>
+              {crud.form.targetMode === '3'
+                ? t('targetSinkKeyColumnsRequiredFieldLabel')
+                : t('targetSinkKeyColumnsFieldLabel')}
+            </Label>
             <Input
               value={crud.form.targetSinkKeyColumns}
               onChange={e => crud.set({ targetSinkKeyColumns: e.target.value })}
@@ -357,6 +412,39 @@ export function CdcFormDialog({
           </div>
         </div>
       )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label>{t('schemaDriftPolicyFieldLabel')}</Label>
+          <Select
+            value={crud.form.schemaDriftPolicy ?? '0'}
+            onValueChange={v => crud.set({ schemaDriftPolicy: normalizeDriftPolicy(Number(v)) })}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">{t('schemaDriftPolicyIgnore')}</SelectItem>
+              <SelectItem value="1">{t('schemaDriftPolicyWarn')}</SelectItem>
+              <SelectItem value="2">{t('schemaDriftPolicyPauseAndAlert')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {crud.form.targetMode === '3' && (
+          <div className="space-y-1.5">
+            <Label>{t('targetDeletePolicyFieldLabel')}</Label>
+            <Select
+              value={crud.form.targetDeletePolicy ?? '0'}
+              onValueChange={v => crud.set({ targetDeletePolicy: v === '1' ? '1' : '0' })}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">{t('deletePolicyDeleteRow')}</SelectItem>
+                <SelectItem value="1">{t('deletePolicyIgnore')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
 
       <div className="space-y-1.5">
         <Label>{tc('description')}</Label>

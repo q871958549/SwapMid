@@ -277,6 +277,27 @@ namespace SwapMid.Migrations
                         .HasMaxLength(63)
                         .HasColumnType("character varying(63)");
 
+                    b.Property<string>("SchemaBaselineHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("SchemaBaselineJson")
+                        .HasMaxLength(32768)
+                        .HasColumnType("character varying(32768)");
+
+                    b.Property<bool>("SchemaDriftDetected")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("SchemaDriftDetectedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("SchemaDriftPolicy")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SchemaDriftSummary")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<string>("SlotName")
                         .IsRequired()
                         .HasMaxLength(63)
@@ -295,6 +316,9 @@ namespace SwapMid.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TargetDeletePolicy")
                         .HasColumnType("integer");
 
                     b.Property<int>("TargetMode")

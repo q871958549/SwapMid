@@ -180,10 +180,15 @@ public static class DataIntegrationEntityTypeConfigurations
             b.Property(x => x.TargetTopicName).HasMaxLength(CdcStreamConsts.MaxTargetTopicNameLength);
             b.Property(x => x.TargetSinkDestination).HasMaxLength(CdcStreamConsts.MaxTargetSinkDestinationLength);
             b.Property(x => x.TargetSinkKeyColumns).HasMaxLength(CdcStreamConsts.MaxTargetSinkKeyColumnsLength);
+            b.Property(x => x.SchemaBaselineHash).HasMaxLength(CdcStreamConsts.MaxSchemaBaselineHashLength);
+            b.Property(x => x.SchemaBaselineJson).HasMaxLength(CdcStreamConsts.MaxSchemaBaselineJsonLength);
+            b.Property(x => x.SchemaDriftSummary).HasMaxLength(CdcStreamConsts.MaxSchemaDriftSummaryLength);
             b.Property(x => x.CheckpointLsn).HasMaxLength(CdcStreamConsts.MaxCheckpointLsnLength);
             b.Property(x => x.LastErrorCode).HasMaxLength(CdcStreamConsts.MaxErrorCodeLength);
             b.Property(x => x.LastErrorMessage).HasMaxLength(CdcStreamConsts.MaxErrorMessageLength);
             b.Property(x => x.TargetMode).HasConversion<int>();
+            b.Property(x => x.TargetDeletePolicy).HasConversion<int>();
+            b.Property(x => x.SchemaDriftPolicy).HasConversion<int>();
             b.Property(x => x.SnapshotStatus).HasConversion<int>();
             b.Property(x => x.Status).HasConversion<int>();
             b.HasIndex(x => x.Name).IsUnique();

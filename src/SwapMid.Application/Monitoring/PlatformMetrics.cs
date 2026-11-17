@@ -116,6 +116,11 @@ public static partial class PlatformMetrics
         "PostgreSQL CDC 下游投递批次计数（固定低基数标签 target_mode）",
         new CounterConfiguration { LabelNames = ["target_mode"] });
 
+    public static readonly Counter CdcSchemaDriftEventsTotal = Metrics.CreateCounter(
+        "swapmid_cdc_schema_drift_events_total",
+        "PostgreSQL CDC 上游表结构漂移护栏触发与确认计数（固定低基数标签 action）",
+        new CounterConfiguration { LabelNames = ["action"] });
+
     private static readonly string[] EtlExecutionAdmissionOutcomes =
     [
         "acquired", "busy", "idempotent_replay", "coordination_failure",
@@ -154,7 +159,8 @@ public static partial class PlatformMetrics
             EtlExecutionResultsTotal);
         PublishSingleLabelSeries(CdcEventsCapturedTotal, ["insert", "update", "delete"]);
         PublishSingleLabelSeries(CdcCapturesTotal, ["succeeded", "failed"]);
-        PublishSingleLabelSeries(CdcDeliveriesTotal, ["message_bus_topic", "data_pipeline", "kafka", "clickhouse", "object_storage"]);
+        PublishSingleLabelSeries(CdcDeliveriesTotal, ["message_bus_topic", "data_pipeline", "kafka", "clickhouse", "object_storage", "relational_table"]);
+        PublishSingleLabelSeries(CdcSchemaDriftEventsTotal, ["warn", "paused", "accepted"]);
     }
 
     internal static void PublishEtlExecutionSeries(

@@ -52,6 +52,8 @@ vi.mock('@/lib/crud/use-crud-form', () => ({
       targetSinkId: '',
       targetSinkDestination: '',
       targetSinkKeyColumns: '',
+      targetDeletePolicy: '0',
+      schemaDriftPolicy: '0',
     },
     openEdit: mocks.openEdit,
     openCreate: mocks.openCreate,
@@ -344,6 +346,116 @@ describe('CdcStreamsClient', () => {
     await waitFor(() => {
       expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/snapshot`, { method: 'POST' })
       expect(mocks.reloadAndRefresh).toHaveBeenCalledOnce()
+    })
+  })
+
+  it('displays schema drift alert in preflight and accepts new schema baseline', async () => {
+    mocks.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          isReady: true,
+          walLevel: 'logical',
+          postgreSqlVersion: '18.0',
+          publicationExists: true,
+          slotExists: true,
+          slotActive: false,
+          slotPlugin: 'pgoutput',
+          confirmedFlushLsn: '0/16B6C50',
+          currentWalLsn: '0/16B6D00',
+          schemaDriftDetected: true,
+          schemaDriftSummary: 'public.etl_demo_source_orders: +col loyalty_tier (text)',
+          currentSchemaHash: 'abcdef0123456789',
+          diagnostics: ['Schema drift detected'],
+          summary: 'Ready',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          schemaBaselineHash: 'abcdef0123456789',
+          message: 'Schema accepted',
+        }),
+      })
+
+    renderClient(makeStream({
+      status: 2,
+      targetMode: 3,
+      targetSinkId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      targetSinkName: 'Mirror PostgreSQL',
+      targetSinkDestination: 'public.etl_demo_orders_mirror',
+      targetSinkKeyColumns: 'order_id',
+      schemaDriftPolicy: 2,
+      schemaDriftDetected: true,
+      schemaDriftSummary: 'public.etl_demo_source_orders: +col loyalty_tier (text)',
+    }))
+
+    fireEvent.click(screen.getByRole('button', { name: '前置预检' }))
+    expect(await screen.findByText('public.etl_demo_source_orders: +col loyalty_tier (text)')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }))
+
+    fireEvent.click(screen.getByRole('button', { name: '确认Schema' }))
+    await waitFor(() => {
+      expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/accept-schema`, { method: 'POST' })
+      expect(mocks.reloadAndRefresh).toHaveBeenCalledOnce()
+    })
+  })
+
+  it('handles 204 No Content responses cleanly on activate and pause lifecycle actions', async () => {
+    mocks.fetch
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+    const { rerender } = renderClient(makeStream({ status: 0 }))
+    fireEvent.click(screen.getByRole('button', { name: '激活' }))
+
+    await waitFor(() => {
+      expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/activate`, { method: 'PUT' })
+      expect(mocks.reloadAndRefresh).toHaveBeenCalledTimes(1)
+      expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success', title: 'CDC 流已激活' }))
+    })
+
+    rerender(
+      <NextIntlClientProvider locale="zh-Hans" messages={zhHansMessages}>
+        <CdcStreamsClient
+          data={{ items: [makeStream({ status: 1 })], totalCount: 1 }}
+          sources={[{ id: SOURCE_ID, name: 'Local Demo PostgreSQL', type: 0, config: '{"provider":"PostgreSql"}' }]}
+          pipelines={[]}
+          topics={[{ id: 't1', name: 'integration.cdc.events' }]}
+          canCreate
+          canUpdate
+          canDelete
+          canManage
+        />
+      </NextIntlClientProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '暂停' }))
+
+    await waitFor(() => {
+      expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/pause`, { method: 'PUT' })
+      expect(mocks.reloadAndRefresh).toHaveBeenCalledTimes(2)
+      expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success', title: 'CDC 流已暂停' }))
+    })
+  })
+
+  it('parses ABP error JSON body on 403 capture drift failure and refreshes stream row state', async () => {
+    mocks.fetch.mockResolvedValueOnce(new Response(
+      JSON.stringify({ error: { code: 'SwapMid:ETL:036', message: '检测到上游表 Schema 漂移，已自动暂停 CDC 流' } }),
+      { status: 403, headers: { 'Content-Type': 'application/json' } },
+    ))
+
+    renderClient(makeStream({ status: 1 }))
+    fireEvent.click(screen.getByRole('button', { name: '立即捕获' }))
+
+    await waitFor(() => {
+      expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({
+        variant: 'destructive',
+        title: 'WAL 捕获失败',
+        description: '检测到上游表 Schema 漂移，已自动暂停 CDC 流',
+      }))
+      expect(mocks.reloadAndRefresh).toHaveBeenCalledTimes(1)
     })
   })
 })

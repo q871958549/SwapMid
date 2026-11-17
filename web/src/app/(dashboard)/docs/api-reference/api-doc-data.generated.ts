@@ -3350,7 +3350,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetMode",
                 "cnName": "",
                 "type": "CdcTargetMode",
-                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink；3=RelationalTable",
                 "nullable": false
               },
               {
@@ -3406,6 +3406,48 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetSinkKeyColumns",
                 "cnName": "",
                 "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetDeletePolicy",
+                "cnName": "",
+                "type": "CdcDeletePolicy",
+                "description": "取值：0=DeleteRow；1=Ignore",
+                "nullable": false
+              },
+              {
+                "name": "schemaDriftPolicy",
+                "cnName": "",
+                "type": "CdcSchemaDriftPolicy",
+                "description": "取值：0=Ignore；1=Warn；2=PauseAndAlert",
+                "nullable": false
+              },
+              {
+                "name": "schemaBaselineHash",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "schemaDriftDetected",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "schemaDriftSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "schemaDriftDetectedAt",
+                "cnName": "",
+                "type": "DateTime",
                 "description": "",
                 "nullable": true
               },
@@ -3589,7 +3631,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetMode",
                 "cnName": "",
                 "type": "CdcTargetMode",
-                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink；3=RelationalTable",
                 "required": false
               },
               {
@@ -3625,6 +3667,20 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "string",
                 "description": "",
+                "required": false
+              },
+              {
+                "name": "targetDeletePolicy",
+                "cnName": "",
+                "type": "CdcDeletePolicy",
+                "description": "取值：0=DeleteRow；1=Ignore",
+                "required": false
+              },
+              {
+                "name": "schemaDriftPolicy",
+                "cnName": "",
+                "type": "CdcSchemaDriftPolicy",
+                "description": "取值：0=Ignore；1=Warn；2=PauseAndAlert",
                 "required": false
               },
               {
@@ -3717,7 +3773,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetMode",
                 "cnName": "",
                 "type": "CdcTargetMode",
-                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink；3=RelationalTable",
                 "nullable": false
               },
               {
@@ -3773,6 +3829,48 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetSinkKeyColumns",
                 "cnName": "",
                 "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetDeletePolicy",
+                "cnName": "",
+                "type": "CdcDeletePolicy",
+                "description": "取值：0=DeleteRow；1=Ignore",
+                "nullable": false
+              },
+              {
+                "name": "schemaDriftPolicy",
+                "cnName": "",
+                "type": "CdcSchemaDriftPolicy",
+                "description": "取值：0=Ignore；1=Warn；2=PauseAndAlert",
+                "nullable": false
+              },
+              {
+                "name": "schemaBaselineHash",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "schemaDriftDetected",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "schemaDriftSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "schemaDriftDetectedAt",
+                "cnName": "",
+                "type": "DateTime",
                 "description": "",
                 "nullable": true
               },
@@ -3979,7 +4077,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetMode",
                 "cnName": "",
                 "type": "CdcTargetMode",
-                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink；3=RelationalTable",
                 "nullable": false
               },
               {
@@ -4035,6 +4133,48 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetSinkKeyColumns",
                 "cnName": "",
                 "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetDeletePolicy",
+                "cnName": "",
+                "type": "CdcDeletePolicy",
+                "description": "取值：0=DeleteRow；1=Ignore",
+                "nullable": false
+              },
+              {
+                "name": "schemaDriftPolicy",
+                "cnName": "",
+                "type": "CdcSchemaDriftPolicy",
+                "description": "取值：0=Ignore；1=Warn；2=PauseAndAlert",
+                "nullable": false
+              },
+              {
+                "name": "schemaBaselineHash",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "schemaDriftDetected",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "schemaDriftSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "schemaDriftDetectedAt",
+                "cnName": "",
+                "type": "DateTime",
                 "description": "",
                 "nullable": true
               },
@@ -4227,7 +4367,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetMode",
                 "cnName": "",
                 "type": "CdcTargetMode",
-                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink；3=RelationalTable",
                 "required": false
               },
               {
@@ -4263,6 +4403,20 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "string",
                 "description": "",
+                "required": false
+              },
+              {
+                "name": "targetDeletePolicy",
+                "cnName": "",
+                "type": "CdcDeletePolicy",
+                "description": "取值：0=DeleteRow；1=Ignore",
+                "required": false
+              },
+              {
+                "name": "schemaDriftPolicy",
+                "cnName": "",
+                "type": "CdcSchemaDriftPolicy",
+                "description": "取值：0=Ignore；1=Warn；2=PauseAndAlert",
                 "required": false
               },
               {
@@ -4355,7 +4509,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetMode",
                 "cnName": "",
                 "type": "CdcTargetMode",
-                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink；3=RelationalTable",
                 "nullable": false
               },
               {
@@ -4411,6 +4565,48 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetSinkKeyColumns",
                 "cnName": "",
                 "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetDeletePolicy",
+                "cnName": "",
+                "type": "CdcDeletePolicy",
+                "description": "取值：0=DeleteRow；1=Ignore",
+                "nullable": false
+              },
+              {
+                "name": "schemaDriftPolicy",
+                "cnName": "",
+                "type": "CdcSchemaDriftPolicy",
+                "description": "取值：0=Ignore；1=Warn；2=PauseAndAlert",
+                "nullable": false
+              },
+              {
+                "name": "schemaBaselineHash",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "schemaDriftDetected",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "schemaDriftSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "schemaDriftDetectedAt",
+                "cnName": "",
+                "type": "DateTime",
                 "description": "",
                 "nullable": true
               },
@@ -4533,6 +4729,51 @@ export const API_MODULES: ApiModule[] = [
                 "type": "Guid",
                 "required": true,
                 "description": "唯一标识"
+              }
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/cdc-streams/{id}/accept-schema",
+            "summary": "确认上游最新表结构作为新的 Schema 基线并清除漂移告警",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "schemaBaselineHash",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "acceptedAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "message",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
               }
             ]
           },
@@ -4722,7 +4963,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetMode",
                 "cnName": "",
                 "type": "CdcTargetMode",
-                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink",
+                "description": "取值：0=MessageBusTopic；1=DataPipeline；2=ExternalSink；3=RelationalTable",
                 "nullable": false
               },
               {
@@ -4778,6 +5019,48 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetSinkKeyColumns",
                 "cnName": "",
                 "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetDeletePolicy",
+                "cnName": "",
+                "type": "CdcDeletePolicy",
+                "description": "取值：0=DeleteRow；1=Ignore",
+                "nullable": false
+              },
+              {
+                "name": "schemaDriftPolicy",
+                "cnName": "",
+                "type": "CdcSchemaDriftPolicy",
+                "description": "取值：0=Ignore；1=Warn；2=PauseAndAlert",
+                "nullable": false
+              },
+              {
+                "name": "schemaBaselineHash",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "schemaDriftDetected",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "schemaDriftSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "schemaDriftDetectedAt",
+                "cnName": "",
+                "type": "DateTime",
                 "description": "",
                 "nullable": true
               },
@@ -5056,6 +5339,27 @@ export const API_MODULES: ApiModule[] = [
               },
               {
                 "name": "tableReplicaIdentities[].replicaIdentity",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "schemaDriftDetected",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "schemaDriftSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "currentSchemaHash",
                 "cnName": "",
                 "type": "string",
                 "description": "",

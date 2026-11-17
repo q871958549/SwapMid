@@ -109,11 +109,22 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
             slotName,
             monitoredTables,
             cancellationToken);
+        var currentSchemas = await PgOutputReplicationMetadataReader.InspectTableSchemasAsync(
+            (NpgsqlConnection)conn,
+            publicationName,
+            state.PublicationExists,
+            monitoredTables,
+            cancellationToken);
+        var driftEval = CdcSchemaDriftEvaluator.Compare(stream.SchemaBaselineJson, currentSchemas);
         var diagnostics = PgOutputReplicationMetadataReader.BuildPreflightDiagnostics(
             stream,
             publicationName,
             slotName,
             state);
+        if (driftEval.HasDrift)
+        {
+            diagnostics.Add($"上游表结构存在 Schema 漂移：{driftEval.Summary}");
+        }
 
         if (state.WalLagBytes.HasValue)
         {
@@ -144,6 +155,9 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
             CurrentWalLsn = state.CurrentWalLsn,
             WalLagBytes = state.WalLagBytes,
             TableReplicaIdentities = state.TableReplicaIdentities,
+            SchemaDriftDetected = driftEval.HasDrift,
+            SchemaDriftSummary = driftEval.HasDrift ? driftEval.Summary : null,
+            CurrentSchemaHash = driftEval.CurrentHash,
             Diagnostics = diagnostics,
             Summary = isReady ? "PostgreSQL pgoutput 逻辑复制前置条件就绪。" : "逻辑复制前置条件尚未就绪，请按诊断提示处理。",
         };
@@ -175,6 +189,33 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
         };
     }
 
+    internal async Task<CdcSchemaDriftEvaluation> EvaluateSchemaAsync(
+        DataSource source,
+        CdcStreamDefinition stream,
+        CancellationToken cancellationToken)
+    {
+        var publicationName = CdcProtocolHelpers.ValidateReplicationIdentifier(stream.PublicationName, "PublicationName");
+        var monitoredTables = CdcProtocolHelpers.ParseMonitoredTables(stream.MonitoredTables);
+        EnsurePostgreSqlSource(source);
+
+        await using var conn = _connectionFactory.CreateTarget(source.Config, ConnectTimeoutSeconds, 30);
+        await conn.OpenAsync(cancellationToken);
+        bool pubExists;
+        await using (var pubCmd = new NpgsqlCommand("SELECT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = @pub)", (NpgsqlConnection)conn))
+        {
+            pubCmd.Parameters.AddWithValue("pub", publicationName);
+            pubExists = Convert.ToBoolean(await pubCmd.ExecuteScalarAsync(cancellationToken));
+        }
+
+        var schemas = await PgOutputReplicationMetadataReader.InspectTableSchemasAsync(
+            (NpgsqlConnection)conn,
+            publicationName,
+            pubExists,
+            monitoredTables,
+            cancellationToken);
+        return CdcSchemaDriftEvaluator.Compare(stream.SchemaBaselineJson, schemas);
+    }
+
     internal Task<PgOutputCaptureBatchResult> CaptureBatchAsync(
         DataSource source,
         CdcStreamDefinition stream,
@@ -185,7 +226,8 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
         DataSource source,
         CdcStreamDefinition stream,
         DataSource? targetSink,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<CdcSchemaDriftEvaluation, Task>? onSchemaEvaluated = null)
     {
         var sw = Stopwatch.StartNew();
         var publicationName = CdcProtocolHelpers.ValidateReplicationIdentifier(stream.PublicationName, "PublicationName");
@@ -206,6 +248,24 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
                     slotName,
                     monitoredTables,
                     cancellationToken);
+
+                var schemas = await PgOutputReplicationMetadataReader.InspectTableSchemasAsync(
+                    (NpgsqlConnection)adminConn,
+                    publicationName,
+                    publicationExists: true,
+                    monitoredTables,
+                    cancellationToken);
+                var schemaEval = CdcSchemaDriftEvaluator.Compare(stream.SchemaBaselineJson, schemas);
+                if (onSchemaEvaluated != null)
+                {
+                    await onSchemaEvaluated(schemaEval);
+                }
+                else if (schemaEval.HasDrift && stream.SchemaDriftPolicy == CdcSchemaDriftPolicy.PauseAndAlert)
+                {
+                    PlatformMetrics.CdcSchemaDriftEventsTotal.WithLabels("paused").Inc();
+                    throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamSchemaDriftDetected)
+                        .WithData("Reason", schemaEval.Summary);
+                }
             }
 
             // 通过工厂构造同款连接参数串供 LogicalReplicationConnection 使用（带物理连接隔离，Pooling=false）。
@@ -276,6 +336,8 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
                     _integrationEventPublisher,
                     _executionCoordinator,
                     _sinkWriters,
+                    _connectionFactory,
+                    _logger,
                     cancellationToken);
             }
 
@@ -350,14 +412,14 @@ public sealed class PgOutputCdcCaptureService : ITransientDependency
                 {
                     return stream.TargetMode == CdcTargetMode.DataPipeline
                         ? await CdcStreamDeliveryDispatcher.DeliverAsync(
-                            stream, targetSink, chunk, lsn, _integrationEventPublisher, _executionCoordinator, _sinkWriters, ct, seqOffset, idempotencyKey, triggerPipeline: true)
+                            stream, targetSink, chunk, lsn, _integrationEventPublisher, _executionCoordinator, _sinkWriters, _connectionFactory, _logger, ct, seqOffset, idempotencyKey, triggerPipeline: true)
                         : 0;
                 }
 
                 var delivered = stream.TargetMode == CdcTargetMode.DataPipeline
                     ? 0
                     : await CdcStreamDeliveryDispatcher.DeliverAsync(
-                        stream, targetSink, chunk, lsn, _integrationEventPublisher, _executionCoordinator, _sinkWriters, ct, seqOffset, idempotencyKey, triggerPipeline: false);
+                        stream, targetSink, chunk, lsn, _integrationEventPublisher, _executionCoordinator, _sinkWriters, _connectionFactory, _logger, ct, seqOffset, idempotencyKey, triggerPipeline: false);
                 foreach (var change in chunk)
                 {
                     PlatformMetrics.CdcEventsCapturedTotal.WithLabels(change.Operation).Inc();

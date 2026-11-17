@@ -58,6 +58,7 @@ public static class SwapMidDomainErrorCodes
         public const string CdcStreamNotActive = "SwapMid:ETL:033";
         public const string CdcStreamCaptureBusy = "SwapMid:ETL:034";
         public const string CdcReplicationPreconditionFailed = "SwapMid:ETL:035";
+        public const string CdcStreamSchemaDriftDetected = "SwapMid:ETL:036";
     }
 
     public static class EnterpriseManagement

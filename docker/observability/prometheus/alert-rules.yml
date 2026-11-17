@@ -80,3 +80,13 @@ groups:
         annotations:
           summary: "PostgreSQL CDC replication slot retained WAL lag above 100 MiB"
           description: "At least one pgoutput replication slot has retained more than 100 MiB of WAL; verify active polling or release unused slots."
+
+      - alert: SwapMidCdcSchemaDriftDetected
+        expr: increase(swapmid_cdc_schema_drift_events_total{action=~"warn|paused"}[10m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          engine: data-integration-cdc
+        annotations:
+          summary: "Upstream PostgreSQL CDC schema drift detected"
+          description: "At least one monitored CDC source table changed columns or types; affected PauseAndAlert streams were paused automatically pending operator confirmation."

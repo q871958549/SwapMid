@@ -1,6 +1,6 @@
 'use client'
 
-import { Activity, DatabaseBackup, FileCode2, Loader2, PauseCircle, Play, Power, RotateCcw, Unplug } from 'lucide-react'
+import { Activity, DatabaseBackup, FileCode2, Loader2, PauseCircle, Play, Power, RotateCcw, ShieldCheck, Unplug } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
@@ -11,6 +11,7 @@ export const CDC_STATUS_PAUSED = 2
 export const CDC_STATUS_ERROR = 3
 export const CDC_TARGET_PIPELINE = 1
 export const CDC_TARGET_EXTERNAL_SINK = 2
+export const CDC_TARGET_RELATIONAL = 3
 
 export function getCdcStatusMeta(
   status: number | undefined,
@@ -45,7 +46,14 @@ export function CdcStatusCell({ stream }: { stream: CdcStreamDto }) {
 
   return (
     <div className="space-y-1">
-      <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
+      <div className="flex flex-wrap items-center gap-1">
+        <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
+        {stream.schemaDriftDetected && (
+          <StatusBadge tone="danger" title={stream.schemaDriftSummary ?? undefined}>
+            {t('schemaDriftDetectedBadge')}
+          </StatusBadge>
+        )}
+      </div>
       {showSnap && <div className="text-xs text-muted-foreground">{snapLabel}</div>}
     </div>
   )
@@ -64,10 +72,13 @@ export function CdcTargetCell({ stream }: { stream: CdcStreamDto }) {
     )
   }
 
-  if (mode === CDC_TARGET_EXTERNAL_SINK) {
+  if (mode === CDC_TARGET_EXTERNAL_SINK || mode === CDC_TARGET_RELATIONAL) {
+    const modeLabel = mode === CDC_TARGET_RELATIONAL
+      ? t('targetModeRelationalTable')
+      : t('targetModeExternalSink')
     return (
       <div className="space-y-0.5 text-xs">
-        <div className="font-medium">{t('targetModeExternalSink')}</div>
+        <div className="font-medium">{modeLabel}</div>
         <div className="font-mono text-muted-foreground">
           {`${stream.targetSinkName || '-'} · ${stream.targetSinkDestination || '-'}`}
         </div>
@@ -99,6 +110,7 @@ export function CdcRowActions({
   onCaptureNow,
   onSnapshot,
   onCheckpointReset,
+  onAcceptSchema,
   onDropSlot,
 }: {
   row: CdcStreamDto
@@ -111,6 +123,7 @@ export function CdcRowActions({
   onCaptureNow: (row: CdcStreamDto) => void
   onSnapshot: (row: CdcStreamDto) => void
   onCheckpointReset: (row: CdcStreamDto) => void
+  onAcceptSchema?: (row: CdcStreamDto) => void
   onDropSlot: (row: CdcStreamDto) => void
 }) {
   const t = useTranslations('DataIntegration.cdc')
@@ -172,6 +185,14 @@ export function CdcRowActions({
             <RotateCcw className="mr-2 size-3.5" />
             {t('resetCheckpointMenuItem')}
           </DropdownMenuItem>
+          {onAcceptSchema && (row.schemaDriftDetected || Number(row.schemaDriftPolicy ?? 0) > 0) && (
+            <DropdownMenuItem disabled={busy} onClick={() => onAcceptSchema(row)}>
+              {busyKind === 'accept-schema'
+                ? <Loader2 className="mr-2 size-3.5 animate-spin" />
+                : <ShieldCheck className="mr-2 size-3.5" />}
+              {t('acceptSchemaMenuItem')}
+            </DropdownMenuItem>
+          )}
           {canDelete && !isActive && (
             <DropdownMenuItem disabled={busy} onClick={() => onDropSlot(row)}>
               <Unplug className="mr-2 size-3.5" />

@@ -96,6 +96,7 @@
     "SwapMid:ETL:033": "Only Active CDC streams can run background capture; please activate it first.",
     "SwapMid:ETL:034": "WAL capture is already running for this CDC stream; please try again shortly.",
     "SwapMid:ETL:035": "PostgreSQL logical replication precondition failed: {Reason}",
+    "SwapMid:ETL:036": "Upstream table schema drift detected; guardrail paused or blocked capture: {Reason}",
     "SwapMid:ENT:001": "Organization not found.",
     "SwapMid:ENT:002": "Organization code already exists.",
     "SwapMid:ENT:003": "Department not found.",

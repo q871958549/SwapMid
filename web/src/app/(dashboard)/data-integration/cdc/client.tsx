@@ -18,8 +18,9 @@ import { PageHeader } from '@/components/data-table/page-header'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from '@/components/ui/use-toast'
 import type { PagedResult } from '@/lib/api-client'
-import { getApiErrorMessage } from '@/lib/api-error'
+import { parseOptionalJsonResponse, readApiErrorMessage } from '@/lib/api-error'
 import type {
+  CdcAcceptSchemaResultDto,
   CdcCaptureResultDto,
   CdcDropSlotResultDto,
   CdcPreflightResultDto,
@@ -57,6 +58,7 @@ import {
 export function CdcStreamsClient({
   data,
   sources,
+  relationalTargets,
   sinks = [],
   pipelines,
   topics,
@@ -72,6 +74,7 @@ export function CdcStreamsClient({
 }: {
   data: PagedResult<CdcStreamDto>
   sources: CdcSourceOption[]
+  relationalTargets?: CdcSourceOption[]
   sinks?: CdcSourceOption[]
   pipelines: CdcPipelineOption[]
   topics: CdcTopicOption[]
@@ -160,16 +163,17 @@ export function CdcStreamsClient({
         toast({
           variant: 'destructive',
           title: failTitle,
-          description: await getApiErrorMessage(res, failFallback),
+          description: await readApiErrorMessage(res, failFallback),
         })
+        // 捕获/快照/生命周期失败可能已由后端触发 Schema 漂移自动暂停或状态变更，刷新列表以同步徽章
+        if (method !== 'GET') await Promise.resolve(list.reloadAndRefresh()).catch(() => {})
         return
       }
-      const data = (typeof res.json === 'function' ? await res.json() : undefined) as T
-      await onOk(data)
+      await onOk(await parseOptionalJsonResponse<T>(res))
     } finally {
       setBusy(row.id, null)
     }
-  }, [setBusy])
+  }, [list, setBusy])
 
   const handlePreflight = useCallback((row: CdcStreamDto) => runStreamAction<CdcPreflightResultDto>(
     row, 'preflight', `/api/proxy/cdc-streams/${row.id}/preflight`, 'POST',
@@ -224,7 +228,7 @@ export function CdcStreamsClient({
         body: JSON.stringify({ checkpointLsn: checkpointInput.trim() || null }),
       })
       if (!res.ok) {
-        setCheckpointError(await getApiErrorMessage(res, t('checkpointFailedFallback')))
+        setCheckpointError(await readApiErrorMessage(res, t('checkpointFailedFallback')))
         return
       }
       toast({
@@ -251,7 +255,7 @@ export function CdcStreamsClient({
     try {
       const res = await fetch(`/api/proxy/cdc-streams/${dropSlotTarget.id}/drop-slot`, { method: 'POST' })
       if (!res.ok) {
-        setDropSlotError(await getApiErrorMessage(res, t('dropSlotFailedFallback')))
+        setDropSlotError(await readApiErrorMessage(res, t('dropSlotFailedFallback')))
         return
       }
       const result = await res.json() as CdcDropSlotResultDto
@@ -290,6 +294,19 @@ export function CdcStreamsClient({
     },
   ), [list, runStreamAction, t])
 
+  const handleAcceptSchema = useCallback((row: CdcStreamDto) => runStreamAction<CdcAcceptSchemaResultDto>(
+    row, 'accept-schema', `/api/proxy/cdc-streams/${row.id}/accept-schema`, 'POST',
+    t('acceptSchemaFailedTitle'), t('acceptSchemaFailedFallback'),
+    async (result) => {
+      toast({
+        variant: 'success',
+        title: t('acceptSchemaSuccessTitle'),
+        description: result.message || row.name,
+      })
+      await list.reloadAndRefresh()
+    },
+  ), [list, runStreamAction, t])
+
   const handleProvisionSink = useCallback(async () => {
     if (!sinkTemplateState) return
     setProvisionSubmitting(true)
@@ -301,7 +318,7 @@ export function CdcStreamsClient({
         toast({
           variant: 'destructive',
           title: t('provisionClickHouseFailedTitle'),
-          description: await getApiErrorMessage(res, t('provisionClickHouseFailedFallback')),
+          description: await readApiErrorMessage(res, t('provisionClickHouseFailedFallback')),
         })
         return
       }
@@ -388,6 +405,7 @@ export function CdcStreamsClient({
           onCaptureNow={item => void handleCaptureNow(item)}
           onSnapshot={item => void handleSnapshot(item)}
           onCheckpointReset={openCheckpointDialog}
+          onAcceptSchema={item => void handleAcceptSchema(item)}
           onDropSlot={openDropSlotDialog}
         />
       ),
@@ -398,6 +416,7 @@ export function CdcStreamsClient({
     canManage,
     canUpdate,
     crud,
+    handleAcceptSchema,
     handleCaptureNow,
     handleLifecycle,
     handlePreflight,
@@ -456,7 +475,14 @@ export function CdcStreamsClient({
         )}
       />
 
-      <CdcFormDialog crud={crud} sources={sources} sinks={sinks} pipelines={pipelines} topics={topics} />
+      <CdcFormDialog
+        crud={crud}
+        sources={sources}
+        relationalTargets={relationalTargets}
+        sinks={sinks}
+        pipelines={pipelines}
+        topics={topics}
+      />
       <CdcPreflightDialog state={preflightState} onClose={() => setPreflightState(null)} />
       <CdcCheckpointDialog
         target={checkpointTarget}

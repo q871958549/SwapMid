@@ -26,6 +26,12 @@ public class CdcStreamDto : FullAuditedEntityDto<Guid>
     public DataSourceType? TargetSinkType { get; set; }
     public string? TargetSinkDestination { get; set; }
     public string? TargetSinkKeyColumns { get; set; }
+    public CdcDeletePolicy TargetDeletePolicy { get; set; }
+    public CdcSchemaDriftPolicy SchemaDriftPolicy { get; set; }
+    public string? SchemaBaselineHash { get; set; }
+    public bool SchemaDriftDetected { get; set; }
+    public string? SchemaDriftSummary { get; set; }
+    public DateTime? SchemaDriftDetectedAt { get; set; }
     public bool InitialSnapshotEnabled { get; set; }
     public CdcSnapshotStatus SnapshotStatus { get; set; }
     public DateTime? SnapshotCompletedAt { get; set; }
@@ -85,6 +91,10 @@ public class CdcStreamCreateUpdateDto
     [StringLength(256)]
     public string? TargetSinkKeyColumns { get; set; }
 
+    public CdcDeletePolicy TargetDeletePolicy { get; set; } = CdcDeletePolicy.DeleteRow;
+
+    public CdcSchemaDriftPolicy SchemaDriftPolicy { get; set; } = CdcSchemaDriftPolicy.Ignore;
+
     public bool InitialSnapshotEnabled { get; set; }
 }
 
@@ -115,6 +125,9 @@ public class CdcPreflightResultDto
     public string? CurrentWalLsn { get; set; }
     public long? WalLagBytes { get; set; }
     public List<CdcTableReplicaIdentityDto> TableReplicaIdentities { get; set; } = new();
+    public bool SchemaDriftDetected { get; set; }
+    public string? SchemaDriftSummary { get; set; }
+    public string? CurrentSchemaHash { get; set; }
     public List<string> Diagnostics { get; set; } = new();
     public string Summary { get; set; } = null!;
 }
@@ -174,5 +187,13 @@ public class CdcSnapshotResultDto
     public long DeliveredCount { get; set; }
     public bool UsedExportedSnapshot { get; set; }
     public DateTime CompletedAtUtc { get; set; }
+    public string Message { get; set; } = null!;
+}
+
+public class CdcAcceptSchemaResultDto
+{
+    public Guid StreamId { get; set; }
+    public string SchemaBaselineHash { get; set; } = null!;
+    public DateTime AcceptedAtUtc { get; set; }
     public string Message { get; set; } = null!;
 }

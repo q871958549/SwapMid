@@ -49,5 +49,13 @@ public class RunScheduledCdcCaptureHangfireJob : ITransientDependency
                 streamId,
                 ex.Code);
         }
+        catch (BusinessException ex) when (
+            ex.Code == SwapMidDomainErrorCodes.DataIntegration.CdcStreamSchemaDriftDetected)
+        {
+            _logger.LogWarning(
+                "定时触发 CDC 流因上游 Schema 漂移被护栏自动暂停或阻塞 streamId={StreamId} code={ErrorCode}",
+                streamId,
+                ex.Code);
+        }
     }
 }

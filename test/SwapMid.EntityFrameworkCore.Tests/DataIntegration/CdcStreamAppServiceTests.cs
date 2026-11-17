@@ -230,4 +230,77 @@ public class CdcStreamAppServiceTests : SwapMidEntityFrameworkCoreTestBase
         template.ClickHouseDdl.ShouldContain("JSONExtractRaw(coalesce(`after_json`, `before_json`, '{}'), 'order_id')");
         template.SamplePayloadJson.ShouldContain("etl_demo_source_orders");
     }
+
+    [Fact]
+    public async Task Should_Validate_And_Persist_RelationalTable_Mirror_And_SchemaDrift_Policies()
+    {
+        var pgSource = await _dataSourceAppService.CreateAsync(new DataSourceCreateUpdateDto
+        {
+            Name = $"pg-mirror-src-{Guid.NewGuid():N}"[..32],
+            Type = DataSourceType.RelationalDatabase,
+            Config = """{"provider":"postgresql","host":"127.0.0.1","port":5432,"database":"swapmid","username":"postgres"}""",
+        });
+        var pgTarget = await _dataSourceAppService.CreateAsync(new DataSourceCreateUpdateDto
+        {
+            Name = $"pg-mirror-tgt-{Guid.NewGuid():N}"[..32],
+            Type = DataSourceType.RelationalDatabase,
+            Config = """{"provider":"postgresql","host":"127.0.0.1","port":5432,"database":"swapmid","username":"postgres"}""",
+        });
+
+        // Must have single monitored table & non-empty key columns
+        var missingKeyEx = await Should.ThrowAsync<BusinessException>(() =>
+            _cdcAppService.CreateAsync(new CdcStreamCreateUpdateDto
+            {
+                Name = $"mirror-no-key-{Guid.NewGuid():N}"[..32],
+                SourceId = pgSource.Id,
+                PublicationName = "pub_m1",
+                SlotName = "slot_m1",
+                MonitoredTables = "public.etl_demo_source_orders",
+                TargetMode = CdcTargetMode.RelationalTable,
+                TargetSinkId = pgTarget.Id,
+                TargetSinkDestination = "public.orders_mirror",
+                TargetSinkKeyColumns = null,
+            }));
+        missingKeyEx.Code.ShouldBe(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid);
+
+        var multiTableEx = await Should.ThrowAsync<BusinessException>(() =>
+            _cdcAppService.CreateAsync(new CdcStreamCreateUpdateDto
+            {
+                Name = $"mirror-multi-{Guid.NewGuid():N}"[..32],
+                SourceId = pgSource.Id,
+                PublicationName = "pub_m2",
+                SlotName = "slot_m2",
+                MonitoredTables = "public.t1,public.t2",
+                TargetMode = CdcTargetMode.RelationalTable,
+                TargetSinkId = pgTarget.Id,
+                TargetSinkDestination = "public.orders_mirror",
+                TargetSinkKeyColumns = "id",
+            }));
+        multiTableEx.Code.ShouldBe(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid);
+
+        var created = await _cdcAppService.CreateAsync(new CdcStreamCreateUpdateDto
+        {
+            Name = $"mirror-ok-{Guid.NewGuid():N}"[..32],
+            SourceId = pgSource.Id,
+            PublicationName = "pub_m_ok",
+            SlotName = "slot_m_ok",
+            MonitoredTables = "etl_demo_source_orders",
+            TargetMode = CdcTargetMode.RelationalTable,
+            TargetSinkId = pgTarget.Id,
+            TargetSinkDestination = "public.etl_demo_orders_mirror",
+            TargetSinkKeyColumns = "order_id",
+            TargetDeletePolicy = CdcDeletePolicy.Ignore,
+            SchemaDriftPolicy = CdcSchemaDriftPolicy.PauseAndAlert,
+            InitialSnapshotEnabled = true,
+        });
+
+        created.TargetMode.ShouldBe(CdcTargetMode.RelationalTable);
+        created.TargetSinkId.ShouldBe(pgTarget.Id);
+        created.TargetSinkName.ShouldBe(pgTarget.Name);
+        created.TargetSinkDestination.ShouldBe("public.etl_demo_orders_mirror");
+        created.TargetSinkKeyColumns.ShouldBe("order_id");
+        created.TargetDeletePolicy.ShouldBe(CdcDeletePolicy.Ignore);
+        created.SchemaDriftPolicy.ShouldBe(CdcSchemaDriftPolicy.PauseAndAlert);
+        created.SchemaDriftDetected.ShouldBeFalse();
+    }
 }

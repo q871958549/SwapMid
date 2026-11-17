@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { getApiErrorMessage } from '@/lib/api-error'
+import { getApiErrorMessage, parseOptionalJsonResponse, readApiErrorMessage } from '@/lib/api-error'
 import {
   resetPlatformUpdatingForTests,
   setPlatformUpdatingCopy,
@@ -91,5 +91,21 @@ describe('getApiErrorMessage', () => {
       new Error(JSON.stringify({ error: { message: `上游接口调用失败：${JSON.stringify(upstreamPayload)}。目标记录未落库` } })),
       '兜底',
     )).toBe('字段“FPickMtrlQty”不存在')
+  })
+})
+
+describe('readApiErrorMessage / parseOptionalJsonResponse', () => {
+  it('从 403 Response JSON 正文中解出业务提示，而非返回 [object Response]', async () => {
+    const res = new Response(
+      JSON.stringify({ error: { code: 'SwapMid:ETL:036', message: '检测到上游 Schema 漂移' } }),
+      { status: 403, headers: { 'Content-Type': 'application/json' } },
+    )
+    await expect(readApiErrorMessage(res, '兜底')).resolves.toBe('检测到上游 Schema 漂移')
+  })
+
+  it('204 No Content 与空字符串响应安全返回 undefined', async () => {
+    await expect(parseOptionalJsonResponse(new Response(null, { status: 204 }))).resolves.toBeUndefined()
+    await expect(parseOptionalJsonResponse(new Response('', { status: 200 }))).resolves.toBeUndefined()
+    await expect(parseOptionalJsonResponse(new Response('{"ok":true}', { status: 200 }))).resolves.toEqual({ ok: true })
   })
 })

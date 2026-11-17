@@ -113,6 +113,51 @@ internal static class CdcStreamMappingHelpers
             sinkDestination = dest;
             sinkKeyColumns = keyCols.Count > 0 ? string.Join(", ", keyCols) : null;
         }
+        else if (input.TargetMode == CdcTargetMode.RelationalTable)
+        {
+            if (parsedTables.Count != 1)
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", "关系表行级镜像模式下必须在监听表清单中指定唯一 1 张上游源表（示例：public.orders）。");
+            }
+
+            if (!input.TargetSinkId.HasValue)
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", "关系表行级镜像模式下必须选择目标关系型数据库数据源。");
+            }
+
+            var targetDb = await sourceRepository.FindAsync(input.TargetSinkId.Value);
+            if (targetDb == null)
+            {
+                throw new EntityNotFoundException(typeof(DataSource), input.TargetSinkId.Value);
+            }
+
+            if (targetDb.Type != DataSourceType.RelationalDatabase)
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", $"关系表行级镜像目标必须为关系型数据库，当前为 {targetDb.Type}。");
+            }
+
+            var dest = input.TargetSinkDestination?.Trim();
+            if (string.IsNullOrWhiteSpace(dest) ||
+                !EtlTransformConfig.IsValidDestinationFor(DataSourceType.RelationalDatabase, dest))
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", "关系型目标表名缺失或格式不合法（示例：public.orders_mirror）。");
+            }
+
+            var keyCols = CdcProtocolHelpers.ParseSinkKeyColumns(input.TargetSinkKeyColumns);
+            if (keyCols.Count == 0)
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", "关系表行级镜像模式下必须填写至少一个业务主键列（TargetSinkKeyColumns）。");
+            }
+
+            sinkId = targetDb.Id;
+            sinkDestination = dest;
+            sinkKeyColumns = string.Join(", ", keyCols);
+        }
         else
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
@@ -164,6 +209,12 @@ internal static class CdcStreamMappingHelpers
         TargetSinkType = targetSink?.Type,
         TargetSinkDestination = stream.TargetSinkDestination,
         TargetSinkKeyColumns = stream.TargetSinkKeyColumns,
+        TargetDeletePolicy = stream.TargetDeletePolicy,
+        SchemaDriftPolicy = stream.SchemaDriftPolicy,
+        SchemaBaselineHash = stream.SchemaBaselineHash,
+        SchemaDriftDetected = stream.SchemaDriftDetected,
+        SchemaDriftSummary = stream.SchemaDriftSummary,
+        SchemaDriftDetectedAt = stream.SchemaDriftDetectedAt,
         InitialSnapshotEnabled = stream.InitialSnapshotEnabled,
         SnapshotStatus = stream.SnapshotStatus,
         SnapshotCompletedAt = stream.SnapshotCompletedAt,

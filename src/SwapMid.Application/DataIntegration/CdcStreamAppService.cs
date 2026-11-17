@@ -4,6 +4,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
+using SwapMid.Monitoring;
+using SwapMid.Notification;
 using SwapMid.Permissions;
 using SwapMid.SharedKernel.IntegrationEvents;
 using Volo.Abp;
@@ -24,6 +27,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     private readonly CdcStreamCaptureCoordinator _captureCoordinator;
     private readonly ICdcScheduleSynchronizer _scheduleSynchronizer;
     private readonly DataIntegrationSinkProbeService? _sinkProbeService;
+    private readonly INotificationService? _notificationService;
 
     public CdcStreamAppService(
         ICdcStreamRepository streamRepository,
@@ -32,7 +36,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         PgOutputCdcCaptureService captureService,
         CdcStreamCaptureCoordinator captureCoordinator,
         ICdcScheduleSynchronizer? scheduleSynchronizer = null,
-        DataIntegrationSinkProbeService? sinkProbeService = null)
+        DataIntegrationSinkProbeService? sinkProbeService = null,
+        INotificationService? notificationService = null)
     {
         _streamRepository = streamRepository;
         _sourceRepository = sourceRepository;
@@ -41,6 +46,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         _captureCoordinator = captureCoordinator;
         _scheduleSynchronizer = scheduleSynchronizer ?? NullCdcScheduleSynchronizer.Instance;
         _sinkProbeService = sinkProbeService;
+        _notificationService = notificationService;
     }
 
     private static readonly IReadOnlyDictionary<string, string> SortingWhitelist =
@@ -147,7 +153,9 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             normalized.TargetSinkId,
             normalized.TargetSinkDestination,
             normalized.TargetSinkKeyColumns,
-            input.InitialSnapshotEnabled);
+            input.InitialSnapshotEnabled,
+            input.TargetDeletePolicy,
+            input.SchemaDriftPolicy);
 
         await _streamRepository.InsertAsync(stream, autoSave: true);
         return await EnrichDtoAsync(stream);
@@ -184,7 +192,9 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             normalized.TargetSinkId,
             normalized.TargetSinkDestination,
             normalized.TargetSinkKeyColumns,
-            input.InitialSnapshotEnabled);
+            input.InitialSnapshotEnabled,
+            input.TargetDeletePolicy,
+            input.SchemaDriftPolicy);
 
         await _streamRepository.UpdateAsync(stream, autoSave: true);
         await _scheduleSynchronizer.SyncAsync(stream.Id, stream.Status, stream.PollIntervalSeconds);
@@ -232,6 +242,21 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             var reason = string.Join("；", preflight.Diagnostics);
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
                 .WithData("Reason", reason);
+        }
+
+        if (preflight.SchemaDriftDetected && stream.SchemaDriftPolicy == CdcSchemaDriftPolicy.PauseAndAlert)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamSchemaDriftDetected)
+                .WithData("Reason", preflight.SchemaDriftSummary ?? "检测到上游表结构漂移，请先确认新 Schema 基线后再激活。");
+        }
+
+        if (string.IsNullOrWhiteSpace(stream.SchemaBaselineJson))
+        {
+            var eval = await _captureService.EvaluateSchemaAsync(source, stream, cancellationToken);
+            if (eval.CurrentJson != "[]")
+            {
+                stream.UpdateSchemaBaseline(eval.CurrentHash, eval.CurrentJson);
+            }
         }
 
         stream.Activate();
@@ -368,6 +393,64 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
 
         var sink = await _sourceRepository.GetAsync(stream.TargetSinkId.Value, cancellationToken: cancellationToken);
         return await CdcExternalSinkTemplateBuilder.ProvisionClickHouseAsync(stream, sink, _sinkProbeService, cancellationToken);
+    }
+
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    public async Task<CdcAcceptSchemaResultDto> AcceptSchemaBaselineAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
+            base.CurrentTenant.Id,
+            SwapMidPermissions.DataIntegration.CdcStreams.Manage);
+
+        var stream = await _streamRepository.GetAsync(id, cancellationToken: cancellationToken);
+        var source = await _sourceRepository.GetAsync(stream.SourceId, cancellationToken: cancellationToken);
+        var eval = await _captureService.EvaluateSchemaAsync(source, stream, cancellationToken);
+        if (eval.CurrentJson == "[]")
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", "未能读取到上游监控表或发布表的列定义，无法建立 Schema 基线。");
+        }
+
+        var hadDrift = stream.SchemaDriftDetected;
+        stream.UpdateSchemaBaseline(eval.CurrentHash, eval.CurrentJson);
+        await _streamRepository.UpdateAsync(stream, autoSave: true, cancellationToken: cancellationToken);
+        PlatformMetrics.CdcSchemaDriftEventsTotal.WithLabels("accepted").Inc();
+
+        if (hadDrift && _notificationService != null)
+        {
+            try
+            {
+                await _notificationService.SendAsync(
+                    new NotificationSendRequest
+                    {
+                        Title = $"CDC 流「{stream.Name}」Schema 漂移已人工确认恢复",
+                        Content = $"已将最新 Schema 指纹（{eval.CurrentHash[..12]}）记录为新基线，可在控制台恢复或激活捕获。",
+                        Level = NotificationLevel.Info,
+                        Source = NotificationSources.DataIntegration,
+                        ActionPath = "/data-integration/cdc",
+                        ActionLabel = "查看 CDC 流",
+                        RecoveryOfTitle = $"CDC 流「{stream.Name}」上游 Schema 漂移已自动暂停",
+                    },
+                    cancellationToken);
+            }
+            catch (Exception notifyEx)
+            {
+                Logger.LogWarning(
+                    "CDC Schema 确认恢复通知发送失败 streamId={StreamId} exceptionType={Type}",
+                    stream.Id,
+                    notifyEx.GetType().FullName ?? notifyEx.GetType().Name);
+            }
+        }
+
+        return new CdcAcceptSchemaResultDto
+        {
+            StreamId = stream.Id,
+            SchemaBaselineHash = eval.CurrentHash,
+            AcceptedAtUtc = DateTime.UtcNow,
+            Message = $"已更新上游 Schema 基线（{eval.CurrentHash[..12]}），可正常激活或继续捕获。",
+        };
     }
 
     private async Task<CdcStreamDto> EnrichDtoAsync(CdcStreamDefinition stream)

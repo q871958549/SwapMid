@@ -284,4 +284,99 @@ internal static class PgOutputReplicationMetadataReader
 
         return diagnostics;
     }
+
+    internal static async Task<List<CdcCapturedTableSchema>> InspectTableSchemasAsync(
+        NpgsqlConnection conn,
+        string publicationName,
+        bool publicationExists,
+        IReadOnlyList<MonitoredTableSpec> monitoredTables,
+        CancellationToken cancellationToken)
+    {
+        var columnsByTable = new Dictionary<string, (string Schema, string Table, List<CdcCapturedTableColumn> Columns)>(
+            StringComparer.OrdinalIgnoreCase);
+
+        NpgsqlCommand cmd;
+        if (monitoredTables.Count > 0)
+        {
+            var fullNames = new string[monitoredTables.Count];
+            for (var i = 0; i < monitoredTables.Count; i++)
+            {
+                fullNames[i] = monitoredTables[i].FullName.ToLowerInvariant();
+            }
+
+            cmd = new NpgsqlCommand(
+                """
+                SELECT n.nspname,
+                       c.relname,
+                       a.attname,
+                       format_type(a.atttypid, a.atttypmod),
+                       NOT a.attnotnull
+                FROM pg_attribute a
+                JOIN pg_class c ON c.oid = a.attrelid
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE c.relkind IN ('r', 'p')
+                  AND a.attnum > 0
+                  AND NOT a.attisdropped
+                  AND LOWER(n.nspname || '.' || c.relname) = ANY(@tables)
+                ORDER BY n.nspname, c.relname, a.attnum
+                """,
+                conn);
+            cmd.Parameters.AddWithValue("tables", fullNames);
+        }
+        else if (publicationExists)
+        {
+            cmd = new NpgsqlCommand(
+                """
+                SELECT pt.schemaname,
+                       pt.tablename,
+                       a.attname,
+                       format_type(a.atttypid, a.atttypmod),
+                       NOT a.attnotnull
+                FROM pg_publication_tables pt
+                JOIN pg_namespace n ON n.nspname = pt.schemaname
+                JOIN pg_class c ON c.relnamespace = n.oid AND c.relname = pt.tablename
+                JOIN pg_attribute a ON a.attrelid = c.oid
+                WHERE pt.pubname = @pub
+                  AND c.relkind IN ('r', 'p')
+                  AND a.attnum > 0
+                  AND NOT a.attisdropped
+                ORDER BY pt.schemaname, pt.tablename, a.attnum
+                """,
+                conn);
+            cmd.Parameters.AddWithValue("pub", publicationName);
+        }
+        else
+        {
+            return new List<CdcCapturedTableSchema>();
+        }
+
+        await using (cmd)
+        await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
+        {
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var schema = reader.GetString(0);
+                var table = reader.GetString(1);
+                var colName = reader.GetString(2);
+                var dataType = reader.GetString(3);
+                var isNullable = reader.GetBoolean(4);
+                var key = $"{schema}.{table}";
+                if (!columnsByTable.TryGetValue(key, out var entry))
+                {
+                    entry = (schema, table, new List<CdcCapturedTableColumn>());
+                    columnsByTable[key] = entry;
+                }
+
+                entry.Columns.Add(new CdcCapturedTableColumn(colName, dataType, isNullable));
+            }
+        }
+
+        var result = new List<CdcCapturedTableSchema>(columnsByTable.Count);
+        foreach (var entry in columnsByTable.Values)
+        {
+            result.Add(new CdcCapturedTableSchema(entry.Schema, entry.Table, entry.Columns));
+        }
+
+        return result;
+    }
 }

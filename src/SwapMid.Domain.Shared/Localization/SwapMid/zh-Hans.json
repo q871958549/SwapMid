@@ -96,6 +96,7 @@
     "SwapMid:ETL:033": "仅已启用（Active）状态的 CDC 流允许执行后台捕获；或请先激活。",
     "SwapMid:ETL:034": "该 CDC 流正在执行 WAL 捕获，请稍后重试。",
     "SwapMid:ETL:035": "PostgreSQL 逻辑复制前置条件未满足：{Reason}",
+    "SwapMid:ETL:036": "检测到上游表结构发生 Schema 漂移，护栏已阻止或暂停捕获：{Reason}",
     "SwapMid:ENT:001": "未找到指定的组织主体。",
     "SwapMid:ENT:002": "组织编码已存在。",
     "SwapMid:ENT:003": "未找到指定的部门。",

@@ -55,6 +55,27 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
     /// <summary>当 TargetMode = ExternalSink 时的分区主键列名列表（逗号分隔，用于 Kafka 同主键保序投递）。</summary>
     public string? TargetSinkKeyColumns { get; private set; }
 
+    /// <summary>关系型目标表镜像（RelationalTable）遇到上游 DELETE 时的处理策略。</summary>
+    public CdcDeletePolicy TargetDeletePolicy { get; private set; }
+
+    /// <summary>上游监控表发生 DDL/Schema 漂移时的护栏策略。</summary>
+    public CdcSchemaDriftPolicy SchemaDriftPolicy { get; private set; }
+
+    /// <summary>最近一次已确认的上游监控表 Schema 指纹（SHA-256 十六进制）。</summary>
+    public string? SchemaBaselineHash { get; private set; }
+
+    /// <summary>最近一次已确认的上游监控表结构基线 JSON。</summary>
+    public string? SchemaBaselineJson { get; private set; }
+
+    /// <summary>当前是否存在尚未确认消警的上游 Schema 漂移。</summary>
+    public bool SchemaDriftDetected { get; private set; }
+
+    /// <summary>最近一次检测到的上游 Schema 变更摘要。</summary>
+    public string? SchemaDriftSummary { get; private set; }
+
+    /// <summary>最近一次检测到上游 Schema 漂移时间（UTC）。</summary>
+    public DateTime? SchemaDriftDetectedAt { get; private set; }
+
     /// <summary>是否在首次复制前自动通过 PG EXPORT_SNAPSHOT 执行一次全量一致性基线快照。</summary>
     public bool InitialSnapshotEnabled { get; private set; }
 
@@ -107,7 +128,9 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         Guid? targetSinkId = null,
         string? targetSinkDestination = null,
         string? targetSinkKeyColumns = null,
-        bool initialSnapshotEnabled = false)
+        bool initialSnapshotEnabled = false,
+        CdcDeletePolicy targetDeletePolicy = CdcDeletePolicy.DeleteRow,
+        CdcSchemaDriftPolicy schemaDriftPolicy = CdcSchemaDriftPolicy.Ignore)
         : base(id)
     {
         ApplyConfiguration(
@@ -126,7 +149,9 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             pollIntervalSeconds,
             maxBatchSize,
             description,
-            initialSnapshotEnabled);
+            initialSnapshotEnabled,
+            targetDeletePolicy,
+            schemaDriftPolicy);
         Status = CdcStreamStatus.Draft;
         SnapshotStatus = CdcSnapshotStatus.NotStarted;
     }
@@ -147,7 +172,9 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         Guid? targetSinkId = null,
         string? targetSinkDestination = null,
         string? targetSinkKeyColumns = null,
-        bool initialSnapshotEnabled = false)
+        bool initialSnapshotEnabled = false,
+        CdcDeletePolicy targetDeletePolicy = CdcDeletePolicy.DeleteRow,
+        CdcSchemaDriftPolicy schemaDriftPolicy = CdcSchemaDriftPolicy.Ignore)
     {
         ApplyConfiguration(
             name,
@@ -165,7 +192,9 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             pollIntervalSeconds,
             maxBatchSize,
             description,
-            initialSnapshotEnabled);
+            initialSnapshotEnabled,
+            targetDeletePolicy,
+            schemaDriftPolicy);
     }
 
     public void Activate()
@@ -259,6 +288,53 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         SnapshotCompletedAt = null;
     }
 
+    public void UpdateSchemaBaseline(string hash, string baselineJson)
+    {
+        SchemaBaselineHash = Check.NotNullOrWhiteSpace(
+            hash,
+            nameof(hash),
+            CdcStreamConsts.MaxSchemaBaselineHashLength).Trim();
+        SchemaBaselineJson = Check.NotNullOrWhiteSpace(
+            baselineJson,
+            nameof(baselineJson),
+            CdcStreamConsts.MaxSchemaBaselineJsonLength);
+        ClearSchemaDrift();
+    }
+
+    public void MarkSchemaDriftDetected(
+        string summary,
+        DateTime detectedAtUtc,
+        bool pauseStream,
+        string? errorCode = null)
+    {
+        SchemaDriftDetected = true;
+        SchemaDriftSummary = Truncate(summary, CdcStreamConsts.MaxSchemaDriftSummaryLength);
+        SchemaDriftDetectedAt = detectedAtUtc;
+        if (pauseStream)
+        {
+            Status = CdcStreamStatus.Paused;
+            LastErrorCode = Truncate(
+                errorCode ?? SwapMidDomainErrorCodes.DataIntegration.CdcStreamSchemaDriftDetected,
+                CdcStreamConsts.MaxErrorCodeLength);
+            LastErrorMessage = Truncate(summary, CdcStreamConsts.MaxErrorMessageLength);
+        }
+    }
+
+    public void ClearSchemaDrift()
+    {
+        SchemaDriftDetected = false;
+        SchemaDriftSummary = null;
+        SchemaDriftDetectedAt = null;
+        if (string.Equals(
+                LastErrorCode,
+                SwapMidDomainErrorCodes.DataIntegration.CdcStreamSchemaDriftDetected,
+                StringComparison.Ordinal))
+        {
+            LastErrorCode = null;
+            LastErrorMessage = null;
+        }
+    }
+
     private void ApplyConfiguration(
         string name,
         Guid sourceId,
@@ -275,8 +351,22 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         int pollIntervalSeconds,
         int maxBatchSize,
         string? description,
-        bool initialSnapshotEnabled)
+        bool initialSnapshotEnabled,
+        CdcDeletePolicy targetDeletePolicy,
+        CdcSchemaDriftPolicy schemaDriftPolicy)
     {
+        var normalizedMonitoredTables = string.IsNullOrWhiteSpace(monitoredTables)
+            ? null
+            : Check.Length(monitoredTables.Trim(), nameof(monitoredTables), CdcStreamConsts.MaxMonitoredTablesLength);
+        if (SourceId != Guid.Empty &&
+            (SourceId != sourceId ||
+             !string.Equals(MonitoredTables, normalizedMonitoredTables, StringComparison.OrdinalIgnoreCase)))
+        {
+            SchemaBaselineHash = null;
+            SchemaBaselineJson = null;
+            ClearSchemaDrift();
+        }
+
         Name = Check.NotNullOrWhiteSpace(name, nameof(name), CdcStreamConsts.MaxNameLength).Trim();
         SourceId = sourceId;
         PublicationName = Check.NotNullOrWhiteSpace(
@@ -287,11 +377,11 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             slotName,
             nameof(slotName),
             CdcStreamConsts.MaxPostgresIdentifierLength).Trim();
-        MonitoredTables = string.IsNullOrWhiteSpace(monitoredTables)
-            ? null
-            : Check.Length(monitoredTables.Trim(), nameof(monitoredTables), CdcStreamConsts.MaxMonitoredTablesLength);
+        MonitoredTables = normalizedMonitoredTables;
         AutoCreatePublicationAndSlot = autoCreatePublicationAndSlot;
         InitialSnapshotEnabled = initialSnapshotEnabled;
+        TargetDeletePolicy = targetDeletePolicy;
+        SchemaDriftPolicy = schemaDriftPolicy;
         PollIntervalSeconds = Math.Clamp(
             pollIntervalSeconds,
             CdcStreamConsts.MinPollIntervalSeconds,

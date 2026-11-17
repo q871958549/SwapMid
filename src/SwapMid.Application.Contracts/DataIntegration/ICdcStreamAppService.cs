@@ -22,4 +22,5 @@ public interface ICdcStreamAppService : IApplicationService
     Task<CdcSinkTemplateDto> GetSinkTemplateAsync(Guid id, CancellationToken cancellationToken = default);
     Task<CdcSnapshotResultDto> RunSnapshotAsync(Guid id, CancellationToken cancellationToken = default);
     Task<CdcSinkTemplateDto> ProvisionExternalSinkAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<CdcAcceptSchemaResultDto> AcceptSchemaBaselineAsync(Guid id, CancellationToken cancellationToken = default);
 }

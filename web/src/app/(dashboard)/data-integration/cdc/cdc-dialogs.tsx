@@ -125,6 +125,18 @@ export function CdcPreflightDialog({
               </div>
             )}
 
+            {state.result.schemaDriftDetected && (
+              <div className="space-y-1 rounded-md border border-destructive/35 bg-destructive/10 p-3 text-xs text-destructive">
+                <div className="flex items-center gap-1.5 font-medium">
+                  <AlertTriangle className="size-3.5 shrink-0" />
+                  <span>{t('schemaDriftPreflightTitle')}</span>
+                </div>
+                {state.result.schemaDriftSummary && (
+                  <p className="font-mono break-all">{state.result.schemaDriftSummary}</p>
+                )}
+              </div>
+            )}
+
             {state.result.diagnostics && state.result.diagnostics.length > 0 && (
               <div className="space-y-1.5 rounded-md border border-warning/35 bg-warning-soft p-3 text-xs text-warning">
                 <div className="flex items-center gap-1.5 font-medium">

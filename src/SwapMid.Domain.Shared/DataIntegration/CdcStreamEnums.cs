@@ -24,6 +24,28 @@ public enum CdcTargetMode
 
     /// <summary>直接流式写入外部分析或事件接收端（Kafka / ClickHouse / 对象存储）。</summary>
     ExternalSink = 2,
+
+    /// <summary>按业务主键直接行级物化（Upsert / Delete）至下游关系型数据库表。</summary>
+    RelationalTable = 3,
+}
+
+/// <summary>
+/// 关系型目标表镜像（RelationalTable）遇到上游 DELETE 事件时的处理策略。
+/// </summary>
+public enum CdcDeletePolicy
+{
+    DeleteRow = 0,
+    Ignore = 1,
+}
+
+/// <summary>
+/// 上游监控表发生 DDL / Schema 漂移时的护栏处理策略。
+/// </summary>
+public enum CdcSchemaDriftPolicy
+{
+    Ignore = 0,
+    Warn = 1,
+    PauseAndAlert = 2,
 }
 
 /// <summary>

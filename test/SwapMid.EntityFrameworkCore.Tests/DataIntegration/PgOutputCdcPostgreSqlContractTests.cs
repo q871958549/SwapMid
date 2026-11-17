@@ -230,6 +230,131 @@ public sealed class PgOutputCdcPostgreSqlContractTests
         }
     }
 
+    [PostgreSqlLogicalReplicationFact]
+    public async Task RelationalMirror_And_SchemaDriftGuard_Should_Work_EndToEnd_On_PostgreSql()
+    {
+        var connStr = Environment.GetEnvironmentVariable(ConnectionEnvVar)
+                      ?? Environment.GetEnvironmentVariable("SWAPMID_POSTGRES_TEST_CONNECTION");
+        connStr.ShouldNotBeNullOrWhiteSpace("Missing PostgreSQL logical replication connection string.");
+
+        var suffix = Guid.NewGuid().ToString("N")[..10];
+        var srcTable = $"cdc_m_src_{suffix}";
+        var tgtTable = $"cdc_m_tgt_{suffix}";
+        var pubName = $"pub_{suffix}";
+        var slotName = $"slot_{suffix}";
+
+        await using var conn = new NpgsqlConnection(connStr);
+        await conn.OpenAsync();
+
+        await ExecuteNonQueryAsync(conn, $"""
+            CREATE TABLE public."{srcTable}" (
+                order_id bigint PRIMARY KEY,
+                customer_name text NOT NULL,
+                total_amount numeric(14,2) NOT NULL
+            );
+            ALTER TABLE public."{srcTable}" REPLICA IDENTITY FULL;
+            INSERT INTO public."{srcTable}" (order_id, customer_name, total_amount) VALUES (1, 'Alice', 100.50);
+
+            CREATE TABLE public."{tgtTable}" (
+                order_id bigint PRIMARY KEY,
+                customer_name text NOT NULL,
+                total_amount numeric(14,2) NOT NULL
+            );
+            INSERT INTO public."{tgtTable}" (order_id, customer_name, total_amount) VALUES (99, 'Stale', 1.00);
+            """);
+
+        try
+        {
+            var builder = new NpgsqlConnectionStringBuilder(connStr);
+            var dsJson = $$"""{"provider":"postgresql","host":"{{builder.Host}}","port":{{builder.Port}},"database":"{{builder.Database}}","username":"{{builder.Username}}","password":"{{builder.Password}}","encrypt":false,"trustServerCertificate":true}""";
+            var pgDs = new DataSource(Guid.NewGuid(), "cdc-mirror-pg", DataSourceType.RelationalDatabase, dsJson);
+
+            var stream = new CdcStreamDefinition(
+                Guid.NewGuid(),
+                "pg-mirror-drift-contract",
+                pgDs.Id,
+                pubName,
+                slotName,
+                CdcTargetMode.RelationalTable,
+                monitoredTables: $"public.{srcTable}",
+                autoCreatePublicationAndSlot: true,
+                maxBatchSize: 100,
+                targetSinkId: pgDs.Id,
+                targetSinkDestination: $"public.{tgtTable}",
+                targetSinkKeyColumns: "order_id",
+                initialSnapshotEnabled: true,
+                targetDeletePolicy: CdcDeletePolicy.DeleteRow,
+                schemaDriftPolicy: CdcSchemaDriftPolicy.PauseAndAlert);
+
+            var service = new PgOutputCdcCaptureService(
+                new EtlRelationalConnectionFactory(),
+                new RecordingIntegrationEventPublisher(),
+                null!,
+                NullLogger<PgOutputCdcCaptureService>.Instance);
+
+            var snap = await service.SnapshotAsync(pgDs, stream, pgDs, CancellationToken.None);
+            snap.SnapshotRowCount.ShouldBe(1);
+            snap.DeliveredCount.ShouldBe(1);
+            stream.MarkSnapshotSucceeded(snap.ConsistentPointLsn, snap.SnapshotRowCount, snap.CompletedAtUtc);
+
+            var initialEval = await service.EvaluateSchemaAsync(pgDs, stream, CancellationToken.None);
+            stream.UpdateSchemaBaseline(initialEval.CurrentHash, initialEval.CurrentJson);
+
+            await ExecuteNonQueryAsync(conn, $"""
+                INSERT INTO public."{srcTable}" (order_id, customer_name, total_amount) VALUES (2, 'Bob', 250.00);
+                UPDATE public."{srcTable}" SET customer_name = 'Alice-V2', total_amount = 120.00 WHERE order_id = 1;
+                INSERT INTO public."{srcTable}" (order_id, customer_name, total_amount) VALUES (99, 'Gone', 1.00);
+                DELETE FROM public."{srcTable}" WHERE order_id = 99;
+                """);
+
+            var delta = await service.CaptureBatchAsync(pgDs, stream, pgDs, CancellationToken.None);
+            delta.CapturedEventCount.ShouldBe(4);
+            stream.MarkCaptureSucceeded(delta.NewCheckpointLsn, delta.CapturedEventCount, delta.CapturedAtUtc);
+
+            await using (var verifyCmd = new NpgsqlCommand(
+                $"SELECT order_id, customer_name, total_amount FROM public.\"{tgtTable}\" ORDER BY order_id", conn))
+            await using (var reader = await verifyCmd.ExecuteReaderAsync())
+            {
+                var mirrored = new List<(long Id, string Name, decimal Amount)>();
+                while (await reader.ReadAsync())
+                {
+                    mirrored.Add((reader.GetInt64(0), reader.GetString(1), reader.GetDecimal(2)));
+                }
+
+                mirrored.ShouldBe(
+                [
+                    (1L, "Alice-V2", 120.00m),
+                    (2L, "Bob", 250.00m),
+                ]);
+            }
+
+            // Upstream DDL schema drift should trip PauseAndAlert before reading/advancing WAL
+            await ExecuteNonQueryAsync(conn, $"ALTER TABLE public.\"{srcTable}\" ADD COLUMN loyalty_tier text;");
+            var pfAfterDrift = await service.PreflightAsync(pgDs, stream, CancellationToken.None);
+            pfAfterDrift.SchemaDriftDetected.ShouldBeTrue();
+            pfAfterDrift.SchemaDriftSummary.ShouldNotBeNull().ShouldContain("+col loyalty_tier");
+
+            var driftEx = await Should.ThrowAsync<Volo.Abp.BusinessException>(() =>
+                service.CaptureBatchAsync(pgDs, stream, pgDs, CancellationToken.None));
+            driftEx.Code.ShouldBe(SwapMidDomainErrorCodes.DataIntegration.CdcStreamSchemaDriftDetected);
+
+            var acceptedEval = await service.EvaluateSchemaAsync(pgDs, stream, CancellationToken.None);
+            stream.UpdateSchemaBaseline(acceptedEval.CurrentHash, acceptedEval.CurrentJson);
+            var afterAccept = await service.CaptureBatchAsync(pgDs, stream, pgDs, CancellationToken.None);
+            afterAccept.CapturedEventCount.ShouldBe(0);
+        }
+        finally
+        {
+            await ExecuteNonQueryAsync(conn, $"""
+                SELECT CASE WHEN EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = '{slotName}')
+                    THEN pg_drop_replication_slot('{slotName}') END;
+                DROP PUBLICATION IF EXISTS "{pubName}";
+                DROP TABLE IF EXISTS public."{srcTable}";
+                DROP TABLE IF EXISTS public."{tgtTable}";
+                """);
+        }
+    }
+
     private static async Task ExecuteNonQueryAsync(NpgsqlConnection conn, string sql)
     {
         await using var cmd = new NpgsqlCommand(sql, conn);

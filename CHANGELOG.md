@@ -4,6 +4,17 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-11-17
+
+### Added
+- **CDC Row-Level Relational Table Mirroring (`CdcTargetMode.RelationalTable = 3` / `DataIntegration` / `web/`)**:
+  - Added `CdcTargetMode.RelationalTable` and `CdcDeletePolicy` (`DeleteRow` / `Ignore`) across domain, EF Core migration (`AddCdcRelationalMirrorAndSchemaDrift`), and `CdcRelationalMirrorDeliveryAdapter` + `EtlTargetAtomicWriter.ApplyCdcMirrorAsync`.
+  - Coalesces ordered WAL & `EXPORT_SNAPSHOT` baseline batches per business primary key (`TargetSinkKeyColumns`), resolves unchanged TOAST sentinels cleanly across batches, coerces temporal/binary values, and atomically executes staging-backed `Upsert` (`ON CONFLICT DO UPDATE` / SQL Server `MERGE WITH (HOLDLOCK)` / MySQL `ON DUPLICATE KEY UPDATE`) plus parameterized `DELETE` inside a single target transaction under writer lease protection (`swapmid_cdc_deliveries_total{target_mode="relational_table"}`).
+- **Upstream Schema Drift Detection, Auto-Pause Guardrails & Recovery Notification (`DataIntegration` / `Mcp` / `Notification` / `web/`)**:
+  - Extended `CdcStreamDefinition` with `CdcSchemaDriftPolicy` (`Ignore`, `Warn`, `PauseAndAlert`), `SchemaBaselineHash`, `SchemaBaselineJson`, `SchemaDriftDetected`, `SchemaDriftSummary`, and `SchemaDriftDetectedAt`.
+  - Implemented `CdcSchemaDriftEvaluator` and `PgOutputReplicationMetadataReader.InspectTableSchemasAsync` (`pg_attribute` catalog inspection) wired into `PreflightAsync`, `ActivateAsync`, `CaptureAsync`, and `RunScheduledCdcCaptureHangfireJob`. When `PauseAndAlert` detects upstream column/type changes, capture aborts safely before advancing LSN, pauses the stream, removes Hangfire polling, emits `swapmid_cdc_schema_drift_events_total{action="paused"}` (and Prometheus alert rule `SwapMidCdcSchemaDriftDetected`), and dispatches notification center alerts (`NotificationService`) with correlation on operator confirmation via `POST /api/v1/cdc-streams/{id}/accept-schema`.
+  - Surfaced `targetMode = 3` Relational Table Mirror controls, `SchemaDriftPolicy` / `TargetDeletePolicy` selectors, `Schema 已漂移` badges, preflight drift banners, and `确认Schema` action in `/data-integration/cdc`, alongside enriched schema-drift diagnostics in MCP `diagnose_cdc_streams`.
+
 ## [1.6.0] - 2026-11-16
 
 ### Added

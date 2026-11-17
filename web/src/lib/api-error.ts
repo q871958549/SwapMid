@@ -77,3 +77,36 @@ export function getApiErrorMessage(error: unknown, fallback: string, copy?: { in
     return polish(text, fallback)
   }
 }
+
+/** 读取非 2xx `fetch` 响应体并提取可读错误信息；兼容只实现部分方法的测试替身。 */
+export async function readApiErrorMessage(
+  res: Response,
+  fallback: string,
+  copy?: { incompleteUpload: string },
+): Promise<string> {
+  if (typeof res.text === 'function') {
+    const bodyText = await res.text().catch(() => '')
+    return bodyText ? getApiErrorMessage(bodyText, fallback, copy) : fallback
+  }
+  if (typeof res.json === 'function') {
+    const payload = await res.json().catch(() => null)
+    return payload ? getApiErrorMessage(JSON.stringify(payload), fallback, copy) : fallback
+  }
+  return fallback
+}
+
+/** 安全解析 `fetch` 成功响应 JSON，自动跳过 `204/205` 或空响应体（如 `activate`/`pause`）。 */
+export async function parseOptionalJsonResponse<T>(res: Response): Promise<T> {
+  const hasEmptyBody = res.status === 204
+    || res.status === 205
+    || res.headers?.get?.('content-length') === '0'
+  if (hasEmptyBody) return undefined as T
+  if (typeof res.text === 'function') {
+    const text = await res.text()
+    return (text ? JSON.parse(text) : undefined) as T
+  }
+  if (typeof res.json === 'function') {
+    return await res.json() as T
+  }
+  return undefined as T
+}

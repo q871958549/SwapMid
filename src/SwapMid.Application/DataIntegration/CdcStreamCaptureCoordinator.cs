@@ -2,6 +2,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SwapMid.Monitoring;
+using SwapMid.Notification;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.DistributedLocking;
@@ -24,6 +26,8 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
     private readonly IUnitOfWorkManager _unitOfWorkManager;
     private readonly PipelineExecutionFailurePolicy _failurePolicy;
     private readonly ILogger<CdcStreamCaptureCoordinator> _logger;
+    private readonly ICdcScheduleSynchronizer _scheduleSynchronizer;
+    private readonly INotificationService? _notificationService;
 
     public CdcStreamCaptureCoordinator(
         ICdcStreamRepository streamRepository,
@@ -32,7 +36,9 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
         IAbpDistributedLock distributedLock,
         IUnitOfWorkManager unitOfWorkManager,
         PipelineExecutionFailurePolicy failurePolicy,
-        ILogger<CdcStreamCaptureCoordinator> logger)
+        ILogger<CdcStreamCaptureCoordinator> logger,
+        ICdcScheduleSynchronizer? scheduleSynchronizer = null,
+        INotificationService? notificationService = null)
     {
         _streamRepository = streamRepository;
         _sourceRepository = sourceRepository;
@@ -41,6 +47,8 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
         _unitOfWorkManager = unitOfWorkManager;
         _failurePolicy = failurePolicy;
         _logger = logger;
+        _scheduleSynchronizer = scheduleSynchronizer ?? NullCdcScheduleSynchronizer.Instance;
+        _notificationService = notificationService;
     }
 
     public async Task<CdcCaptureResultDto> CaptureAsync(
@@ -64,6 +72,9 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
             PgOutputSnapshotBatchResult? snapshotResult = null;
             if (stream.InitialSnapshotEnabled && stream.SnapshotStatus == CdcSnapshotStatus.NotStarted)
             {
+                var preSnapSchema = await _captureService.EvaluateSchemaAsync(source, stream, cancellationToken);
+                stream = await HandleSchemaEvaluationAsync(stream, preSnapSchema, cancellationToken);
+
                 try
                 {
                     snapshotResult = await _captureService.SnapshotAsync(source, stream, targetSink, cancellationToken);
@@ -78,7 +89,15 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
                 stream = await PersistSnapshotSuccessAsync(id, snapshotResult, cancellationToken);
             }
 
-            var batch = await _captureService.CaptureBatchAsync(source, stream, targetSink, cancellationToken);
+            var batch = await _captureService.CaptureBatchAsync(
+                source,
+                stream,
+                targetSink,
+                cancellationToken,
+                onSchemaEvaluated: async eval =>
+                {
+                    stream = await HandleSchemaEvaluationAsync(stream, eval, cancellationToken);
+                });
 
             using (var writeUow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: true))
             {
@@ -106,6 +125,10 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
             };
         }
         catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (BusinessException ex) when (ex.Code == SwapMidDomainErrorCodes.DataIntegration.CdcStreamSchemaDriftDetected)
         {
             throw;
         }
@@ -190,7 +213,8 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
 
         var source = await _sourceRepository.GetAsync(stream.SourceId, cancellationToken: cancellationToken);
         DataSource? targetSink = null;
-        if (stream.TargetMode == CdcTargetMode.ExternalSink && stream.TargetSinkId.HasValue)
+        if (stream.TargetMode is (CdcTargetMode.ExternalSink or CdcTargetMode.RelationalTable) &&
+            stream.TargetSinkId.HasValue)
         {
             targetSink = await _sourceRepository.FindAsync(
                 stream.TargetSinkId.Value,
@@ -199,6 +223,102 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
 
         await readUow.CompleteAsync(cancellationToken);
         return (stream, source, targetSink);
+    }
+
+    private async Task<CdcStreamDefinition> HandleSchemaEvaluationAsync(
+        CdcStreamDefinition stream,
+        CdcSchemaDriftEvaluation eval,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(stream.SchemaBaselineJson))
+        {
+            if (eval.CurrentJson != "[]")
+            {
+                using var initUow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+                var latest = await _streamRepository.GetAsync(stream.Id, cancellationToken: cancellationToken);
+                if (string.IsNullOrWhiteSpace(latest.SchemaBaselineJson))
+                {
+                    latest.UpdateSchemaBaseline(eval.CurrentHash, eval.CurrentJson);
+                    await _streamRepository.UpdateAsync(latest, autoSave: true, cancellationToken: cancellationToken);
+                }
+
+                await initUow.CompleteAsync(cancellationToken);
+                return latest;
+            }
+
+            return stream;
+        }
+
+        if (!eval.HasDrift || stream.SchemaDriftPolicy == CdcSchemaDriftPolicy.Ignore)
+        {
+            return stream;
+        }
+
+        var pauseStream = stream.SchemaDriftPolicy == CdcSchemaDriftPolicy.PauseAndAlert;
+        var summaryChanged = !stream.SchemaDriftDetected ||
+                             !string.Equals(stream.SchemaDriftSummary, eval.Summary, StringComparison.Ordinal);
+
+        CdcStreamDefinition updated;
+        using (var driftUow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: true))
+        {
+            updated = await _streamRepository.GetAsync(stream.Id, cancellationToken: cancellationToken);
+            updated.MarkSchemaDriftDetected(eval.Summary, DateTime.UtcNow, pauseStream);
+            await _streamRepository.UpdateAsync(updated, autoSave: true, cancellationToken: cancellationToken);
+            await driftUow.CompleteAsync(cancellationToken);
+        }
+
+        if (pauseStream)
+        {
+            await _scheduleSynchronizer.SyncAsync(stream.Id, CdcStreamStatus.Paused, stream.PollIntervalSeconds, cancellationToken);
+            PlatformMetrics.CdcSchemaDriftEventsTotal.WithLabels("paused").Inc();
+            await TrySendDriftAlertAsync(updated, eval.Summary, paused: true, cancellationToken);
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamSchemaDriftDetected)
+                .WithData("Reason", eval.Summary);
+        }
+
+        if (summaryChanged)
+        {
+            PlatformMetrics.CdcSchemaDriftEventsTotal.WithLabels("warn").Inc();
+            await TrySendDriftAlertAsync(updated, eval.Summary, paused: false, cancellationToken);
+        }
+
+        return updated;
+    }
+
+    private async Task TrySendDriftAlertAsync(
+        CdcStreamDefinition stream,
+        string summary,
+        bool paused,
+        CancellationToken cancellationToken)
+    {
+        if (_notificationService == null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _notificationService.SendAsync(
+                new NotificationSendRequest
+                {
+                    Title = paused
+                        ? $"CDC 流「{stream.Name}」上游 Schema 漂移已自动暂停"
+                        : $"CDC 流「{stream.Name}」检测到上游 Schema 漂移",
+                    Content = $"上游表结构变更摘要：{summary}\n请核对下游目标结构并在 CDC 控制台确认新 Schema。",
+                    Level = paused ? NotificationLevel.Warning : NotificationLevel.Info,
+                    Source = NotificationSources.DataIntegration,
+                    ActionPath = "/data-integration/cdc",
+                    ActionLabel = "查看 CDC 流",
+                },
+                cancellationToken);
+        }
+        catch (Exception notifyEx)
+        {
+            _logger.LogWarning(
+                "CDC Schema 漂移告警发送失败 streamId={StreamId} exceptionType={Type}",
+                stream.Id,
+                notifyEx.GetType().FullName ?? notifyEx.GetType().Name);
+        }
     }
 
     private async Task<CdcStreamDefinition> PersistSnapshotSuccessAsync(

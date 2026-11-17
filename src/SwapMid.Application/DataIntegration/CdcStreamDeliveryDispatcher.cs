@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NpgsqlTypes;
 using SwapMid.Monitoring;
 using SwapMid.SharedKernel.IntegrationEvents;
@@ -11,7 +12,8 @@ namespace SwapMid.DataIntegration;
 
 /// <summary>
 /// 统一将 PostgreSQL CDC 捕获的 WAL 变更与初始全量快照区块分发到
-/// <see cref="CdcTargetMode.MessageBusTopic"/>、<see cref="CdcTargetMode.DataPipeline"/> 或 <see cref="CdcTargetMode.ExternalSink"/>。
+/// <see cref="CdcTargetMode.MessageBusTopic"/>、<see cref="CdcTargetMode.DataPipeline"/>、
+/// <see cref="CdcTargetMode.ExternalSink"/> 或 <see cref="CdcTargetMode.RelationalTable"/>。
 /// </summary>
 internal static class CdcStreamDeliveryDispatcher
 {
@@ -23,6 +25,8 @@ internal static class CdcStreamDeliveryDispatcher
         IIntegrationEventPublisher integrationEventPublisher,
         DataPipelineExecutionCoordinator executionCoordinator,
         IReadOnlyDictionary<DataSourceType, IEtlSinkWriter> sinkWriters,
+        IEtlRelationalConnectionFactory connectionFactory,
+        ILogger logger,
         CancellationToken cancellationToken,
         long eventSequenceOffset = 0,
         string? idempotencyKeyOverride = null,
@@ -117,6 +121,25 @@ internal static class CdcStreamDeliveryDispatcher
             };
             PlatformMetrics.CdcDeliveriesTotal.WithLabels(label).Inc();
             return written;
+        }
+
+        if (stream.TargetMode == CdcTargetMode.RelationalTable)
+        {
+            if (targetSink == null)
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", "RelationalTable 镜像模式下未找到目标关系型数据源。");
+            }
+
+            var mirrored = await CdcRelationalMirrorDeliveryAdapter.DeliverAsync(
+                stream,
+                targetSink,
+                changes,
+                connectionFactory,
+                logger,
+                cancellationToken);
+            PlatformMetrics.CdcDeliveriesTotal.WithLabels("relational_table").Inc();
+            return mirrored;
         }
 
         return 0;

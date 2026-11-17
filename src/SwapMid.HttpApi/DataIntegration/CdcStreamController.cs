@@ -121,4 +121,12 @@ public class CdcStreamController : SwapMidController, ICdcStreamAppService
         Guid id,
         CancellationToken cancellationToken = default)
         => _service.ProvisionExternalSinkAsync(id, cancellationToken);
+
+    /// <summary>确认上游最新表结构作为新的 Schema 基线并清除漂移告警</summary>
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    [HttpPost("{id}/accept-schema")]
+    public Task<CdcAcceptSchemaResultDto> AcceptSchemaBaselineAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+        => _service.AcceptSchemaBaselineAsync(id, cancellationToken);
 }

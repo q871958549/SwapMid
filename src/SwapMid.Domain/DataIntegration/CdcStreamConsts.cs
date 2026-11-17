@@ -17,6 +17,9 @@ public static class CdcStreamConsts
     public const int MaxCheckpointLsnLength = 32;
     public const int MaxErrorCodeLength = 64;
     public const int MaxErrorMessageLength = 2000;
+    public const int MaxSchemaBaselineHashLength = 64;
+    public const int MaxSchemaBaselineJsonLength = 32768;
+    public const int MaxSchemaDriftSummaryLength = 1000;
 
     public const long WalLagWarningBytes = 100L * 1024 * 1024;
 

@@ -99,7 +99,7 @@ public static class McpToolCatalog
         new McpToolDescriptor(
             Name: DiagnoseCdcStreams,
             RequiredPermission: SwapMidPermissions.DataIntegration.CdcStreams.Default,
-            Description: "Inspect configured PostgreSQL logical replication CDC streams, LSN checkpoints, initial snapshot status, and optional live WAL lag pre-flight diagnostics.",
+            Description: "Inspect configured PostgreSQL logical replication CDC streams, LSN checkpoints, initial snapshot status, upstream schema drift flags/summaries, and optional live WAL lag & schema pre-flight diagnostics.",
             InputSchema: new
             {
                 type = "object",

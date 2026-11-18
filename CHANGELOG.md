@@ -4,6 +4,20 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-11-18
+
+### Added
+- **MySQL / MariaDB Row-Based Binlog CDC Capture Engine (`CdcSourceType.MySqlBinlog = 2`)**:
+  - Added `MySqlCdc 4.0.1` (paired with `MySqlConnector 2.6.1`, zero NuGetAudit warnings) and implemented `MySqlBinlogCdcCaptureService` (split cleanly across partial classes under `src/SwapMid.Application/DataIntegration/`).
+  - Performs server pre-flight validation (`log_bin=ON`, `binlog_format=ROW`, `binlog_row_image`, purged binlog detection, and byte-accurate `WalLagBytes`), consistent baseline snapshots (`FLUSH TABLES WITH READ LOCK` + `REPEATABLE READ` + `START TRANSACTION WITH CONSISTENT SNAPSHOT` + `SHOW BINARY LOG STATUS`/`SHOW MASTER STATUS`, with `LOCK TABLES READ` fallback), transaction-atomic bounded incremental reads (`RotateEvent`, `TableMapEvent`, `WriteRowsEvent`, `UpdateRowsEvent`, `DeleteRowsEvent`, `XidEvent`, `QueryEvent("COMMIT")`), `INFORMATION_SCHEMA.COLUMNS` schema drift evaluation, and full integration across `CdcStreamCaptureCoordinator`, `CdcRelationalMirrorPreflightService`, and `McpCdcDiagnosticsHandler`.
+  - Added `MySqlBinlogCdcHelperTests`, `MySqlBinlogCdcContractTests` (`SWAPMID_MYSQL_TEST_CONNECTION`), and a live `mysql:8.4` `--binlog-format=ROW --binlog-row-image=FULL` service step in `.github/workflows/ci.yml`.
+- **Native Apache Delta Lake `_delta_log/` Transaction Log Protocol (`LakehouseTableFormat.DeltaLake = 1`)**:
+  - Added `LakehouseTableFormat` (`SwapMidManifest = 0`, `DeltaLake = 1`) to `CdcStreamDefinition` (widened `CheckpointLsn` to `128` characters for `{binlogFile}:{position}`, extracted `CdcStreamDefinition.Configuration.cs`, and generated EF Core migration `AddCdcMySqlBinlogAndDeltaLake`).
+  - Implemented `DeltaLakeCommitWriter` emitting native Delta Lake Protocol v1/v2 NDJSON commits (`_delta_log/{version:D20}.json` with `commitInfo`, `protocol`, `metaData`, `add`, and `OPTIMIZE` compaction `remove` + `add` actions with `dataChange: false`), enforced via S3 `If-None-Match: *` optimistic concurrency control and idempotent `swapmidRunId` replay.
+  - Integrated Delta Lake `OPTIMIZE` commits into `CdcObjectStorageCompactionService` (with merge helpers extracted to `CdcParquetCompactionMergeHelper.cs`) and surfaced `DeltaLogDirectory`, `LatestDeltaVersion`, DuckDB `delta_scan()`, Spark `format("delta")` / `DESCRIBE HISTORY`, and Polars `pl.scan_delta()` templates in `CdcExternalSinkTemplateBuilder`.
+- **Frontend CDC Console (`web/src/app/(dashboard)/data-integration/cdc/`) & Trilingual Localization**:
+  - Extended source-type auto-detection (`MySql`/`MariaDb` -> `MySqlBinlog`), `LakehouseTableFormat` selector (`SwapMid Manifest` / `Delta Lake`), checkpoint/template badges (`Delta Lake vN`, `_delta_log` path, `delta_scan()` SQL) across `zh-Hans`, `zh-Hant`, and `en` catalogs (`0` CJK characters in `en.json`), and Vitest coverage in `client.test.tsx`.
+
 ## [1.9.1] - 2026-11-18
 
 ### Added

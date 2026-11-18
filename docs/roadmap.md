@@ -30,7 +30,8 @@ Every milestone adheres to five non-negotiable engineering invariants:
 | **`v1.7.0`** *(Released)* | **CDC Relational Row-Level Mirror (`Upsert`/`Delete`) & Schema Drift Guardrails** | Direct `CdcTargetMode.RelationalTable` materialization across PostgreSQL / SQL Server / MySQL (`TargetDeletePolicy`, `EXPORT_SNAPSHOT` + staging `Upsert` + atomic `Delete`), upstream DDL `SchemaDriftPolicy` (`Ignore` / `Warn` / `PauseAndAlert`) with Hangfire circuit-breaking, `NotificationService` alerts, `accept-schema` recovery, and `SwapMidCdcSchemaDriftDetected` alerting |
 | **`v1.8.0`** *(Released)* | **CDC Field Remapping, Soft-Delete Tombstones & Object-Store Lakehouse Manifests** | Explicit `TargetFieldMappings` projection + `CdcDeletePolicy.SoftDelete` tombstones with intra-batch `NOT NULL` safety & resurrection clearing, dual-source `inspect-mirror-schema` preflight & interactive visual mapper UI, immutable S3/MinIO `_swapmid/manifests/*.json` + bounded `_swapmid/latest.json` Lakehouse checkpoint index (`swapmid_cdc_object_storage_manifests_total`), and Grafana Panel 9 CDC P95 observability |
 | **`v1.9.0`** *(Released)* | **SQL Server Change Tracking CDC & Lakehouse Small-File Compaction** | Heterogeneous `CdcSourceType` (`SqlServerChangeTracking = 1`) via native `CHANGETABLE(CHANGES ...)` + retention/drift checks, `CdcObjectStorageCompactionService` (Parquet/JSONL small-file consolidation + auto-threshold + `/compact-lakehouse`), DuckDB/ClickHouse/Spark analytics SQL, Grafana Panel 9 compaction series, and React `#418` hydration fix |
-| **`v1.9.1`** *(Current)* | **Security & Runtime Polish, 100% OpenAPI Summaries & SQL Server CI** | Next.js `16.4.6` security upgrade, zero-404 UI runtime (`ITablePreferenceAppService` cloud table persistence, `/api/v1/nav-usage` logging, `204` default avatar fallback), 100% `/api/v1` XML `<summary>` OpenAPI coverage, and Linux SQL Server 2022 Change Tracking CI gate |
+| **`v1.9.1`** *(Released)* | **Security & Runtime Polish, 100% OpenAPI Summaries & SQL Server CI** | Next.js `16.4.6` security upgrade, zero-404 UI runtime (`ITablePreferenceAppService` cloud table persistence, `/api/v1/nav-usage` logging, `204` default avatar fallback), 100% `/api/v1` XML `<summary>` OpenAPI coverage, and Linux SQL Server 2022 Change Tracking CI gate |
+| **`v2.0.0`** *(Current)* | **MySQL Row-Based Binlog CDC & Apache Delta Lake (`_delta_log`) Protocol** | Native `CdcSourceType.MySqlBinlog = 2` (`MySqlCdc 4.0.1` ROW + FULL binlog capture, consistent FTWRL/LOCK TABLES snapshot, schema drift, `mysql:8.4` CI gate), `LakehouseTableFormat.DeltaLake = 1` (`_delta_log/{version:D20}.json` v1/v2 commits, S3 `If-None-Match: *` CAS, `OPTIMIZE` `remove`+`add` compaction, DuckDB `delta_scan()` / Spark / Polars SQL), and trilingual frontend controls |
 
 ---
 
@@ -99,9 +100,9 @@ Every milestone adheres to five non-negotiable engineering invariants:
 
 ---
 
-## Next Evolution (`v2.0+` Post-LTS Backlog)
+## Next Evolution (`v2.1+` Post-2.0 Backlog)
 
-1. **Additional Heterogeneous CDC Sources (MySQL Binlog / Oracle LogMiner)**:
-   - Extend `ICdcStreamAppService` and `CdcStreamCaptureCoordinator` with `MySqlBinlog` (`Row`-based event reader) alongside PostgreSQL `pgoutput` and SQL Server Change Tracking.
-2. **Managed Apache Iceberg / Delta Lake Catalog Registration**:
-   - Optionally register SwapMid `_swapmid/manifests/*.json` commits directly with an external REST Iceberg / Hive Metastore catalog.
+1. **Oracle LogMiner & Cloud Serverless CDC Sources**:
+   - Extend `ICdcStreamAppService` and `CdcStreamCaptureCoordinator` with `OracleLogMiner` alongside PostgreSQL `pgoutput`, SQL Server Change Tracking, and MySQL / MariaDB `Binlog`.
+2. **External Hive Metastore / Unity Catalog / REST Iceberg Synchronization**:
+   - Optionally register SwapMid Delta Lake (`_delta_log/*.json`) and `_swapmid/manifests/*.json` table commits directly with an external REST Iceberg / Hive Metastore / Unity Catalog service.

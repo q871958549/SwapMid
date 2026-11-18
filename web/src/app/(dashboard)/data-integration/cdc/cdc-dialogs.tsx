@@ -231,7 +231,11 @@ export function CdcCheckpointDialog({
               <Input
                 value={value}
                 onChange={e => onValueChange(e.target.value)}
-                placeholder="0/16B6C50"
+                placeholder={
+                  Number(target.sourceType ?? 0) === 2
+                    ? 'mysql-bin.000003:197'
+                    : (Number(target.sourceType ?? 0) === 1 ? '42' : '0/16B6C50')
+                }
                 className="font-mono"
               />
               <p className="text-xs text-muted-foreground">{t('checkpointInputHint')}</p>
@@ -346,6 +350,13 @@ export function CdcSinkTemplateDialog({
               {state.template.partitionKeyExpression && (
                 <StatusBadge tone="info">{`Key: ${state.template.partitionKeyExpression}`}</StatusBadge>
               )}
+              {state.template.deltaLogDirectory && (
+                <StatusBadge tone="info">
+                  {state.template.latestDeltaVersion !== null && state.template.latestDeltaVersion !== undefined
+                    ? `Delta Lake v${state.template.latestDeltaVersion}`
+                    : 'Delta Lake'}
+                </StatusBadge>
+              )}
             </div>
 
             {state.template.clickHouseDdl && (
@@ -422,6 +433,11 @@ export function CdcSinkTemplateDialog({
                 {state.template.manifestLatestKey && (
                   <div className="font-mono text-muted-foreground break-all">
                     {`Latest: ${state.template.manifestLatestKey}`}
+                  </div>
+                )}
+                {state.template.deltaLogDirectory && (
+                  <div className="font-mono text-muted-foreground break-all">
+                    {`Delta Log: ${state.template.deltaLogDirectory}`}
                   </div>
                 )}
                 {state.template.latestManifestJson && (

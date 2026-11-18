@@ -3308,7 +3308,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog",
                 "nullable": false
               },
               {
@@ -3464,6 +3464,13 @@ export const API_MODULES: ApiModule[] = [
                 "type": "integer",
                 "description": "",
                 "nullable": true
+              },
+              {
+                "name": "lakehouseTableFormat",
+                "cnName": "",
+                "type": "LakehouseTableFormat",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "nullable": false
               },
               {
                 "name": "schemaDriftPolicy",
@@ -3638,7 +3645,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog",
                 "required": false
               },
               {
@@ -3775,6 +3782,13 @@ export const API_MODULES: ApiModule[] = [
                 "required": false
               },
               {
+                "name": "lakehouseTableFormat",
+                "cnName": "",
+                "type": "LakehouseTableFormat",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "required": false
+              },
+              {
                 "name": "schemaDriftPolicy",
                 "cnName": "",
                 "type": "CdcSchemaDriftPolicy",
@@ -3829,7 +3843,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog",
                 "nullable": false
               },
               {
@@ -3985,6 +3999,13 @@ export const API_MODULES: ApiModule[] = [
                 "type": "integer",
                 "description": "",
                 "nullable": true
+              },
+              {
+                "name": "lakehouseTableFormat",
+                "cnName": "",
+                "type": "LakehouseTableFormat",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "nullable": false
               },
               {
                 "name": "schemaDriftPolicy",
@@ -4182,7 +4203,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog",
                 "nullable": false
               },
               {
@@ -4338,6 +4359,13 @@ export const API_MODULES: ApiModule[] = [
                 "type": "integer",
                 "description": "",
                 "nullable": true
+              },
+              {
+                "name": "lakehouseTableFormat",
+                "cnName": "",
+                "type": "LakehouseTableFormat",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "nullable": false
               },
               {
                 "name": "schemaDriftPolicy",
@@ -4521,7 +4549,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog",
                 "required": false
               },
               {
@@ -4658,6 +4686,13 @@ export const API_MODULES: ApiModule[] = [
                 "required": false
               },
               {
+                "name": "lakehouseTableFormat",
+                "cnName": "",
+                "type": "LakehouseTableFormat",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "required": false
+              },
+              {
                 "name": "schemaDriftPolicy",
                 "cnName": "",
                 "type": "CdcSchemaDriftPolicy",
@@ -4712,7 +4747,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog",
                 "nullable": false
               },
               {
@@ -4868,6 +4903,13 @@ export const API_MODULES: ApiModule[] = [
                 "type": "integer",
                 "description": "",
                 "nullable": true
+              },
+              {
+                "name": "lakehouseTableFormat",
+                "cnName": "",
+                "type": "LakehouseTableFormat",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "nullable": false
               },
               {
                 "name": "schemaDriftPolicy",
@@ -5215,7 +5257,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog",
                 "nullable": false
               },
               {
@@ -5371,6 +5413,13 @@ export const API_MODULES: ApiModule[] = [
                 "type": "integer",
                 "description": "",
                 "nullable": true
+              },
+              {
+                "name": "lakehouseTableFormat",
+                "cnName": "",
+                "type": "LakehouseTableFormat",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "nullable": false
               },
               {
                 "name": "schemaDriftPolicy",
@@ -5997,6 +6046,20 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "deltaLogDirectory",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "latestDeltaVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "latestManifestJson",
                 "cnName": "",
                 "type": "string",
@@ -6140,6 +6203,20 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "deltaLogDirectory",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "latestDeltaVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "latestManifestJson",
                 "cnName": "",
                 "type": "string",
@@ -6252,7 +6329,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog",
                 "required": false
               },
               {

@@ -22,6 +22,7 @@
     <PackageReference Include="Microsoft.SqlServer.TransactSql.ScriptDom" Version="180.59.2" /><!-- ETL SQL Server sourceQuery AST 只读边界 -->
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.0.0" />
     <PackageReference Include="MiniExcel" Version="1.45.0" /><!-- 开发者文档·数据库表字典 Excel 导出 -->
+    <PackageReference Include="MySqlCdc" Version="4.0.1" /><!-- MySQL Binlog 行级 CDC 流客户端 -->
     <PackageReference Include="MySqlConnector" Version="2.6.1" />
     <PackageReference Include="Npgsql" Version="10.0.0" />
     <PackageReference Include="Parquet.Net" Version="6.1.0" />

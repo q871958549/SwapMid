@@ -89,8 +89,11 @@ export function CdcTargetCell({ stream }: { stream: CdcStreamDto }) {
             {`Key: ${stream.targetSinkKeyColumns}`}
           </div>
         )}
-        {(isSoftDelete || mappingCount > 0) && (
+        {(isSoftDelete || mappingCount > 0 || (mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.lakehouseTableFormat ?? 0) === 1)) && (
           <div className="flex flex-wrap gap-1 pt-0.5">
+            {mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.lakehouseTableFormat ?? 0) === 1 && (
+              <StatusBadge tone="info">Delta Lake</StatusBadge>
+            )}
             {isSoftDelete && (
               <StatusBadge tone="info">
                 {t('softDeleteCellBadge', { col: stream.softDeleteColumn || 'is_deleted' })}
@@ -209,7 +212,7 @@ export function CdcRowActions({
               {t('acceptSchemaMenuItem')}
             </DropdownMenuItem>
           )}
-          {canDelete && !isActive && Number(row.sourceType ?? 0) !== 1 && (
+          {canDelete && !isActive && Number(row.sourceType ?? 0) === 0 && (
             <DropdownMenuItem disabled={busy} onClick={() => onDropSlot(row)}>
               <Unplug className="mr-2 size-3.5" />
               {t('dropSlotMenuItem')}

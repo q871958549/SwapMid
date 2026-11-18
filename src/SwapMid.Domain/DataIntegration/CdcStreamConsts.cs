@@ -18,7 +18,7 @@ public static class CdcStreamConsts
     public const int MaxTargetFieldMappingCount = 256;
     public const int MaxSoftDeleteColumnLength = 128;
     public const int MaxSoftDeleteTimestampColumnLength = 128;
-    public const int MaxCheckpointLsnLength = 32;
+    public const int MaxCheckpointLsnLength = 128;
     public const int MaxErrorCodeLength = 64;
     public const int MaxErrorMessageLength = 2000;
     public const int MaxSchemaBaselineHashLength = 64;

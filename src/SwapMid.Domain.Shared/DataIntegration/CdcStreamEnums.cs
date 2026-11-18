@@ -10,6 +10,21 @@ public enum CdcSourceType
 
     /// <summary>SQL Server 原生变更跟踪（CHANGETABLE(CHANGES ...)）。</summary>
     SqlServerChangeTracking = 1,
+
+    /// <summary>MySQL / MariaDB 二进制日志行级复制（Binlog ROW Image）。</summary>
+    MySqlBinlog = 2,
+}
+
+/// <summary>
+/// 对象存储 Lakehouse 开放表格式提交协议。
+/// </summary>
+public enum LakehouseTableFormat
+{
+    /// <summary>仅写入 SwapMid _swapmid/manifests 批次清单与 latest.json 索引。</summary>
+    SwapMidManifest = 0,
+
+    /// <summary>同时提交 Apache Delta Lake 事务日志（_delta_log/*.json）及 OPTIMIZE 合并记录。</summary>
+    DeltaLake = 1,
 }
 
 /// <summary>

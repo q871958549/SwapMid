@@ -32,15 +32,7 @@ public sealed class CdcRelationalMirrorPreflightService : ITransientDependency
         InspectCdcMirrorSchemaInput input,
         CancellationToken cancellationToken)
     {
-        var isSqlServer = input.SourceType == CdcSourceType.SqlServerChangeTracking;
-        if (isSqlServer)
-        {
-            SqlServerCdcCaptureService.EnsureSqlServerSource(source);
-        }
-        else
-        {
-            PgOutputCdcCaptureService.EnsurePostgreSqlSource(source);
-        }
+        CdcStreamMappingHelpers.EnsureSourceMatchesType(input.SourceType, source);
 
         if (target.Type != DataSourceType.RelationalDatabase)
         {
@@ -48,9 +40,15 @@ public sealed class CdcRelationalMirrorPreflightService : ITransientDependency
                 .WithData("Reason", $"关系表行级镜像目标必须为关系型数据库，当前为 {target.Type}。");
         }
 
+        var defaultSchema = input.SourceType switch
+        {
+            CdcSourceType.SqlServerChangeTracking => "dbo",
+            CdcSourceType.MySqlBinlog => RelationalDataSourceConnection.Parse(source.Config).Database?.Trim() ?? string.Empty,
+            _ => "public",
+        };
         var monitoredTables = CdcProtocolHelpers.ParseMonitoredTables(
             input.MonitoredTables,
-            defaultSchema: isSqlServer ? "dbo" : "public");
+            defaultSchema: defaultSchema);
         if (monitoredTables.Count != 1)
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
@@ -68,7 +66,12 @@ public sealed class CdcRelationalMirrorPreflightService : ITransientDependency
         var mappingRules = ConvertFieldMappings(input.TargetFieldMappings);
 
         var sourceTable = monitoredTables[0].FullName;
-        var sourceProvider = isSqlServer ? "sqlserver" : "postgresql";
+        var sourceProvider = input.SourceType switch
+        {
+            CdcSourceType.SqlServerChangeTracking => "sqlserver",
+            CdcSourceType.MySqlBinlog => "mysql",
+            _ => "postgresql",
+        };
         var sourceColumns = new List<PreflightColumnDto>();
         var targetColumns = new List<PreflightColumnDto>();
         var issues = new List<PreflightSchemaIssueDto>();

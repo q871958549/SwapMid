@@ -70,6 +70,7 @@ internal static class CdcObjectStorageLakehouseWriter
         public string? SchemaBaselineHash { get; set; }
         public string LatestManifestKey { get; set; } = string.Empty;
         public string LatestDataObjectKey { get; set; } = string.Empty;
+        public long? LatestDeltaVersion { get; set; }
         public int CompactionCount { get; set; }
         public DateTime? LastCompactedAtUtc { get; set; }
         public DateTime UpdatedAtUtc { get; set; }
@@ -213,6 +214,25 @@ internal static class CdcObjectStorageLakehouseWriter
             latestDoc.RecentFiles = latestDoc.RecentFiles
                 .Skip(latestDoc.RecentFiles.Count - MaxRecentFilesInLatest)
                 .ToList();
+        }
+
+        if (stream.LakehouseTableFormat == LakehouseTableFormat.DeltaLake &&
+            string.Equals(uploaded.Format, "parquet", StringComparison.OrdinalIgnoreCase))
+        {
+            latestDoc.LatestDeltaVersion = await DeltaLakeCommitWriter.CommitAppendAsync(
+                writer.HttpClientFactory,
+                writer.Configuration,
+                config,
+                destination,
+                stream,
+                latestDoc,
+                runId,
+                uploaded.ObjectKey,
+                uploaded.ByteSize,
+                uploaded.RowCount,
+                isInitialSnapshot,
+                committedAtUtc,
+                cancellationToken);
         }
 
         await PutJsonObjectAsync(

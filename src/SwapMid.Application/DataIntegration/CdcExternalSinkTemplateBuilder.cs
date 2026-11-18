@@ -37,6 +37,8 @@ internal static class CdcExternalSinkTemplateBuilder
         string? clickHouseDdl = null;
         string? manifestDir = null;
         string? manifestLatestKey = null;
+        string? deltaLogDir = null;
+        long? latestDeltaVersion = null;
         string? latestManifestJson = null;
         string? lakehouseQuerySql = null;
         if (targetSink.Type == DataSourceType.ClickHouse)
@@ -72,7 +74,12 @@ internal static class CdcExternalSinkTemplateBuilder
             var cfg = ObjectStorageSinkConfigContract.ParseForWrite(targetSink.Config, requireSecretKey: false);
             manifestDir = cfg.BuildManifestDirectory(destination);
             manifestLatestKey = cfg.BuildLatestManifestKey(destination);
-            lakehouseQuerySql = BuildLakehouseQuerySql(cfg, destination);
+            if (stream.LakehouseTableFormat == LakehouseTableFormat.DeltaLake)
+            {
+                deltaLogDir = cfg.BuildDeltaLogDirectory(destination);
+            }
+
+            lakehouseQuerySql = BuildLakehouseQuerySql(cfg, destination, stream.LakehouseTableFormat);
             if (probeService != null && !string.IsNullOrWhiteSpace(cfg.SecretKey))
             {
                 try
@@ -82,6 +89,13 @@ internal static class CdcExternalSinkTemplateBuilder
                         manifestLatestKey,
                         cancellationToken);
                     targetExists = !string.IsNullOrWhiteSpace(latestManifestJson);
+                    if (!string.IsNullOrWhiteSpace(latestManifestJson))
+                    {
+                        var parsed = JsonSerializer.Deserialize<CdcObjectStorageLakehouseWriter.CdcLatestCheckpointDocument>(
+                            latestManifestJson,
+                            CdcObjectStorageLakehouseWriter.JsonOptions);
+                        latestDeltaVersion = parsed?.LatestDeltaVersion;
+                    }
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
@@ -123,6 +137,8 @@ internal static class CdcExternalSinkTemplateBuilder
             ClickHouseDdl = clickHouseDdl,
             ManifestDirectory = manifestDir,
             ManifestLatestKey = manifestLatestKey,
+            DeltaLogDirectory = deltaLogDir,
+            LatestDeltaVersion = latestDeltaVersion,
             LatestManifestJson = latestManifestJson,
             LakehouseQuerySql = lakehouseQuerySql,
             SamplePayloadJson = sampleJson,
@@ -130,12 +146,30 @@ internal static class CdcExternalSinkTemplateBuilder
         };
     }
 
-    internal static string BuildLakehouseQuerySql(ObjectStorageSinkConfig cfg, string destination)
+    internal static string BuildLakehouseQuerySql(
+        ObjectStorageSinkConfig cfg,
+        string destination,
+        LakehouseTableFormat tableFormat = LakehouseTableFormat.SwapMidManifest)
     {
         var baseDir = cfg.BuildDestinationDirectory(destination);
         var ext = cfg.Format == "jsonl" ? "jsonl" : "parquet";
         var chFormat = cfg.Format == "jsonl" ? "JSONEachRow" : "Parquet";
         var chUrl = $"{cfg.Endpoint.TrimEnd('/')}/{cfg.Bucket}/{baseDir}/*.{ext}";
+
+        if (tableFormat == LakehouseTableFormat.DeltaLake && ext == "parquet")
+        {
+            return $"""
+                -- DuckDB (Delta Lake 原生 ACID 事务视图：s3://{cfg.Bucket}/{baseDir}/_delta_log/)
+                SELECT * FROM delta_scan('s3://{cfg.Bucket}/{baseDir}');
+
+                -- Apache Spark SQL (Delta Lake / Time-Travel)
+                SELECT * FROM delta.`s3a://{cfg.Bucket}/{baseDir}`;
+                DESCRIBE HISTORY delta.`s3a://{cfg.Bucket}/{baseDir}`;
+
+                -- Python Polars (Delta Lake 直读)
+                -- pl.scan_delta("s3://{cfg.Bucket}/{baseDir}")
+                """;
+        }
 
         return $"""
             -- DuckDB (读取最新压缩快照与增量分片)
@@ -246,10 +280,10 @@ internal static class CdcExternalSinkTemplateBuilder
         new() { Name = "event_id", LogicalType = "string", ClickHouseType = "String", Nullable = false, Description = "基于 streamId + LSN + 序号的幂等事件 UUID" },
         new() { Name = "stream_id", LogicalType = "string", ClickHouseType = "String", Nullable = false, Description = "CDC 流定义 Id" },
         new() { Name = "stream_name", LogicalType = "string", ClickHouseType = "String", Nullable = false, Description = "CDC 流名称" },
-        new() { Name = "source_schema", LogicalType = "string", ClickHouseType = "String", Nullable = false, Description = "PostgreSQL 源表 Schema" },
-        new() { Name = "source_table", LogicalType = "string", ClickHouseType = "String", Nullable = false, Description = "PostgreSQL 源表表名" },
-        new() { Name = "op", LogicalType = "string", ClickHouseType = "LowCardinality(String)", Nullable = false, Description = "WAL 操作类型：insert / update / delete" },
-        new() { Name = "lsn", LogicalType = "string", ClickHouseType = "String", Nullable = false, Description = "事务提交 WAL LSN 位点" },
+        new() { Name = "source_schema", LogicalType = "string", ClickHouseType = "String", Nullable = false, Description = "上游源表 Schema / Database" },
+        new() { Name = "source_table", LogicalType = "string", ClickHouseType = "String", Nullable = false, Description = "上游源表表名" },
+        new() { Name = "op", LogicalType = "string", ClickHouseType = "LowCardinality(String)", Nullable = false, Description = "变更操作类型：insert / update / delete" },
+        new() { Name = "lsn", LogicalType = "string", ClickHouseType = "String", Nullable = false, Description = "事务位点标识（LSN / CT Version / Binlog Pos）" },
         new() { Name = "commit_timestamp_utc", LogicalType = "datetime", ClickHouseType = "DateTime64(3, 'UTC')", Nullable = false, Description = "WAL 事务提交 UTC 时间" },
         new() { Name = "changed_columns", LogicalType = "string", ClickHouseType = "Nullable(String)", Nullable = true, Description = "变更列名 JSON 数组（需旧行映像时非空）" },
         new() { Name = "after_json", LogicalType = "string", ClickHouseType = "Nullable(String)", Nullable = true, Description = "变更后整行 JSON 快照（delete 为 null）" },

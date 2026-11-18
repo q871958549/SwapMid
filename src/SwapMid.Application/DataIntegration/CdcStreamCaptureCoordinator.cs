@@ -23,6 +23,7 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
     private readonly IRepository<DataSource, Guid> _sourceRepository;
     private readonly PgOutputCdcCaptureService _captureService;
     private readonly SqlServerCdcCaptureService? _sqlServerCaptureService;
+    private readonly MySqlBinlogCdcCaptureService? _mySqlCaptureService;
     private readonly CdcObjectStorageCompactionService? _lakehouseCompactor;
     private readonly IAbpDistributedLock _distributedLock;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
@@ -42,12 +43,14 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
         ICdcScheduleSynchronizer? scheduleSynchronizer = null,
         INotificationService? notificationService = null,
         SqlServerCdcCaptureService? sqlServerCaptureService = null,
-        CdcObjectStorageCompactionService? lakehouseCompactor = null)
+        CdcObjectStorageCompactionService? lakehouseCompactor = null,
+        MySqlBinlogCdcCaptureService? mySqlCaptureService = null)
     {
         _streamRepository = streamRepository;
         _sourceRepository = sourceRepository;
         _captureService = captureService;
         _sqlServerCaptureService = sqlServerCaptureService;
+        _mySqlCaptureService = mySqlCaptureService;
         _lakehouseCompactor = lakehouseCompactor;
         _distributedLock = distributedLock;
         _unitOfWorkManager = unitOfWorkManager;
@@ -81,6 +84,7 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
                 var preSnapSchema = await CdcStreamMappingHelpers.EvaluateSchemaForStreamAsync(
                     _captureService,
                     _sqlServerCaptureService,
+                    _mySqlCaptureService,
                     source,
                     stream,
                     cancellationToken);
@@ -88,9 +92,7 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
 
                 try
                 {
-                    snapshotResult = stream.SourceType == CdcSourceType.SqlServerChangeTracking
-                        ? await RequireSqlServerEngine().SnapshotAsync(source, stream, targetSink, cancellationToken)
-                        : await _captureService.SnapshotAsync(source, stream, targetSink, cancellationToken);
+                    snapshotResult = await DispatchSnapshotAsync(source, stream, targetSink, cancellationToken);
                 }
                 catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
                 {
@@ -102,25 +104,7 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
                 stream = await PersistSnapshotSuccessAsync(id, snapshotResult, cancellationToken);
             }
 
-            var batch = stream.SourceType == CdcSourceType.SqlServerChangeTracking
-                ? await RequireSqlServerEngine().CaptureBatchAsync(
-                    source,
-                    stream,
-                    targetSink,
-                    cancellationToken,
-                    onSchemaEvaluated: async eval =>
-                    {
-                        stream = await HandleSchemaEvaluationAsync(stream, eval, cancellationToken);
-                    })
-                : await _captureService.CaptureBatchAsync(
-                    source,
-                    stream,
-                    targetSink,
-                    cancellationToken,
-                    onSchemaEvaluated: async eval =>
-                    {
-                        stream = await HandleSchemaEvaluationAsync(stream, eval, cancellationToken);
-                    });
+            var batch = await DispatchCaptureAsync(source, stream, targetSink, cancellationToken);
 
             using (var writeUow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: true))
             {
@@ -202,9 +186,7 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
 
         try
         {
-            var snapshotResult = stream.SourceType == CdcSourceType.SqlServerChangeTracking
-                ? await RequireSqlServerEngine().SnapshotAsync(source, stream, targetSink, cancellationToken)
-                : await _captureService.SnapshotAsync(source, stream, targetSink, cancellationToken);
+            var snapshotResult = await DispatchSnapshotAsync(source, stream, targetSink, cancellationToken);
             await PersistSnapshotSuccessAsync(id, snapshotResult, cancellationToken);
             return new CdcSnapshotResultDto
             {
@@ -386,7 +368,47 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
             failure.ExceptionType);
     }
 
+    private Task<PgOutputSnapshotBatchResult> DispatchSnapshotAsync(
+        DataSource source,
+        CdcStreamDefinition stream,
+        DataSource? targetSink,
+        CancellationToken cancellationToken)
+        => stream.SourceType switch
+        {
+            CdcSourceType.SqlServerChangeTracking => RequireSqlServerEngine().SnapshotAsync(source, stream, targetSink, cancellationToken),
+            CdcSourceType.MySqlBinlog => RequireMySqlEngine().SnapshotAsync(source, stream, targetSink, cancellationToken),
+            _ => _captureService.SnapshotAsync(source, stream, targetSink, cancellationToken),
+        };
+
+    private Task<PgOutputCaptureBatchResult> DispatchCaptureAsync(
+        DataSource source,
+        CdcStreamDefinition stream,
+        DataSource? targetSink,
+        CancellationToken cancellationToken)
+    {
+        Task OnSchemaAsync(CdcSchemaDriftEvaluation eval)
+            => HandleSchemaEvaluationAsync(stream, eval, cancellationToken).ContinueWith(
+                t => { stream = t.Result; },
+                cancellationToken,
+                TaskContinuationOptions.OnlyOnRanToCompletion | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+
+        return stream.SourceType switch
+        {
+            CdcSourceType.SqlServerChangeTracking => RequireSqlServerEngine().CaptureBatchAsync(
+                source, stream, targetSink, cancellationToken, OnSchemaAsync),
+            CdcSourceType.MySqlBinlog => RequireMySqlEngine().CaptureBatchAsync(
+                source, stream, targetSink, cancellationToken, OnSchemaAsync),
+            _ => _captureService.CaptureBatchAsync(
+                source, stream, targetSink, cancellationToken, OnSchemaAsync),
+        };
+    }
+
     private SqlServerCdcCaptureService RequireSqlServerEngine()
         => _sqlServerCaptureService ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
             .WithData("Reason", "SQL Server Change Tracking 捕获引擎未启用。");
+
+    private MySqlBinlogCdcCaptureService RequireMySqlEngine()
+        => _mySqlCaptureService ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
+            .WithData("Reason", "MySQL Binlog 捕获引擎未启用。");
 }

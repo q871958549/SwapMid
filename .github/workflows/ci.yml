@@ -78,18 +78,34 @@ jobs:
             sleep 2
           done
 
-      - name: Run unit, architecture, PostgreSQL 18 & SQL Server 2022 contract test suites
+      - name: Start MySQL 8.4 container for Binlog ROW CDC contracts
+        run: |
+          docker run -d --name mysql-cdc \
+            -e MYSQL_ROOT_PASSWORD='SwapMidCiOnly_MySql84!' \
+            -e MYSQL_DATABASE=swapmid_cdc \
+            -p 3306:3306 \
+            mysql:8.4 \
+            --server-id=1 --log-bin=mysql-bin --binlog-format=ROW --binlog-row-image=FULL
+          for i in $(seq 1 45); do
+            if docker exec mysql-cdc mysqladmin ping -h 127.0.0.1 -uroot -p'SwapMidCiOnly_MySql84!' --silent >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Run unit, architecture, PostgreSQL 18, SQL Server 2022 & MySQL 8.4 contract test suites
         env:
           SWAPMID_POSTGRES_TEST_CONNECTION: Host=127.0.0.1;Port=5432;Database=postgres;Username=postgres;Password=SwapMidCiOnly_2026!
           SWAPMID_RUN_POSTGRES_CONTRACT_TESTS: '1'
           SWAPMID_POSTGRES_CDC_TEST_CONNECTION: Host=127.0.0.1;Port=55432;Database=postgres;Username=postgres;Password=SwapMidCiOnly_2026!
           SWAPMID_RUN_POSTGRES_CDC_CONTRACT_TESTS: '1'
           SWAPMID_SQLSERVER_TEST_CONNECTION: Server=127.0.0.1,1433;User Id=sa;Password=SwapMidCiOnly_Sql2022!;TrustServerCertificate=True;Encrypt=False
+          SWAPMID_MYSQL_TEST_CONNECTION: Server=127.0.0.1;Port=3306;Database=swapmid_cdc;User ID=root;Password=SwapMidCiOnly_MySql84!;SslMode=Preferred;AllowPublicKeyRetrieval=True
         run: dotnet test SwapMid.slnx --no-build -c Release --nologo --verbosity normal
 
       - name: Stop CDC database containers
         if: always()
-        run: docker rm -f postgres-cdc mssql-cdc >/dev/null 2>&1 || true
+        run: docker rm -f postgres-cdc mssql-cdc mysql-cdc >/dev/null 2>&1 || true
 
   frontend:
     name: Frontend (Next.js 16)

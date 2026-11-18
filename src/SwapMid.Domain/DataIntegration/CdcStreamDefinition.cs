@@ -5,10 +5,10 @@ using Volo.Abp.Domain.Entities.Auditing;
 namespace SwapMid.DataIntegration;
 
 /// <summary>
-/// 轻量级 PostgreSQL 逻辑复制（pgoutput）CDC 流定义。
-/// 通过只读 WAL 复制槽周期性增量读取已提交变更，保持单调递增 LSN 断点，并投递至消息总线或关联数据管道。
+/// 轻量级多源（PostgreSQL 逻辑复制 / SQL Server CT / MySQL Binlog）CDC 流定义。
+/// 周期性增量读取已提交变更，保持单调断点，并投递至消息总线、联动管道、分析接收端或关系表镜像。
 /// </summary>
-public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
+public partial class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
 {
     /// <summary>流名称（唯一）。</summary>
     public string Name { get; private set; } = null!;
@@ -72,6 +72,9 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
 
     /// <summary>ObjectStorage 接收端 Lakehouse 触发自动压缩合并的分片阈值（null 表示仅手动触发）。</summary>
     public int? LakehouseCompactMinFiles { get; private set; }
+
+    /// <summary>ObjectStorage 接收端 Lakehouse 开放表格式提交协议（SwapMidManifest / DeltaLake）。</summary>
+    public LakehouseTableFormat LakehouseTableFormat { get; private set; }
 
     /// <summary>上游监控表发生 DDL/Schema 漂移时的护栏策略。</summary>
     public CdcSchemaDriftPolicy SchemaDriftPolicy { get; private set; }
@@ -150,7 +153,8 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         string? softDeleteColumn = null,
         string? softDeleteTimestampColumn = null,
         CdcSourceType sourceType = CdcSourceType.PostgreSqlLogicalReplication,
-        int? lakehouseCompactMinFiles = null)
+        int? lakehouseCompactMinFiles = null,
+        LakehouseTableFormat lakehouseTableFormat = LakehouseTableFormat.SwapMidManifest)
         : base(id)
     {
         ApplyConfiguration(
@@ -176,7 +180,8 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             softDeleteColumn,
             softDeleteTimestampColumn,
             sourceType,
-            lakehouseCompactMinFiles);
+            lakehouseCompactMinFiles,
+            lakehouseTableFormat);
         Status = CdcStreamStatus.Draft;
         SnapshotStatus = CdcSnapshotStatus.NotStarted;
     }
@@ -204,7 +209,8 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         string? softDeleteColumn = null,
         string? softDeleteTimestampColumn = null,
         CdcSourceType sourceType = CdcSourceType.PostgreSqlLogicalReplication,
-        int? lakehouseCompactMinFiles = null)
+        int? lakehouseCompactMinFiles = null,
+        LakehouseTableFormat lakehouseTableFormat = LakehouseTableFormat.SwapMidManifest)
     {
         ApplyConfiguration(
             name,
@@ -229,7 +235,8 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             softDeleteColumn,
             softDeleteTimestampColumn,
             sourceType,
-            lakehouseCompactMinFiles);
+            lakehouseCompactMinFiles,
+            lakehouseTableFormat);
     }
 
     public void Activate()
@@ -368,129 +375,5 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             LastErrorCode = null;
             LastErrorMessage = null;
         }
-    }
-
-    private void ApplyConfiguration(
-        string name,
-        Guid sourceId,
-        string publicationName,
-        string slotName,
-        CdcTargetMode targetMode,
-        string? targetTopicName,
-        Guid? targetPipelineId,
-        Guid? targetSinkId,
-        string? targetSinkDestination,
-        string? targetSinkKeyColumns,
-        string? monitoredTables,
-        bool autoCreatePublicationAndSlot,
-        int pollIntervalSeconds,
-        int maxBatchSize,
-        string? description,
-        bool initialSnapshotEnabled,
-        CdcDeletePolicy targetDeletePolicy,
-        CdcSchemaDriftPolicy schemaDriftPolicy,
-        string? targetFieldMappingsJson,
-        string? softDeleteColumn,
-        string? softDeleteTimestampColumn,
-        CdcSourceType sourceType,
-        int? lakehouseCompactMinFiles)
-    {
-        var normalizedMonitoredTables = string.IsNullOrWhiteSpace(monitoredTables)
-            ? null
-            : Check.Length(monitoredTables.Trim(), nameof(monitoredTables), CdcStreamConsts.MaxMonitoredTablesLength);
-        if (SourceId != Guid.Empty &&
-            (SourceId != sourceId ||
-             SourceType != sourceType ||
-             !string.Equals(MonitoredTables, normalizedMonitoredTables, StringComparison.OrdinalIgnoreCase)))
-        {
-            SchemaBaselineHash = null;
-            SchemaBaselineJson = null;
-            ClearSchemaDrift();
-        }
-
-        Name = Check.NotNullOrWhiteSpace(name, nameof(name), CdcStreamConsts.MaxNameLength).Trim();
-        SourceId = sourceId;
-        SourceType = sourceType;
-        PublicationName = Check.NotNullOrWhiteSpace(
-            publicationName,
-            nameof(publicationName),
-            CdcStreamConsts.MaxPostgresIdentifierLength).Trim();
-        SlotName = Check.NotNullOrWhiteSpace(
-            slotName,
-            nameof(slotName),
-            CdcStreamConsts.MaxPostgresIdentifierLength).Trim();
-        MonitoredTables = normalizedMonitoredTables;
-        AutoCreatePublicationAndSlot = autoCreatePublicationAndSlot;
-        InitialSnapshotEnabled = initialSnapshotEnabled;
-        TargetDeletePolicy = targetMode == CdcTargetMode.RelationalTable
-            ? targetDeletePolicy
-            : CdcDeletePolicy.DeleteRow;
-        SchemaDriftPolicy = schemaDriftPolicy;
-        TargetFieldMappingsJson = targetMode == CdcTargetMode.RelationalTable
-            ? CdcStreamMirrorConfigValidator.NormalizeFieldMappingsJson(targetFieldMappingsJson)
-            : null;
-        LakehouseCompactMinFiles = CdcStreamMirrorConfigValidator.NormalizeLakehouseCompactMinFiles(
-            targetMode,
-            lakehouseCompactMinFiles);
-        var enableSoftDelete = targetMode == CdcTargetMode.RelationalTable && TargetDeletePolicy == CdcDeletePolicy.SoftDelete;
-        SoftDeleteColumn = enableSoftDelete
-            ? CdcStreamMirrorConfigValidator.NormalizeIdentifier(
-                softDeleteColumn,
-                CdcStreamConsts.MaxSoftDeleteColumnLength,
-                nameof(softDeleteColumn))
-            : null;
-        SoftDeleteTimestampColumn = enableSoftDelete
-            ? CdcStreamMirrorConfigValidator.NormalizeIdentifier(
-                softDeleteTimestampColumn,
-                CdcStreamConsts.MaxSoftDeleteTimestampColumnLength,
-                nameof(softDeleteTimestampColumn))
-            : null;
-        PollIntervalSeconds = Math.Clamp(
-            pollIntervalSeconds,
-            CdcStreamConsts.MinPollIntervalSeconds,
-            CdcStreamConsts.MaxPollIntervalSeconds);
-        MaxBatchSize = Math.Clamp(
-            maxBatchSize,
-            CdcStreamConsts.MinBatchSize,
-            CdcStreamConsts.MaxBatchSize);
-        TargetMode = targetMode;
-        TargetTopicName = string.IsNullOrWhiteSpace(targetTopicName)
-            ? null
-            : Check.Length(targetTopicName.Trim(), nameof(targetTopicName), CdcStreamConsts.MaxTargetTopicNameLength);
-        TargetPipelineId = targetPipelineId;
-        TargetSinkId = targetSinkId;
-        TargetSinkDestination = string.IsNullOrWhiteSpace(targetSinkDestination)
-            ? null
-            : Check.Length(
-                targetSinkDestination.Trim(),
-                nameof(targetSinkDestination),
-                CdcStreamConsts.MaxTargetSinkDestinationLength);
-        TargetSinkKeyColumns = string.IsNullOrWhiteSpace(targetSinkKeyColumns)
-            ? null
-            : Check.Length(
-                targetSinkKeyColumns.Trim(),
-                nameof(targetSinkKeyColumns),
-                CdcStreamConsts.MaxTargetSinkKeyColumnsLength);
-        Description = string.IsNullOrWhiteSpace(description)
-            ? null
-            : Check.Length(description.Trim(), nameof(description), CdcStreamConsts.MaxDescriptionLength);
-
-        CdcStreamMirrorConfigValidator.ValidateMirrorColumns(
-            TargetMode,
-            TargetSinkKeyColumns,
-            TargetFieldMappingsJson,
-            TargetDeletePolicy,
-            SoftDeleteColumn,
-            SoftDeleteTimestampColumn);
-    }
-
-    private static string Truncate(string value, int maxLength)
-    {
-        if (string.IsNullOrEmpty(value))
-        {
-            return string.Empty;
-        }
-
-        return value.Length <= maxLength ? value : value[..maxLength];
     }
 }

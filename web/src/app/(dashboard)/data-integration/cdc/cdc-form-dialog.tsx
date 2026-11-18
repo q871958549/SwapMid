@@ -21,6 +21,7 @@ import {
   isCdcFormValid,
   normalizeDeletePolicy,
   normalizeDriftPolicy,
+  normalizeLakehouseTableFormat,
   normalizeSourceType,
   normalizeTargetMode,
 } from './cdc-form-state'
@@ -101,14 +102,18 @@ export function CdcFormDialog({
           <SelectContent>
             <SelectItem value="0">{t('sourceTypePostgres')}</SelectItem>
             <SelectItem value="1">{t('sourceTypeSqlServerCt')}</SelectItem>
+            <SelectItem value="2">{t('sourceTypeMySqlBinlog')}</SelectItem>
           </SelectContent>
         </Select>
         {crud.form.sourceType === '1' && (
           <p className="text-xs text-muted-foreground">{t('sourceTypeSqlServerHint')}</p>
         )}
+        {crud.form.sourceType === '2' && (
+          <p className="text-xs text-muted-foreground">{t('sourceTypeMySqlBinlogHint')}</p>
+        )}
       </div>
 
-      {crud.form.sourceType !== '1' && (
+      {crud.form.sourceType === '0' && (
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label>{t('publicationFieldLabel')}</Label>
@@ -136,15 +141,21 @@ export function CdcFormDialog({
         <Input
           value={crud.form.monitoredTables}
           onChange={e => crud.set({ monitoredTables: e.target.value })}
-          placeholder={crud.form.sourceType === '1' ? 'dbo.orders' : t('monitoredTablesPlaceholder')}
+          placeholder={
+            crud.form.sourceType === '2'
+              ? 'appdb.orders'
+              : (crud.form.sourceType === '1' ? 'dbo.orders' : t('monitoredTablesPlaceholder'))
+          }
           className="font-mono"
         />
         <p className="text-xs text-muted-foreground">
-          {crud.form.sourceType === '1' ? t('monitoredTablesSqlServerHint') : t('monitoredTablesHint')}
+          {crud.form.sourceType === '2'
+            ? t('monitoredTablesMySqlHint')
+            : (crud.form.sourceType === '1' ? t('monitoredTablesSqlServerHint') : t('monitoredTablesHint'))}
         </p>
       </div>
 
-      {crud.form.sourceType !== '1' && (
+      {crud.form.sourceType === '0' && (
         <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/30 px-3 py-2">
           <div className="space-y-0.5">
             <Label htmlFor="cdc-auto-create">{t('autoCreateSwitchLabel')}</Label>
@@ -296,18 +307,34 @@ export function CdcFormDialog({
             <p className="text-xs text-muted-foreground">{t('targetSinkKeyColumnsHint')}</p>
           </div>
           {crud.form.targetMode === '2' && selectedSink?.type === 5 && (
-            <div className="space-y-1.5">
-              <Label>{t('lakehouseCompactMinFilesFieldLabel')}</Label>
-              <Input
-                type="number"
-                min={2}
-                max={100}
-                value={crud.form.lakehouseCompactMinFiles}
-                onChange={e => crud.set({ lakehouseCompactMinFiles: e.target.value })}
-                placeholder="5"
-                className="font-mono"
-              />
-              <p className="text-xs text-muted-foreground">{t('lakehouseCompactMinFilesHint')}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>{t('lakehouseTableFormatFieldLabel')}</Label>
+                <Select
+                  value={crud.form.lakehouseTableFormat ?? '0'}
+                  onValueChange={v => crud.set({ lakehouseTableFormat: normalizeLakehouseTableFormat(Number(v)) })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">{t('lakehouseFormatSwapMid')}</SelectItem>
+                    <SelectItem value="1">{t('lakehouseFormatDeltaLake')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">{t('lakehouseTableFormatHint')}</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t('lakehouseCompactMinFilesFieldLabel')}</Label>
+                <Input
+                  type="number"
+                  min={2}
+                  max={100}
+                  value={crud.form.lakehouseCompactMinFiles}
+                  onChange={e => crud.set({ lakehouseCompactMinFiles: e.target.value })}
+                  placeholder="5"
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">{t('lakehouseCompactMinFilesHint')}</p>
+              </div>
             </div>
           )}
         </div>

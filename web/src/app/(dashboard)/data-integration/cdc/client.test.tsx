@@ -64,6 +64,7 @@ vi.mock('@/lib/crud/use-crud-form', () => ({
       softDeleteColumn: '',
       softDeleteTimestampColumn: '',
       targetFieldMappings: [],
+      lakehouseTableFormat: '0',
       lakehouseCompactMinFiles: '',
       schemaDriftPolicy: '0',
     },
@@ -652,5 +653,85 @@ describe('CdcStreamsClient', () => {
     expect(body.sourceType).toBe(1)
     expect(body.lakehouseCompactMinFiles).toBe(5)
     expect(body.publicationName).toBeNull()
+  })
+
+  it('supports MySqlBinlog detection, DeltaLake serialization, and round-trip mapping', () => {
+    expect(detectCdcSourceTypeFromSource('mysql-1', [
+      { id: 'mysql-1', name: 'MySQL 8.4 Orders', type: 0, config: '{"provider":"MySql"}' },
+    ])).toBe('2')
+    expect(detectCdcSourceTypeFromSource('maria-1', [
+      { id: 'maria-1', name: 'MariaDB Analytics', type: 0, config: '{"provider":"MariaDb"}' },
+    ])).toBe('2')
+
+    const validMySqlDeltaForm = {
+      ...defaultCdcForm,
+      name: 'mysql-binlog-delta',
+      sourceId: 'mysql-1',
+      sourceType: '2' as const,
+      publicationName: '',
+      slotName: '',
+      monitoredTables: 'swapmid_cdc.orders',
+      targetMode: '2' as const,
+      targetSinkId: 's3-1',
+      targetSinkDestination: 'orders/delta',
+      lakehouseTableFormat: '1' as const,
+      lakehouseCompactMinFiles: '2',
+    }
+    expect(isCdcFormValid(validMySqlDeltaForm)).toBe(true)
+    expect(isCdcFormValid({ ...validMySqlDeltaForm, monitoredTables: '' })).toBe(false)
+
+    const body = toCdcBody(validMySqlDeltaForm)
+    expect(body.sourceType).toBe(2)
+    expect(body.lakehouseTableFormat).toBe(1)
+    expect(body.lakehouseCompactMinFiles).toBe(2)
+    expect(body.publicationName).toBeNull()
+    expect(body.slotName).toBeNull()
+
+    const roundTrip = toCdcForm(makeStream({
+      sourceType: 2,
+      publicationName: undefined,
+      slotName: undefined,
+      targetMode: 2,
+      targetSinkId: 's3-1',
+      targetSinkDestination: 'orders/delta',
+      lakehouseTableFormat: 1,
+      lakehouseCompactMinFiles: 2,
+    }))
+    expect(roundTrip.sourceType).toBe('2')
+    expect(roundTrip.lakehouseTableFormat).toBe('1')
+  })
+
+  it('renders Delta Lake version badge, _delta_log path, and delta_scan SQL in template dialog', async () => {
+    mocks.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        destination: 'orders/delta',
+        targetType: 5,
+        targetExists: true,
+        manifestDirectory: 'cdc/orders/delta/_swapmid/manifests',
+        manifestLatestKey: 'cdc/orders/delta/_swapmid/latest.json',
+        deltaLogDirectory: 'cdc/orders/delta/_delta_log',
+        latestDeltaVersion: 2,
+        latestManifestJson: '{"latestDeltaVersion":2,"format":"parquet"}',
+        lakehouseQuerySql: "-- DuckDB Delta Lake\nSELECT * FROM delta_scan('s3://lakehouse/cdc/orders/delta');",
+        samplePayloadJson: '{"op":"insert"}',
+        columns: [],
+        summary: 'ObjectStorage parquet (Delta Lake v2)',
+      }),
+    })
+
+    renderClient(makeStream({
+      sourceType: 2,
+      targetMode: 2,
+      targetSinkId: SOURCE_ID,
+      targetSinkName: 'minio-delta',
+      targetSinkDestination: 'orders/delta',
+      lakehouseTableFormat: 1,
+    }))
+    fireEvent.click(screen.getByRole('button', { name: '查看模板' }))
+
+    expect(await screen.findByText('Delta Lake v2')).toBeTruthy()
+    expect(screen.getByText(/Delta Log: cdc\/orders\/delta\/_delta_log/)).toBeTruthy()
+    expect(screen.getByText(/delta_scan\('s3:\/\/lakehouse\/cdc\/orders\/delta'\)/)).toBeTruthy()
   })
 })

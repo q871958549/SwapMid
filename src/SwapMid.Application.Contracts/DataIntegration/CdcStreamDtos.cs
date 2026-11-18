@@ -32,6 +32,7 @@ public class CdcStreamDto : FullAuditedEntityDto<Guid>
     public string? SoftDeleteColumn { get; set; }
     public string? SoftDeleteTimestampColumn { get; set; }
     public int? LakehouseCompactMinFiles { get; set; }
+    public LakehouseTableFormat LakehouseTableFormat { get; set; }
     public CdcSchemaDriftPolicy SchemaDriftPolicy { get; set; }
     public string? SchemaBaselineHash { get; set; }
     public bool SchemaDriftDetected { get; set; }
@@ -109,6 +110,8 @@ public class CdcStreamCreateUpdateDto
     [Range(2, 100)]
     public int? LakehouseCompactMinFiles { get; set; }
 
+    public LakehouseTableFormat LakehouseTableFormat { get; set; } = LakehouseTableFormat.SwapMidManifest;
+
     public CdcSchemaDriftPolicy SchemaDriftPolicy { get; set; } = CdcSchemaDriftPolicy.Ignore;
 
     public bool InitialSnapshotEnabled { get; set; }
@@ -170,7 +173,7 @@ public class CdcCaptureResultDto
 
 public class CdcResetCheckpointInput
 {
-    [StringLength(32)]
+    [StringLength(128)]
     public string? CheckpointLsn { get; set; }
 }
 
@@ -194,6 +197,8 @@ public class CdcSinkTemplateDto
     public string? ClickHouseDdl { get; set; }
     public string? ManifestDirectory { get; set; }
     public string? ManifestLatestKey { get; set; }
+    public string? DeltaLogDirectory { get; set; }
+    public long? LatestDeltaVersion { get; set; }
     public string? LatestManifestJson { get; set; }
     public string? LakehouseQuerySql { get; set; }
     public string SamplePayloadJson { get; set; } = null!;

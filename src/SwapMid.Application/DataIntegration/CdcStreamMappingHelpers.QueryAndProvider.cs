@@ -11,22 +11,64 @@ namespace SwapMid.DataIntegration;
 
 internal static partial class CdcStreamMappingHelpers
 {
+    internal static void EnsureSourceMatchesType(CdcSourceType sourceType, DataSource source)
+    {
+        switch (sourceType)
+        {
+            case CdcSourceType.SqlServerChangeTracking:
+                SqlServerCdcCaptureService.EnsureSqlServerSource(source);
+                break;
+            case CdcSourceType.MySqlBinlog:
+                MySqlBinlogCdcCaptureService.EnsureMySqlSource(source);
+                break;
+            default:
+                PgOutputCdcCaptureService.EnsurePostgreSqlSource(source);
+                break;
+        }
+    }
+
     internal static Task<CdcSchemaDriftEvaluation> EvaluateSchemaForStreamAsync(
         PgOutputCdcCaptureService pgCaptureService,
         SqlServerCdcCaptureService? sqlServerCaptureService,
+        MySqlBinlogCdcCaptureService? mySqlCaptureService,
         DataSource source,
         CdcStreamDefinition stream,
         CancellationToken cancellationToken)
     {
-        if (stream.SourceType == CdcSourceType.SqlServerChangeTracking)
+        return stream.SourceType switch
         {
-            var sqlSvc = sqlServerCaptureService
+            CdcSourceType.SqlServerChangeTracking => (sqlServerCaptureService
                 ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
-                    .WithData("Reason", "SQL Server Change Tracking 捕获引擎未启用。");
-            return sqlSvc.EvaluateSchemaAsync(source, stream, cancellationToken);
-        }
+                    .WithData("Reason", "SQL Server Change Tracking 捕获引擎未启用。"))
+                .EvaluateSchemaAsync(source, stream, cancellationToken),
+            CdcSourceType.MySqlBinlog => (mySqlCaptureService
+                ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
+                    .WithData("Reason", "MySQL Binlog 捕获引擎未启用。"))
+                .EvaluateSchemaAsync(source, stream, cancellationToken),
+            _ => pgCaptureService.EvaluateSchemaAsync(source, stream, cancellationToken),
+        };
+    }
 
-        return pgCaptureService.EvaluateSchemaAsync(source, stream, cancellationToken);
+    internal static async Task<CdcPreflightResultDto> DispatchPreflightAsync(
+        PgOutputCdcCaptureService pgCaptureService,
+        SqlServerCdcCaptureService? sqlServerCaptureService,
+        MySqlBinlogCdcCaptureService? mySqlCaptureService,
+        DataSource source,
+        CdcStreamDefinition stream,
+        CancellationToken cancellationToken)
+    {
+        return stream.SourceType switch
+        {
+            CdcSourceType.SqlServerChangeTracking => await (sqlServerCaptureService
+                ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
+                    .WithData("Reason", "SQL Server Change Tracking 捕获引擎未启用。"))
+                .PreflightAsync(source, stream, cancellationToken),
+            CdcSourceType.MySqlBinlog => await (mySqlCaptureService
+                ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
+                    .WithData("Reason", "MySQL Binlog 捕获引擎未启用。"))
+                .PreflightAsync(source, stream, cancellationToken),
+            _ => await pgCaptureService.PreflightAsync(source, stream, cancellationToken),
+        };
     }
 
     internal static string? NormalizeCheckpointResetToken(CdcSourceType sourceType, string? rawCheckpoint)
@@ -45,6 +87,11 @@ internal static partial class CdcStreamMappingHelpers
             }
 
             return version.ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (sourceType == CdcSourceType.MySqlBinlog)
+        {
+            return MySqlBinlogCdcCaptureService.ValidateCheckpoint(rawCheckpoint).Token;
         }
 
         return CdcProtocolHelpers.ValidateLsn(rawCheckpoint).ToString();

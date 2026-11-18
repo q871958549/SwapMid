@@ -26,9 +26,9 @@ function isCdcSupportedSource(source: DataSourceDto): boolean {
   try {
     const parsed = JSON.parse(source.config) as { provider?: unknown }
     const provider = typeof parsed.provider === 'string' ? parsed.provider.toLowerCase() : ''
-    return provider === 'postgresql' || provider === 'sqlserver'
+    return provider === 'postgresql' || provider === 'sqlserver' || provider === 'mysql' || provider === 'mariadb'
   } catch {
-    return /"provider"\s*:\s*"(postgresql|sqlserver)"/i.test(source.config)
+    return /"provider"\s*:\s*"(postgresql|sqlserver|mysql|mariadb)"/i.test(source.config)
   }
 }
 

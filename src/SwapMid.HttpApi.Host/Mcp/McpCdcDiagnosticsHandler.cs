@@ -76,6 +76,7 @@ internal static class McpCdcDiagnosticsHandler
                 stream.SoftDeleteColumn,
                 stream.SoftDeleteTimestampColumn,
                 stream.LakehouseCompactMinFiles,
+                stream.LakehouseTableFormat,
                 stream.SchemaDriftPolicy,
                 stream.SchemaBaselineHash,
                 stream.SchemaDriftDetected,

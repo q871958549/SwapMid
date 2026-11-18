@@ -304,6 +304,20 @@ internal readonly record struct ObjectStorageSinkConfig(
     internal string BuildLatestManifestKey(string destination)
         => $"{BuildDestinationDirectory(destination)}/_swapmid/latest.json";
 
+    internal string BuildDeltaLogDirectory(string destination)
+        => $"{BuildDestinationDirectory(destination)}/_delta_log";
+
+    internal string BuildDeltaCommitKey(string destination, long version)
+        => $"{BuildDeltaLogDirectory(destination)}/{version:D20}.json";
+
+    internal string ToRelativeTablePath(string destination, string objectKey)
+    {
+        var basePrefix = BuildDestinationDirectory(destination).TrimEnd('/') + "/";
+        return objectKey.StartsWith(basePrefix, StringComparison.Ordinal)
+            ? objectKey[basePrefix.Length..]
+            : objectKey.TrimStart('/');
+    }
+
     internal Uri BuildObjectUri(string objectKey)
     {
         var encodedKey = string.Join(

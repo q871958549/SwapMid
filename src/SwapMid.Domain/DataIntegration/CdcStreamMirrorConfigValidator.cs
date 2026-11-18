@@ -206,6 +206,20 @@ public static partial class CdcStreamMirrorConfigValidator
         return value.Value;
     }
 
+    public static LakehouseTableFormat NormalizeLakehouseTableFormat(
+        CdcTargetMode targetMode,
+        LakehouseTableFormat format)
+    {
+        if (targetMode != CdcTargetMode.ExternalSink)
+        {
+            return LakehouseTableFormat.SwapMidManifest;
+        }
+
+        return format == LakehouseTableFormat.DeltaLake
+            ? LakehouseTableFormat.DeltaLake
+            : LakehouseTableFormat.SwapMidManifest;
+    }
+
     private sealed class CdcFieldMappingRuleInput
     {
         public string? SourceColumn { get; set; }

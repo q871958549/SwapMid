@@ -15,7 +15,7 @@ export interface CdcFormState {
   name: string
   description: string
   sourceId: string
-  sourceType: '0' | '1'
+  sourceType: '0' | '1' | '2'
   publicationName: string
   slotName: string
   monitoredTables: string
@@ -34,6 +34,7 @@ export interface CdcFormState {
   softDeleteTimestampColumn: string
   targetFieldMappings: CdcFieldMappingDto[]
   lakehouseCompactMinFiles: string
+  lakehouseTableFormat: '0' | '1'
   schemaDriftPolicy: '0' | '1' | '2'
 }
 
@@ -62,23 +63,33 @@ export const defaultCdcForm: CdcFormState = {
   softDeleteTimestampColumn: '',
   targetFieldMappings: [],
   lakehouseCompactMinFiles: '',
+  lakehouseTableFormat: '0',
   schemaDriftPolicy: '0',
 }
 
-export function normalizeSourceType(sourceType: number | undefined): '0' | '1' {
-  return Number(sourceType) === 1 ? '1' : '0'
+export function normalizeSourceType(sourceType: number | undefined): '0' | '1' | '2' {
+  if (Number(sourceType) === 1) return '1'
+  if (Number(sourceType) === 2) return '2'
+  return '0'
 }
 
-export function detectCdcSourceTypeFromSource(sourceId: string, sources: CdcSourceOption[]): '0' | '1' {
+export function normalizeLakehouseTableFormat(format: number | undefined): '0' | '1' {
+  return Number(format) === 1 ? '1' : '0'
+}
+
+export function detectCdcSourceTypeFromSource(sourceId: string, sources: CdcSourceOption[]): '0' | '1' | '2' {
   const matched = sources.find(s => s.id === sourceId)
   if (!matched?.config) return '0'
   try {
     const parsed = JSON.parse(matched.config) as { provider?: unknown }
-    if (typeof parsed.provider === 'string' && parsed.provider.toLowerCase() === 'sqlserver') {
-      return '1'
+    if (typeof parsed.provider === 'string') {
+      const lower = parsed.provider.toLowerCase()
+      if (lower === 'sqlserver' || lower === 'mssql') return '1'
+      if (lower === 'mysql' || lower === 'mariadb') return '2'
     }
   } catch {
-    if (/"provider"\s*:\s*"sqlserver"/i.test(matched.config)) return '1'
+    if (/"provider"\s*:\s*"(sqlserver|mssql)"/i.test(matched.config)) return '1'
+    if (/"provider"\s*:\s*"(mysql|mariadb)"/i.test(matched.config)) return '2'
   }
   return '0'
 }
@@ -134,6 +145,7 @@ export function toCdcForm(item: CdcStreamDto): CdcFormState {
     softDeleteTimestampColumn: item.softDeleteTimestampColumn ?? '',
     targetFieldMappings: mappings,
     lakehouseCompactMinFiles: item.lakehouseCompactMinFiles ? String(item.lakehouseCompactMinFiles) : '',
+    lakehouseTableFormat: normalizeLakehouseTableFormat(item.lakehouseTableFormat),
     schemaDriftPolicy: normalizeDriftPolicy(item.schemaDriftPolicy),
   }
 }
@@ -149,6 +161,7 @@ export function toCdcBody(form: CdcFormState) {
   const compactMin = mode === 2 && form.lakehouseCompactMinFiles.trim()
     ? Number.parseInt(form.lakehouseCompactMinFiles.trim(), 10)
     : null
+  const tableFormat = mode === 2 ? Number(normalizeLakehouseTableFormat(Number(form.lakehouseTableFormat))) : 0
   const cleanMappings = mode === 3
     ? form.targetFieldMappings
         .map(m => ({
@@ -183,15 +196,16 @@ export function toCdcBody(form: CdcFormState) {
       ? (form.softDeleteTimestampColumn.trim() || null)
       : null,
     lakehouseCompactMinFiles: compactMin !== null && Number.isFinite(compactMin) ? compactMin : null,
+    lakehouseTableFormat: tableFormat,
     schemaDriftPolicy: Number(form.schemaDriftPolicy) === 1 ? 1 : (Number(form.schemaDriftPolicy) === 2 ? 2 : 0),
   }
 }
 
 export function isCdcFormValid(form: CdcFormState): boolean {
-  const isSqlServer = form.sourceType === '1'
+  const requiresMonitoredTables = form.sourceType === '1' || form.sourceType === '2'
   if (!form.name.trim() || !form.sourceId) return false
-  if (!isSqlServer && (!form.publicationName.trim() || !form.slotName.trim())) return false
-  if (isSqlServer && !form.monitoredTables.trim()) return false
+  if (form.sourceType === '0' && (!form.publicationName.trim() || !form.slotName.trim())) return false
+  if (requiresMonitoredTables && !form.monitoredTables.trim()) return false
 
   const poll = Number.parseInt(form.pollIntervalSeconds, 10)
   const batch = Number.parseInt(form.maxBatchSize, 10)

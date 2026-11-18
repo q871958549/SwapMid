@@ -191,8 +191,8 @@ namespace SwapMid.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("CheckpointLsn")
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -236,6 +236,9 @@ namespace SwapMid.Migrations
                         .HasColumnName("IsDeleted");
 
                     b.Property<int?>("LakehouseCompactMinFiles")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LakehouseTableFormat")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("LastCapturedAt")

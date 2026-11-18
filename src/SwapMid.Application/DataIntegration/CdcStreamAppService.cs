@@ -30,6 +30,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     private readonly INotificationService? _notificationService;
     private readonly CdcRelationalMirrorPreflightService? _mirrorPreflightService;
     private readonly SqlServerCdcCaptureService? _sqlServerCaptureService;
+    private readonly MySqlBinlogCdcCaptureService? _mySqlCaptureService;
     private readonly CdcObjectStorageCompactionService? _lakehouseCompactor;
 
     public CdcStreamAppService(
@@ -43,7 +44,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         INotificationService? notificationService = null,
         CdcRelationalMirrorPreflightService? mirrorPreflightService = null,
         SqlServerCdcCaptureService? sqlServerCaptureService = null,
-        CdcObjectStorageCompactionService? lakehouseCompactor = null)
+        CdcObjectStorageCompactionService? lakehouseCompactor = null,
+        MySqlBinlogCdcCaptureService? mySqlCaptureService = null)
     {
         _streamRepository = streamRepository;
         _sourceRepository = sourceRepository;
@@ -55,6 +57,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         _notificationService = notificationService;
         _mirrorPreflightService = mirrorPreflightService;
         _sqlServerCaptureService = sqlServerCaptureService;
+        _mySqlCaptureService = mySqlCaptureService;
         _lakehouseCompactor = lakehouseCompactor;
     }
 
@@ -139,7 +142,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             normalized.SoftDeleteColumn,
             normalized.SoftDeleteTimestampColumn,
             normalized.SourceType,
-            normalized.LakehouseCompactMinFiles);
+            normalized.LakehouseCompactMinFiles,
+            normalized.LakehouseTableFormat);
 
         await _streamRepository.InsertAsync(stream, autoSave: true);
         return await EnrichDtoAsync(stream);
@@ -183,7 +187,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             normalized.SoftDeleteColumn,
             normalized.SoftDeleteTimestampColumn,
             normalized.SourceType,
-            normalized.LakehouseCompactMinFiles);
+            normalized.LakehouseCompactMinFiles,
+            normalized.LakehouseTableFormat);
 
         await _streamRepository.UpdateAsync(stream, autoSave: true);
         await _scheduleSynchronizer.SyncAsync(stream.Id, stream.Status, stream.PollIntervalSeconds);
@@ -232,6 +237,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         return await CdcStreamMappingHelpers.BuildPreflightWithMirrorCheckAsync(
             _captureService,
             _sqlServerCaptureService,
+            _mySqlCaptureService,
             _mirrorPreflightService,
             _sourceRepository,
             source,
@@ -252,6 +258,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         var preflight = await CdcStreamMappingHelpers.BuildPreflightWithMirrorCheckAsync(
             _captureService,
             _sqlServerCaptureService,
+            _mySqlCaptureService,
             _mirrorPreflightService,
             _sourceRepository,
             source,
@@ -273,7 +280,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         if (string.IsNullOrWhiteSpace(stream.SchemaBaselineJson))
         {
             var eval = await CdcStreamMappingHelpers.EvaluateSchemaForStreamAsync(
-                _captureService, _sqlServerCaptureService, source, stream, cancellationToken);
+                _captureService, _sqlServerCaptureService, _mySqlCaptureService, source, stream, cancellationToken);
             if (eval.CurrentJson != "[]") stream.UpdateSchemaBaseline(eval.CurrentHash, eval.CurrentJson);
         }
 
@@ -439,7 +446,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         var stream = await _streamRepository.GetAsync(id, cancellationToken: cancellationToken);
         var source = await _sourceRepository.GetAsync(stream.SourceId, cancellationToken: cancellationToken);
         var eval = await CdcStreamMappingHelpers.EvaluateSchemaForStreamAsync(
-            _captureService, _sqlServerCaptureService, source, stream, cancellationToken);
+            _captureService, _sqlServerCaptureService, _mySqlCaptureService, source, stream, cancellationToken);
         if (eval.CurrentJson == "[]")
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)

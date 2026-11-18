@@ -123,7 +123,9 @@ export function CdcStreamsClient({
         <div className="space-y-0.5">
           <div>{row.original.sourceName || '-'}</div>
           <div className="font-mono text-[11px] text-muted-foreground">
-            {Number(row.original.sourceType ?? 0) === 1 ? 'SQL Server CT' : 'PostgreSQL'}
+            {Number(row.original.sourceType ?? 0) === 2
+              ? 'MySQL Binlog'
+              : (Number(row.original.sourceType ?? 0) === 1 ? 'SQL Server CT' : 'PostgreSQL')}
           </div>
         </div>
       ),

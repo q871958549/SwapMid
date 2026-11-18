@@ -144,7 +144,7 @@ export function SystemHealthClient({ initial }: { initial: SystemHealthDto }) {
           </div>
           <p className={cn('mt-1 text-sm', overall.bannerText, 'opacity-90')}>{data.overallConclusion}</p>
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-            <span>{t('checkedAtLabel', { time: formatTime(data.checkedAt, locale) })}</span>
+            <span suppressHydrationWarning>{t('checkedAtLabel', { time: formatTime(data.checkedAt, locale) })}</span>
             {counts.critical > 0 && <span className="text-destructive">{t('countCriticalTemplate', { count: counts.critical })}</span>}
             {counts.warning > 0 && <span className="text-warning">{t('countWarningTemplate', { count: counts.warning })}</span>}
             {counts.healthy > 0 && <span className="text-success">{t('countHealthyTemplate', { count: counts.healthy })}</span>}

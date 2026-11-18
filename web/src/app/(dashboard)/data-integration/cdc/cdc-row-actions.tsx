@@ -209,7 +209,7 @@ export function CdcRowActions({
               {t('acceptSchemaMenuItem')}
             </DropdownMenuItem>
           )}
-          {canDelete && !isActive && (
+          {canDelete && !isActive && Number(row.sourceType ?? 0) !== 1 && (
             <DropdownMenuItem disabled={busy} onClick={() => onDropSlot(row)}>
               <Unplug className="mr-2 size-3.5" />
               {t('dropSlotMenuItem')}

@@ -164,6 +164,11 @@
           "expr": "sum by (format) (rate(swapmid_cdc_object_storage_manifests_total[5m]))",
           "legendFormat": "lakehouse_manifest:{{format}}",
           "refId": "C"
+        },
+        {
+          "expr": "sum by (format, outcome) (rate(swapmid_cdc_lakehouse_compactions_total[5m]))",
+          "legendFormat": "compaction:{{format}}/{{outcome}}",
+          "refId": "D"
         }
       ]
     }

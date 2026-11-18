@@ -25,7 +25,7 @@ internal static class CdcObjectStorageLakehouseWriter
 {
     private const int MaxRecentFilesInLatest = 100;
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    internal static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
@@ -40,6 +40,9 @@ internal static class CdcObjectStorageLakehouseWriter
         public string StreamName { get; set; } = string.Empty;
         public Guid RunId { get; set; }
         public bool IsInitialSnapshot { get; set; }
+        public bool? IsCompaction { get; set; }
+        public int? CompactedSourceCount { get; set; }
+        public List<string>? CompactedSourceKeys { get; set; }
         public string Format { get; set; } = "parquet";
         public string DataObjectKey { get; set; } = string.Empty;
         public long ByteSize { get; set; }
@@ -67,6 +70,8 @@ internal static class CdcObjectStorageLakehouseWriter
         public string? SchemaBaselineHash { get; set; }
         public string LatestManifestKey { get; set; } = string.Empty;
         public string LatestDataObjectKey { get; set; } = string.Empty;
+        public int CompactionCount { get; set; }
+        public DateTime? LastCompactedAtUtc { get; set; }
         public DateTime UpdatedAtUtc { get; set; }
         public List<CdcLatestDataFileEntry> RecentFiles { get; set; } = new();
     }
@@ -81,6 +86,7 @@ internal static class CdcObjectStorageLakehouseWriter
         public long ByteSize { get; set; }
         public string Sha256Hex { get; set; } = string.Empty;
         public bool IsInitialSnapshot { get; set; }
+        public bool? IsCompaction { get; set; }
         public string? EndLsn { get; set; }
         public DateTime CommittedAtUtc { get; set; }
     }
@@ -221,7 +227,7 @@ internal static class CdcObjectStorageLakehouseWriter
         return uploaded.RowCount;
     }
 
-    private static async Task<CdcLatestCheckpointDocument> LoadOrInitializeLatestAsync(
+    internal static async Task<CdcLatestCheckpointDocument> LoadOrInitializeLatestAsync(
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
         ObjectStorageSinkConfig config,

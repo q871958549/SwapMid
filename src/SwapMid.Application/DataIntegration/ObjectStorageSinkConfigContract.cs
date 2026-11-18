@@ -277,6 +277,13 @@ internal readonly record struct ObjectStorageSinkConfig(
         return $"{baseDir}/run_{runId:N}.{extension}";
     }
 
+    internal string BuildCompactedObjectKey(string destination, Guid compactRunId)
+    {
+        var baseDir = BuildDestinationDirectory(destination);
+        var extension = Format == "jsonl" ? "jsonl" : "parquet";
+        return $"{baseDir}/compact_{compactRunId:N}.{extension}";
+    }
+
     internal string BuildDestinationDirectory(string destination)
     {
         var cleanDest = destination.Trim().Trim('/');
@@ -290,6 +297,9 @@ internal readonly record struct ObjectStorageSinkConfig(
 
     internal string BuildBatchManifestKey(string destination, string lsnToken, Guid runId)
         => $"{BuildManifestDirectory(destination)}/{lsnToken}_{runId:N}.json";
+
+    internal string BuildCompactionManifestKey(string destination, string lsnToken, Guid compactRunId)
+        => $"{BuildManifestDirectory(destination)}/compact_{lsnToken}_{compactRunId:N}.json";
 
     internal string BuildLatestManifestKey(string destination)
         => $"{BuildDestinationDirectory(destination)}/_swapmid/latest.json";

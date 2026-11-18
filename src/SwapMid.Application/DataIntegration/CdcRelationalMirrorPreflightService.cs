@@ -32,14 +32,25 @@ public sealed class CdcRelationalMirrorPreflightService : ITransientDependency
         InspectCdcMirrorSchemaInput input,
         CancellationToken cancellationToken)
     {
-        PgOutputCdcCaptureService.EnsurePostgreSqlSource(source);
+        var isSqlServer = input.SourceType == CdcSourceType.SqlServerChangeTracking;
+        if (isSqlServer)
+        {
+            SqlServerCdcCaptureService.EnsureSqlServerSource(source);
+        }
+        else
+        {
+            PgOutputCdcCaptureService.EnsurePostgreSqlSource(source);
+        }
+
         if (target.Type != DataSourceType.RelationalDatabase)
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
                 .WithData("Reason", $"关系表行级镜像目标必须为关系型数据库，当前为 {target.Type}。");
         }
 
-        var monitoredTables = CdcProtocolHelpers.ParseMonitoredTables(input.MonitoredTables);
+        var monitoredTables = CdcProtocolHelpers.ParseMonitoredTables(
+            input.MonitoredTables,
+            defaultSchema: isSqlServer ? "dbo" : "public");
         if (monitoredTables.Count != 1)
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
@@ -57,6 +68,7 @@ public sealed class CdcRelationalMirrorPreflightService : ITransientDependency
         var mappingRules = ConvertFieldMappings(input.TargetFieldMappings);
 
         var sourceTable = monitoredTables[0].FullName;
+        var sourceProvider = isSqlServer ? "sqlserver" : "postgresql";
         var sourceColumns = new List<PreflightColumnDto>();
         var targetColumns = new List<PreflightColumnDto>();
         var issues = new List<PreflightSchemaIssueDto>();
@@ -68,7 +80,7 @@ public sealed class CdcRelationalMirrorPreflightService : ITransientDependency
             await using var srcConn = _connectionFactory.CreateTarget(source.Config, ConnectTimeoutSeconds, CommandTimeoutSeconds);
             await srcConn.OpenAsync(cancellationToken);
             sourceColumns = await EtlTargetSchemaInspector.InspectTargetTableAsync(
-                srcConn, "postgresql", sourceTable, cancellationToken);
+                srcConn, sourceProvider, sourceTable, cancellationToken);
             if (sourceColumns.Count == 0)
             {
                 issues.Add(new PreflightSchemaIssueDto
@@ -137,7 +149,7 @@ public sealed class CdcRelationalMirrorPreflightService : ITransientDependency
         return new CdcMirrorSchemaInspectionDto
         {
             Compatible = issues.All(i => !string.Equals(i.Severity, "error", StringComparison.OrdinalIgnoreCase)),
-            SourceProvider = "postgresql",
+            SourceProvider = sourceProvider,
             TargetProvider = targetProvider,
             CanonicalSourceTable = sourceTable,
             CanonicalTargetTable = canonicalTarget,
@@ -164,6 +176,7 @@ public sealed class CdcRelationalMirrorPreflightService : ITransientDependency
             new InspectCdcMirrorSchemaInput
             {
                 SourceId = stream.SourceId,
+                SourceType = stream.SourceType,
                 MonitoredTables = stream.MonitoredTables,
                 TargetSinkId = target.Id,
                 TargetSinkDestination = stream.TargetSinkDestination ?? string.Empty,

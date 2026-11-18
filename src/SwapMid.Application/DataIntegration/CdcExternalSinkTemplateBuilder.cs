@@ -38,6 +38,7 @@ internal static class CdcExternalSinkTemplateBuilder
         string? manifestDir = null;
         string? manifestLatestKey = null;
         string? latestManifestJson = null;
+        string? lakehouseQuerySql = null;
         if (targetSink.Type == DataSourceType.ClickHouse)
         {
             var cfg = ClickHouseSinkConfigContract.ParseForWrite(targetSink.Config);
@@ -71,6 +72,7 @@ internal static class CdcExternalSinkTemplateBuilder
             var cfg = ObjectStorageSinkConfigContract.ParseForWrite(targetSink.Config, requireSecretKey: false);
             manifestDir = cfg.BuildManifestDirectory(destination);
             manifestLatestKey = cfg.BuildLatestManifestKey(destination);
+            lakehouseQuerySql = BuildLakehouseQuerySql(cfg, destination);
             if (probeService != null && !string.IsNullOrWhiteSpace(cfg.SecretKey))
             {
                 try
@@ -122,9 +124,29 @@ internal static class CdcExternalSinkTemplateBuilder
             ManifestDirectory = manifestDir,
             ManifestLatestKey = manifestLatestKey,
             LatestManifestJson = latestManifestJson,
+            LakehouseQuerySql = lakehouseQuerySql,
             SamplePayloadJson = sampleJson,
             Summary = summary,
         };
+    }
+
+    internal static string BuildLakehouseQuerySql(ObjectStorageSinkConfig cfg, string destination)
+    {
+        var baseDir = cfg.BuildDestinationDirectory(destination);
+        var ext = cfg.Format == "jsonl" ? "jsonl" : "parquet";
+        var chFormat = cfg.Format == "jsonl" ? "JSONEachRow" : "Parquet";
+        var chUrl = $"{cfg.Endpoint.TrimEnd('/')}/{cfg.Bucket}/{baseDir}/*.{ext}";
+
+        return $"""
+            -- DuckDB (读取最新压缩快照与增量分片)
+            SELECT * FROM read_{ext}('s3://{cfg.Bucket}/{baseDir}/*.{ext}');
+
+            -- ClickHouse S3 即席分析查询
+            SELECT * FROM s3('{chUrl}', '<accessKey>', '<secretKey>', '{chFormat}');
+
+            -- Apache Spark SQL (Lakehouse 检查点路径: s3a://{cfg.Bucket}/{cfg.BuildLatestManifestKey(destination)})
+            SELECT * FROM {ext}.`s3a://{cfg.Bucket}/{baseDir}/`;
+            """;
     }
 
     internal static async Task<CdcSinkTemplateDto> ProvisionClickHouseAsync(

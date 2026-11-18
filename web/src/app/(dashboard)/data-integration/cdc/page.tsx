@@ -21,13 +21,14 @@ type CdcStreamsSearch = {
   status?: string
 }
 
-function isPostgreSqlSource(source: DataSourceDto): boolean {
+function isCdcSupportedSource(source: DataSourceDto): boolean {
   if (source.type !== 0 || !source.config) return false
   try {
     const parsed = JSON.parse(source.config) as { provider?: unknown }
-    return typeof parsed.provider === 'string' && parsed.provider.toLowerCase() === 'postgresql'
+    const provider = typeof parsed.provider === 'string' ? parsed.provider.toLowerCase() : ''
+    return provider === 'postgresql' || provider === 'sqlserver'
   } catch {
-    return /"provider"\s*:\s*"postgresql"/i.test(source.config)
+    return /"provider"\s*:\s*"(postgresql|sqlserver)"/i.test(source.config)
   }
 }
 
@@ -65,12 +66,12 @@ async function fetchInitialData(
     })),
   ])
 
-  const pgSources = sources.items.filter(isPostgreSqlSource)
+  const cdcSources = sources.items.filter(isCdcSupportedSource)
   const relationalTargets = sources.items.filter(s => s.type === 0)
   const sinks = sources.items.filter(s => s.type === 3 || s.type === 4 || s.type === 5)
   return {
     streams,
-    sources: pgSources.length > 0 ? pgSources : relationalTargets,
+    sources: cdcSources.length > 0 ? cdcSources : relationalTargets,
     relationalTargets,
     sinks,
     pipelines: pipelines.items,

@@ -16,10 +16,12 @@ import {
   type CdcSourceOption,
   type CdcTopicOption,
   DEFAULT_CDC_TOPIC,
+  detectCdcSourceTypeFromSource,
   getSinkTypeTag,
   isCdcFormValid,
   normalizeDeletePolicy,
   normalizeDriftPolicy,
+  normalizeSourceType,
   normalizeTargetMode,
 } from './cdc-form-state'
 import { CdcRelationalMirrorSection } from './cdc-relational-mirror-section'
@@ -81,7 +83,7 @@ export function CdcFormDialog({
           <Combobox
             options={sourceOptions}
             value={crud.form.sourceId}
-            onChange={v => crud.set({ sourceId: v })}
+            onChange={v => crud.set({ sourceId: v, sourceType: detectCdcSourceTypeFromSource(v, sources) })}
             placeholder={t('sourcePlaceholder')}
             searchPlaceholder={t('sourceSearchPlaceholder')}
             emptyText={t('sourceEmptyText')}
@@ -89,49 +91,72 @@ export function CdcFormDialog({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label>{t('publicationFieldLabel')}</Label>
-          <Input
-            value={crud.form.publicationName}
-            onChange={e => crud.set({ publicationName: e.target.value })}
-            placeholder="swapmid_cdc_pub"
-            className="font-mono"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>{t('slotFieldLabel')}</Label>
-          <Input
-            value={crud.form.slotName}
-            onChange={e => crud.set({ slotName: e.target.value })}
-            placeholder="swapmid_cdc_slot"
-            className="font-mono"
-          />
-        </div>
+      <div className="space-y-1.5">
+        <Label>{t('sourceTypeFieldLabel')}</Label>
+        <Select
+          value={crud.form.sourceType ?? '0'}
+          onValueChange={v => crud.set({ sourceType: normalizeSourceType(Number(v)) })}
+        >
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="0">{t('sourceTypePostgres')}</SelectItem>
+            <SelectItem value="1">{t('sourceTypeSqlServerCt')}</SelectItem>
+          </SelectContent>
+        </Select>
+        {crud.form.sourceType === '1' && (
+          <p className="text-xs text-muted-foreground">{t('sourceTypeSqlServerHint')}</p>
+        )}
       </div>
+
+      {crud.form.sourceType !== '1' && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label>{t('publicationFieldLabel')}</Label>
+            <Input
+              value={crud.form.publicationName}
+              onChange={e => crud.set({ publicationName: e.target.value })}
+              placeholder="swapmid_cdc_pub"
+              className="font-mono"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t('slotFieldLabel')}</Label>
+            <Input
+              value={crud.form.slotName}
+              onChange={e => crud.set({ slotName: e.target.value })}
+              placeholder="swapmid_cdc_slot"
+              className="font-mono"
+            />
+          </div>
+        </div>
+      )}
 
       <div className="space-y-1.5">
         <Label>{t('monitoredTablesFieldLabel')}</Label>
         <Input
           value={crud.form.monitoredTables}
           onChange={e => crud.set({ monitoredTables: e.target.value })}
-          placeholder={t('monitoredTablesPlaceholder')}
+          placeholder={crud.form.sourceType === '1' ? 'dbo.orders' : t('monitoredTablesPlaceholder')}
           className="font-mono"
         />
-        <p className="text-xs text-muted-foreground">{t('monitoredTablesHint')}</p>
+        <p className="text-xs text-muted-foreground">
+          {crud.form.sourceType === '1' ? t('monitoredTablesSqlServerHint') : t('monitoredTablesHint')}
+        </p>
       </div>
 
-      <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/30 px-3 py-2">
-        <div className="space-y-0.5">
-          <Label htmlFor="cdc-auto-create">{t('autoCreateSwitchLabel')}</Label>
-          <p className="text-xs text-muted-foreground">{t('autoCreateHint')}</p>
+      {crud.form.sourceType !== '1' && (
+        <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/30 px-3 py-2">
+          <div className="space-y-0.5">
+            <Label htmlFor="cdc-auto-create">{t('autoCreateSwitchLabel')}</Label>
+            <p className="text-xs text-muted-foreground">{t('autoCreateHint')}</p>
+          </div>
+          <Switch
+            id="cdc-auto-create"
+            checked={crud.form.autoCreatePublicationAndSlot}
+            onCheckedChange={v => crud.set({ autoCreatePublicationAndSlot: v })}
+          />
         </div>
-        <Switch
-          id="cdc-auto-create"
-          checked={crud.form.autoCreatePublicationAndSlot}
-          onCheckedChange={v => crud.set({ autoCreatePublicationAndSlot: v })}
-        />
-      </div>
+      )}
 
       <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/30 px-3 py-2">
         <div className="space-y-0.5">
@@ -270,6 +295,21 @@ export function CdcFormDialog({
             />
             <p className="text-xs text-muted-foreground">{t('targetSinkKeyColumnsHint')}</p>
           </div>
+          {crud.form.targetMode === '2' && selectedSink?.type === 5 && (
+            <div className="space-y-1.5">
+              <Label>{t('lakehouseCompactMinFilesFieldLabel')}</Label>
+              <Input
+                type="number"
+                min={2}
+                max={100}
+                value={crud.form.lakehouseCompactMinFiles}
+                onChange={e => crud.set({ lakehouseCompactMinFiles: e.target.value })}
+                placeholder="5"
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground">{t('lakehouseCompactMinFilesHint')}</p>
+            </div>
+          )}
         </div>
       )}
 

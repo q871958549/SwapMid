@@ -19,6 +19,9 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
     /// <summary>上游 PostgreSQL 数据源 Id。</summary>
     public Guid SourceId { get; private set; }
 
+    /// <summary>上游 CDC 捕获协议类型（PG pgoutput / SQL Server Change Tracking）。</summary>
+    public CdcSourceType SourceType { get; private set; }
+
     /// <summary>PostgreSQL 逻辑复制发布（Publication）名称。</summary>
     public string PublicationName { get; private set; } = null!;
 
@@ -66,6 +69,9 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
 
     /// <summary>软删除策略下的可选删除时间戳列名（如 deleted_at_utc）。</summary>
     public string? SoftDeleteTimestampColumn { get; private set; }
+
+    /// <summary>ObjectStorage 接收端 Lakehouse 触发自动压缩合并的分片阈值（null 表示仅手动触发）。</summary>
+    public int? LakehouseCompactMinFiles { get; private set; }
 
     /// <summary>上游监控表发生 DDL/Schema 漂移时的护栏策略。</summary>
     public CdcSchemaDriftPolicy SchemaDriftPolicy { get; private set; }
@@ -142,7 +148,9 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         CdcSchemaDriftPolicy schemaDriftPolicy = CdcSchemaDriftPolicy.Ignore,
         string? targetFieldMappingsJson = null,
         string? softDeleteColumn = null,
-        string? softDeleteTimestampColumn = null)
+        string? softDeleteTimestampColumn = null,
+        CdcSourceType sourceType = CdcSourceType.PostgreSqlLogicalReplication,
+        int? lakehouseCompactMinFiles = null)
         : base(id)
     {
         ApplyConfiguration(
@@ -166,7 +174,9 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             schemaDriftPolicy,
             targetFieldMappingsJson,
             softDeleteColumn,
-            softDeleteTimestampColumn);
+            softDeleteTimestampColumn,
+            sourceType,
+            lakehouseCompactMinFiles);
         Status = CdcStreamStatus.Draft;
         SnapshotStatus = CdcSnapshotStatus.NotStarted;
     }
@@ -192,7 +202,9 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         CdcSchemaDriftPolicy schemaDriftPolicy = CdcSchemaDriftPolicy.Ignore,
         string? targetFieldMappingsJson = null,
         string? softDeleteColumn = null,
-        string? softDeleteTimestampColumn = null)
+        string? softDeleteTimestampColumn = null,
+        CdcSourceType sourceType = CdcSourceType.PostgreSqlLogicalReplication,
+        int? lakehouseCompactMinFiles = null)
     {
         ApplyConfiguration(
             name,
@@ -215,7 +227,9 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             schemaDriftPolicy,
             targetFieldMappingsJson,
             softDeleteColumn,
-            softDeleteTimestampColumn);
+            softDeleteTimestampColumn,
+            sourceType,
+            lakehouseCompactMinFiles);
     }
 
     public void Activate()
@@ -377,13 +391,16 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         CdcSchemaDriftPolicy schemaDriftPolicy,
         string? targetFieldMappingsJson,
         string? softDeleteColumn,
-        string? softDeleteTimestampColumn)
+        string? softDeleteTimestampColumn,
+        CdcSourceType sourceType,
+        int? lakehouseCompactMinFiles)
     {
         var normalizedMonitoredTables = string.IsNullOrWhiteSpace(monitoredTables)
             ? null
             : Check.Length(monitoredTables.Trim(), nameof(monitoredTables), CdcStreamConsts.MaxMonitoredTablesLength);
         if (SourceId != Guid.Empty &&
             (SourceId != sourceId ||
+             SourceType != sourceType ||
              !string.Equals(MonitoredTables, normalizedMonitoredTables, StringComparison.OrdinalIgnoreCase)))
         {
             SchemaBaselineHash = null;
@@ -393,6 +410,7 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
 
         Name = Check.NotNullOrWhiteSpace(name, nameof(name), CdcStreamConsts.MaxNameLength).Trim();
         SourceId = sourceId;
+        SourceType = sourceType;
         PublicationName = Check.NotNullOrWhiteSpace(
             publicationName,
             nameof(publicationName),
@@ -411,6 +429,9 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         TargetFieldMappingsJson = targetMode == CdcTargetMode.RelationalTable
             ? CdcStreamMirrorConfigValidator.NormalizeFieldMappingsJson(targetFieldMappingsJson)
             : null;
+        LakehouseCompactMinFiles = CdcStreamMirrorConfigValidator.NormalizeLakehouseCompactMinFiles(
+            targetMode,
+            lakehouseCompactMinFiles);
         var enableSoftDelete = targetMode == CdcTargetMode.RelationalTable && TargetDeletePolicy == CdcDeletePolicy.SoftDelete;
         SoftDeleteColumn = enableSoftDelete
             ? CdcStreamMirrorConfigValidator.NormalizeIdentifier(

@@ -119,7 +119,14 @@ export function CdcStreamsClient({
       accessorKey: 'sourceName',
       enableSorting: false,
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('colSource')} />,
-      cell: ({ row }) => row.original.sourceName || '-',
+      cell: ({ row }) => (
+        <div className="space-y-0.5">
+          <div>{row.original.sourceName || '-'}</div>
+          <div className="font-mono text-[11px] text-muted-foreground">
+            {Number(row.original.sourceType ?? 0) === 1 ? 'SQL Server CT' : 'PostgreSQL'}
+          </div>
+        </div>
+      ),
     },
     {
       accessorKey: 'slotName',
@@ -162,9 +169,11 @@ export function CdcStreamsClient({
     {
       accessorKey: 'lastCapturedAt',
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('colLastCapturedAt')} />,
-      cell: ({ row }) => row.original.lastCapturedAt
-        ? new Date(row.original.lastCapturedAt).toLocaleString(locale)
-        : '-',
+      cell: ({ row }) => (
+        <span suppressHydrationWarning>
+          {row.original.lastCapturedAt ? new Date(row.original.lastCapturedAt).toLocaleString(locale) : '-'}
+        </span>
+      ),
     },
     actionsColumn<CdcStreamDto>({
       onEdit: canUpdate ? crud.openEdit : undefined,
@@ -264,7 +273,9 @@ export function CdcStreamsClient({
         state={actions.sinkTemplateState}
         canManage={canManage}
         provisioning={actions.provisionSubmitting}
+        compacting={actions.compactSubmitting}
         onProvision={() => void actions.handleProvisionSink()}
+        onCompact={() => void actions.handleCompactLakehouse()}
         onClose={() => actions.setSinkTemplateState(null)}
       />
       <DeleteConfirm

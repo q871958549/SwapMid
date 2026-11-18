@@ -14,6 +14,7 @@ import type {
   CdcDeletePolicy,
   CdcFieldMappingDto,
   CdcMirrorSchemaInspectionDto,
+  CdcSourceType,
   InspectCdcMirrorSchemaInput,
   PreflightColumnDto,
 } from '@/lib/api/types'
@@ -68,6 +69,7 @@ export function CdcRelationalMirrorSection({
     try {
       const payload: InspectCdcMirrorSchemaInput = {
         sourceId: form.sourceId,
+        sourceType: Number(form.sourceType) as CdcSourceType,
         monitoredTables: form.monitoredTables.trim() || null,
         targetSinkId: form.targetSinkId,
         targetSinkDestination: form.targetSinkDestination.trim(),

@@ -82,9 +82,17 @@ Every milestone adheres to five non-negotiable engineering invariants:
 
 ---
 
-## Next Evolution (`v1.9+` Post-LTS Backlog)
+### `v1.9.0` — SQL Server Change Tracking CDC & Lakehouse Small-File Compaction
+- **Heterogeneous CDC Provider Abstraction (`CdcSourceType.SqlServerChangeTracking = 1`)**:
+  - Extended `CdcStreamDefinition` with `SourceType` and `LakehouseCompactMinFiles` (`AddCdcSourceTypeAndLakehouseCompaction`), and implemented `SqlServerCdcCaptureService` (`CHANGETABLE(CHANGES ...)`, `CHANGE_TRACKING_MIN_VALID_VERSION` retention guard, `Snapshot` / `REPEATABLE READ + HOLDLOCK` baseline, `INFORMATION_SCHEMA.COLUMNS` schema drift evaluation) feeding the shared `CdcStreamDeliveryDispatcher` across all targets. Verified live on Windows `(localdb)\MSSQLLocalDB`.
+- **Object-Store Lakehouse Small-File Compaction & Cross-Engine Analytics SQL**:
+  - Implemented `CdcObjectStorageCompactionService` (Parquet `RowGroup` merge + JSONL consolidation, immutable compaction manifest, atomic `_swapmid/latest.json` swap, optional superseded fragment cleanup, auto-compaction trigger, and `POST /api/v1/cdc-streams/{id}/compact-lakehouse`), `LakehouseQuerySql` generation (`DuckDB`, `ClickHouse s3()`, `Spark`), Prometheus compaction metrics, Grafana Panel 9 compaction series, and React `#418` hydration fixes.
 
-1. **Additional Heterogeneous CDC Sources (MySQL Binlog / SQL Server Change Tracking)**:
-   - Extend the `ICdcStreamAppService` and `CdcStreamCaptureCoordinator` abstraction beyond PostgreSQL `pgoutput` as needed.
-2. **Multi-Region Passive Replica & Iceberg/Delta Compaction Jobs**:
-   - Leverage `_swapmid/manifests/*.json` and `_swapmid/latest.json` checkpoints to register downstream Iceberg/Delta snapshot tables or orchestrate scheduled small-file Parquet compaction.
+---
+
+## Next Evolution (`v2.0+` Post-LTS Backlog)
+
+1. **Additional Heterogeneous CDC Sources (MySQL Binlog / Oracle LogMiner)**:
+   - Extend `ICdcStreamAppService` and `CdcStreamCaptureCoordinator` with `MySqlBinlog` (`Row`-based event reader) alongside PostgreSQL `pgoutput` and SQL Server Change Tracking.
+2. **Managed Apache Iceberg / Delta Lake Catalog Registration**:
+   - Optionally register SwapMid `_swapmid/manifests/*.json` commits directly with an external REST Iceberg / Hive Metastore catalog.

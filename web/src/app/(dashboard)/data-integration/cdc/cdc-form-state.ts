@@ -15,6 +15,7 @@ export interface CdcFormState {
   name: string
   description: string
   sourceId: string
+  sourceType: '0' | '1'
   publicationName: string
   slotName: string
   monitoredTables: string
@@ -32,6 +33,7 @@ export interface CdcFormState {
   softDeleteColumn: string
   softDeleteTimestampColumn: string
   targetFieldMappings: CdcFieldMappingDto[]
+  lakehouseCompactMinFiles: string
   schemaDriftPolicy: '0' | '1' | '2'
 }
 
@@ -41,6 +43,7 @@ export const defaultCdcForm: CdcFormState = {
   name: '',
   description: '',
   sourceId: '',
+  sourceType: '0',
   publicationName: 'swapmid_cdc_pub',
   slotName: 'swapmid_cdc_slot',
   monitoredTables: '',
@@ -58,7 +61,26 @@ export const defaultCdcForm: CdcFormState = {
   softDeleteColumn: '',
   softDeleteTimestampColumn: '',
   targetFieldMappings: [],
+  lakehouseCompactMinFiles: '',
   schemaDriftPolicy: '0',
+}
+
+export function normalizeSourceType(sourceType: number | undefined): '0' | '1' {
+  return Number(sourceType) === 1 ? '1' : '0'
+}
+
+export function detectCdcSourceTypeFromSource(sourceId: string, sources: CdcSourceOption[]): '0' | '1' {
+  const matched = sources.find(s => s.id === sourceId)
+  if (!matched?.config) return '0'
+  try {
+    const parsed = JSON.parse(matched.config) as { provider?: unknown }
+    if (typeof parsed.provider === 'string' && parsed.provider.toLowerCase() === 'sqlserver') {
+      return '1'
+    }
+  } catch {
+    if (/"provider"\s*:\s*"sqlserver"/i.test(matched.config)) return '1'
+  }
+  return '0'
 }
 
 export function normalizeTargetMode(mode: number | undefined): '0' | '1' | '2' | '3' {
@@ -93,6 +115,7 @@ export function toCdcForm(item: CdcStreamDto): CdcFormState {
     name: item.name,
     description: item.description ?? '',
     sourceId: item.sourceId,
+    sourceType: normalizeSourceType(item.sourceType),
     publicationName: item.publicationName,
     slotName: item.slotName,
     monitoredTables: item.monitoredTables ?? '',
@@ -110,6 +133,7 @@ export function toCdcForm(item: CdcStreamDto): CdcFormState {
     softDeleteColumn: item.softDeleteColumn ?? '',
     softDeleteTimestampColumn: item.softDeleteTimestampColumn ?? '',
     targetFieldMappings: mappings,
+    lakehouseCompactMinFiles: item.lakehouseCompactMinFiles ? String(item.lakehouseCompactMinFiles) : '',
     schemaDriftPolicy: normalizeDriftPolicy(item.schemaDriftPolicy),
   }
 }
@@ -117,10 +141,14 @@ export function toCdcForm(item: CdcStreamDto): CdcFormState {
 export function toCdcBody(form: CdcFormState) {
   const poll = Number.parseInt(form.pollIntervalSeconds, 10)
   const batch = Number.parseInt(form.maxBatchSize, 10)
+  const sourceType = Number(normalizeSourceType(Number(form.sourceType)))
   const rawMode = Number(form.targetMode)
   const mode = rawMode === 1 || rawMode === 2 || rawMode === 3 ? rawMode : 0
   const usesSinkTarget = mode === 2 || mode === 3
   const deletePolicy = mode === 3 ? Number(normalizeDeletePolicy(Number(form.targetDeletePolicy))) : 0
+  const compactMin = mode === 2 && form.lakehouseCompactMinFiles.trim()
+    ? Number.parseInt(form.lakehouseCompactMinFiles.trim(), 10)
+    : null
   const cleanMappings = mode === 3
     ? form.targetFieldMappings
         .map(m => ({
@@ -134,8 +162,9 @@ export function toCdcBody(form: CdcFormState) {
     name: form.name.trim(),
     description: form.description.trim() || null,
     sourceId: form.sourceId,
-    publicationName: form.publicationName.trim(),
-    slotName: form.slotName.trim(),
+    sourceType,
+    publicationName: sourceType === 0 ? form.publicationName.trim() : (form.publicationName.trim() || null),
+    slotName: sourceType === 0 ? form.slotName.trim() : (form.slotName.trim() || null),
     monitoredTables: form.monitoredTables.trim() || null,
     autoCreatePublicationAndSlot: form.autoCreatePublicationAndSlot,
     initialSnapshotEnabled: form.initialSnapshotEnabled,
@@ -153,18 +182,25 @@ export function toCdcBody(form: CdcFormState) {
     softDeleteTimestampColumn: mode === 3 && deletePolicy === 2
       ? (form.softDeleteTimestampColumn.trim() || null)
       : null,
+    lakehouseCompactMinFiles: compactMin !== null && Number.isFinite(compactMin) ? compactMin : null,
     schemaDriftPolicy: Number(form.schemaDriftPolicy) === 1 ? 1 : (Number(form.schemaDriftPolicy) === 2 ? 2 : 0),
   }
 }
 
 export function isCdcFormValid(form: CdcFormState): boolean {
-  if (!form.name.trim() || !form.sourceId || !form.publicationName.trim() || !form.slotName.trim()) {
-    return false
-  }
+  const isSqlServer = form.sourceType === '1'
+  if (!form.name.trim() || !form.sourceId) return false
+  if (!isSqlServer && (!form.publicationName.trim() || !form.slotName.trim())) return false
+  if (isSqlServer && !form.monitoredTables.trim()) return false
+
   const poll = Number.parseInt(form.pollIntervalSeconds, 10)
   const batch = Number.parseInt(form.maxBatchSize, 10)
   if (!Number.isFinite(poll) || poll < 5 || poll > 3600) return false
   if (!Number.isFinite(batch) || batch < 1 || batch > 5000) return false
+  if (form.targetMode === '2' && form.lakehouseCompactMinFiles.trim().length > 0) {
+    const minFiles = Number.parseInt(form.lakehouseCompactMinFiles.trim(), 10)
+    if (!Number.isFinite(minFiles) || minFiles < 2 || minFiles > 100) return false
+  }
   if (form.targetMode === '0') {
     return form.targetTopicName.trim().length > 0
   }

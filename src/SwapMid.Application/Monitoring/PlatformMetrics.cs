@@ -126,6 +126,16 @@ public static partial class PlatformMetrics
         "PostgreSQL CDC 对象存储 Lakehouse Manifest 写入计数（固定低基数标签 format）",
         new CounterConfiguration { LabelNames = ["format"] });
 
+    public static readonly Counter CdcLakehouseCompactionsTotal = Metrics.CreateCounter(
+        "swapmid_cdc_lakehouse_compactions_total",
+        "CDC 对象存储 Lakehouse 小文件压缩合并执行次数（固定低基数标签 format/outcome）",
+        new CounterConfiguration { LabelNames = ["format", "outcome"] });
+
+    public static readonly Counter CdcLakehouseCompactedFilesTotal = Metrics.CreateCounter(
+        "swapmid_cdc_lakehouse_compacted_files_total",
+        "CDC 对象存储 Lakehouse 累计被合并的小文件分片数（固定低基数标签 format）",
+        new CounterConfiguration { LabelNames = ["format"] });
+
     private static readonly string[] EtlExecutionAdmissionOutcomes =
     [
         "acquired", "busy", "idempotent_replay", "coordination_failure",
@@ -167,6 +177,14 @@ public static partial class PlatformMetrics
         PublishSingleLabelSeries(CdcDeliveriesTotal, ["message_bus_topic", "data_pipeline", "kafka", "clickhouse", "object_storage", "relational_table"]);
         PublishSingleLabelSeries(CdcSchemaDriftEventsTotal, ["warn", "paused", "accepted"]);
         PublishSingleLabelSeries(CdcObjectStorageManifestsTotal, ["parquet", "jsonl"]);
+        PublishSingleLabelSeries(CdcLakehouseCompactedFilesTotal, ["parquet", "jsonl"]);
+        foreach (var format in new[] { "parquet", "jsonl" })
+        {
+            foreach (var outcome in new[] { "succeeded", "skipped", "failed" })
+            {
+                CdcLakehouseCompactionsTotal.WithLabels(format, outcome).Publish();
+            }
+        }
     }
 
     internal static void PublishEtlExecutionSeries(

@@ -1,7 +1,19 @@
 namespace SwapMid.DataIntegration;
 
 /// <summary>
-/// PostgreSQL 逻辑复制（pgoutput）CDC 流运行状态。
+/// CDC 上游数据源捕获协议类型。
+/// </summary>
+public enum CdcSourceType
+{
+    /// <summary>PostgreSQL 逻辑复制（pgoutput WAL）。</summary>
+    PostgreSqlLogicalReplication = 0,
+
+    /// <summary>SQL Server 原生变更跟踪（CHANGETABLE(CHANGES ...)）。</summary>
+    SqlServerChangeTracking = 1,
+}
+
+/// <summary>
+/// PostgreSQL 逻辑复制（pgoutput）与多源 CDC 流运行状态。
 /// </summary>
 public enum CdcStreamStatus
 {

@@ -189,6 +189,7 @@ public static class DataIntegrationEntityTypeConfigurations
             b.Property(x => x.CheckpointLsn).HasMaxLength(CdcStreamConsts.MaxCheckpointLsnLength);
             b.Property(x => x.LastErrorCode).HasMaxLength(CdcStreamConsts.MaxErrorCodeLength);
             b.Property(x => x.LastErrorMessage).HasMaxLength(CdcStreamConsts.MaxErrorMessageLength);
+            b.Property(x => x.SourceType).HasConversion<int>();
             b.Property(x => x.TargetMode).HasConversion<int>();
             b.Property(x => x.TargetDeletePolicy).HasConversion<int>();
             b.Property(x => x.SchemaDriftPolicy).HasConversion<int>();

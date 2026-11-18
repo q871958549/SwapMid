@@ -117,7 +117,12 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
                 return new UploadedObjectResult(objectKey, 0, string.Empty, config.Format, 0);
             }
 
-            var sha256Hex = await UploadTempFileAsync(tempPath, objectUri, config, cancellationToken);
+            var sha256Hex = await UploadFileAndComputeSha256Async(
+                _httpClientFactory,
+                tempPath,
+                objectUri,
+                config,
+                cancellationToken);
             return new UploadedObjectResult(objectKey, fileLength, sha256Hex, config.Format, totalRows);
         }
         finally
@@ -217,7 +222,8 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
         return totalRows;
     }
 
-    private async Task<string> UploadTempFileAsync(
+    internal static async Task<string> UploadFileAndComputeSha256Async(
+        IHttpClientFactory httpClientFactory,
         string filePath,
         Uri objectUri,
         ObjectStorageSinkConfig config,
@@ -251,7 +257,7 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
             config.SecretKey ?? string.Empty,
             payloadHashHex);
 
-        var client = _httpClientFactory.CreateClient(ExternalHttpClientNames.DataIntegrationSink);
+        var client = httpClientFactory.CreateClient(ExternalHttpClientNames.DataIntegrationSink);
         using var response = await client.SendAsync(request, HttpCompletionOption.ResponseContentRead, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {

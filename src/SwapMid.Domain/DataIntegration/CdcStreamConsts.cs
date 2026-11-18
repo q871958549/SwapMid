@@ -34,4 +34,7 @@ public static class CdcStreamConsts
     public const int MinBatchSize = 1;
     public const int DefaultBatchSize = 500;
     public const int MaxBatchSize = 5000;
+
+    public const int MinLakehouseCompactMinFiles = 2;
+    public const int MaxLakehouseCompactMinFiles = 100;
 }

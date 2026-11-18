@@ -235,6 +235,9 @@ namespace SwapMid.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("IsDeleted");
 
+                    b.Property<int?>("LakehouseCompactMinFiles")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("LastCapturedAt")
                         .HasColumnType("timestamp without time zone");
 
@@ -322,6 +325,9 @@ namespace SwapMid.Migrations
 
                     b.Property<Guid>("SourceId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("SourceType")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");

@@ -29,6 +29,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     private readonly DataIntegrationSinkProbeService? _sinkProbeService;
     private readonly INotificationService? _notificationService;
     private readonly CdcRelationalMirrorPreflightService? _mirrorPreflightService;
+    private readonly SqlServerCdcCaptureService? _sqlServerCaptureService;
+    private readonly CdcObjectStorageCompactionService? _lakehouseCompactor;
 
     public CdcStreamAppService(
         ICdcStreamRepository streamRepository,
@@ -39,7 +41,9 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         ICdcScheduleSynchronizer? scheduleSynchronizer = null,
         DataIntegrationSinkProbeService? sinkProbeService = null,
         INotificationService? notificationService = null,
-        CdcRelationalMirrorPreflightService? mirrorPreflightService = null)
+        CdcRelationalMirrorPreflightService? mirrorPreflightService = null,
+        SqlServerCdcCaptureService? sqlServerCaptureService = null,
+        CdcObjectStorageCompactionService? lakehouseCompactor = null)
     {
         _streamRepository = streamRepository;
         _sourceRepository = sourceRepository;
@@ -50,6 +54,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         _sinkProbeService = sinkProbeService;
         _notificationService = notificationService;
         _mirrorPreflightService = mirrorPreflightService;
+        _sqlServerCaptureService = sqlServerCaptureService;
+        _lakehouseCompactor = lakehouseCompactor;
     }
 
     private static readonly IReadOnlyDictionary<string, string> SortingWhitelist =
@@ -82,37 +88,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             sorting,
             input.MaxResultCount,
             input.SkipCount);
-
-        var sourceIds = items.SelectMany(x =>
-            x.TargetSinkId.HasValue ? new[] { x.SourceId, x.TargetSinkId.Value } : new[] { x.SourceId })
-            .Distinct()
-            .ToList();
-        var sources = sourceIds.Count > 0
-            ? (await _sourceRepository.GetListAsync(x => sourceIds.Contains(x.Id)))
-                .ToDictionary(x => x.Id)
-            : new Dictionary<Guid, DataSource>();
-
-        var pipelineIds = items
-            .Where(x => x.TargetPipelineId.HasValue)
-            .Select(x => x.TargetPipelineId!.Value)
-            .Distinct()
-            .ToList();
-        var pipelines = pipelineIds.Count > 0
-            ? (await _pipelineRepository.GetListAsync(x => pipelineIds.Contains(x.Id)))
-                .ToDictionary(x => x.Id, x => x.Name)
-            : new Dictionary<Guid, string>();
-
-        var dtos = items.Select(x =>
-        {
-            var src = sources.GetValueOrDefault(x.SourceId);
-            var sink = x.TargetSinkId.HasValue ? sources.GetValueOrDefault(x.TargetSinkId.Value) : null;
-            return CdcStreamMappingHelpers.MapToDto(
-                x,
-                src?.Name,
-                x.TargetPipelineId.HasValue ? pipelines.GetValueOrDefault(x.TargetPipelineId.Value) : null,
-                sink);
-        }).ToList();
-
+        var dtos = await CdcStreamMappingHelpers.MapToDtoListAsync(items, _sourceRepository, _pipelineRepository);
         return new PagedResultDto<CdcStreamDto>(totalCount, dtos);
     }
 
@@ -161,7 +137,9 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             input.SchemaDriftPolicy,
             normalized.TargetFieldMappingsJson,
             normalized.SoftDeleteColumn,
-            normalized.SoftDeleteTimestampColumn);
+            normalized.SoftDeleteTimestampColumn,
+            normalized.SourceType,
+            normalized.LakehouseCompactMinFiles);
 
         await _streamRepository.InsertAsync(stream, autoSave: true);
         return await EnrichDtoAsync(stream);
@@ -203,7 +181,9 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             input.SchemaDriftPolicy,
             normalized.TargetFieldMappingsJson,
             normalized.SoftDeleteColumn,
-            normalized.SoftDeleteTimestampColumn);
+            normalized.SoftDeleteTimestampColumn,
+            normalized.SourceType,
+            normalized.LakehouseCompactMinFiles);
 
         await _streamRepository.UpdateAsync(stream, autoSave: true);
         await _scheduleSynchronizer.SyncAsync(stream.Id, stream.Status, stream.PollIntervalSeconds);
@@ -251,6 +231,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         var source = await _sourceRepository.GetAsync(stream.SourceId, cancellationToken: cancellationToken);
         return await CdcStreamMappingHelpers.BuildPreflightWithMirrorCheckAsync(
             _captureService,
+            _sqlServerCaptureService,
             _mirrorPreflightService,
             _sourceRepository,
             source,
@@ -270,6 +251,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
 
         var preflight = await CdcStreamMappingHelpers.BuildPreflightWithMirrorCheckAsync(
             _captureService,
+            _sqlServerCaptureService,
             _mirrorPreflightService,
             _sourceRepository,
             source,
@@ -290,11 +272,9 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
 
         if (string.IsNullOrWhiteSpace(stream.SchemaBaselineJson))
         {
-            var eval = await _captureService.EvaluateSchemaAsync(source, stream, cancellationToken);
-            if (eval.CurrentJson != "[]")
-            {
-                stream.UpdateSchemaBaseline(eval.CurrentHash, eval.CurrentJson);
-            }
+            var eval = await CdcStreamMappingHelpers.EvaluateSchemaForStreamAsync(
+                _captureService, _sqlServerCaptureService, source, stream, cancellationToken);
+            if (eval.CurrentJson != "[]") stream.UpdateSchemaBaseline(eval.CurrentHash, eval.CurrentJson);
         }
 
         stream.Activate();
@@ -342,12 +322,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
                 .WithData("Reason", "重置 WAL LSN 位点前请先暂停 CDC 流。");
         }
 
-        string? normalizedLsn = null;
-        if (!string.IsNullOrWhiteSpace(input.CheckpointLsn))
-        {
-            normalizedLsn = CdcProtocolHelpers.ValidateLsn(input.CheckpointLsn).ToString();
-        }
-
+        var normalizedLsn = CdcStreamMappingHelpers.NormalizeCheckpointResetToken(stream.SourceType, input.CheckpointLsn);
         stream.ResetCheckpoint(normalizedLsn);
         await _streamRepository.UpdateAsync(stream, autoSave: true);
         return await EnrichDtoAsync(stream);
@@ -363,6 +338,12 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             SwapMidPermissions.DataIntegration.CdcStreams.Delete);
 
         var stream = await _streamRepository.GetAsync(id, cancellationToken: cancellationToken);
+        if (stream.SourceType != CdcSourceType.PostgreSqlLogicalReplication)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", "仅 PostgreSQL 逻辑复制流支持释放上游 Replication Slot。");
+        }
+
         if (stream.Status == CdcStreamStatus.Active)
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
@@ -430,6 +411,23 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     }
 
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    public async Task<CdcLakehouseCompactionResultDto> CompactLakehouseAsync(
+        Guid id,
+        CompactCdcLakehouseInput input,
+        CancellationToken cancellationToken = default)
+    {
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
+            base.CurrentTenant.Id,
+            SwapMidPermissions.DataIntegration.CdcStreams.Manage);
+
+        var compactor = _lakehouseCompactor ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+            .WithData("Reason", "Lakehouse 分片压缩服务未启用。");
+        var (stream, sink) = await CdcStreamMappingHelpers.LoadExternalSinkContextAsync(
+            id, "仅外部接收端（ObjectStorage）模式的 CDC 流支持 Lakehouse 分片合并。", _streamRepository, _sourceRepository, cancellationToken);
+        return await compactor.CompactAsync(stream, sink, input.MinFiles, input.DeleteCompactedFiles, cancellationToken);
+    }
+
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
     public async Task<CdcAcceptSchemaResultDto> AcceptSchemaBaselineAsync(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -440,7 +438,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
 
         var stream = await _streamRepository.GetAsync(id, cancellationToken: cancellationToken);
         var source = await _sourceRepository.GetAsync(stream.SourceId, cancellationToken: cancellationToken);
-        var eval = await _captureService.EvaluateSchemaAsync(source, stream, cancellationToken);
+        var eval = await CdcStreamMappingHelpers.EvaluateSchemaForStreamAsync(
+            _captureService, _sqlServerCaptureService, source, stream, cancellationToken);
         if (eval.CurrentJson == "[]")
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)

@@ -5,7 +5,13 @@ import { NextIntlClientProvider } from 'next-intl'
 import zhHansMessages from '../../../../../messages/zh-Hans.json'
 import type { CdcStreamDto } from '@/lib/api/types'
 import { CdcStreamsClient } from './client'
-import { defaultCdcForm, isCdcFormValid, toCdcBody, toCdcForm } from './cdc-form-state'
+import {
+  defaultCdcForm,
+  detectCdcSourceTypeFromSource,
+  isCdcFormValid,
+  toCdcBody,
+  toCdcForm,
+} from './cdc-form-state'
 
 type ActionColumn = {
   id?: string
@@ -40,6 +46,7 @@ vi.mock('@/lib/crud/use-crud-form', () => ({
       name: '',
       description: '',
       sourceId: SOURCE_ID,
+      sourceType: '0',
       publicationName: 'swapmid_cdc_pub',
       slotName: 'swapmid_cdc_slot',
       monitoredTables: 'public.orders',
@@ -57,6 +64,7 @@ vi.mock('@/lib/crud/use-crud-form', () => ({
       softDeleteColumn: '',
       softDeleteTimestampColumn: '',
       targetFieldMappings: [],
+      lakehouseCompactMinFiles: '',
       schemaDriftPolicy: '0',
     },
     openEdit: mocks.openEdit,
@@ -528,32 +536,121 @@ describe('CdcStreamsClient', () => {
     expect(roundTrip.targetFieldMappings).toEqual([{ sourceColumn: 'src_id', targetColumn: 'order_id' }])
   })
 
-  it('renders Lakehouse manifest directory and latest checkpoint JSON in sink template dialog', async () => {
-    mocks.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        destination: 'orders/raw',
-        targetType: 5,
-        targetExists: true,
-        manifestDirectory: 'cdc/orders/raw/_swapmid/manifests',
-        manifestLatestKey: 'cdc/orders/raw/_swapmid/latest.json',
-        latestManifestJson: '{"checkpointLsn":"0/1A00","format":"parquet"}',
-        samplePayloadJson: '{"op":"insert"}',
-        columns: [],
-        summary: 'ObjectStorage parquet',
-      }),
-    })
+  it('renders Lakehouse manifest, analytics SQL, and triggers manual compaction', async () => {
+    mocks.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          destination: 'orders/raw',
+          targetType: 5,
+          targetExists: true,
+          manifestDirectory: 'cdc/orders/raw/_swapmid/manifests',
+          manifestLatestKey: 'cdc/orders/raw/_swapmid/latest.json',
+          latestManifestJson: '{"checkpointLsn":"0/1A00","format":"parquet"}',
+          lakehouseQuerySql: "-- DuckDB\nSELECT * FROM read_parquet('s3://lakehouse/cdc/orders/raw/**/*.parquet');",
+          samplePayloadJson: '{"op":"insert"}',
+          columns: [],
+          summary: 'ObjectStorage parquet',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          compacted: true,
+          compactedFileCount: 3,
+          consolidatedRowCount: 3,
+          message: '已合并 3 个 PARQUET 分片',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          destination: 'orders/raw',
+          targetType: 5,
+          targetExists: true,
+          manifestDirectory: 'cdc/orders/raw/_swapmid/manifests',
+          manifestLatestKey: 'cdc/orders/raw/_swapmid/latest.json',
+          latestManifestJson: '{"compactionCount":1,"format":"parquet"}',
+          lakehouseQuerySql: "-- DuckDB\nSELECT * FROM read_parquet('s3://lakehouse/cdc/orders/raw/**/*.parquet');",
+          samplePayloadJson: '{"op":"insert"}',
+          columns: [],
+          summary: 'ObjectStorage parquet',
+        }),
+      })
 
     renderClient(makeStream({
       targetMode: 2,
       targetSinkId: SOURCE_ID,
       targetSinkName: 'minio-lakehouse',
       targetSinkDestination: 'orders/raw',
+      lakehouseCompactMinFiles: 5,
     }))
     fireEvent.click(screen.getByRole('button', { name: '查看模板' }))
 
     expect(await screen.findByText(/cdc\/orders\/raw\/_swapmid\/manifests/)).toBeTruthy()
     expect(screen.getByText(/cdc\/orders\/raw\/_swapmid\/latest\.json/)).toBeTruthy()
     expect(screen.getByText(/"checkpointLsn":"0\/1A00"/)).toBeTruthy()
+    expect(screen.getByText(/read_parquet/)).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '合并分片' }))
+    await waitFor(() => {
+      expect(mocks.fetch).toHaveBeenCalledWith(
+        `/api/proxy/cdc-streams/${STREAM_ID}/compact-lakehouse`,
+        expect.objectContaining({ method: 'POST' }),
+      )
+      expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({
+        variant: 'success',
+        title: 'Lakehouse 分片合并完成',
+      }))
+    })
+    expect(await screen.findByText(/"compactionCount":1/)).toBeTruthy()
+  })
+
+  it('supports SqlServerChangeTracking validation and lakehouseCompactMinFiles serialization', () => {
+    expect(detectCdcSourceTypeFromSource('sql-1', [
+      { id: 'sql-1', name: 'SQL Server Main', type: 0, config: '{"provider":"SqlServer"}' },
+    ])).toBe('1')
+
+    expect(isCdcFormValid({
+      ...defaultCdcForm,
+      name: 'sql-ct-orders',
+      sourceId: 'sql-1',
+      sourceType: '1',
+      publicationName: '',
+      slotName: '',
+      monitoredTables: 'dbo.orders',
+      targetMode: '2',
+      targetSinkId: 's3-1',
+      targetSinkDestination: 'orders/ct',
+      lakehouseCompactMinFiles: '5',
+    })).toBe(true)
+
+    expect(isCdcFormValid({
+      ...defaultCdcForm,
+      name: 'sql-ct-orders',
+      sourceId: 'sql-1',
+      sourceType: '1',
+      publicationName: '',
+      slotName: '',
+      monitoredTables: '',
+      targetMode: '0',
+    })).toBe(false)
+
+    const body = toCdcBody({
+      ...defaultCdcForm,
+      name: 'sql-ct-orders',
+      sourceId: 'sql-1',
+      sourceType: '1',
+      publicationName: '',
+      slotName: '',
+      monitoredTables: 'dbo.orders',
+      targetMode: '2',
+      targetSinkId: 's3-1',
+      targetSinkDestination: 'orders/ct',
+      lakehouseCompactMinFiles: '5',
+    })
+    expect(body.sourceType).toBe(1)
+    expect(body.lakehouseCompactMinFiles).toBe(5)
+    expect(body.publicationName).toBeNull()
   })
 })

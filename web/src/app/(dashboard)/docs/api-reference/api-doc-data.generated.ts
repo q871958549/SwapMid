@@ -3305,6 +3305,13 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "sourceType",
+                "cnName": "",
+                "type": "CdcSourceType",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking",
+                "nullable": false
+              },
+              {
                 "name": "publicationName",
                 "cnName": "",
                 "type": "string",
@@ -3448,6 +3455,13 @@ export const API_MODULES: ApiModule[] = [
                 "name": "softDeleteTimestampColumn",
                 "cnName": "",
                 "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseCompactMinFiles",
+                "cnName": "",
+                "type": "integer",
                 "description": "",
                 "nullable": true
               },
@@ -3621,18 +3635,25 @@ export const API_MODULES: ApiModule[] = [
                 "required": true
               },
               {
+                "name": "sourceType",
+                "cnName": "",
+                "type": "CdcSourceType",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking",
+                "required": false
+              },
+              {
                 "name": "publicationName",
                 "cnName": "",
                 "type": "string",
                 "description": "",
-                "required": true
+                "required": false
               },
               {
                 "name": "slotName",
                 "cnName": "",
                 "type": "string",
                 "description": "",
-                "required": true
+                "required": false
               },
               {
                 "name": "monitoredTables",
@@ -3747,6 +3768,13 @@ export const API_MODULES: ApiModule[] = [
                 "required": false
               },
               {
+                "name": "lakehouseCompactMinFiles",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              },
+              {
                 "name": "schemaDriftPolicy",
                 "cnName": "",
                 "type": "CdcSchemaDriftPolicy",
@@ -3796,6 +3824,13 @@ export const API_MODULES: ApiModule[] = [
                 "type": "string",
                 "description": "",
                 "nullable": true
+              },
+              {
+                "name": "sourceType",
+                "cnName": "",
+                "type": "CdcSourceType",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking",
+                "nullable": false
               },
               {
                 "name": "publicationName",
@@ -3941,6 +3976,13 @@ export const API_MODULES: ApiModule[] = [
                 "name": "softDeleteTimestampColumn",
                 "cnName": "",
                 "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseCompactMinFiles",
+                "cnName": "",
+                "type": "integer",
                 "description": "",
                 "nullable": true
               },
@@ -4137,6 +4179,13 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "sourceType",
+                "cnName": "",
+                "type": "CdcSourceType",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking",
+                "nullable": false
+              },
+              {
                 "name": "publicationName",
                 "cnName": "",
                 "type": "string",
@@ -4280,6 +4329,13 @@ export const API_MODULES: ApiModule[] = [
                 "name": "softDeleteTimestampColumn",
                 "cnName": "",
                 "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseCompactMinFiles",
+                "cnName": "",
+                "type": "integer",
                 "description": "",
                 "nullable": true
               },
@@ -4462,18 +4518,25 @@ export const API_MODULES: ApiModule[] = [
                 "required": true
               },
               {
+                "name": "sourceType",
+                "cnName": "",
+                "type": "CdcSourceType",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking",
+                "required": false
+              },
+              {
                 "name": "publicationName",
                 "cnName": "",
                 "type": "string",
                 "description": "",
-                "required": true
+                "required": false
               },
               {
                 "name": "slotName",
                 "cnName": "",
                 "type": "string",
                 "description": "",
-                "required": true
+                "required": false
               },
               {
                 "name": "monitoredTables",
@@ -4588,6 +4651,13 @@ export const API_MODULES: ApiModule[] = [
                 "required": false
               },
               {
+                "name": "lakehouseCompactMinFiles",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              },
+              {
                 "name": "schemaDriftPolicy",
                 "cnName": "",
                 "type": "CdcSchemaDriftPolicy",
@@ -4637,6 +4707,13 @@ export const API_MODULES: ApiModule[] = [
                 "type": "string",
                 "description": "",
                 "nullable": true
+              },
+              {
+                "name": "sourceType",
+                "cnName": "",
+                "type": "CdcSourceType",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking",
+                "nullable": false
               },
               {
                 "name": "publicationName",
@@ -4782,6 +4859,13 @@ export const API_MODULES: ApiModule[] = [
                 "name": "softDeleteTimestampColumn",
                 "cnName": "",
                 "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseCompactMinFiles",
+                "cnName": "",
+                "type": "integer",
                 "description": "",
                 "nullable": true
               },
@@ -5128,6 +5212,13 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "sourceType",
+                "cnName": "",
+                "type": "CdcSourceType",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking",
+                "nullable": false
+              },
+              {
                 "name": "publicationName",
                 "cnName": "",
                 "type": "string",
@@ -5275,6 +5366,13 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "lakehouseCompactMinFiles",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "schemaDriftPolicy",
                 "cnName": "",
                 "type": "CdcSchemaDriftPolicy",
@@ -5412,6 +5510,109 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "Guid",
                 "description": "最后修改人 ID",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/cdc-streams/{id}/compact-lakehouse",
+            "summary": "手动触发 Lakehouse（S3/MinIO）Parquet/JSONL 小分片合并压缩并更新 _swapmid/latest.json",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "requestBody": [
+              {
+                "name": "minFiles",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "deleteCompactedFiles",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "required": false
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "compacted",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "compactedFileCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "consolidatedRowCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "outputObjectKey",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "outputManifestKey",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "outputByteSize",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "deletedSourceCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "completedAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "message",
+                "cnName": "",
+                "type": "string",
+                "description": "",
                 "nullable": true
               }
             ]
@@ -5803,6 +6004,13 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "lakehouseQuerySql",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "samplePayloadJson",
                 "cnName": "",
                 "type": "string",
@@ -5939,6 +6147,13 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "lakehouseQuerySql",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "samplePayloadJson",
                 "cnName": "",
                 "type": "string",
@@ -6032,6 +6247,13 @@ export const API_MODULES: ApiModule[] = [
                 "type": "Guid",
                 "description": "",
                 "required": true
+              },
+              {
+                "name": "sourceType",
+                "cnName": "",
+                "type": "CdcSourceType",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking",
+                "required": false
               },
               {
                 "name": "monitoredTables",

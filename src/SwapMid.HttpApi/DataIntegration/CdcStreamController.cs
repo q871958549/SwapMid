@@ -137,4 +137,13 @@ public class CdcStreamController : SwapMidController, ICdcStreamAppService
         [FromBody] InspectCdcMirrorSchemaInput input,
         CancellationToken cancellationToken = default)
         => _service.InspectMirrorSchemaAsync(input, cancellationToken);
+
+    /// <summary>手动触发 Lakehouse（S3/MinIO）Parquet/JSONL 小分片合并压缩并更新 _swapmid/latest.json</summary>
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    [HttpPost("{id}/compact-lakehouse")]
+    public Task<CdcLakehouseCompactionResultDto> CompactLakehouseAsync(
+        Guid id,
+        [FromBody] CompactCdcLakehouseInput? input = null,
+        CancellationToken cancellationToken = default)
+        => _service.CompactLakehouseAsync(id, input ?? new CompactCdcLakehouseInput(), cancellationToken);
 }

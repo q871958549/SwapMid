@@ -4,6 +4,22 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-11-18
+
+### Added
+- **Heterogeneous CDC Provider Architecture & SQL Server Change Tracking (`DataIntegration` / `EntityFrameworkCore` / `web/`)**:
+  - Extended `CdcStreamDefinition` with `CdcSourceType` (`PostgreSqlLogicalReplication = 0`, `SqlServerChangeTracking = 1`) and `LakehouseCompactMinFiles` (`2..100`), backed by EF Core migration `AddCdcSourceTypeAndLakehouseCompaction`.
+  - Implemented `SqlServerCdcCaptureService`: validates `sys.change_tracking_databases`, `sys.change_tracking_tables`, primary keys, and `CHANGE_TRACKING_MIN_VALID_VERSION` retention bounds; performs `Snapshot` / `REPEATABLE READ + HOLDLOCK` consistent baseline exports anchored to `CHANGE_TRACKING_CURRENT_VERSION()`; captures `CHANGETABLE(CHANGES ...)` incremental inserts/updates/deletes strictly bounded by `MaxBatchSize` without splitting a transaction version; evaluates `INFORMATION_SCHEMA.COLUMNS` schema drift; and feeds seamlessly into Message Bus, Data Pipeline, Kafka/ClickHouse/MinIO Parquet, and Relational Table Mirror (`FieldMappings` & `SoftDelete`). Verified live on Windows `(localdb)\MSSQLLocalDB` (`SqlServerCdcLocalDbContractTests`).
+- **Object-Store Lakehouse Small-File Compaction & Analytics SQL (`CdcTargetMode.ExternalSink = 2` / `Observability` / `web/`)**:
+  - Implemented `CdcObjectStorageCompactionService`: merges `>= minFiles` small Parquet (via `Parquet.Net` RowGroup copy) or JSONL fragment objects referenced in `_swapmid/latest.json` into a consolidated `compact_{runId}.parquet`/`.jsonl` object under SSRF guard, writes an immutable compaction manifest (`isCompaction: true`), atomically updates `_swapmid/latest.json` (`compactionCount`, `lastCompactedAtUtc`), optionally deletes superseded fragments via SigV4 `DELETE`, and emits `swapmid_cdc_lakehouse_compactions_total` + `swapmid_cdc_lakehouse_compacted_files_total` (surfaced on Grafana Panel 9).
+  - Added optional per-stream auto-compaction (`LakehouseCompactMinFiles`) on incremental capture, `POST /api/v1/cdc-streams/{id}/compact-lakehouse` (`CompactLakehouseAsync`), and ready-to-run `LakehouseQuerySql` (DuckDB, ClickHouse `s3()`, Spark SQL with sanitized credential placeholders) inside `CdcSinkTemplateDto`.
+- **Frontend CDC Console & SSR Hydration Fix (`web/`)**:
+  - Updated `/data-integration/cdc` across `zh-Hans`, `zh-Hant`, and `en` to support PostgreSQL & SQL Server Change Tracking source selection, `lakehouseCompactMinFiles` threshold configuration, cross-engine analytics SQL preview (`复制SQL` / `Copy SQL`), and one-click **合并分片** / **Compact** triggering inside `CdcSinkTemplateDialog`.
+
+### Fixed
+- **Timezone SSR Hydration Mismatch on `/system/health` (`web/`)**:
+  - Added `suppressHydrationWarning` to client-locale formatted `checkedAt` timestamp rendering in `web/src/app/(dashboard)/system/health/client.tsx` (and CDC `lastCapturedAt` table cells), eliminating React minified error `#418` when server (`UTC`) and browser timezones differ.
+
 ## [1.8.0] - 2026-11-18
 
 ### Added

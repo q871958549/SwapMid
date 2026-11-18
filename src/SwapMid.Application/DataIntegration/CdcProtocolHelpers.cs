@@ -45,7 +45,7 @@ internal static partial class CdcProtocolHelpers
         return trimmed;
     }
 
-    internal static IReadOnlyList<MonitoredTableSpec> ParseMonitoredTables(string? raw)
+    internal static IReadOnlyList<MonitoredTableSpec> ParseMonitoredTables(string? raw, string defaultSchema = "public")
     {
         if (string.IsNullOrWhiteSpace(raw))
         {
@@ -68,7 +68,7 @@ internal static partial class CdcProtocolHelpers
             string table;
             if (parts.Length == 1)
             {
-                schema = "public";
+                schema = defaultSchema;
                 table = parts[0];
             }
             else if (parts.Length == 2)

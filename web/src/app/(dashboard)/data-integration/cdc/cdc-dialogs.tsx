@@ -287,18 +287,23 @@ export function CdcSinkTemplateDialog({
   state,
   canManage = false,
   provisioning = false,
+  compacting = false,
   onProvision,
+  onCompact,
   onClose,
 }: {
   state: CdcSinkTemplateState | null
   canManage?: boolean
   provisioning?: boolean
+  compacting?: boolean
   onProvision?: () => void
+  onCompact?: () => void
   onClose: () => void
 }) {
   const t = useTranslations('DataIntegration.cdc')
   const tc = useTranslations('Common')
   const [copiedDdl, setCopiedDdl] = useState(false)
+  const [copiedSql, setCopiedSql] = useState(false)
 
   async function copyDdl(ddl: string) {
     try {
@@ -307,6 +312,16 @@ export function CdcSinkTemplateDialog({
       setTimeout(() => setCopiedDdl(false), 1800)
     } catch {
       setCopiedDdl(false)
+    }
+  }
+
+  async function copyQuerySql(sql: string) {
+    try {
+      await navigator.clipboard?.writeText(sql)
+      setCopiedSql(true)
+      setTimeout(() => setCopiedSql(false), 1800)
+    } catch {
+      setCopiedSql(false)
     }
   }
 
@@ -383,9 +398,21 @@ export function CdcSinkTemplateDialog({
               <div className="space-y-2 rounded-md border bg-muted/20 p-3 text-xs">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium">{t('lakehouseManifestTitle')}</span>
-                  <StatusBadge tone={state.template.latestManifestJson ? 'success' : 'neutral'}>
-                    {state.template.latestManifestJson ? t('lakehouseLatestFound') : t('lakehouseLatestEmpty')}
-                  </StatusBadge>
+                  <div className="flex items-center gap-2">
+                    {state.template.targetType === 5 && state.template.latestManifestJson && canManage && onCompact && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={compacting}
+                        onClick={onCompact}
+                      >
+                        {compacting ? tc('processing') : t('compactLakehouseButton')}
+                      </Button>
+                    )}
+                    <StatusBadge tone={state.template.latestManifestJson ? 'success' : 'neutral'}>
+                      {state.template.latestManifestJson ? t('lakehouseLatestFound') : t('lakehouseLatestEmpty')}
+                    </StatusBadge>
+                  </div>
                 </div>
                 {state.template.manifestDirectory && (
                   <div className="font-mono text-muted-foreground break-all">
@@ -402,6 +429,25 @@ export function CdcSinkTemplateDialog({
                     {state.template.latestManifestJson}
                   </pre>
                 )}
+              </div>
+            )}
+
+            {state.template.lakehouseQuerySql && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-muted-foreground">{t('lakehouseQuerySqlTitle')}</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void copyQuerySql(state.template.lakehouseQuerySql!)}
+                  >
+                    {copiedSql ? <Check className="mr-1.5 size-3.5" /> : <Copy className="mr-1.5 size-3.5" />}
+                    {copiedSql ? t('copiedDdlButton') : t('copyQuerySqlButton')}
+                  </Button>
+                </div>
+                <pre className="max-h-52 overflow-auto rounded-md border bg-muted/40 p-3 font-mono text-xs">
+                  {state.template.lakehouseQuerySql}
+                </pre>
               </div>
             )}
 

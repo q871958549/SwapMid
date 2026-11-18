@@ -15,6 +15,7 @@ namespace SwapMid.DataIntegration;
 
 internal sealed record NormalizedCdcStreamInput(
     string Name,
+    CdcSourceType SourceType,
     string PublicationName,
     string SlotName,
     string? MonitoredTables,
@@ -25,12 +26,13 @@ internal sealed record NormalizedCdcStreamInput(
     string? TargetSinkKeyColumns,
     string? TargetFieldMappingsJson,
     string? SoftDeleteColumn,
-    string? SoftDeleteTimestampColumn);
+    string? SoftDeleteTimestampColumn,
+    int? LakehouseCompactMinFiles);
 
 /// <summary>
 /// <see cref="CdcStreamAppService"/> 的输入规范化与 DTO 映射辅助类。
 /// </summary>
-internal static class CdcStreamMappingHelpers
+internal static partial class CdcStreamMappingHelpers
 {
     internal static async Task<NormalizedCdcStreamInput> ValidateAndNormalizeInputAsync(
         CdcStreamCreateUpdateDto input,
@@ -51,11 +53,31 @@ internal static class CdcStreamMappingHelpers
             throw new EntityNotFoundException(typeof(DataSource), input.SourceId);
         }
 
-        PgOutputCdcCaptureService.EnsurePostgreSqlSource(source);
+        var isSqlServer = input.SourceType == CdcSourceType.SqlServerChangeTracking;
+        if (isSqlServer)
+        {
+            SqlServerCdcCaptureService.EnsureSqlServerSource(source);
+        }
+        else
+        {
+            PgOutputCdcCaptureService.EnsurePostgreSqlSource(source);
+        }
 
-        var pub = CdcProtocolHelpers.ValidateReplicationIdentifier(input.PublicationName, "PublicationName");
-        var slot = CdcProtocolHelpers.ValidateReplicationIdentifier(input.SlotName, "SlotName");
-        var parsedTables = CdcProtocolHelpers.ParseMonitoredTables(input.MonitoredTables);
+        var parsedTables = CdcProtocolHelpers.ParseMonitoredTables(
+            input.MonitoredTables,
+            defaultSchema: isSqlServer ? "dbo" : "public");
+        if (isSqlServer && parsedTables.Count == 0)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", "SQL Server Change Tracking 模式下必须指定至少 1 张监听表（示例：dbo.orders）。");
+        }
+
+        var pub = isSqlServer
+            ? (string.IsNullOrWhiteSpace(input.PublicationName) ? "sqlserver_ct" : input.PublicationName.Trim()[..Math.Min(input.PublicationName.Trim().Length, CdcStreamConsts.MaxPostgresIdentifierLength)])
+            : CdcProtocolHelpers.ValidateReplicationIdentifier(input.PublicationName, "PublicationName");
+        var slot = isSqlServer
+            ? BuildSqlServerCheckpointToken(input.SlotName, name)
+            : CdcProtocolHelpers.ValidateReplicationIdentifier(input.SlotName, "SlotName");
         var normalizedTables = parsedTables.Count > 0
             ? string.Join(", ", parsedTables.Select(t => t.FullName))
             : null;
@@ -200,8 +222,25 @@ internal static class CdcStreamMappingHelpers
                 softDeleteTimestampColumn);
         }
 
+        int? lakehouseCompactMinFiles = null;
+        if (input.TargetMode == CdcTargetMode.ExternalSink &&
+            input.LakehouseCompactMinFiles is > 0)
+        {
+            var sinkForCompact = await sourceRepository.FindAsync(input.TargetSinkId!.Value);
+            if (sinkForCompact?.Type != DataSourceType.ObjectStorage)
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", "仅 ObjectStorage 接收端支持设置 Lakehouse 自动压缩分片阈值（LakehouseCompactMinFiles）。");
+            }
+
+            lakehouseCompactMinFiles = CdcStreamMirrorConfigValidator.NormalizeLakehouseCompactMinFiles(
+                input.TargetMode,
+                input.LakehouseCompactMinFiles);
+        }
+
         return new NormalizedCdcStreamInput(
             name,
+            input.SourceType,
             pub,
             slot,
             normalizedTables,
@@ -212,18 +251,31 @@ internal static class CdcStreamMappingHelpers
             sinkKeyColumns,
             targetFieldMappingsJson,
             softDeleteColumn,
-            softDeleteTimestampColumn);
+            softDeleteTimestampColumn,
+            lakehouseCompactMinFiles);
     }
 
     internal static async Task<CdcPreflightResultDto> BuildPreflightWithMirrorCheckAsync(
         PgOutputCdcCaptureService captureService,
+        SqlServerCdcCaptureService? sqlServerCaptureService,
         CdcRelationalMirrorPreflightService? mirrorPreflightService,
         IRepository<DataSource, Guid> sourceRepository,
         DataSource source,
         CdcStreamDefinition stream,
         CancellationToken cancellationToken)
     {
-        var preflight = await captureService.PreflightAsync(source, stream, cancellationToken);
+        CdcPreflightResultDto preflight;
+        if (stream.SourceType == CdcSourceType.SqlServerChangeTracking)
+        {
+            var sqlCapture = sqlServerCaptureService
+                ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
+                    .WithData("Reason", "SQL Server Change Tracking 捕获引擎未启用。");
+            preflight = await sqlCapture.PreflightAsync(source, stream, cancellationToken);
+        }
+        else
+        {
+            preflight = await captureService.PreflightAsync(source, stream, cancellationToken);
+        }
         if (stream.TargetMode != CdcTargetMode.RelationalTable ||
             !stream.TargetSinkId.HasValue ||
             mirrorPreflightService == null)
@@ -336,6 +388,7 @@ internal static class CdcStreamMappingHelpers
         Description = stream.Description,
         SourceId = stream.SourceId,
         SourceName = sourceName,
+        SourceType = stream.SourceType,
         PublicationName = stream.PublicationName,
         SlotName = stream.SlotName,
         MonitoredTables = stream.MonitoredTables,
@@ -361,6 +414,7 @@ internal static class CdcStreamMappingHelpers
             .ToList(),
         SoftDeleteColumn = stream.SoftDeleteColumn,
         SoftDeleteTimestampColumn = stream.SoftDeleteTimestampColumn,
+        LakehouseCompactMinFiles = stream.LakehouseCompactMinFiles,
         SchemaDriftPolicy = stream.SchemaDriftPolicy,
         SchemaBaselineHash = stream.SchemaBaselineHash,
         SchemaDriftDetected = stream.SchemaDriftDetected,
@@ -378,4 +432,12 @@ internal static class CdcStreamMappingHelpers
         LastErrorCode = stream.LastErrorCode,
         LastErrorMessage = stream.LastErrorMessage,
     };
+
+    private static string BuildSqlServerCheckpointToken(string? rawSlot, string streamName)
+    {
+        var candidate = !string.IsNullOrWhiteSpace(rawSlot) ? rawSlot.Trim() : $"ct_{streamName}";
+        return candidate.Length <= CdcStreamConsts.MaxPostgresIdentifierLength
+            ? candidate
+            : candidate[..CdcStreamConsts.MaxPostgresIdentifierLength];
+    }
 }

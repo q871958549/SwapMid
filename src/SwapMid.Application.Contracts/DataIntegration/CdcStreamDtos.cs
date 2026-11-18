@@ -11,6 +11,7 @@ public class CdcStreamDto : FullAuditedEntityDto<Guid>
     public string? Description { get; set; }
     public Guid SourceId { get; set; }
     public string? SourceName { get; set; }
+    public CdcSourceType SourceType { get; set; }
     public string PublicationName { get; set; } = null!;
     public string SlotName { get; set; } = null!;
     public string? MonitoredTables { get; set; }
@@ -30,6 +31,7 @@ public class CdcStreamDto : FullAuditedEntityDto<Guid>
     public List<CdcFieldMappingDto> TargetFieldMappings { get; set; } = new();
     public string? SoftDeleteColumn { get; set; }
     public string? SoftDeleteTimestampColumn { get; set; }
+    public int? LakehouseCompactMinFiles { get; set; }
     public CdcSchemaDriftPolicy SchemaDriftPolicy { get; set; }
     public string? SchemaBaselineHash { get; set; }
     public bool SchemaDriftDetected { get; set; }
@@ -60,13 +62,13 @@ public class CdcStreamCreateUpdateDto
     [Required]
     public Guid SourceId { get; set; }
 
-    [Required]
-    [StringLength(63)]
-    public string PublicationName { get; set; } = null!;
+    public CdcSourceType SourceType { get; set; } = CdcSourceType.PostgreSqlLogicalReplication;
 
-    [Required]
     [StringLength(63)]
-    public string SlotName { get; set; } = null!;
+    public string? PublicationName { get; set; }
+
+    [StringLength(63)]
+    public string? SlotName { get; set; }
 
     [StringLength(2048)]
     public string? MonitoredTables { get; set; }
@@ -103,6 +105,9 @@ public class CdcStreamCreateUpdateDto
 
     [StringLength(128)]
     public string? SoftDeleteTimestampColumn { get; set; }
+
+    [Range(2, 100)]
+    public int? LakehouseCompactMinFiles { get; set; }
 
     public CdcSchemaDriftPolicy SchemaDriftPolicy { get; set; } = CdcSchemaDriftPolicy.Ignore;
 
@@ -190,6 +195,7 @@ public class CdcSinkTemplateDto
     public string? ManifestDirectory { get; set; }
     public string? ManifestLatestKey { get; set; }
     public string? LatestManifestJson { get; set; }
+    public string? LakehouseQuerySql { get; set; }
     public string SamplePayloadJson { get; set; } = null!;
     public string Summary { get; set; } = null!;
 }
@@ -240,6 +246,8 @@ public class InspectCdcMirrorSchemaInput
     [Required]
     public Guid SourceId { get; set; }
 
+    public CdcSourceType SourceType { get; set; } = CdcSourceType.PostgreSqlLogicalReplication;
+
     [StringLength(2048)]
     public string? MonitoredTables { get; set; }
 
@@ -275,4 +283,26 @@ public class CdcMirrorSchemaInspectionDto
     public List<PreflightColumnDto> TargetColumns { get; set; } = new();
     public List<CdcFieldMappingDto> SuggestedMappings { get; set; } = new();
     public List<PreflightSchemaIssueDto> Issues { get; set; } = new();
+}
+
+public class CompactCdcLakehouseInput
+{
+    [Range(2, 100)]
+    public int MinFiles { get; set; } = 2;
+
+    public bool DeleteCompactedFiles { get; set; } = true;
+}
+
+public class CdcLakehouseCompactionResultDto
+{
+    public Guid StreamId { get; set; }
+    public bool Compacted { get; set; }
+    public int CompactedFileCount { get; set; }
+    public long ConsolidatedRowCount { get; set; }
+    public string? OutputObjectKey { get; set; }
+    public string? OutputManifestKey { get; set; }
+    public long OutputByteSize { get; set; }
+    public int DeletedSourceCount { get; set; }
+    public DateTime CompletedAtUtc { get; set; }
+    public string Message { get; set; } = null!;
 }

@@ -8,6 +8,7 @@ import type {
   CdcAcceptSchemaResultDto,
   CdcCaptureResultDto,
   CdcDropSlotResultDto,
+  CdcLakehouseCompactionResultDto,
   CdcPreflightResultDto,
   CdcSinkTemplateDto,
   CdcSnapshotResultDto,
@@ -30,6 +31,7 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
   const [dropSlotError, setDropSlotError] = useState<string | null>(null)
   const [sinkTemplateState, setSinkTemplateState] = useState<CdcSinkTemplateState | null>(null)
   const [provisionSubmitting, setProvisionSubmitting] = useState(false)
+  const [compactSubmitting, setCompactSubmitting] = useState(false)
 
   const setBusy = useCallback((id: string, kind: string | null) => {
     if (kind === null) {
@@ -233,6 +235,41 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
     }
   }, [sinkTemplateState, t])
 
+  const handleCompactLakehouse = useCallback(async () => {
+    if (!sinkTemplateState) return
+    const stream = sinkTemplateState.stream
+    setCompactSubmitting(true)
+    try {
+      const res = await fetch(`/api/proxy/cdc-streams/${stream.id}/compact-lakehouse`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ minFiles: 2, deleteCompactedFiles: true }),
+      })
+      if (!res.ok) {
+        toast({
+          variant: 'destructive',
+          title: t('compactLakehouseFailedTitle'),
+          description: await readApiErrorMessage(res, t('compactLakehouseFailedFallback')),
+        })
+        return
+      }
+      const result = await res.json() as CdcLakehouseCompactionResultDto
+      toast({
+        variant: 'success',
+        title: result.compacted ? t('compactLakehouseSuccessTitle') : t('compactLakehouseSkippedTitle'),
+        description: result.message || stream.name,
+      })
+      const tplRes = await fetch(`/api/proxy/cdc-streams/${stream.id}/sink-template`)
+      if (tplRes.ok) {
+        const updatedTemplate = await tplRes.json() as CdcSinkTemplateDto
+        setSinkTemplateState({ stream, template: updatedTemplate })
+      }
+      await reloadAndRefresh()
+    } finally {
+      setCompactSubmitting(false)
+    }
+  }, [reloadAndRefresh, sinkTemplateState, t])
+
   return {
     busyActions,
     preflightState,
@@ -250,6 +287,7 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
     sinkTemplateState,
     setSinkTemplateState,
     provisionSubmitting,
+    compactSubmitting,
     handlePreflight,
     handleLifecycle,
     handleCaptureNow,
@@ -261,5 +299,6 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
     handleSnapshot,
     handleAcceptSchema,
     handleProvisionSink,
+    handleCompactLakehouse,
   }
 }

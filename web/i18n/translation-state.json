@@ -7336,16 +7336,16 @@
       "traditionalHash": "aa9c0b2a909c136c7d3b5452"
     },
     "DataIntegration.cdc.createTitle": {
-      "sourceHash": "76fa1994341f8fdc6a8012ae",
-      "englishHash": "82fbf89c68f6fb49fa7e987e",
-      "traditionalSourceHash": "756bdfc4f7ac5b7140104f0b",
-      "traditionalHash": "2bac5b89f65b169cf37b2596"
+      "sourceHash": "763e16a90569208d87fca7d9",
+      "englishHash": "4c1ddbf0d3ebb379fa196f1a",
+      "traditionalSourceHash": "96fc4a2541a6fda52cda9787",
+      "traditionalHash": "183b1961f7925cfd40793e99"
     },
     "DataIntegration.cdc.editTitle": {
-      "sourceHash": "0b2a0d9f8b5204eaec564afb",
-      "englishHash": "08ce24afe14df30e6265892b",
-      "traditionalSourceHash": "a8ee3cfe9601d158a3d003c8",
-      "traditionalHash": "beba87ff592bc1370bb3cb22"
+      "sourceHash": "550b5a8ba396ee0c5816bb83",
+      "englishHash": "3199cf1971ad1607fa534a5c",
+      "traditionalSourceHash": "d162708dd73d00fc446daefb",
+      "traditionalHash": "29d734d9ab612c111cb1e053"
     },
     "DataIntegration.cdc.deleteDesc": {
       "sourceHash": "77eaa1ea286d181b3b15fe00",
@@ -7366,16 +7366,16 @@
       "traditionalHash": "278e2dfe6619366c97b18369"
     },
     "DataIntegration.cdc.sourceFieldLabel": {
-      "sourceHash": "3edc07e819131cccfbeff5d7",
-      "englishHash": "a76b8cdbee43680dd71d5a01",
-      "traditionalSourceHash": "9f03c58688e27d9ba583de02",
-      "traditionalHash": "28d95780d75534c12a7770ce"
+      "sourceHash": "a8774f2d224c0e8930554449",
+      "englishHash": "222de24e9291b9597fb8b9be",
+      "traditionalSourceHash": "f013a8eb3f62219ec516700d",
+      "traditionalHash": "51372332c79401334e94240c"
     },
     "DataIntegration.cdc.sourcePlaceholder": {
-      "sourceHash": "281029bfab03efc392338573",
-      "englishHash": "a487dacaff3dcc14ec38a20e",
-      "traditionalSourceHash": "6964f1e1b0663bb9d3e32406",
-      "traditionalHash": "c9991c5065218e9b8d50f481"
+      "sourceHash": "a8600144894201f2af67cdb8",
+      "englishHash": "07171296b7bab103fd0a4cd4",
+      "traditionalSourceHash": "fcb329eefa7c6cd66faefc13",
+      "traditionalHash": "71aab0f53d128498ff98f14c"
     },
     "DataIntegration.cdc.sourceSearchPlaceholder": {
       "sourceHash": "c8439fd8a408098fa96d7fff",
@@ -7384,10 +7384,34 @@
       "traditionalHash": "bdeba246602d486b98f17156"
     },
     "DataIntegration.cdc.sourceEmptyText": {
-      "sourceHash": "4550eaad08545ecf1767499f",
-      "englishHash": "6e8b439d7840f449211fd96c",
-      "traditionalSourceHash": "d65984fd80a0dde18a5495a9",
-      "traditionalHash": "c6ad26ba6174b31d6b031fe1"
+      "sourceHash": "aae53b7485650b29751d1fc6",
+      "englishHash": "cb31f2eaac3ad02ce2031ab3",
+      "traditionalSourceHash": "371aa65bb43c0ae9422d7c6c",
+      "traditionalHash": "7953b6db911f65e704e6cb48"
+    },
+    "DataIntegration.cdc.sourceTypeFieldLabel": {
+      "sourceHash": "3cc81b2a32b770f40994eab5",
+      "englishHash": "92ecf1dcfff8dfaf9683d87c",
+      "traditionalSourceHash": "a723e5e6a5a30152c4573956",
+      "traditionalHash": "6d3c85ab31a9f62313e65491"
+    },
+    "DataIntegration.cdc.sourceTypePostgres": {
+      "sourceHash": "c984b7e19653ad84e749d07e",
+      "englishHash": "6ba094a84e2bfc01cfe30a62",
+      "traditionalSourceHash": "fbac0f0ce7a17684a8b9f57b",
+      "traditionalHash": "f4cce6c757adb84b6aea1c46"
+    },
+    "DataIntegration.cdc.sourceTypeSqlServerCt": {
+      "sourceHash": "2515e7a81afb7eab92c6ae5c",
+      "englishHash": "3e55e865046b7b790b44905e",
+      "traditionalSourceHash": "7805b3046be29791fb8b6149",
+      "traditionalHash": "333d7f9d0c4d54a99a60df5d"
+    },
+    "DataIntegration.cdc.sourceTypeSqlServerHint": {
+      "sourceHash": "f122bfedb90fbaed065703b3",
+      "englishHash": "22e58fb9ef2082d1125a08de",
+      "traditionalSourceHash": "528497b1c1e67fe30b06eeea",
+      "traditionalHash": "ce99254338a8e7d6bf9a661d"
     },
     "DataIntegration.cdc.publicationFieldLabel": {
       "sourceHash": "6f9a62c5434b526751e67998",
@@ -7402,10 +7426,10 @@
       "traditionalHash": "c6d5ba4330a195eda95d32b2"
     },
     "DataIntegration.cdc.monitoredTablesFieldLabel": {
-      "sourceHash": "852942511ec25d43882b44c9",
-      "englishHash": "d2d42b91f8ee5b8e833a62c7",
-      "traditionalSourceHash": "677900e8239e74c9c41e229b",
-      "traditionalHash": "907da0014370fbefdf67c397"
+      "sourceHash": "53e9598d268952a61fb377ec",
+      "englishHash": "16cb057e6190126722d5d58c",
+      "traditionalSourceHash": "701a3072886718ded8a0fbda",
+      "traditionalHash": "4189403bb4f3c384d3a8ca37"
     },
     "DataIntegration.cdc.monitoredTablesPlaceholder": {
       "sourceHash": "78d831e372bb878d5a8c908f",
@@ -7418,6 +7442,12 @@
       "englishHash": "0476093585213033fef5104a",
       "traditionalSourceHash": "a1ecef55c431780ef78bc360",
       "traditionalHash": "db15e3bb9e1eb587060a2e81"
+    },
+    "DataIntegration.cdc.monitoredTablesSqlServerHint": {
+      "sourceHash": "1b969a670bbfe078de60d610",
+      "englishHash": "85e7bd042491eb3fa42b909b",
+      "traditionalSourceHash": "77b36a4617c120221a1673d4",
+      "traditionalHash": "626f346aa941d004e9dae40a"
     },
     "DataIntegration.cdc.autoCreateSwitchLabel": {
       "sourceHash": "41d44ad94108c64690c4a325",
@@ -8270,6 +8300,60 @@
       "englishHash": "f1d0eb9063069c8be3d21490",
       "traditionalSourceHash": "933a631e7eb175f91b7af1a0",
       "traditionalHash": "347adfcc49dbabd9a0320645"
+    },
+    "DataIntegration.cdc.lakehouseCompactMinFilesFieldLabel": {
+      "sourceHash": "670ac6e65987660bb181afe3",
+      "englishHash": "a2437d6e5b5578a85a8c8870",
+      "traditionalSourceHash": "2cc260dc8410224dbb0ab567",
+      "traditionalHash": "d378e0fc2ad43fa6494c30d5"
+    },
+    "DataIntegration.cdc.lakehouseCompactMinFilesHint": {
+      "sourceHash": "dd94932e1eb2306dad26b7e0",
+      "englishHash": "9549319b4aaa071f15fb8bb8",
+      "traditionalSourceHash": "6df9619487c5a29d642b912a",
+      "traditionalHash": "1d3508cd14d4d727e2344852"
+    },
+    "DataIntegration.cdc.compactLakehouseButton": {
+      "sourceHash": "b441e80209da2a2f2d8ed03b",
+      "englishHash": "99452646e34b69704c9134a0",
+      "traditionalSourceHash": "d9b824fed8660b57f8dafa3e",
+      "traditionalHash": "f607e7496f647252bffec4d5"
+    },
+    "DataIntegration.cdc.compactLakehouseSuccessTitle": {
+      "sourceHash": "96647065c11fb8633d934ddf",
+      "englishHash": "218395799173924611ef337e",
+      "traditionalSourceHash": "1015a3de513962822cc44253",
+      "traditionalHash": "9b2b7c92a7c2328996f0676d"
+    },
+    "DataIntegration.cdc.compactLakehouseSkippedTitle": {
+      "sourceHash": "3a34d57c7f1ce29b22f9f9b1",
+      "englishHash": "ee0a0ecc632b536cd49b399a",
+      "traditionalSourceHash": "9400d4e71d1c8032e3deb9f6",
+      "traditionalHash": "a0087d32dcea743255eefb03"
+    },
+    "DataIntegration.cdc.compactLakehouseFailedTitle": {
+      "sourceHash": "6f6c85e911f323ea8f238e31",
+      "englishHash": "17a6d39cb20008984d0da55e",
+      "traditionalSourceHash": "1cba367137b2f9f100db2cae",
+      "traditionalHash": "fdd687f4a1cb12c3ac6039af"
+    },
+    "DataIntegration.cdc.compactLakehouseFailedFallback": {
+      "sourceHash": "48485b2e5a0952077fdbe224",
+      "englishHash": "afedffa699c31bf053208336",
+      "traditionalSourceHash": "0f2e1f97962db1e51ba68ae3",
+      "traditionalHash": "f481297cc4bbe9b7cbec63df"
+    },
+    "DataIntegration.cdc.lakehouseQuerySqlTitle": {
+      "sourceHash": "a006bc9cbbbb500bccb46fd2",
+      "englishHash": "659c08c442973aff85d01863",
+      "traditionalSourceHash": "afe3c21412a2bad9c5dc1b63",
+      "traditionalHash": "54c2b5dcaec832fdca7e4603"
+    },
+    "DataIntegration.cdc.copyQuerySqlButton": {
+      "sourceHash": "7f9c746f523cb61665e50adf",
+      "englishHash": "4f61ddf87f04daa497bc88ef",
+      "traditionalSourceHash": "8b10b40b589b40dc5e7f14d4",
+      "traditionalHash": "40de7ebee20e72b2356873fd"
     },
     "DataIntegration.cdc.softDeleteCellBadge": {
       "sourceHash": "62f80fb75e4033ccba4138c1",

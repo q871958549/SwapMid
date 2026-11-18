@@ -187,6 +187,25 @@ public static partial class CdcStreamMirrorConfigValidator
         }
     }
 
+    public static int? NormalizeLakehouseCompactMinFiles(CdcTargetMode targetMode, int? value)
+    {
+        if (targetMode != CdcTargetMode.ExternalSink || !value.HasValue || value.Value == 0)
+        {
+            return null;
+        }
+
+        if (value.Value < CdcStreamConsts.MinLakehouseCompactMinFiles ||
+            value.Value > CdcStreamConsts.MaxLakehouseCompactMinFiles)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData(
+                    "Reason",
+                    $"Lakehouse 自动压缩分片阈值（LakehouseCompactMinFiles）须在 {CdcStreamConsts.MinLakehouseCompactMinFiles}~{CdcStreamConsts.MaxLakehouseCompactMinFiles} 之间。");
+        }
+
+        return value.Value;
+    }
+
     private sealed class CdcFieldMappingRuleInput
     {
         public string? SourceColumn { get; set; }

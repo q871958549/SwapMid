@@ -62,6 +62,7 @@ internal static class McpCdcDiagnosticsHandler
             {
                 stream.Id,
                 stream.Name,
+                stream.SourceType,
                 stream.Status,
                 stream.MonitoredTables,
                 stream.PollIntervalSeconds,
@@ -74,6 +75,7 @@ internal static class McpCdcDiagnosticsHandler
                 targetFieldMappingsCount = stream.TargetFieldMappings.Count,
                 stream.SoftDeleteColumn,
                 stream.SoftDeleteTimestampColumn,
+                stream.LakehouseCompactMinFiles,
                 stream.SchemaDriftPolicy,
                 stream.SchemaBaselineHash,
                 stream.SchemaDriftDetected,

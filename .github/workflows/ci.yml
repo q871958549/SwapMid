@@ -87,7 +87,7 @@ jobs:
             mysql:8.4 \
             --server-id=1 --log-bin=mysql-bin --binlog-format=ROW --binlog-row-image=FULL
           for i in $(seq 1 45); do
-            if docker exec mysql-cdc mysqladmin ping -h 127.0.0.1 -uroot -p'SwapMidCiOnly_MySql84!' --silent >/dev/null 2>&1; then
+            if docker exec mysql-cdc mysql -h 127.0.0.1 -P 3306 -uroot -p'SwapMidCiOnly_MySql84!' -e "SELECT 1" >/dev/null 2>&1; then
               break
             fi
             sleep 2
@@ -120,6 +120,8 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: '11.5.2'
 
       - name: Setup Node.js 24
         uses: actions/setup-node@v4

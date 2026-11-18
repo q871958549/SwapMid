@@ -62,7 +62,7 @@ jobs:
 
       - name: Extract OCI metadata & tags
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ steps.meta_owner.outputs.owner }}/swapmid-${{ matrix.component }}
           tags: |

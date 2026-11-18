@@ -272,13 +272,27 @@ internal readonly record struct ObjectStorageSinkConfig(
 
     internal string BuildObjectKey(string destination, Guid runId)
     {
-        var cleanDest = destination.Trim().Trim('/');
+        var baseDir = BuildDestinationDirectory(destination);
         var extension = Format == "jsonl" ? "jsonl" : "parquet";
-        var fileName = $"run_{runId:N}.{extension}";
-        return string.IsNullOrEmpty(Prefix)
-            ? $"{cleanDest}/{fileName}"
-            : $"{Prefix}/{cleanDest}/{fileName}";
+        return $"{baseDir}/run_{runId:N}.{extension}";
     }
+
+    internal string BuildDestinationDirectory(string destination)
+    {
+        var cleanDest = destination.Trim().Trim('/');
+        return string.IsNullOrEmpty(Prefix)
+            ? cleanDest
+            : $"{Prefix}/{cleanDest}";
+    }
+
+    internal string BuildManifestDirectory(string destination)
+        => $"{BuildDestinationDirectory(destination)}/_swapmid/manifests";
+
+    internal string BuildBatchManifestKey(string destination, string lsnToken, Guid runId)
+        => $"{BuildManifestDirectory(destination)}/{lsnToken}_{runId:N}.json";
+
+    internal string BuildLatestManifestKey(string destination)
+        => $"{BuildDestinationDirectory(destination)}/_swapmid/latest.json";
 
     internal Uri BuildObjectUri(string objectKey)
     {

@@ -303,4 +303,93 @@ public class CdcStreamAppServiceTests : SwapMidEntityFrameworkCoreTestBase
         created.SchemaDriftPolicy.ShouldBe(CdcSchemaDriftPolicy.PauseAndAlert);
         created.SchemaDriftDetected.ShouldBeFalse();
     }
+
+    [Fact]
+    public async Task Should_Validate_And_Persist_FieldMappings_And_SoftDelete_Columns()
+    {
+        var pgSource = await _dataSourceAppService.CreateAsync(new DataSourceCreateUpdateDto
+        {
+            Name = $"pg-sd-src-{Guid.NewGuid():N}"[..32],
+            Type = DataSourceType.RelationalDatabase,
+            Config = """{"provider":"postgresql","host":"127.0.0.1","port":5432,"database":"swapmid","username":"postgres"}""",
+        });
+        var pgTarget = await _dataSourceAppService.CreateAsync(new DataSourceCreateUpdateDto
+        {
+            Name = $"pg-sd-tgt-{Guid.NewGuid():N}"[..32],
+            Type = DataSourceType.RelationalDatabase,
+            Config = """{"provider":"postgresql","host":"127.0.0.1","port":5432,"database":"swapmid","username":"postgres"}""",
+        });
+
+        // Missing SoftDeleteColumn when TargetDeletePolicy = SoftDelete -> rejected
+        var missingSdColEx = await Should.ThrowAsync<BusinessException>(() =>
+            _cdcAppService.CreateAsync(new CdcStreamCreateUpdateDto
+            {
+                Name = $"sd-missing-col-{Guid.NewGuid():N}"[..32],
+                SourceId = pgSource.Id,
+                PublicationName = "pub_sd1",
+                SlotName = "slot_sd1",
+                MonitoredTables = "public.orders",
+                TargetMode = CdcTargetMode.RelationalTable,
+                TargetSinkId = pgTarget.Id,
+                TargetSinkDestination = "public.orders_mirror",
+                TargetSinkKeyColumns = "order_id",
+                TargetDeletePolicy = CdcDeletePolicy.SoftDelete,
+                SoftDeleteColumn = null,
+            }));
+        missingSdColEx.Code.ShouldBe(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid);
+
+        // Explicit field mappings missing PK column -> rejected
+        var missingPkMapEx = await Should.ThrowAsync<BusinessException>(() =>
+            _cdcAppService.CreateAsync(new CdcStreamCreateUpdateDto
+            {
+                Name = $"sd-missing-pk-{Guid.NewGuid():N}"[..32],
+                SourceId = pgSource.Id,
+                PublicationName = "pub_sd2",
+                SlotName = "slot_sd2",
+                MonitoredTables = "public.orders",
+                TargetMode = CdcTargetMode.RelationalTable,
+                TargetSinkId = pgTarget.Id,
+                TargetSinkDestination = "public.orders_mirror",
+                TargetSinkKeyColumns = "order_id",
+                TargetDeletePolicy = CdcDeletePolicy.SoftDelete,
+                SoftDeleteColumn = "is_deleted",
+                TargetFieldMappings =
+                [
+                    new CdcFieldMappingDto { SourceColumn = "customer", TargetColumn = "client_ref" },
+                ],
+            }));
+        missingPkMapEx.Code.ShouldBe(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid);
+
+        var created = await _cdcAppService.CreateAsync(new CdcStreamCreateUpdateDto
+        {
+            Name = $"sd-valid-{Guid.NewGuid():N}"[..32],
+            SourceId = pgSource.Id,
+            PublicationName = "pub_sd_ok",
+            SlotName = "slot_sd_ok",
+            MonitoredTables = "public.orders",
+            TargetMode = CdcTargetMode.RelationalTable,
+            TargetSinkId = pgTarget.Id,
+            TargetSinkDestination = "public.orders_mirror",
+            TargetSinkKeyColumns = "order_id",
+            TargetDeletePolicy = CdcDeletePolicy.SoftDelete,
+            SoftDeleteColumn = "is_deleted",
+            SoftDeleteTimestampColumn = "deleted_at_utc",
+            TargetFieldMappings =
+            [
+                new CdcFieldMappingDto { SourceColumn = "src_id", TargetColumn = "order_id" },
+                new CdcFieldMappingDto { SourceColumn = "src_customer", TargetColumn = "client_ref" },
+            ],
+        });
+
+        created.TargetDeletePolicy.ShouldBe(CdcDeletePolicy.SoftDelete);
+        created.SoftDeleteColumn.ShouldBe("is_deleted");
+        created.SoftDeleteTimestampColumn.ShouldBe("deleted_at_utc");
+        created.TargetFieldMappings.Count.ShouldBe(2);
+        created.TargetFieldMappings[0].SourceColumn.ShouldBe("src_id");
+        created.TargetFieldMappings[0].TargetColumn.ShouldBe("order_id");
+
+        var loaded = await _cdcAppService.GetAsync(created.Id);
+        loaded.SoftDeleteColumn.ShouldBe("is_deleted");
+        loaded.TargetFieldMappings.Count.ShouldBe(2);
+    }
 }

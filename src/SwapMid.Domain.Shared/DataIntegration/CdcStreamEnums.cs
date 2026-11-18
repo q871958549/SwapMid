@@ -36,6 +36,7 @@ public enum CdcDeletePolicy
 {
     DeleteRow = 0,
     Ignore = 1,
+    SoftDelete = 2,
 }
 
 /// <summary>

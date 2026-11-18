@@ -27,7 +27,8 @@ Every milestone adheres to five non-negotiable engineering invariants:
 | **`v1.4.0`** *(Released)* | **CDC-to-Sink Streaming, `REPLICA IDENTITY` Diffs & Operational Hardening** | Direct `CdcTargetMode.ExternalSink` streaming (`Kafka` / `ClickHouse` / `S3 Parquet`), `changedColumns` old/new diff computation, pre-flight `TableReplicaIdentities` + `WalLagBytes` inspection, safe `drop-slot` WAL retention release, `swapmid_cdc_wal_lag_bytes` telemetry, and no-tracking concurrent `MessageBus` delivery hardening |
 | **`v1.5.0`** *(Released)* | **Deterministic Kafka Key Ordering, Sink DDL Templates & Batch Replay** | Per-event Kafka partition keys (`TargetSinkKeyColumns` + `EtlSourceBatch.PartitionKeys`), one-click ClickHouse DDL & CDC schema template dialog (`GET /api/v1/cdc-streams/{id}/sink-template`), set-based `POST /api/v1/message-records/batch-replay`, and Prometheus `SwapMidCdcCaptureFailures` / `SwapMidCdcWalLagHigh` alert rules |
 | **`v1.6.0`** *(Released)* | **Consistent CDC Initial Snapshot, Keyed ClickHouse Auto-DDL, Grafana CDC & MCP** | PostgreSQL `EXPORT_SNAPSHOT` + `REPEATABLE READ` baseline snapshot (`InitialSnapshotEnabled` + `/snapshot`), keyed ClickHouse `ReplacingMergeTree` DDL & `/provision-sink`, MCP `diagnose_cdc_streams` tool, Grafana CDC dashboard panels, and active CI PG 18 `wal_level=logical` contracts |
-| **`v1.7.0`** *(Current)* | **CDC Relational Row-Level Mirror (`Upsert`/`Delete`) & Schema Drift Guardrails** | Direct `CdcTargetMode.RelationalTable` materialization across PostgreSQL / SQL Server / MySQL (`TargetDeletePolicy`, `EXPORT_SNAPSHOT` + staging `Upsert` + atomic `Delete`), upstream DDL `SchemaDriftPolicy` (`Ignore` / `Warn` / `PauseAndAlert`) with Hangfire circuit-breaking, `NotificationService` alerts, `accept-schema` recovery, and `SwapMidCdcSchemaDriftDetected` alerting |
+| **`v1.7.0`** *(Released)* | **CDC Relational Row-Level Mirror (`Upsert`/`Delete`) & Schema Drift Guardrails** | Direct `CdcTargetMode.RelationalTable` materialization across PostgreSQL / SQL Server / MySQL (`TargetDeletePolicy`, `EXPORT_SNAPSHOT` + staging `Upsert` + atomic `Delete`), upstream DDL `SchemaDriftPolicy` (`Ignore` / `Warn` / `PauseAndAlert`) with Hangfire circuit-breaking, `NotificationService` alerts, `accept-schema` recovery, and `SwapMidCdcSchemaDriftDetected` alerting |
+| **`v1.8.0`** *(Current)* | **CDC Field Remapping, Soft-Delete Tombstones & Object-Store Lakehouse Manifests** | Explicit `TargetFieldMappings` projection + `CdcDeletePolicy.SoftDelete` tombstones with intra-batch `NOT NULL` safety & resurrection clearing, dual-source `inspect-mirror-schema` preflight & interactive visual mapper UI, immutable S3/MinIO `_swapmid/manifests/*.json` + bounded `_swapmid/latest.json` Lakehouse checkpoint index (`swapmid_cdc_object_storage_manifests_total`), and Grafana Panel 9 CDC P95 observability |
 
 ---
 
@@ -81,11 +82,9 @@ Every milestone adheres to five non-negotiable engineering invariants:
 
 ---
 
-## Next Evolution (`v1.8+` Post-LTS Backlog)
+## Next Evolution (`v1.9+` Post-LTS Backlog)
 
 1. **Additional Heterogeneous CDC Sources (MySQL Binlog / SQL Server Change Tracking)**:
    - Extend the `ICdcStreamAppService` and `CdcStreamCaptureCoordinator` abstraction beyond PostgreSQL `pgoutput` as needed.
-2. **Configurable Field-Level CDC Projection & Soft-Delete Columns**:
-   - Extend `CdcTargetMode.RelationalTable` with explicit source-to-target column remapping and soft-delete tombstone columns alongside hard row deletion.
-3. **Multi-Region Passive Replica & Object-Store Iceberg/Delta Compaction Metadata**:
-   - Emit partitioned Parquet manifest/checkpoint metadata for downstream lakehouse table engines on `ObjectStorage` targets.
+2. **Multi-Region Passive Replica & Iceberg/Delta Compaction Jobs**:
+   - Leverage `_swapmid/manifests/*.json` and `_swapmid/latest.json` checkpoints to register downstream Iceberg/Delta snapshot tables or orchestrate scheduled small-file Parquet compaction.

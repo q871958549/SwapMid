@@ -312,6 +312,14 @@ namespace SwapMid.Migrations
                     b.Property<int>("SnapshotStatus")
                         .HasColumnType("integer");
 
+                    b.Property<string>("SoftDeleteColumn")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("SoftDeleteTimestampColumn")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
                     b.Property<Guid>("SourceId")
                         .HasColumnType("uuid");
 
@@ -320,6 +328,10 @@ namespace SwapMid.Migrations
 
                     b.Property<int>("TargetDeletePolicy")
                         .HasColumnType("integer");
+
+                    b.Property<string>("TargetFieldMappingsJson")
+                        .HasMaxLength(16384)
+                        .HasColumnType("character varying(16384)");
 
                     b.Property<int>("TargetMode")
                         .HasColumnType("integer");

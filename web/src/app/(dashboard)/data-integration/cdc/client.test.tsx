@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from 'next-intl'
 import zhHansMessages from '../../../../../messages/zh-Hans.json'
 import type { CdcStreamDto } from '@/lib/api/types'
 import { CdcStreamsClient } from './client'
+import { defaultCdcForm, isCdcFormValid, toCdcBody, toCdcForm } from './cdc-form-state'
 
 type ActionColumn = {
   id?: string
@@ -53,6 +54,9 @@ vi.mock('@/lib/crud/use-crud-form', () => ({
       targetSinkDestination: '',
       targetSinkKeyColumns: '',
       targetDeletePolicy: '0',
+      softDeleteColumn: '',
+      softDeleteTimestampColumn: '',
+      targetFieldMappings: [],
       schemaDriftPolicy: '0',
     },
     openEdit: mocks.openEdit,
@@ -457,5 +461,99 @@ describe('CdcStreamsClient', () => {
       }))
       expect(mocks.reloadAndRefresh).toHaveBeenCalledTimes(1)
     })
+  })
+
+  it('serializes and validates SoftDelete tombstone and field mappings in CdcFormState helpers', () => {
+    const valid = isCdcFormValid({
+      ...defaultCdcForm,
+      name: 'mirror-sd',
+      sourceId: SOURCE_ID,
+      monitoredTables: 'public.orders',
+      targetMode: '3',
+      targetSinkId: SOURCE_ID,
+      targetSinkDestination: 'public.orders_mirror',
+      targetSinkKeyColumns: 'order_id',
+      targetDeletePolicy: '2',
+      softDeleteColumn: 'is_deleted',
+      softDeleteTimestampColumn: 'deleted_at_utc',
+      targetFieldMappings: [{ sourceColumn: 'src_id', targetColumn: 'order_id' }],
+    })
+    expect(valid).toBe(true)
+
+    const missingSdCol = isCdcFormValid({
+      ...defaultCdcForm,
+      name: 'mirror-sd',
+      sourceId: SOURCE_ID,
+      monitoredTables: 'public.orders',
+      targetMode: '3',
+      targetSinkId: SOURCE_ID,
+      targetSinkDestination: 'public.orders_mirror',
+      targetSinkKeyColumns: 'order_id',
+      targetDeletePolicy: '2',
+      softDeleteColumn: '',
+    })
+    expect(missingSdCol).toBe(false)
+
+    const body = toCdcBody({
+      ...defaultCdcForm,
+      name: 'mirror-sd',
+      sourceId: SOURCE_ID,
+      monitoredTables: 'public.orders',
+      targetMode: '3',
+      targetSinkId: SOURCE_ID,
+      targetSinkDestination: 'public.orders_mirror',
+      targetSinkKeyColumns: 'order_id',
+      targetDeletePolicy: '2',
+      softDeleteColumn: 'is_deleted',
+      softDeleteTimestampColumn: 'deleted_at_utc',
+      targetFieldMappings: [{ sourceColumn: 'src_id', targetColumn: 'order_id' }],
+    })
+    expect(body.targetDeletePolicy).toBe(2)
+    expect(body.softDeleteColumn).toBe('is_deleted')
+    expect(body.softDeleteTimestampColumn).toBe('deleted_at_utc')
+    expect(body.targetFieldMappings).toEqual([{ sourceColumn: 'src_id', targetColumn: 'order_id' }])
+
+    const roundTrip = toCdcForm(makeStream({
+      targetMode: 3,
+      targetSinkId: SOURCE_ID,
+      targetSinkDestination: 'public.orders_mirror',
+      targetSinkKeyColumns: 'order_id',
+      targetDeletePolicy: 2,
+      softDeleteColumn: 'is_deleted',
+      softDeleteTimestampColumn: 'deleted_at_utc',
+      targetFieldMappings: [{ sourceColumn: 'src_id', targetColumn: 'order_id' }],
+    }))
+    expect(roundTrip.targetDeletePolicy).toBe('2')
+    expect(roundTrip.softDeleteColumn).toBe('is_deleted')
+    expect(roundTrip.targetFieldMappings).toEqual([{ sourceColumn: 'src_id', targetColumn: 'order_id' }])
+  })
+
+  it('renders Lakehouse manifest directory and latest checkpoint JSON in sink template dialog', async () => {
+    mocks.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        destination: 'orders/raw',
+        targetType: 5,
+        targetExists: true,
+        manifestDirectory: 'cdc/orders/raw/_swapmid/manifests',
+        manifestLatestKey: 'cdc/orders/raw/_swapmid/latest.json',
+        latestManifestJson: '{"checkpointLsn":"0/1A00","format":"parquet"}',
+        samplePayloadJson: '{"op":"insert"}',
+        columns: [],
+        summary: 'ObjectStorage parquet',
+      }),
+    })
+
+    renderClient(makeStream({
+      targetMode: 2,
+      targetSinkId: SOURCE_ID,
+      targetSinkName: 'minio-lakehouse',
+      targetSinkDestination: 'orders/raw',
+    }))
+    fireEvent.click(screen.getByRole('button', { name: '查看模板' }))
+
+    expect(await screen.findByText(/cdc\/orders\/raw\/_swapmid\/manifests/)).toBeTruthy()
+    expect(screen.getByText(/cdc\/orders\/raw\/_swapmid\/latest\.json/)).toBeTruthy()
+    expect(screen.getByText(/"checkpointLsn":"0\/1A00"/)).toBeTruthy()
   })
 })

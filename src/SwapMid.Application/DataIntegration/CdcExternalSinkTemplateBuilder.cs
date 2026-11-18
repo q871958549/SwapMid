@@ -35,6 +35,9 @@ internal static class CdcExternalSinkTemplateBuilder
 
         bool? targetExists = null;
         string? clickHouseDdl = null;
+        string? manifestDir = null;
+        string? manifestLatestKey = null;
+        string? latestManifestJson = null;
         if (targetSink.Type == DataSourceType.ClickHouse)
         {
             var cfg = ClickHouseSinkConfigContract.ParseForWrite(targetSink.Config);
@@ -63,6 +66,31 @@ internal static class CdcExternalSinkTemplateBuilder
                 }
             }
         }
+        else if (targetSink.Type == DataSourceType.ObjectStorage && !string.IsNullOrWhiteSpace(destination))
+        {
+            var cfg = ObjectStorageSinkConfigContract.ParseForWrite(targetSink.Config, requireSecretKey: false);
+            manifestDir = cfg.BuildManifestDirectory(destination);
+            manifestLatestKey = cfg.BuildLatestManifestKey(destination);
+            if (probeService != null && !string.IsNullOrWhiteSpace(cfg.SecretKey))
+            {
+                try
+                {
+                    latestManifestJson = await probeService.TryReadObjectStorageJsonAsync(
+                        cfg,
+                        manifestLatestKey,
+                        cancellationToken);
+                    targetExists = !string.IsNullOrWhiteSpace(latestManifestJson);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception)
+                {
+                    targetExists = null;
+                }
+            }
+        }
 
         var columns = BuildColumnDefinitions();
         var sampleJson = BuildSampleJson(stream, partitionKeyExpr);
@@ -76,7 +104,9 @@ internal static class CdcExternalSinkTemplateBuilder
             DataSourceType.Kafka => keyColumns.Count > 0
                 ? $"Kafka 将按主键（{string.Join(", ", keyColumns)}）构造分区 Message Key 保证同实体严格有序。"
                 : "Kafka 将投递 11 列标准 JSON 事件（建议配置分区主键列以保持实体更新有序）。",
-            DataSourceType.ObjectStorage => "对象存储将按 LSN 幂等写入 11 列 Apache Parquet RowGroup 或 JSONL 分片文件。",
+            DataSourceType.ObjectStorage => targetExists == true
+                ? "对象存储 Lakehouse 检出点索引已就绪，每次提交自动追加 11 列 Parquet/JSONL 与不可变 Manifest。"
+                : "对象存储将按 LSN 幂等写入 11 列 Apache Parquet/JSONL 分片，并同步生成 _swapmid/manifests 批次清单与 latest.json 检出点。",
             _ => "已生成标准 CDC 接收端结构模板。",
         };
 
@@ -89,6 +119,9 @@ internal static class CdcExternalSinkTemplateBuilder
             PartitionKeyExpression = partitionKeyExpr,
             Columns = columns,
             ClickHouseDdl = clickHouseDdl,
+            ManifestDirectory = manifestDir,
+            ManifestLatestKey = manifestLatestKey,
+            LatestManifestJson = latestManifestJson,
             SamplePayloadJson = sampleJson,
             Summary = summary,
         };

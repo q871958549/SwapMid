@@ -143,4 +143,79 @@ internal static class CdcMirrorValueCoercer
 
         return value;
     }
+
+    internal static object CoerceSoftDeleteFlag(
+        bool isDeleted,
+        string? targetDataType,
+        string? normalizedProvider = null)
+    {
+        var dt = targetDataType?.Trim().ToLowerInvariant() ?? string.Empty;
+        if (dt.Contains("char", StringComparison.Ordinal) || dt.Contains("text", StringComparison.Ordinal))
+        {
+            return isDeleted ? "true" : "false";
+        }
+
+        if (string.Equals(normalizedProvider, "sqlite", StringComparison.OrdinalIgnoreCase))
+        {
+            return isDeleted ? 1L : 0L;
+        }
+
+        if (dt is "smallint" or "int2" or "tinyint")
+        {
+            return isDeleted ? (short)1 : (short)0;
+        }
+
+        if (dt is "integer" or "int" or "int4" or "mediumint")
+        {
+            return isDeleted ? 1 : 0;
+        }
+
+        if (dt is "bigint" or "int8")
+        {
+            return isDeleted ? 1L : 0L;
+        }
+
+        if (dt.StartsWith("numeric", StringComparison.Ordinal) || dt.StartsWith("decimal", StringComparison.Ordinal))
+        {
+            return isDeleted ? 1m : 0m;
+        }
+
+        return isDeleted;
+    }
+
+    internal static object CoerceSoftDeleteTimestamp(
+        DateTime commitTimestampUtc,
+        string? targetDataType)
+    {
+        var utc = commitTimestampUtc.Kind == DateTimeKind.Utc
+            ? commitTimestampUtc
+            : DateTime.SpecifyKind(commitTimestampUtc, DateTimeKind.Utc);
+        var truncatedTicks = utc.Ticks - (utc.Ticks % TimeSpan.TicksPerMillisecond);
+        var alignedUtc = new DateTime(truncatedTicks, DateTimeKind.Utc);
+        var dt = targetDataType?.Trim().ToLowerInvariant() ?? string.Empty;
+
+        if (dt == "datetimeoffset")
+        {
+            return new DateTimeOffset(alignedUtc);
+        }
+
+        if (dt is "bigint" or "int8")
+        {
+            return new DateTimeOffset(alignedUtc).ToUnixTimeMilliseconds();
+        }
+
+        if (dt.Contains("char", StringComparison.Ordinal) || dt.Contains("text", StringComparison.Ordinal))
+        {
+            return alignedUtc.ToString("O", CultureInfo.InvariantCulture);
+        }
+
+        if ((dt.StartsWith("timestamp", StringComparison.Ordinal) &&
+             !dt.Contains("with time zone", StringComparison.Ordinal)) ||
+            dt is "datetime" or "datetime2" or "smalldatetime")
+        {
+            return DateTime.SpecifyKind(alignedUtc, DateTimeKind.Unspecified);
+        }
+
+        return alignedUtc;
+    }
 }

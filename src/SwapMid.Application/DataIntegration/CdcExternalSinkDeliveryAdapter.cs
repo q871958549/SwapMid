@@ -80,10 +80,28 @@ internal static class CdcExternalSinkDeliveryAdapter
             Mode = EtlWriteMode.Append,
         };
 
-        var endLsnText = idempotencyKeyOverride ?? batchEndLsn?.ToString() ?? changes[^1].Lsn;
-        var runId = CdcProtocolHelpers.BuildDeterministicPipelineRunId(stream.Id, endLsnText);
         var rows = BuildRows(stream, changes, eventSequenceOffset);
         var partitionKeys = BuildPartitionKeys(stream, changes);
+
+        if (targetSink.Type == DataSourceType.ObjectStorage && writer is ObjectStorageEtlSinkWriter objectStorageWriter)
+        {
+            return await CdcObjectStorageLakehouseWriter.DeliverWithManifestAsync(
+                stream,
+                targetSink,
+                destination,
+                changes,
+                batchEndLsn,
+                objectStorageWriter,
+                Columns,
+                ClrTypes,
+                rows,
+                partitionKeys,
+                cancellationToken,
+                idempotencyKeyOverride);
+        }
+
+        var endLsnText = idempotencyKeyOverride ?? batchEndLsn?.ToString() ?? changes[^1].Lsn;
+        var runId = CdcProtocolHelpers.BuildDeterministicPipelineRunId(stream.Id, endLsnText);
 
         return await writer.WriteAsync(
             stream.Id,

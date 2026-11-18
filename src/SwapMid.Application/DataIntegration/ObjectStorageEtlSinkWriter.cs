@@ -33,6 +33,16 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
 
     public DataSourceType TargetType => DataSourceType.ObjectStorage;
 
+    internal IHttpClientFactory HttpClientFactory => _httpClientFactory;
+    internal IConfiguration Configuration => _configuration;
+
+    internal sealed record UploadedObjectResult(
+        string ObjectKey,
+        long ByteSize,
+        string Sha256Hex,
+        string Format,
+        long RowCount);
+
     public async Task<long> WriteAsync(
         Guid pipelineId,
         Guid runId,
@@ -41,20 +51,52 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
         Func<Func<EtlSourceBatch, CancellationToken, Task>, CancellationToken, Task> streamBatchesAsync,
         CancellationToken cancellationToken)
     {
-        if (transform.Mode != EtlWriteMode.Append)
+        var uploaded = await WriteAndUploadCoreAsync(
+            runId,
+            target,
+            transform.Mode,
+            transform.TargetTable,
+            streamBatchesAsync,
+            cancellationToken);
+        return uploaded.RowCount;
+    }
+
+    internal async Task<UploadedObjectResult> WriteAndUploadCdcBatchAsync(
+        Guid runId,
+        DataSource target,
+        string destination,
+        Func<Func<EtlSourceBatch, CancellationToken, Task>, CancellationToken, Task> streamBatchesAsync,
+        CancellationToken cancellationToken)
+        => await WriteAndUploadCoreAsync(
+            runId,
+            target,
+            EtlWriteMode.Append,
+            destination,
+            streamBatchesAsync,
+            cancellationToken);
+
+    private async Task<UploadedObjectResult> WriteAndUploadCoreAsync(
+        Guid runId,
+        DataSource target,
+        EtlWriteMode mode,
+        string destination,
+        Func<Func<EtlSourceBatch, CancellationToken, Task>, CancellationToken, Task> streamBatchesAsync,
+        CancellationToken cancellationToken)
+    {
+        if (mode != EtlWriteMode.Append)
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.PipelineExecutionInputInvalid)
                 .WithData("Reason", "对象存储目标仅支持 append 写入模式（按 RunId 幂等写入新对象）。");
         }
 
-        if (!ObjectStorageSinkConfigContract.IsValidDestinationPath(transform.TargetTable))
+        if (!ObjectStorageSinkConfigContract.IsValidDestinationPath(destination))
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.PipelineExecutionInputInvalid)
                 .WithData("Reason", "对象存储目标路径前缀格式无效或包含越界目录段。");
         }
 
         var config = ObjectStorageSinkConfigContract.ParseForWrite(target.Config, requireSecretKey: true);
-        var objectKey = config.BuildObjectKey(transform.TargetTable, runId);
+        var objectKey = config.BuildObjectKey(destination, runId);
         var objectUri = config.BuildObjectUri(objectKey);
 
         await DataIntegrationSinkEndpointPolicy.ValidateHttpEndpointAsync(
@@ -69,13 +111,14 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
                 ? await WriteJsonLinesTempFileAsync(tempPath, streamBatchesAsync, cancellationToken)
                 : await WriteParquetTempFileAsync(tempPath, streamBatchesAsync, cancellationToken);
 
-            if (totalRows == 0 || !File.Exists(tempPath) || new FileInfo(tempPath).Length == 0)
+            var fileLength = File.Exists(tempPath) ? new FileInfo(tempPath).Length : 0;
+            if (totalRows == 0 || fileLength == 0)
             {
-                return 0;
+                return new UploadedObjectResult(objectKey, 0, string.Empty, config.Format, 0);
             }
 
-            await UploadTempFileAsync(tempPath, objectUri, config, cancellationToken);
-            return totalRows;
+            var sha256Hex = await UploadTempFileAsync(tempPath, objectUri, config, cancellationToken);
+            return new UploadedObjectResult(objectKey, fileLength, sha256Hex, config.Format, totalRows);
         }
         finally
         {
@@ -174,7 +217,7 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
         return totalRows;
     }
 
-    private async Task UploadTempFileAsync(
+    private async Task<string> UploadTempFileAsync(
         string filePath,
         Uri objectUri,
         ObjectStorageSinkConfig config,
@@ -219,6 +262,8 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
                     SinkConfigContractHelpers.RedactDiagnosticText(
                         $"S3/MinIO PUT 失败 ({(int)response.StatusCode}): {err}"));
         }
+
+        return payloadHashHex;
     }
 
     private static ParquetFieldSpec[] BuildParquetFields(string[] columns, Type[] clrTypes)

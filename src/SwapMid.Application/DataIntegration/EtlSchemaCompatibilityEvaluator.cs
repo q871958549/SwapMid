@@ -13,52 +13,87 @@ internal static class EtlSchemaCompatibilityEvaluator
         EtlTransformConfig cfg,
         PipelineSchemaPreflightResultDto result)
     {
-        if (result.TargetColumns.Count == 0)
+        EvaluateMappingContract(
+            cfg.TargetTable,
+            result.SourceColumns,
+            result.TargetColumns,
+            cfg.ColumnMappings,
+            cfg.Mode == EtlWriteMode.Upsert,
+            cfg.KeyColumns,
+            cfg.WatermarkColumn,
+            systemManagedTargets: null,
+            result.Issues);
+    }
+
+    internal static void EvaluateMappingContract(
+        string targetTable,
+        List<PreflightColumnDto> sourceColumns,
+        List<PreflightColumnDto> targetColumns,
+        IReadOnlyList<EtlColumnMapping> columnMappings,
+        bool validateUpsertKeys,
+        IReadOnlyList<string> keyColumns,
+        string? watermarkColumn,
+        IReadOnlySet<string>? systemManagedTargets,
+        List<PreflightSchemaIssueDto> issues)
+    {
+        if (targetColumns.Count == 0)
         {
-            result.Issues.Add(new PreflightSchemaIssueDto
+            issues.Add(new PreflightSchemaIssueDto
             {
                 Severity = "error",
                 Code = "SwapMid:ETL:TargetTableNotFound",
-                Message = $"目标库中未找到表「{cfg.TargetTable}」或当前账号无元数据读取权限。",
+                Message = $"目标库中未找到表「{targetTable}」或当前账号无元数据读取权限。",
             });
             return;
         }
 
-        var sourceMap = result.SourceColumns
+        var sourceMap = sourceColumns
             .GroupBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
-        var targetMap = result.TargetColumns
+        var targetMap = targetColumns
             .GroupBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
-        var hasExplicitMappings = cfg.ColumnMappings.Count > 0;
+        var hasExplicitMappings = columnMappings.Count > 0;
         var mappedTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         if (hasExplicitMappings)
         {
-            EvaluateExplicitMappings(cfg, sourceMap, targetMap, mappedTargets, result.Issues);
+            EvaluateExplicitMappings(targetTable, columnMappings, sourceMap, targetMap, mappedTargets, issues);
         }
         else
         {
-            EvaluateImplicitMappings(cfg.TargetTable, result.SourceColumns, targetMap, mappedTargets, result.Issues);
+            EvaluateImplicitMappings(targetTable, sourceColumns, targetMap, mappedTargets, issues);
         }
 
-        ValidateRequiredTargets(result.TargetColumns, mappedTargets, result.Issues);
-
-        if (cfg.Mode == EtlWriteMode.Upsert)
+        if (systemManagedTargets != null)
         {
-            ValidateUpsertConfiguration(cfg, targetMap, mappedTargets, result.Issues);
+            foreach (var managed in systemManagedTargets)
+            {
+                if (targetMap.TryGetValue(managed, out var managedCol))
+                {
+                    mappedTargets.Add(managedCol.Name);
+                }
+            }
+        }
+
+        ValidateRequiredTargets(targetColumns, mappedTargets, issues);
+
+        if (validateUpsertKeys)
+        {
+            ValidateUpsertConfiguration(keyColumns, watermarkColumn, targetMap, mappedTargets, issues);
         }
     }
 
     private static void EvaluateExplicitMappings(
-        EtlTransformConfig cfg,
+        string targetTable,
+        IReadOnlyList<EtlColumnMapping> columnMappings,
         Dictionary<string, PreflightColumnDto> sourceMap,
         Dictionary<string, PreflightColumnDto> targetMap,
         HashSet<string> mappedTargets,
         List<PreflightSchemaIssueDto> issues)
     {
-        foreach (var mapping in cfg.ColumnMappings)
+        foreach (var mapping in columnMappings)
         {
             var hasSource = sourceMap.TryGetValue(mapping.SourceColumn, out var srcCol);
             var hasTarget = targetMap.TryGetValue(mapping.TargetColumn, out var tgtCol);
@@ -69,7 +104,7 @@ internal static class EtlSchemaCompatibilityEvaluator
                 {
                     Severity = "error",
                     Code = "SwapMid:ETL:MappedSourceMissing",
-                    Message = $"字段映射中的源列「{mapping.SourceColumn}」未包含在源查询投影中。",
+                    Message = $"字段映射中的源列「{mapping.SourceColumn}」未包含在源表或源查询投影中。",
                 });
             }
 
@@ -79,7 +114,7 @@ internal static class EtlSchemaCompatibilityEvaluator
                 {
                     Severity = "error",
                     Code = "SwapMid:ETL:MappedTargetMissing",
-                    Message = $"字段映射中的目标列「{mapping.TargetColumn}」在目标表「{cfg.TargetTable}」中不存在。",
+                    Message = $"字段映射中的目标列「{mapping.TargetColumn}」在目标表「{targetTable}」中不存在。",
                 });
             }
 
@@ -165,12 +200,13 @@ internal static class EtlSchemaCompatibilityEvaluator
     }
 
     private static void ValidateUpsertConfiguration(
-        EtlTransformConfig cfg,
+        IReadOnlyList<string> keyColumns,
+        string? watermarkColumn,
         Dictionary<string, PreflightColumnDto> targetMap,
         HashSet<string> mappedTargets,
         List<PreflightSchemaIssueDto> issues)
     {
-        foreach (var key in cfg.KeyColumns)
+        foreach (var key in keyColumns)
         {
             if (!mappedTargets.Contains(key))
             {
@@ -178,7 +214,7 @@ internal static class EtlSchemaCompatibilityEvaluator
                 {
                     Severity = "error",
                     Code = "SwapMid:ETL:UpsertKeyMissingInSource",
-                    Message = $"Upsert 业务主键列「{key}」未包含在源查询或目标字段映射中。",
+                    Message = $"Upsert 业务主键列「{key}」未包含在源表或目标字段映射中。",
                 });
             }
 
@@ -214,30 +250,30 @@ internal static class EtlSchemaCompatibilityEvaluator
             }
         }
 
-        var keySet = cfg.KeyColumns.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var keySet = keyColumns.ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (mappedTargets.Count(target => !keySet.Contains(target)) == 0)
         {
             issues.Add(new PreflightSchemaIssueDto
             {
                 Severity = "error",
                 Code = "SwapMid:ETL:UpsertNoUpdateColumns",
-                Message = "Upsert 除业务主键外至少需要包含 1 个待更新目标业务列。",
+                Message = "Upsert 除业务主键外至少需要包含 1 个待更新目标列。",
             });
         }
 
-        if (!string.IsNullOrWhiteSpace(cfg.WatermarkColumn) &&
-            (!mappedTargets.Contains(cfg.WatermarkColumn) || !targetMap.ContainsKey(cfg.WatermarkColumn)))
+        if (!string.IsNullOrWhiteSpace(watermarkColumn) &&
+            (!mappedTargets.Contains(watermarkColumn) || !targetMap.ContainsKey(watermarkColumn)))
         {
             issues.Add(new PreflightSchemaIssueDto
             {
                 Severity = "error",
                 Code = "SwapMid:ETL:WatermarkColumnMissing",
-                Message = $"Upsert 水位线列「{cfg.WatermarkColumn}」必须同时存在于写入映射与目标表中。",
+                Message = $"Upsert 水位线列「{watermarkColumn}」必须同时存在于写入映射与目标表中。",
             });
         }
     }
 
-    private static bool IsIncompatibleTypeFamily(string sourceType, string targetType)
+    internal static bool IsIncompatibleTypeFamily(string sourceType, string targetType)
     {
         static string Classify(string raw)
         {

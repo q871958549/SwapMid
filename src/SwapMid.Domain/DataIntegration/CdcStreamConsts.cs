@@ -14,6 +14,10 @@ public static class CdcStreamConsts
     public const int MaxTargetSinkDestinationLength = 256;
     public const int MaxTargetSinkKeyColumnsLength = 256;
     public const int MaxTargetSinkKeyColumnCount = 16;
+    public const int MaxTargetFieldMappingsJsonLength = 16384;
+    public const int MaxTargetFieldMappingCount = 256;
+    public const int MaxSoftDeleteColumnLength = 128;
+    public const int MaxSoftDeleteTimestampColumnLength = 128;
     public const int MaxCheckpointLsnLength = 32;
     public const int MaxErrorCodeLength = 64;
     public const int MaxErrorMessageLength = 2000;

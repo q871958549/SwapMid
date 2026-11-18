@@ -355,6 +355,140 @@ public sealed class PgOutputCdcPostgreSqlContractTests
         }
     }
 
+    [PostgreSqlLogicalReplicationFact]
+    public async Task CaptureBatchAsync_With_FieldMappings_And_SoftDelete_Should_Remap_And_Resurrect_In_PostgreSql()
+    {
+        var connStr = Environment.GetEnvironmentVariable(ConnectionEnvVar)
+                      ?? Environment.GetEnvironmentVariable("SWAPMID_POSTGRES_TEST_CONNECTION");
+        connStr.ShouldNotBeNullOrWhiteSpace("Missing PostgreSQL logical replication connection string.");
+
+        var suffix = Guid.NewGuid().ToString("N")[..10];
+        var srcTable = $"cdc_src_sd_{suffix}";
+        var tgtTable = $"cdc_tgt_sd_{suffix}";
+        var pubName = $"pub_sd_{suffix}";
+        var slotName = $"slot_sd_{suffix}";
+
+        await using var conn = new NpgsqlConnection(connStr);
+        await conn.OpenAsync();
+
+        // Source uses REPLICA IDENTITY DEFAULT to verify out-of-batch SoftDelete works with key-only DELETE WAL tuples.
+        await ExecuteNonQueryAsync(conn, $"""
+            CREATE TABLE public."{srcTable}" (
+                src_order_id bigint PRIMARY KEY,
+                src_customer text NOT NULL,
+                src_amount numeric(14,2) NOT NULL,
+                ignored_note text NULL
+            );
+            INSERT INTO public."{srcTable}" (src_order_id, src_customer, src_amount, ignored_note)
+            VALUES (1001, 'SeedOne', 100.00, 'drop-me'), (1002, 'SeedTwo', 200.00, 'drop-me');
+
+            CREATE TABLE public."{tgtTable}" (
+                order_id bigint PRIMARY KEY,
+                customer_code text NOT NULL,
+                total_amount numeric(14,2) NOT NULL,
+                is_deleted boolean NOT NULL DEFAULT false,
+                deleted_at_utc timestamptz NULL
+            );
+            """);
+
+        try
+        {
+            var builder = new NpgsqlConnectionStringBuilder(connStr);
+            var dsJson = $$"""{"provider":"postgresql","host":"{{builder.Host}}","port":{{builder.Port}},"database":"{{builder.Database}}","username":"{{builder.Username}}","password":"{{builder.Password}}","encrypt":false,"trustServerCertificate":true}""";
+            var pgDs = new DataSource(Guid.NewGuid(), "cdc-sd-pg", DataSourceType.RelationalDatabase, dsJson);
+
+            const string mappingsJson =
+                """[{"sourceColumn":"src_order_id","targetColumn":"order_id"},{"sourceColumn":"src_customer","targetColumn":"customer_code"},{"sourceColumn":"src_amount","targetColumn":"total_amount"}]""";
+
+            var stream = new CdcStreamDefinition(
+                Guid.NewGuid(),
+                "pg-mirror-softdelete-contract",
+                pgDs.Id,
+                pubName,
+                slotName,
+                CdcTargetMode.RelationalTable,
+                monitoredTables: $"public.{srcTable}",
+                autoCreatePublicationAndSlot: true,
+                maxBatchSize: 100,
+                targetSinkId: pgDs.Id,
+                targetSinkDestination: $"public.{tgtTable}",
+                targetSinkKeyColumns: "order_id",
+                initialSnapshotEnabled: true,
+                targetDeletePolicy: CdcDeletePolicy.SoftDelete,
+                schemaDriftPolicy: CdcSchemaDriftPolicy.Ignore,
+                targetFieldMappingsJson: mappingsJson,
+                softDeleteColumn: "is_deleted",
+                softDeleteTimestampColumn: "deleted_at_utc");
+
+            var connFactory = new EtlRelationalConnectionFactory();
+            var preflightSvc = new CdcRelationalMirrorPreflightService(connFactory);
+            var compat = await preflightSvc.EvaluateStreamAsync(pgDs, pgDs, stream, CancellationToken.None);
+            compat.Compatible.ShouldBeTrue(string.Join("; ", compat.Issues.Select(i => i.Message)));
+
+            var service = new PgOutputCdcCaptureService(
+                connFactory,
+                new RecordingIntegrationEventPublisher(),
+                null!,
+                NullLogger<PgOutputCdcCaptureService>.Instance);
+
+            var snap = await service.SnapshotAsync(pgDs, stream, pgDs, CancellationToken.None);
+            snap.SnapshotRowCount.ShouldBe(2);
+            stream.MarkSnapshotSucceeded(snap.ConsistentPointLsn, snap.SnapshotRowCount, snap.CompletedAtUtc);
+
+            // Batch 1: delete 1001, insert 1003, update 1002
+            await ExecuteNonQueryAsync(conn, $"""
+                DELETE FROM public."{srcTable}" WHERE src_order_id = 1001;
+                INSERT INTO public."{srcTable}" (src_order_id, src_customer, src_amount, ignored_note) VALUES (1003, 'CreatedThree', 300.50, 'x');
+                UPDATE public."{srcTable}" SET src_amount = 222.25 WHERE src_order_id = 1002;
+                """);
+
+            var delta1 = await service.CaptureBatchAsync(pgDs, stream, pgDs, CancellationToken.None);
+            delta1.CapturedEventCount.ShouldBe(3);
+            stream.MarkCaptureSucceeded(delta1.NewCheckpointLsn, delta1.CapturedEventCount, delta1.CapturedAtUtc);
+
+            // Batch 2: resurrect 1001 via INSERT
+            await ExecuteNonQueryAsync(conn, $"""
+                INSERT INTO public."{srcTable}" (src_order_id, src_customer, src_amount, ignored_note) VALUES (1001, 'ResurrectedOne', 150.75, 'z');
+                DELETE FROM public."{srcTable}" WHERE src_order_id = 1003;
+                """);
+
+            var delta2 = await service.CaptureBatchAsync(pgDs, stream, pgDs, CancellationToken.None);
+            delta2.CapturedEventCount.ShouldBe(2);
+
+            await using var verifyCmd = new NpgsqlCommand(
+                $"SELECT order_id, customer_code, total_amount, is_deleted, deleted_at_utc IS NOT NULL FROM public.\"{tgtTable}\" ORDER BY order_id",
+                conn);
+            await using var reader = await verifyCmd.ExecuteReaderAsync();
+            var rows = new List<(long Id, string Customer, decimal Amount, bool Deleted, bool HasDeletedAt)>();
+            while (await reader.ReadAsync())
+            {
+                rows.Add((
+                    reader.GetInt64(0),
+                    reader.GetString(1),
+                    reader.GetDecimal(2),
+                    reader.GetBoolean(3),
+                    reader.GetBoolean(4)));
+            }
+
+            rows.ShouldBe(
+            [
+                (1001L, "ResurrectedOne", 150.75m, false, false),
+                (1002L, "SeedTwo", 222.25m, false, false),
+                (1003L, "CreatedThree", 300.50m, true, true),
+            ]);
+        }
+        finally
+        {
+            await ExecuteNonQueryAsync(conn, $"""
+                SELECT CASE WHEN EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = '{slotName}')
+                    THEN pg_drop_replication_slot('{slotName}') END;
+                DROP PUBLICATION IF EXISTS "{pubName}";
+                DROP TABLE IF EXISTS public."{srcTable}";
+                DROP TABLE IF EXISTS public."{tgtTable}";
+                """);
+        }
+    }
+
     private static async Task ExecuteNonQueryAsync(NpgsqlConnection conn, string sql)
     {
         await using var cmd = new NpgsqlCommand(sql, conn);

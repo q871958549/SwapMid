@@ -26,7 +26,7 @@ public class CdcRelationalMirrorDeliveryAdapterTests
             new("public", "orders", "delete", "0/15", now, null, new Dictionary<string, object?> { ["order_id"] = 4L }),
         ];
 
-        var deleteEnabled = CdcRelationalMirrorDeliveryAdapter.CoalesceChangesByKey(
+        var deleteEnabled = CdcRelationalMirrorRowProjector.CoalesceChangesByKey(
             changes,
             ["order_id"],
             CdcDeletePolicy.DeleteRow);
@@ -41,13 +41,108 @@ public class CdcRelationalMirrorDeliveryAdapterTests
         deleteEnabled[3].IsDelete.ShouldBeTrue();
         deleteEnabled[3].KeyValues[0].ShouldBe(4L);
 
-        var deleteIgnored = CdcRelationalMirrorDeliveryAdapter.CoalesceChangesByKey(
+        var deleteIgnored = CdcRelationalMirrorRowProjector.CoalesceChangesByKey(
             changes,
             ["order_id"],
             CdcDeletePolicy.Ignore);
 
         deleteIgnored.Count.ShouldBe(3);
         deleteIgnored.ShouldAllBe(x => !x.IsDelete);
+    }
+
+    [Fact]
+    public void CoalesceChangesByKey_Should_Support_FieldMappings_And_SoftDelete_IntraBatch_Payload()
+    {
+        var now = DateTime.UtcNow;
+        IReadOnlyList<CdcFieldMappingRule> mappings =
+        [
+            new("src_order_id", "order_id"),
+            new("src_customer", "customer_code"),
+        ];
+        IReadOnlyList<PgOutputCapturedChange> changes =
+        [
+            // Intra-batch insert then delete -> retains full remapped payload for NOT NULL safety under SoftDelete
+            new("public", "orders", "insert", "0/20", now, new Dictionary<string, object?> { ["src_order_id"] = 10L, ["src_customer"] = "ACME", ["ignored_col"] = "x" }, null),
+            new("public", "orders", "delete", "0/21", now.AddSeconds(2), null, new Dictionary<string, object?> { ["src_order_id"] = 10L }),
+            // Out-of-batch delete under REPLICA IDENTITY DEFAULT -> HasFullPayload=false -> targeted tombstone UPDATE
+            new("public", "orders", "delete", "0/22", now.AddSeconds(3), null, new Dictionary<string, object?> { ["src_order_id"] = 11L }),
+            // Delete followed by resurrection insert
+            new("public", "orders", "delete", "0/23", now.AddSeconds(4), null, new Dictionary<string, object?> { ["src_order_id"] = 12L }),
+            new("public", "orders", "insert", "0/24", now.AddSeconds(5), new Dictionary<string, object?> { ["src_order_id"] = 12L, ["src_customer"] = "PHOENIX" }, null),
+        ];
+
+        var coalesced = CdcRelationalMirrorRowProjector.CoalesceChangesByKey(
+            changes,
+            ["order_id"],
+            CdcDeletePolicy.SoftDelete,
+            mappings);
+
+        coalesced.Count.ShouldBe(3);
+
+        coalesced[0].IsDelete.ShouldBeTrue();
+        coalesced[0].HasFullPayload.ShouldBeTrue();
+        coalesced[0].Data!.ContainsKey("ignored_col").ShouldBeFalse();
+        coalesced[0].Data!["customer_code"].ShouldBe("ACME");
+
+        coalesced[1].IsDelete.ShouldBeTrue();
+        coalesced[1].HasFullPayload.ShouldBeFalse();
+        coalesced[1].KeyValues[0].ShouldBe(11L);
+
+        coalesced[2].IsDelete.ShouldBeFalse();
+        coalesced[2].HasFullPayload.ShouldBeTrue();
+        coalesced[2].Data!["customer_code"].ShouldBe("PHOENIX");
+    }
+
+    [Fact]
+    public void EvaluateCompatibility_Should_Suggest_Mappings_And_Validate_SoftDelete_Contract()
+    {
+        List<PreflightColumnDto> sourceCols =
+        [
+            new() { Name = "src_order_id", DataType = "bigint", IsNullable = false },
+            new() { Name = "CustomerCode", DataType = "character varying", IsNullable = false },
+            new() { Name = "amount", DataType = "numeric", IsNullable = false },
+        ];
+        List<PreflightColumnDto> targetCols =
+        [
+            new() { Name = "order_id", DataType = "bigint", IsNullable = false, IsUniqueIndexed = true },
+            new() { Name = "customer_code", DataType = "text", IsNullable = false },
+            new() { Name = "amount", DataType = "numeric", IsNullable = false },
+            new() { Name = "is_deleted", DataType = "boolean", IsNullable = false },
+            new() { Name = "deleted_at_utc", DataType = "timestamp with time zone", IsNullable = false },
+        ];
+
+        var suggested = CdcRelationalMirrorPreflightService.BuildSuggestedMappings(sourceCols, targetCols);
+        suggested.ShouldContain(m => m.SourceColumn == "CustomerCode" && m.TargetColumn == "customer_code");
+        suggested.ShouldContain(m => m.SourceColumn == "amount" && m.TargetColumn == "amount");
+
+        var issues = new List<PreflightSchemaIssueDto>();
+        CdcRelationalMirrorPreflightService.EvaluateCompatibility(
+            "public.orders_mirror",
+            sourceCols,
+            targetCols,
+            [new("src_order_id", "order_id"), new("CustomerCode", "customer_code"), new("amount", "amount")],
+            ["order_id"],
+            CdcDeletePolicy.SoftDelete,
+            "is_deleted",
+            "deleted_at_utc",
+            issues);
+
+        issues.ShouldContain(i => i.Code == "SwapMid:ETL:SoftDeleteTimestampNotNullable" && i.Severity == "error");
+
+        targetCols[4] = new() { Name = "deleted_at_utc", DataType = "timestamp with time zone", IsNullable = true };
+        issues.Clear();
+        CdcRelationalMirrorPreflightService.EvaluateCompatibility(
+            "public.orders_mirror",
+            sourceCols,
+            targetCols,
+            [new("src_order_id", "order_id"), new("CustomerCode", "customer_code"), new("amount", "amount")],
+            ["order_id"],
+            CdcDeletePolicy.SoftDelete,
+            "is_deleted",
+            "deleted_at_utc",
+            issues);
+
+        issues.ShouldBeEmpty();
     }
 
     [Fact]

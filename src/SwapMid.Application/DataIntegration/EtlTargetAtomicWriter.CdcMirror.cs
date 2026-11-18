@@ -20,6 +20,15 @@ internal static partial class EtlTargetAtomicWriter
 {
     private const int DeleteChunkSize = 100;
 
+    internal sealed record CdcMirrorSoftDeleteSpec(
+        string FlagColumn,
+        string? TimestampColumn);
+
+    internal sealed record CdcMirrorSoftDeleteTuple(
+        object?[] KeyValues,
+        object FlagValue,
+        object? TimestampValue);
+
     internal static async Task<(long Upserted, long Deleted)> ApplyCdcMirrorAsync(
         DbConnection connection,
         EtlTargetStagingWriter.Stage? stage,
@@ -36,9 +45,11 @@ internal static partial class EtlTargetAtomicWriter
         int cleanupTimeoutSeconds,
         ILogger logger,
         EtlTargetConnectionCleanupState connectionCleanupState,
-        CancellationToken ct)
+        CancellationToken ct,
+        CdcMirrorSoftDeleteSpec? softDeleteSpec = null,
+        IReadOnlyList<CdcMirrorSoftDeleteTuple>? softDeleteTuples = null)
     {
-        if (totalUpserts <= 0 && deleteKeys.Count == 0)
+        if (totalUpserts <= 0 && deleteKeys.Count == 0 && (softDeleteTuples == null || softDeleteTuples.Count == 0))
         {
             return (0, 0);
         }
@@ -137,12 +148,26 @@ internal static partial class EtlTargetAtomicWriter
             long deletedRows = 0;
             if (deleteKeys.Count > 0)
             {
-                deletedRows = await ExecuteDeleteChunksAsync(
+                deletedRows += await ExecuteDeleteChunksAsync(
                     connection,
                     targetTransaction,
                     targetTable,
                     keyColumns,
                     deleteKeys,
+                    targetProbe,
+                    commandTimeoutSeconds,
+                    ct);
+            }
+
+            if (softDeleteSpec != null && softDeleteTuples is { Count: > 0 })
+            {
+                deletedRows += await ExecuteSoftDeleteChunksAsync(
+                    connection,
+                    targetTransaction,
+                    targetTable,
+                    keyColumns,
+                    softDeleteSpec,
+                    softDeleteTuples,
                     targetProbe,
                     commandTimeoutSeconds,
                     ct);
@@ -265,5 +290,76 @@ internal static partial class EtlTargetAtomicWriter
         }
 
         return totalDeleted;
+    }
+
+    private static async Task<long> ExecuteSoftDeleteChunksAsync(
+        DbConnection connection,
+        DbTransaction transaction,
+        string targetTable,
+        IReadOnlyList<string> keyColumns,
+        CdcMirrorSoftDeleteSpec spec,
+        IReadOnlyList<CdcMirrorSoftDeleteTuple> softDeleteTuples,
+        RelationalDataSourceConnection.Probe targetProbe,
+        int commandTimeoutSeconds,
+        CancellationToken ct)
+    {
+        var quotedTarget = RelationalDataSourceConnection.QuoteIdentifier(targetTable, targetProbe);
+        var quotedFlag = RelationalDataSourceConnection.QuoteIdentifierPart(spec.FlagColumn, targetProbe);
+        var hasTs = !string.IsNullOrWhiteSpace(spec.TimestampColumn);
+        var quotedTs = hasTs
+            ? RelationalDataSourceConnection.QuoteIdentifierPart(spec.TimestampColumn!, targetProbe)
+            : null;
+        var quotedKeys = keyColumns
+            .Select(col => RelationalDataSourceConnection.QuoteIdentifierPart(col, targetProbe))
+            .ToArray();
+
+        long totalUpdated = 0;
+        var byTimestamp = softDeleteTuples.GroupBy(t => t.TimestampValue);
+        foreach (var group in byTimestamp)
+        {
+            var items = group.ToList();
+            for (var offset = 0; offset < items.Count; offset += DeleteChunkSize)
+            {
+                var chunkCount = Math.Min(DeleteChunkSize, items.Count - offset);
+                var parameters = new DynamicParameters();
+                parameters.Add("sd_flag", EtlTargetStagingWriter.NormalizeParameterValue(items[offset].FlagValue));
+                var setClause = $"{quotedFlag} = @sd_flag";
+                if (hasTs)
+                {
+                    parameters.Add("sd_ts", EtlTargetStagingWriter.NormalizeParameterValue(group.Key));
+                    setClause += $", {quotedTs} = @sd_ts";
+                }
+
+                var predicates = new string[chunkCount];
+                for (var i = 0; i < chunkCount; i++)
+                {
+                    var rowKeys = items[offset + i].KeyValues;
+                    var terms = new string[quotedKeys.Length];
+                    for (var k = 0; k < quotedKeys.Length; k++)
+                    {
+                        var paramName = $"sd_k{i}_{k}";
+                        terms[k] = $"{quotedKeys[k]} = @{paramName}";
+                        parameters.Add(paramName, EtlTargetStagingWriter.NormalizeParameterValue(rowKeys[k]));
+                    }
+
+                    predicates[i] = $"({string.Join(" AND ", terms)})";
+                }
+
+                var updateSql = $"UPDATE {quotedTarget} SET {setClause} WHERE {string.Join(" OR ", predicates)}";
+                var affected = await connection.ExecuteAsync(
+                    new CommandDefinition(
+                        updateSql,
+                        parameters,
+                        transaction: transaction,
+                        commandTimeout: commandTimeoutSeconds,
+                        cancellationToken: ct));
+                if (affected > 0)
+                {
+                    totalUpdated += affected;
+                }
+            }
+        }
+
+        return totalUpdated;
     }
 }

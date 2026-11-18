@@ -129,4 +129,12 @@ public class CdcStreamController : SwapMidController, ICdcStreamAppService
         Guid id,
         CancellationToken cancellationToken = default)
         => _service.AcceptSchemaBaselineAsync(id, cancellationToken);
+
+    /// <summary>探测关系表行级镜像双端表结构并验证字段映射与软删除列契约</summary>
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    [HttpPost("inspect-mirror-schema")]
+    public Task<CdcMirrorSchemaInspectionDto> InspectMirrorSchemaAsync(
+        [FromBody] InspectCdcMirrorSchemaInput input,
+        CancellationToken cancellationToken = default)
+        => _service.InspectMirrorSchemaAsync(input, cancellationToken);
 }

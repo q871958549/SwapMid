@@ -180,6 +180,9 @@ public static class DataIntegrationEntityTypeConfigurations
             b.Property(x => x.TargetTopicName).HasMaxLength(CdcStreamConsts.MaxTargetTopicNameLength);
             b.Property(x => x.TargetSinkDestination).HasMaxLength(CdcStreamConsts.MaxTargetSinkDestinationLength);
             b.Property(x => x.TargetSinkKeyColumns).HasMaxLength(CdcStreamConsts.MaxTargetSinkKeyColumnsLength);
+            b.Property(x => x.TargetFieldMappingsJson).HasMaxLength(CdcStreamConsts.MaxTargetFieldMappingsJsonLength);
+            b.Property(x => x.SoftDeleteColumn).HasMaxLength(CdcStreamConsts.MaxSoftDeleteColumnLength);
+            b.Property(x => x.SoftDeleteTimestampColumn).HasMaxLength(CdcStreamConsts.MaxSoftDeleteTimestampColumnLength);
             b.Property(x => x.SchemaBaselineHash).HasMaxLength(CdcStreamConsts.MaxSchemaBaselineHashLength);
             b.Property(x => x.SchemaBaselineJson).HasMaxLength(CdcStreamConsts.MaxSchemaBaselineJsonLength);
             b.Property(x => x.SchemaDriftSummary).HasMaxLength(CdcStreamConsts.MaxSchemaDriftSummaryLength);

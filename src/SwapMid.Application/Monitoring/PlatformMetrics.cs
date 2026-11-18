@@ -121,6 +121,11 @@ public static partial class PlatformMetrics
         "PostgreSQL CDC 上游表结构漂移护栏触发与确认计数（固定低基数标签 action）",
         new CounterConfiguration { LabelNames = ["action"] });
 
+    public static readonly Counter CdcObjectStorageManifestsTotal = Metrics.CreateCounter(
+        "swapmid_cdc_object_storage_manifests_total",
+        "PostgreSQL CDC 对象存储 Lakehouse Manifest 写入计数（固定低基数标签 format）",
+        new CounterConfiguration { LabelNames = ["format"] });
+
     private static readonly string[] EtlExecutionAdmissionOutcomes =
     [
         "acquired", "busy", "idempotent_replay", "coordination_failure",
@@ -161,6 +166,7 @@ public static partial class PlatformMetrics
         PublishSingleLabelSeries(CdcCapturesTotal, ["succeeded", "failed"]);
         PublishSingleLabelSeries(CdcDeliveriesTotal, ["message_bus_topic", "data_pipeline", "kafka", "clickhouse", "object_storage", "relational_table"]);
         PublishSingleLabelSeries(CdcSchemaDriftEventsTotal, ["warn", "paused", "accepted"]);
+        PublishSingleLabelSeries(CdcObjectStorageManifestsTotal, ["parquet", "jsonl"]);
     }
 
     internal static void PublishEtlExecutionSeries(

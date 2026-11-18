@@ -58,6 +58,15 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
     /// <summary>关系型目标表镜像（RelationalTable）遇到上游 DELETE 时的处理策略。</summary>
     public CdcDeletePolicy TargetDeletePolicy { get; private set; }
 
+    /// <summary>关系型目标表镜像（RelationalTable）显式字段映射 JSON（源列到目标列）。</summary>
+    public string? TargetFieldMappingsJson { get; private set; }
+
+    /// <summary>软删除策略下的布尔或整型墓碑标记列名（如 is_deleted）。</summary>
+    public string? SoftDeleteColumn { get; private set; }
+
+    /// <summary>软删除策略下的可选删除时间戳列名（如 deleted_at_utc）。</summary>
+    public string? SoftDeleteTimestampColumn { get; private set; }
+
     /// <summary>上游监控表发生 DDL/Schema 漂移时的护栏策略。</summary>
     public CdcSchemaDriftPolicy SchemaDriftPolicy { get; private set; }
 
@@ -130,7 +139,10 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         string? targetSinkKeyColumns = null,
         bool initialSnapshotEnabled = false,
         CdcDeletePolicy targetDeletePolicy = CdcDeletePolicy.DeleteRow,
-        CdcSchemaDriftPolicy schemaDriftPolicy = CdcSchemaDriftPolicy.Ignore)
+        CdcSchemaDriftPolicy schemaDriftPolicy = CdcSchemaDriftPolicy.Ignore,
+        string? targetFieldMappingsJson = null,
+        string? softDeleteColumn = null,
+        string? softDeleteTimestampColumn = null)
         : base(id)
     {
         ApplyConfiguration(
@@ -151,7 +163,10 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             description,
             initialSnapshotEnabled,
             targetDeletePolicy,
-            schemaDriftPolicy);
+            schemaDriftPolicy,
+            targetFieldMappingsJson,
+            softDeleteColumn,
+            softDeleteTimestampColumn);
         Status = CdcStreamStatus.Draft;
         SnapshotStatus = CdcSnapshotStatus.NotStarted;
     }
@@ -174,7 +189,10 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         string? targetSinkKeyColumns = null,
         bool initialSnapshotEnabled = false,
         CdcDeletePolicy targetDeletePolicy = CdcDeletePolicy.DeleteRow,
-        CdcSchemaDriftPolicy schemaDriftPolicy = CdcSchemaDriftPolicy.Ignore)
+        CdcSchemaDriftPolicy schemaDriftPolicy = CdcSchemaDriftPolicy.Ignore,
+        string? targetFieldMappingsJson = null,
+        string? softDeleteColumn = null,
+        string? softDeleteTimestampColumn = null)
     {
         ApplyConfiguration(
             name,
@@ -194,7 +212,10 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             description,
             initialSnapshotEnabled,
             targetDeletePolicy,
-            schemaDriftPolicy);
+            schemaDriftPolicy,
+            targetFieldMappingsJson,
+            softDeleteColumn,
+            softDeleteTimestampColumn);
     }
 
     public void Activate()
@@ -353,7 +374,10 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         string? description,
         bool initialSnapshotEnabled,
         CdcDeletePolicy targetDeletePolicy,
-        CdcSchemaDriftPolicy schemaDriftPolicy)
+        CdcSchemaDriftPolicy schemaDriftPolicy,
+        string? targetFieldMappingsJson,
+        string? softDeleteColumn,
+        string? softDeleteTimestampColumn)
     {
         var normalizedMonitoredTables = string.IsNullOrWhiteSpace(monitoredTables)
             ? null
@@ -380,8 +404,26 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         MonitoredTables = normalizedMonitoredTables;
         AutoCreatePublicationAndSlot = autoCreatePublicationAndSlot;
         InitialSnapshotEnabled = initialSnapshotEnabled;
-        TargetDeletePolicy = targetDeletePolicy;
+        TargetDeletePolicy = targetMode == CdcTargetMode.RelationalTable
+            ? targetDeletePolicy
+            : CdcDeletePolicy.DeleteRow;
         SchemaDriftPolicy = schemaDriftPolicy;
+        TargetFieldMappingsJson = targetMode == CdcTargetMode.RelationalTable
+            ? CdcStreamMirrorConfigValidator.NormalizeFieldMappingsJson(targetFieldMappingsJson)
+            : null;
+        var enableSoftDelete = targetMode == CdcTargetMode.RelationalTable && TargetDeletePolicy == CdcDeletePolicy.SoftDelete;
+        SoftDeleteColumn = enableSoftDelete
+            ? CdcStreamMirrorConfigValidator.NormalizeIdentifier(
+                softDeleteColumn,
+                CdcStreamConsts.MaxSoftDeleteColumnLength,
+                nameof(softDeleteColumn))
+            : null;
+        SoftDeleteTimestampColumn = enableSoftDelete
+            ? CdcStreamMirrorConfigValidator.NormalizeIdentifier(
+                softDeleteTimestampColumn,
+                CdcStreamConsts.MaxSoftDeleteTimestampColumnLength,
+                nameof(softDeleteTimestampColumn))
+            : null;
         PollIntervalSeconds = Math.Clamp(
             pollIntervalSeconds,
             CdcStreamConsts.MinPollIntervalSeconds,
@@ -411,6 +453,14 @@ public class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         Description = string.IsNullOrWhiteSpace(description)
             ? null
             : Check.Length(description.Trim(), nameof(description), CdcStreamConsts.MaxDescriptionLength);
+
+        CdcStreamMirrorConfigValidator.ValidateMirrorColumns(
+            TargetMode,
+            TargetSinkKeyColumns,
+            TargetFieldMappingsJson,
+            TargetDeletePolicy,
+            SoftDeleteColumn,
+            SoftDeleteTimestampColumn);
     }
 
     private static string Truncate(string value, int maxLength)

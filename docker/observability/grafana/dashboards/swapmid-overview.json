@@ -142,6 +142,30 @@
           "refId": "A"
         }
       ]
+    },
+    {
+      "id": 9,
+      "title": "DataIntegration — CDC Capture P95 Duration (s), Schema Drift & Lakehouse Manifests",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "swapmid-prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(swapmid_cdc_capture_duration_seconds_bucket[5m])))",
+          "legendFormat": "capture p95 (s)",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (action) (rate(swapmid_cdc_schema_drift_events_total[5m]))",
+          "legendFormat": "schema_drift:{{action}}",
+          "refId": "B"
+        },
+        {
+          "expr": "sum by (format) (rate(swapmid_cdc_object_storage_manifests_total[5m]))",
+          "legendFormat": "lakehouse_manifest:{{format}}",
+          "refId": "C"
+        }
+      ]
     }
   ],
   "refresh": "15s",

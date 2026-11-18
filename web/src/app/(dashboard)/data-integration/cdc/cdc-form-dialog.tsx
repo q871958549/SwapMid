@@ -8,161 +8,21 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import type { CdcStreamDto, DataPipelineDto, DataSourceDto, MessageTopicDto } from '@/lib/api/types'
+import type { CdcStreamDto } from '@/lib/api/types'
 import type { useCrudForm } from '@/lib/crud/use-crud-form'
-
-export type CdcSourceOption = Pick<DataSourceDto, 'id' | 'name' | 'type' | 'config'>
-export type CdcPipelineOption = Pick<DataPipelineDto, 'id' | 'name'>
-export type CdcTopicOption = Pick<MessageTopicDto, 'id' | 'name'>
-
-export interface CdcFormState {
-  name: string
-  description: string
-  sourceId: string
-  publicationName: string
-  slotName: string
-  monitoredTables: string
-  autoCreatePublicationAndSlot: boolean
-  initialSnapshotEnabled: boolean
-  pollIntervalSeconds: string
-  maxBatchSize: string
-  targetMode: '0' | '1' | '2' | '3'
-  targetTopicName: string
-  targetPipelineId: string
-  targetSinkId: string
-  targetSinkDestination: string
-  targetSinkKeyColumns: string
-  targetDeletePolicy: '0' | '1'
-  schemaDriftPolicy: '0' | '1' | '2'
-}
-
-export const DEFAULT_CDC_TOPIC = 'integration.cdc.events'
-
-export const defaultCdcForm: CdcFormState = {
-  name: '',
-  description: '',
-  sourceId: '',
-  publicationName: 'swapmid_cdc_pub',
-  slotName: 'swapmid_cdc_slot',
-  monitoredTables: '',
-  autoCreatePublicationAndSlot: true,
-  initialSnapshotEnabled: false,
-  pollIntervalSeconds: '15',
-  maxBatchSize: '500',
-  targetMode: '0',
-  targetTopicName: DEFAULT_CDC_TOPIC,
-  targetPipelineId: '',
-  targetSinkId: '',
-  targetSinkDestination: '',
-  targetSinkKeyColumns: '',
-  targetDeletePolicy: '0',
-  schemaDriftPolicy: '0',
-}
-
-function normalizeTargetMode(mode: number | undefined): '0' | '1' | '2' | '3' {
-  if (Number(mode) === 1) return '1'
-  if (Number(mode) === 2) return '2'
-  if (Number(mode) === 3) return '3'
-  return '0'
-}
-
-function normalizeDeletePolicy(policy: number | undefined): '0' | '1' {
-  return Number(policy) === 1 ? '1' : '0'
-}
-
-function normalizeDriftPolicy(policy: number | undefined): '0' | '1' | '2' {
-  if (Number(policy) === 1) return '1'
-  if (Number(policy) === 2) return '2'
-  return '0'
-}
-
-export function toCdcForm(item: CdcStreamDto): CdcFormState {
-  return {
-    name: item.name,
-    description: item.description ?? '',
-    sourceId: item.sourceId,
-    publicationName: item.publicationName,
-    slotName: item.slotName,
-    monitoredTables: item.monitoredTables ?? '',
-    autoCreatePublicationAndSlot: item.autoCreatePublicationAndSlot,
-    initialSnapshotEnabled: item.initialSnapshotEnabled ?? false,
-    pollIntervalSeconds: String(item.pollIntervalSeconds || 15),
-    maxBatchSize: String(item.maxBatchSize || 500),
-    targetMode: normalizeTargetMode(item.targetMode),
-    targetTopicName: item.targetTopicName ?? DEFAULT_CDC_TOPIC,
-    targetPipelineId: item.targetPipelineId ?? '',
-    targetSinkId: item.targetSinkId ?? '',
-    targetSinkDestination: item.targetSinkDestination ?? '',
-    targetSinkKeyColumns: item.targetSinkKeyColumns ?? '',
-    targetDeletePolicy: normalizeDeletePolicy(item.targetDeletePolicy),
-    schemaDriftPolicy: normalizeDriftPolicy(item.schemaDriftPolicy),
-  }
-}
-
-export function toCdcBody(form: CdcFormState) {
-  const poll = Number.parseInt(form.pollIntervalSeconds, 10)
-  const batch = Number.parseInt(form.maxBatchSize, 10)
-  const rawMode = Number(form.targetMode)
-  const mode = rawMode === 1 || rawMode === 2 || rawMode === 3 ? rawMode : 0
-  const usesSinkTarget = mode === 2 || mode === 3
-  return {
-    name: form.name.trim(),
-    description: form.description.trim() || null,
-    sourceId: form.sourceId,
-    publicationName: form.publicationName.trim(),
-    slotName: form.slotName.trim(),
-    monitoredTables: form.monitoredTables.trim() || null,
-    autoCreatePublicationAndSlot: form.autoCreatePublicationAndSlot,
-    initialSnapshotEnabled: form.initialSnapshotEnabled,
-    pollIntervalSeconds: Number.isFinite(poll) ? poll : 15,
-    maxBatchSize: Number.isFinite(batch) ? batch : 500,
-    targetMode: mode,
-    targetTopicName: mode === 0 ? (form.targetTopicName.trim() || null) : null,
-    targetPipelineId: mode === 1 ? (form.targetPipelineId || null) : null,
-    targetSinkId: usesSinkTarget ? (form.targetSinkId || null) : null,
-    targetSinkDestination: usesSinkTarget ? (form.targetSinkDestination.trim() || null) : null,
-    targetSinkKeyColumns: usesSinkTarget ? (form.targetSinkKeyColumns.trim() || null) : null,
-    targetDeletePolicy: mode === 3 && form.targetDeletePolicy === '1' ? 1 : 0,
-    schemaDriftPolicy: Number(form.schemaDriftPolicy) === 1 ? 1 : (Number(form.schemaDriftPolicy) === 2 ? 2 : 0),
-  }
-}
-
-export function isCdcFormValid(form: CdcFormState): boolean {
-  if (!form.name.trim() || !form.sourceId || !form.publicationName.trim() || !form.slotName.trim()) {
-    return false
-  }
-  const poll = Number.parseInt(form.pollIntervalSeconds, 10)
-  const batch = Number.parseInt(form.maxBatchSize, 10)
-  if (!Number.isFinite(poll) || poll < 5 || poll > 3600) return false
-  if (!Number.isFinite(batch) || batch < 1 || batch > 5000) return false
-  if (form.targetMode === '0') {
-    return form.targetTopicName.trim().length > 0
-  }
-  if (form.targetMode === '1') {
-    return form.targetPipelineId.trim().length > 0
-  }
-  if (form.targetMode === '3') {
-    const tables = form.monitoredTables.split(/[,;\r\n]/).map(s => s.trim()).filter(Boolean)
-    return tables.length === 1
-      && form.targetSinkId.trim().length > 0
-      && form.targetSinkDestination.trim().length > 0
-      && form.targetSinkKeyColumns.trim().length > 0
-  }
-  return form.targetSinkId.trim().length > 0 && form.targetSinkDestination.trim().length > 0
-}
-
-function getSinkTypeTag(type: number): string {
-  switch (type) {
-    case 3:
-      return 'Kafka'
-    case 4:
-      return 'ClickHouse'
-    case 5:
-      return 'S3/MinIO'
-    default:
-      return 'Sink'
-  }
-}
+import {
+  type CdcFormState,
+  type CdcPipelineOption,
+  type CdcSourceOption,
+  type CdcTopicOption,
+  DEFAULT_CDC_TOPIC,
+  getSinkTypeTag,
+  isCdcFormValid,
+  normalizeDeletePolicy,
+  normalizeDriftPolicy,
+  normalizeTargetMode,
+} from './cdc-form-state'
+import { CdcRelationalMirrorSection } from './cdc-relational-mirror-section'
 
 export function CdcFormDialog({
   crud,
@@ -204,7 +64,7 @@ export function CdcFormDialog({
     <CrudFormDialog
       crud={crud}
       title={{ create: t('createTitle'), edit: t('editTitle') }}
-      contentClassName="sm:max-w-xl"
+      contentClassName="sm:max-w-2xl"
       canSubmit={isCdcFormValid(crud.form)}
     >
       <div className="grid grid-cols-2 gap-3">
@@ -434,17 +294,20 @@ export function CdcFormDialog({
             <Label>{t('targetDeletePolicyFieldLabel')}</Label>
             <Select
               value={crud.form.targetDeletePolicy ?? '0'}
-              onValueChange={v => crud.set({ targetDeletePolicy: v === '1' ? '1' : '0' })}
+              onValueChange={v => crud.set({ targetDeletePolicy: normalizeDeletePolicy(Number(v)) })}
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="0">{t('deletePolicyDeleteRow')}</SelectItem>
                 <SelectItem value="1">{t('deletePolicyIgnore')}</SelectItem>
+                <SelectItem value="2">{t('deletePolicySoftDelete')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         )}
       </div>
+
+      {crud.form.targetMode === '3' && <CdcRelationalMirrorSection crud={crud} />}
 
       <div className="space-y-1.5">
         <Label>{tc('description')}</Label>

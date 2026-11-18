@@ -28,6 +28,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     private readonly ICdcScheduleSynchronizer _scheduleSynchronizer;
     private readonly DataIntegrationSinkProbeService? _sinkProbeService;
     private readonly INotificationService? _notificationService;
+    private readonly CdcRelationalMirrorPreflightService? _mirrorPreflightService;
 
     public CdcStreamAppService(
         ICdcStreamRepository streamRepository,
@@ -37,7 +38,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         CdcStreamCaptureCoordinator captureCoordinator,
         ICdcScheduleSynchronizer? scheduleSynchronizer = null,
         DataIntegrationSinkProbeService? sinkProbeService = null,
-        INotificationService? notificationService = null)
+        INotificationService? notificationService = null,
+        CdcRelationalMirrorPreflightService? mirrorPreflightService = null)
     {
         _streamRepository = streamRepository;
         _sourceRepository = sourceRepository;
@@ -47,6 +49,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         _scheduleSynchronizer = scheduleSynchronizer ?? NullCdcScheduleSynchronizer.Instance;
         _sinkProbeService = sinkProbeService;
         _notificationService = notificationService;
+        _mirrorPreflightService = mirrorPreflightService;
     }
 
     private static readonly IReadOnlyDictionary<string, string> SortingWhitelist =
@@ -155,7 +158,10 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             normalized.TargetSinkKeyColumns,
             input.InitialSnapshotEnabled,
             input.TargetDeletePolicy,
-            input.SchemaDriftPolicy);
+            input.SchemaDriftPolicy,
+            normalized.TargetFieldMappingsJson,
+            normalized.SoftDeleteColumn,
+            normalized.SoftDeleteTimestampColumn);
 
         await _streamRepository.InsertAsync(stream, autoSave: true);
         return await EnrichDtoAsync(stream);
@@ -194,7 +200,10 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             normalized.TargetSinkKeyColumns,
             input.InitialSnapshotEnabled,
             input.TargetDeletePolicy,
-            input.SchemaDriftPolicy);
+            input.SchemaDriftPolicy,
+            normalized.TargetFieldMappingsJson,
+            normalized.SoftDeleteColumn,
+            normalized.SoftDeleteTimestampColumn);
 
         await _streamRepository.UpdateAsync(stream, autoSave: true);
         await _scheduleSynchronizer.SyncAsync(stream.Id, stream.Status, stream.PollIntervalSeconds);
@@ -213,6 +222,23 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     }
 
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    public async Task<CdcMirrorSchemaInspectionDto> InspectMirrorSchemaAsync(
+        InspectCdcMirrorSchemaInput input,
+        CancellationToken cancellationToken = default)
+    {
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
+            base.CurrentTenant.Id,
+            SwapMidPermissions.DataIntegration.CdcStreams.Manage);
+
+        var preflight = _mirrorPreflightService
+            ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
+                .WithData("Reason", "关系表镜像结构预检服务未启用。");
+        var source = await _sourceRepository.GetAsync(input.SourceId, cancellationToken: cancellationToken);
+        var target = await _sourceRepository.GetAsync(input.TargetSinkId, cancellationToken: cancellationToken);
+        return await preflight.InspectAsync(source, target, input, cancellationToken);
+    }
+
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
     public async Task<CdcPreflightResultDto> PreflightAsync(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -223,7 +249,13 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
 
         var stream = await _streamRepository.GetAsync(id, cancellationToken: cancellationToken);
         var source = await _sourceRepository.GetAsync(stream.SourceId, cancellationToken: cancellationToken);
-        return await _captureService.PreflightAsync(source, stream, cancellationToken);
+        return await CdcStreamMappingHelpers.BuildPreflightWithMirrorCheckAsync(
+            _captureService,
+            _mirrorPreflightService,
+            _sourceRepository,
+            source,
+            stream,
+            cancellationToken);
     }
 
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
@@ -236,7 +268,13 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         var stream = await _streamRepository.GetAsync(id, cancellationToken: cancellationToken);
         var source = await _sourceRepository.GetAsync(stream.SourceId, cancellationToken: cancellationToken);
 
-        var preflight = await _captureService.PreflightAsync(source, stream, cancellationToken);
+        var preflight = await CdcStreamMappingHelpers.BuildPreflightWithMirrorCheckAsync(
+            _captureService,
+            _mirrorPreflightService,
+            _sourceRepository,
+            source,
+            stream,
+            cancellationToken);
         if (!preflight.IsReady)
         {
             var reason = string.Join("；", preflight.Diagnostics);
@@ -351,14 +389,12 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             base.CurrentTenant.Id,
             SwapMidPermissions.DataIntegration.CdcStreams.Default);
 
-        var stream = await _streamRepository.GetAsync(id, cancellationToken: cancellationToken);
-        if (stream.TargetMode != CdcTargetMode.ExternalSink || !stream.TargetSinkId.HasValue)
-        {
-            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-                .WithData("Reason", "仅外部接收端（ExternalSink）模式的 CDC 流支持生成接收端结构与 DDL 模板。");
-        }
-
-        var sink = await _sourceRepository.GetAsync(stream.TargetSinkId.Value, cancellationToken: cancellationToken);
+        var (stream, sink) = await CdcStreamMappingHelpers.LoadExternalSinkContextAsync(
+            id,
+            "仅外部接收端（ExternalSink）模式的 CDC 流支持生成接收端结构与 DDL 模板。",
+            _streamRepository,
+            _sourceRepository,
+            cancellationToken);
         return await CdcExternalSinkTemplateBuilder.BuildAsync(stream, sink, _sinkProbeService, cancellationToken);
     }
 
@@ -384,14 +420,12 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             base.CurrentTenant.Id,
             SwapMidPermissions.DataIntegration.CdcStreams.Manage);
 
-        var stream = await _streamRepository.GetAsync(id, cancellationToken: cancellationToken);
-        if (stream.TargetMode != CdcTargetMode.ExternalSink || !stream.TargetSinkId.HasValue)
-        {
-            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-                .WithData("Reason", "仅外部接收端（ExternalSink）模式的 CDC 流支持自动初始化下游目标表。");
-        }
-
-        var sink = await _sourceRepository.GetAsync(stream.TargetSinkId.Value, cancellationToken: cancellationToken);
+        var (stream, sink) = await CdcStreamMappingHelpers.LoadExternalSinkContextAsync(
+            id,
+            "仅外部接收端（ExternalSink）模式的 CDC 流支持自动初始化下游目标表。",
+            _streamRepository,
+            _sourceRepository,
+            cancellationToken);
         return await CdcExternalSinkTemplateBuilder.ProvisionClickHouseAsync(stream, sink, _sinkProbeService, cancellationToken);
     }
 
@@ -418,30 +452,14 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         await _streamRepository.UpdateAsync(stream, autoSave: true, cancellationToken: cancellationToken);
         PlatformMetrics.CdcSchemaDriftEventsTotal.WithLabels("accepted").Inc();
 
-        if (hadDrift && _notificationService != null)
+        if (hadDrift)
         {
-            try
-            {
-                await _notificationService.SendAsync(
-                    new NotificationSendRequest
-                    {
-                        Title = $"CDC 流「{stream.Name}」Schema 漂移已人工确认恢复",
-                        Content = $"已将最新 Schema 指纹（{eval.CurrentHash[..12]}）记录为新基线，可在控制台恢复或激活捕获。",
-                        Level = NotificationLevel.Info,
-                        Source = NotificationSources.DataIntegration,
-                        ActionPath = "/data-integration/cdc",
-                        ActionLabel = "查看 CDC 流",
-                        RecoveryOfTitle = $"CDC 流「{stream.Name}」上游 Schema 漂移已自动暂停",
-                    },
-                    cancellationToken);
-            }
-            catch (Exception notifyEx)
-            {
-                Logger.LogWarning(
-                    "CDC Schema 确认恢复通知发送失败 streamId={StreamId} exceptionType={Type}",
-                    stream.Id,
-                    notifyEx.GetType().FullName ?? notifyEx.GetType().Name);
-            }
+            await CdcStreamMappingHelpers.NotifySchemaAcceptedAsync(
+                stream,
+                eval.CurrentHash,
+                _notificationService,
+                Logger,
+                cancellationToken);
         }
 
         return new CdcAcceptSchemaResultDto

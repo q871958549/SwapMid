@@ -29,6 +29,17 @@ public class DataIntegrationSinkProbeService : ITransientDependency
         _configuration = configuration;
     }
 
+    internal Task<string?> TryReadObjectStorageJsonAsync(
+        ObjectStorageSinkConfig config,
+        string objectKey,
+        CancellationToken cancellationToken)
+        => CdcObjectStorageLakehouseWriter.TryGetObjectStorageJsonAsync(
+            _httpClientFactory,
+            _configuration,
+            config,
+            objectKey,
+            cancellationToken);
+
     internal async Task<TestConnectionResultDto> TestConnectionAsync(
         DataSourceType type,
         string normalizedConfigJson,

@@ -137,6 +137,38 @@ export function CdcPreflightDialog({
               </div>
             )}
 
+            {state.result.mirrorCompatibility && (
+              <div className="space-y-2 rounded-md border bg-muted/30 p-3 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium">{t('mirrorCompatTitle')}</span>
+                  <StatusBadge tone={state.result.mirrorCompatibility.compatible ? 'success' : 'danger'}>
+                    {state.result.mirrorCompatibility.compatible
+                      ? t('mirrorCompatibleBadge')
+                      : t('mirrorIncompatibleBadge')}
+                  </StatusBadge>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 font-mono text-muted-foreground">
+                  <span>{state.result.mirrorCompatibility.targetProvider || '-'}</span>
+                  <span>·</span>
+                  <span>{state.result.mirrorCompatibility.canonicalTargetTable || '-'}</span>
+                  <span>·</span>
+                  <span>{`${state.result.mirrorCompatibility.sourceColumnCount ?? 0} -> ${state.result.mirrorCompatibility.targetColumnCount ?? 0}`}</span>
+                </div>
+                {state.result.mirrorCompatibility.issues && state.result.mirrorCompatibility.issues.length > 0 && (
+                  <ul className="list-disc space-y-1 pl-4">
+                    {state.result.mirrorCompatibility.issues.map((issue, idx) => (
+                      <li
+                        key={`${issue.code ?? 'compat'}-${idx}`}
+                        className={issue.severity === 'error' ? 'text-destructive' : 'text-warning'}
+                      >
+                        {issue.message}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
             {state.result.diagnostics && state.result.diagnostics.length > 0 && (
               <div className="space-y-1.5 rounded-md border border-warning/35 bg-warning-soft p-3 text-xs text-warning">
                 <div className="flex items-center gap-1.5 font-medium">
@@ -344,6 +376,32 @@ export function CdcSinkTemplateDialog({
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {(state.template.manifestDirectory || state.template.manifestLatestKey || state.template.latestManifestJson) && (
+              <div className="space-y-2 rounded-md border bg-muted/20 p-3 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium">{t('lakehouseManifestTitle')}</span>
+                  <StatusBadge tone={state.template.latestManifestJson ? 'success' : 'neutral'}>
+                    {state.template.latestManifestJson ? t('lakehouseLatestFound') : t('lakehouseLatestEmpty')}
+                  </StatusBadge>
+                </div>
+                {state.template.manifestDirectory && (
+                  <div className="font-mono text-muted-foreground break-all">
+                    {`Manifests: ${state.template.manifestDirectory}`}
+                  </div>
+                )}
+                {state.template.manifestLatestKey && (
+                  <div className="font-mono text-muted-foreground break-all">
+                    {`Latest: ${state.template.manifestLatestKey}`}
+                  </div>
+                )}
+                {state.template.latestManifestJson && (
+                  <pre className="max-h-52 overflow-auto rounded-md border bg-background p-2.5 font-mono text-xs">
+                    {state.template.latestManifestJson}
+                  </pre>
+                )}
               </div>
             )}
 

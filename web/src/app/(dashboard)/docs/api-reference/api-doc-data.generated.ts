@@ -3413,8 +3413,43 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetDeletePolicy",
                 "cnName": "",
                 "type": "CdcDeletePolicy",
-                "description": "取值：0=DeleteRow；1=Ignore",
+                "description": "取值：0=DeleteRow；1=Ignore；2=SoftDelete",
                 "nullable": false
+              },
+              {
+                "name": "targetFieldMappings",
+                "cnName": "",
+                "type": "CdcFieldMappingDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetFieldMappings[].sourceColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "targetFieldMappings[].targetColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "softDeleteColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "softDeleteTimestampColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
               },
               {
                 "name": "schemaDriftPolicy",
@@ -3673,7 +3708,42 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetDeletePolicy",
                 "cnName": "",
                 "type": "CdcDeletePolicy",
-                "description": "取值：0=DeleteRow；1=Ignore",
+                "description": "取值：0=DeleteRow；1=Ignore；2=SoftDelete",
+                "required": false
+              },
+              {
+                "name": "targetFieldMappings",
+                "cnName": "",
+                "type": "CdcFieldMappingDto[]",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "targetFieldMappings[].sourceColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "targetFieldMappings[].targetColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "softDeleteColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "softDeleteTimestampColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
                 "required": false
               },
               {
@@ -3836,8 +3906,43 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetDeletePolicy",
                 "cnName": "",
                 "type": "CdcDeletePolicy",
-                "description": "取值：0=DeleteRow；1=Ignore",
+                "description": "取值：0=DeleteRow；1=Ignore；2=SoftDelete",
                 "nullable": false
+              },
+              {
+                "name": "targetFieldMappings",
+                "cnName": "",
+                "type": "CdcFieldMappingDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetFieldMappings[].sourceColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "targetFieldMappings[].targetColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "softDeleteColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "softDeleteTimestampColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
               },
               {
                 "name": "schemaDriftPolicy",
@@ -4140,8 +4245,43 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetDeletePolicy",
                 "cnName": "",
                 "type": "CdcDeletePolicy",
-                "description": "取值：0=DeleteRow；1=Ignore",
+                "description": "取值：0=DeleteRow；1=Ignore；2=SoftDelete",
                 "nullable": false
+              },
+              {
+                "name": "targetFieldMappings",
+                "cnName": "",
+                "type": "CdcFieldMappingDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetFieldMappings[].sourceColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "targetFieldMappings[].targetColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "softDeleteColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "softDeleteTimestampColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
               },
               {
                 "name": "schemaDriftPolicy",
@@ -4409,7 +4549,42 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetDeletePolicy",
                 "cnName": "",
                 "type": "CdcDeletePolicy",
-                "description": "取值：0=DeleteRow；1=Ignore",
+                "description": "取值：0=DeleteRow；1=Ignore；2=SoftDelete",
+                "required": false
+              },
+              {
+                "name": "targetFieldMappings",
+                "cnName": "",
+                "type": "CdcFieldMappingDto[]",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "targetFieldMappings[].sourceColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "targetFieldMappings[].targetColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "softDeleteColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "softDeleteTimestampColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
                 "required": false
               },
               {
@@ -4572,8 +4747,43 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetDeletePolicy",
                 "cnName": "",
                 "type": "CdcDeletePolicy",
-                "description": "取值：0=DeleteRow；1=Ignore",
+                "description": "取值：0=DeleteRow；1=Ignore；2=SoftDelete",
                 "nullable": false
+              },
+              {
+                "name": "targetFieldMappings",
+                "cnName": "",
+                "type": "CdcFieldMappingDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetFieldMappings[].sourceColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "targetFieldMappings[].targetColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "softDeleteColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "softDeleteTimestampColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
               },
               {
                 "name": "schemaDriftPolicy",
@@ -5026,8 +5236,43 @@ export const API_MODULES: ApiModule[] = [
                 "name": "targetDeletePolicy",
                 "cnName": "",
                 "type": "CdcDeletePolicy",
-                "description": "取值：0=DeleteRow；1=Ignore",
+                "description": "取值：0=DeleteRow；1=Ignore；2=SoftDelete",
                 "nullable": false
+              },
+              {
+                "name": "targetFieldMappings",
+                "cnName": "",
+                "type": "CdcFieldMappingDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetFieldMappings[].sourceColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "targetFieldMappings[].targetColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "softDeleteColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "softDeleteTimestampColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
               },
               {
                 "name": "schemaDriftPolicy",
@@ -5366,6 +5611,62 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "mirrorCompatibility",
+                "cnName": "",
+                "type": "CdcMirrorCompatibilityDto",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "mirrorCompatibility.compatible",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "mirrorCompatibility.targetProvider",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "mirrorCompatibility.canonicalTargetTable",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "mirrorCompatibility.sourceColumnCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "mirrorCompatibility.targetColumnCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "mirrorCompatibility.mappedColumnCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "mirrorCompatibility.issues",
+                "cnName": "",
+                "type": "PreflightSchemaIssueDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "diagnostics",
                 "cnName": "",
                 "type": "string[]",
@@ -5475,6 +5776,27 @@ export const API_MODULES: ApiModule[] = [
               },
               {
                 "name": "clickHouseDdl",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "manifestDirectory",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "manifestLatestKey",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "latestManifestJson",
                 "cnName": "",
                 "type": "string",
                 "description": "",
@@ -5596,6 +5918,27 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "manifestDirectory",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "manifestLatestKey",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "latestManifestJson",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "samplePayloadJson",
                 "cnName": "",
                 "type": "string",
@@ -5673,6 +6016,275 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "string",
                 "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/cdc-streams/inspect-mirror-schema",
+            "summary": "探测关系表行级镜像双端表结构并验证字段映射与软删除列契约",
+            "summaryDocumented": true,
+            "requestBody": [
+              {
+                "name": "sourceId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "monitoredTables",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "targetSinkId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "targetSinkDestination",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "targetSinkKeyColumns",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "targetDeletePolicy",
+                "cnName": "",
+                "type": "CdcDeletePolicy",
+                "description": "取值：0=DeleteRow；1=Ignore；2=SoftDelete",
+                "required": false
+              },
+              {
+                "name": "softDeleteColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "softDeleteTimestampColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "targetFieldMappings",
+                "cnName": "",
+                "type": "CdcFieldMappingDto[]",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "targetFieldMappings[].sourceColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "targetFieldMappings[].targetColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": true
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "compatible",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "sourceProvider",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetProvider",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "canonicalSourceTable",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "canonicalTargetTable",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "sourceColumns",
+                "cnName": "",
+                "type": "PreflightColumnDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "sourceColumns[].name",
+                "cnName": "",
+                "type": "string",
+                "description": "列名。",
+                "nullable": true
+              },
+              {
+                "name": "sourceColumns[].dataType",
+                "cnName": "",
+                "type": "string",
+                "description": "数据库类型或 CLR 类型描述。",
+                "nullable": true
+              },
+              {
+                "name": "sourceColumns[].isNullable",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否允许空值。",
+                "nullable": false
+              },
+              {
+                "name": "sourceColumns[].isPrimaryKey",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否为主键列。",
+                "nullable": false
+              },
+              {
+                "name": "sourceColumns[].isUniqueIndexed",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否受非过滤唯一索引或主键覆盖。",
+                "nullable": false
+              },
+              {
+                "name": "sourceColumns[].hasDefaultOrIdentity",
+                "cnName": "",
+                "type": "boolean",
+                "description": "目标列是否定义了默认值或自增计算。",
+                "nullable": false
+              },
+              {
+                "name": "targetColumns",
+                "cnName": "",
+                "type": "PreflightColumnDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetColumns[].name",
+                "cnName": "",
+                "type": "string",
+                "description": "列名。",
+                "nullable": true
+              },
+              {
+                "name": "targetColumns[].dataType",
+                "cnName": "",
+                "type": "string",
+                "description": "数据库类型或 CLR 类型描述。",
+                "nullable": true
+              },
+              {
+                "name": "targetColumns[].isNullable",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否允许空值。",
+                "nullable": false
+              },
+              {
+                "name": "targetColumns[].isPrimaryKey",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否为主键列。",
+                "nullable": false
+              },
+              {
+                "name": "targetColumns[].isUniqueIndexed",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否受非过滤唯一索引或主键覆盖。",
+                "nullable": false
+              },
+              {
+                "name": "targetColumns[].hasDefaultOrIdentity",
+                "cnName": "",
+                "type": "boolean",
+                "description": "目标列是否定义了默认值或自增计算。",
+                "nullable": false
+              },
+              {
+                "name": "suggestedMappings",
+                "cnName": "",
+                "type": "CdcFieldMappingDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "suggestedMappings[].sourceColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "suggestedMappings[].targetColumn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "issues",
+                "cnName": "",
+                "type": "PreflightSchemaIssueDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "issues[].severity",
+                "cnName": "",
+                "type": "string",
+                "description": "严重级别：error 或 warning。",
+                "nullable": true
+              },
+              {
+                "name": "issues[].code",
+                "cnName": "",
+                "type": "string",
+                "description": "稳定诊断代码。",
+                "nullable": true
+              },
+              {
+                "name": "issues[].message",
+                "cnName": "",
+                "type": "string",
+                "description": "面向操作员的诊断说明（不含敏感连接串或驱动原文）。",
                 "nullable": true
               }
             ]

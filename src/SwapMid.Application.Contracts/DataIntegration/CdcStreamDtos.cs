@@ -27,6 +27,9 @@ public class CdcStreamDto : FullAuditedEntityDto<Guid>
     public string? TargetSinkDestination { get; set; }
     public string? TargetSinkKeyColumns { get; set; }
     public CdcDeletePolicy TargetDeletePolicy { get; set; }
+    public List<CdcFieldMappingDto> TargetFieldMappings { get; set; } = new();
+    public string? SoftDeleteColumn { get; set; }
+    public string? SoftDeleteTimestampColumn { get; set; }
     public CdcSchemaDriftPolicy SchemaDriftPolicy { get; set; }
     public string? SchemaBaselineHash { get; set; }
     public bool SchemaDriftDetected { get; set; }
@@ -93,6 +96,14 @@ public class CdcStreamCreateUpdateDto
 
     public CdcDeletePolicy TargetDeletePolicy { get; set; } = CdcDeletePolicy.DeleteRow;
 
+    public List<CdcFieldMappingDto>? TargetFieldMappings { get; set; }
+
+    [StringLength(128)]
+    public string? SoftDeleteColumn { get; set; }
+
+    [StringLength(128)]
+    public string? SoftDeleteTimestampColumn { get; set; }
+
     public CdcSchemaDriftPolicy SchemaDriftPolicy { get; set; } = CdcSchemaDriftPolicy.Ignore;
 
     public bool InitialSnapshotEnabled { get; set; }
@@ -128,6 +139,7 @@ public class CdcPreflightResultDto
     public bool SchemaDriftDetected { get; set; }
     public string? SchemaDriftSummary { get; set; }
     public string? CurrentSchemaHash { get; set; }
+    public CdcMirrorCompatibilityDto? MirrorCompatibility { get; set; }
     public List<string> Diagnostics { get; set; } = new();
     public string Summary { get; set; } = null!;
 }
@@ -175,6 +187,9 @@ public class CdcSinkTemplateDto
     public string? PartitionKeyExpression { get; set; }
     public List<CdcSinkColumnTemplateDto> Columns { get; set; } = new();
     public string? ClickHouseDdl { get; set; }
+    public string? ManifestDirectory { get; set; }
+    public string? ManifestLatestKey { get; set; }
+    public string? LatestManifestJson { get; set; }
     public string SamplePayloadJson { get; set; } = null!;
     public string Summary { get; set; } = null!;
 }
@@ -196,4 +211,68 @@ public class CdcAcceptSchemaResultDto
     public string SchemaBaselineHash { get; set; } = null!;
     public DateTime AcceptedAtUtc { get; set; }
     public string Message { get; set; } = null!;
+}
+
+public class CdcFieldMappingDto
+{
+    [Required]
+    [StringLength(128)]
+    public string SourceColumn { get; set; } = null!;
+
+    [Required]
+    [StringLength(128)]
+    public string TargetColumn { get; set; } = null!;
+}
+
+public class CdcMirrorCompatibilityDto
+{
+    public bool Compatible { get; set; }
+    public string? TargetProvider { get; set; }
+    public string? CanonicalTargetTable { get; set; }
+    public int SourceColumnCount { get; set; }
+    public int TargetColumnCount { get; set; }
+    public int MappedColumnCount { get; set; }
+    public List<PreflightSchemaIssueDto> Issues { get; set; } = new();
+}
+
+public class InspectCdcMirrorSchemaInput
+{
+    [Required]
+    public Guid SourceId { get; set; }
+
+    [StringLength(2048)]
+    public string? MonitoredTables { get; set; }
+
+    [Required]
+    public Guid TargetSinkId { get; set; }
+
+    [Required]
+    [StringLength(256)]
+    public string TargetSinkDestination { get; set; } = null!;
+
+    [StringLength(256)]
+    public string? TargetSinkKeyColumns { get; set; }
+
+    public CdcDeletePolicy TargetDeletePolicy { get; set; } = CdcDeletePolicy.DeleteRow;
+
+    [StringLength(128)]
+    public string? SoftDeleteColumn { get; set; }
+
+    [StringLength(128)]
+    public string? SoftDeleteTimestampColumn { get; set; }
+
+    public List<CdcFieldMappingDto>? TargetFieldMappings { get; set; }
+}
+
+public class CdcMirrorSchemaInspectionDto
+{
+    public bool Compatible { get; set; }
+    public string SourceProvider { get; set; } = "postgresql";
+    public string? TargetProvider { get; set; }
+    public string? CanonicalSourceTable { get; set; }
+    public string? CanonicalTargetTable { get; set; }
+    public List<PreflightColumnDto> SourceColumns { get; set; } = new();
+    public List<PreflightColumnDto> TargetColumns { get; set; } = new();
+    public List<CdcFieldMappingDto> SuggestedMappings { get; set; } = new();
+    public List<PreflightSchemaIssueDto> Issues { get; set; } = new();
 }

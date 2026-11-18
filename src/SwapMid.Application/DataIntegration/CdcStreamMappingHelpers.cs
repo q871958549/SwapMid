@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using SwapMid.Notification;
 using SwapMid.SharedKernel.IntegrationEvents;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
@@ -18,7 +22,10 @@ internal sealed record NormalizedCdcStreamInput(
     Guid? TargetPipelineId,
     Guid? TargetSinkId,
     string? TargetSinkDestination,
-    string? TargetSinkKeyColumns);
+    string? TargetSinkKeyColumns,
+    string? TargetFieldMappingsJson,
+    string? SoftDeleteColumn,
+    string? SoftDeleteTimestampColumn);
 
 /// <summary>
 /// <see cref="CdcStreamAppService"/> 的输入规范化与 DTO 映射辅助类。
@@ -164,6 +171,35 @@ internal static class CdcStreamMappingHelpers
                 .WithData("Reason", "不支持的 CDC 下游投递模式。");
         }
 
+        string? targetFieldMappingsJson = null;
+        string? softDeleteColumn = null;
+        string? softDeleteTimestampColumn = null;
+        if (input.TargetMode == CdcTargetMode.RelationalTable)
+        {
+            if (input.TargetFieldMappings is { Count: > 0 })
+            {
+                var rawMappingsJson = JsonSerializer.Serialize(input.TargetFieldMappings);
+                targetFieldMappingsJson = CdcStreamMirrorConfigValidator.NormalizeFieldMappingsJson(rawMappingsJson);
+            }
+
+            softDeleteColumn = CdcStreamMirrorConfigValidator.NormalizeIdentifier(
+                input.SoftDeleteColumn,
+                CdcStreamConsts.MaxSoftDeleteColumnLength,
+                nameof(input.SoftDeleteColumn));
+            softDeleteTimestampColumn = CdcStreamMirrorConfigValidator.NormalizeIdentifier(
+                input.SoftDeleteTimestampColumn,
+                CdcStreamConsts.MaxSoftDeleteTimestampColumnLength,
+                nameof(input.SoftDeleteTimestampColumn));
+
+            CdcStreamMirrorConfigValidator.ValidateMirrorColumns(
+                input.TargetMode,
+                sinkKeyColumns,
+                targetFieldMappingsJson,
+                input.TargetDeletePolicy,
+                softDeleteColumn,
+                softDeleteTimestampColumn);
+        }
+
         return new NormalizedCdcStreamInput(
             name,
             pub,
@@ -173,7 +209,113 @@ internal static class CdcStreamMappingHelpers
             pipelineId,
             sinkId,
             sinkDestination,
-            sinkKeyColumns);
+            sinkKeyColumns,
+            targetFieldMappingsJson,
+            softDeleteColumn,
+            softDeleteTimestampColumn);
+    }
+
+    internal static async Task<CdcPreflightResultDto> BuildPreflightWithMirrorCheckAsync(
+        PgOutputCdcCaptureService captureService,
+        CdcRelationalMirrorPreflightService? mirrorPreflightService,
+        IRepository<DataSource, Guid> sourceRepository,
+        DataSource source,
+        CdcStreamDefinition stream,
+        CancellationToken cancellationToken)
+    {
+        var preflight = await captureService.PreflightAsync(source, stream, cancellationToken);
+        if (stream.TargetMode != CdcTargetMode.RelationalTable ||
+            !stream.TargetSinkId.HasValue ||
+            mirrorPreflightService == null)
+        {
+            return preflight;
+        }
+
+        var targetSink = await sourceRepository.FindAsync(
+            stream.TargetSinkId.Value,
+            includeDetails: false,
+            cancellationToken: cancellationToken);
+        if (targetSink == null)
+        {
+            preflight.IsReady = false;
+            preflight.Diagnostics.Add($"目标关系数据源（{stream.TargetSinkId.Value}）不存在。");
+            return preflight;
+        }
+
+        var compatibility = await mirrorPreflightService.EvaluateStreamAsync(
+            source,
+            targetSink,
+            stream,
+            cancellationToken);
+        preflight.MirrorCompatibility = compatibility;
+        if (!compatibility.Compatible)
+        {
+            preflight.IsReady = false;
+        }
+
+        foreach (var issue in compatibility.Issues)
+        {
+            var prefix = string.Equals(issue.Severity, "error", StringComparison.OrdinalIgnoreCase)
+                ? "[镜像兼容错误]"
+                : "[镜像兼容告警]";
+            preflight.Diagnostics.Add($"{prefix} {issue.Message}");
+        }
+
+        return preflight;
+    }
+
+    internal static async Task<(CdcStreamDefinition Stream, DataSource Sink)> LoadExternalSinkContextAsync(
+        Guid streamId,
+        string reasonMessage,
+        ICdcStreamRepository streamRepository,
+        IRepository<DataSource, Guid> sourceRepository,
+        CancellationToken cancellationToken)
+    {
+        var stream = await streamRepository.GetAsync(streamId, cancellationToken: cancellationToken);
+        if (stream.TargetMode != CdcTargetMode.ExternalSink || !stream.TargetSinkId.HasValue)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", reasonMessage);
+        }
+
+        var sink = await sourceRepository.GetAsync(stream.TargetSinkId.Value, cancellationToken: cancellationToken);
+        return (stream, sink);
+    }
+
+    internal static async Task NotifySchemaAcceptedAsync(
+        CdcStreamDefinition stream,
+        string baselineHash,
+        INotificationService? notificationService,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        if (notificationService == null)
+        {
+            return;
+        }
+
+        try
+        {
+            await notificationService.SendAsync(
+                new NotificationSendRequest
+                {
+                    Title = $"CDC 流「{stream.Name}」Schema 漂移已人工确认恢复",
+                    Content = $"已将最新 Schema 指纹（{baselineHash[..12]}）记录为新基线，可在控制台恢复或激活捕获。",
+                    Level = NotificationLevel.Info,
+                    Source = NotificationSources.DataIntegration,
+                    ActionPath = "/data-integration/cdc",
+                    ActionLabel = "查看 CDC 流",
+                    RecoveryOfTitle = $"CDC 流「{stream.Name}」上游 Schema 漂移已自动暂停",
+                },
+                cancellationToken);
+        }
+        catch (Exception notifyEx)
+        {
+            logger.LogWarning(
+                "CDC Schema 确认恢复通知发送失败 streamId={StreamId} exceptionType={Type}",
+                stream.Id,
+                notifyEx.GetType().FullName ?? notifyEx.GetType().Name);
+        }
     }
 
     internal static CdcStreamDto MapToDto(
@@ -210,6 +352,15 @@ internal static class CdcStreamMappingHelpers
         TargetSinkDestination = stream.TargetSinkDestination,
         TargetSinkKeyColumns = stream.TargetSinkKeyColumns,
         TargetDeletePolicy = stream.TargetDeletePolicy,
+        TargetFieldMappings = CdcStreamMirrorConfigValidator.ParseFieldMappings(stream.TargetFieldMappingsJson)
+            .Select(m => new CdcFieldMappingDto
+            {
+                SourceColumn = m.SourceColumn,
+                TargetColumn = m.TargetColumn,
+            })
+            .ToList(),
+        SoftDeleteColumn = stream.SoftDeleteColumn,
+        SoftDeleteTimestampColumn = stream.SoftDeleteTimestampColumn,
         SchemaDriftPolicy = stream.SchemaDriftPolicy,
         SchemaBaselineHash = stream.SchemaBaselineHash,
         SchemaDriftDetected = stream.SchemaDriftDetected,

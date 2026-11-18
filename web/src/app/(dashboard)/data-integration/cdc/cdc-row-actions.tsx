@@ -76,6 +76,8 @@ export function CdcTargetCell({ stream }: { stream: CdcStreamDto }) {
     const modeLabel = mode === CDC_TARGET_RELATIONAL
       ? t('targetModeRelationalTable')
       : t('targetModeExternalSink')
+    const mappingCount = stream.targetFieldMappings?.length ?? 0
+    const isSoftDelete = mode === CDC_TARGET_RELATIONAL && Number(stream.targetDeletePolicy) === 2
     return (
       <div className="space-y-0.5 text-xs">
         <div className="font-medium">{modeLabel}</div>
@@ -85,6 +87,20 @@ export function CdcTargetCell({ stream }: { stream: CdcStreamDto }) {
         {stream.targetSinkKeyColumns && (
           <div className="font-mono text-[11px] text-muted-foreground">
             {`Key: ${stream.targetSinkKeyColumns}`}
+          </div>
+        )}
+        {(isSoftDelete || mappingCount > 0) && (
+          <div className="flex flex-wrap gap-1 pt-0.5">
+            {isSoftDelete && (
+              <StatusBadge tone="info">
+                {t('softDeleteCellBadge', { col: stream.softDeleteColumn || 'is_deleted' })}
+              </StatusBadge>
+            )}
+            {mappingCount > 0 && (
+              <StatusBadge tone="neutral">
+                {t('fieldMappingsCellBadge', { count: mappingCount })}
+              </StatusBadge>
+            )}
           </div>
         )}
       </div>

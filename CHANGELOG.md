@@ -4,6 +4,17 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-11-18
+
+### Added
+- **Configurable CDC Field-Level Remapping & Soft-Delete Tombstones (`CdcTargetMode.RelationalTable = 3` / `DataIntegration` / `web/`)**:
+  - Extended `CdcStreamDefinition` with `TargetFieldMappingsJson` (explicit `SourceColumn -> TargetColumn` rules, up to 256 pairs), `CdcDeletePolicy.SoftDelete = 2`, `SoftDeleteColumn` (required flag column), and `SoftDeleteTimestampColumn` (optional nullable timestamp column), backed by EF Core migration `AddCdcFieldMappingsAndSoftDelete`.
+  - Implemented `CdcRelationalMirrorRowProjector` and `EtlTargetAtomicWriter.ExecuteSoftDeleteChunksAsync`: normal/snapshot/resurrection events clear tombstones (`SoftDeleteColumn = false/0`, `SoftDeleteTimestampColumn = NULL`), out-of-batch `DELETE` events update target tombstone flags safely under both `REPLICA IDENTITY DEFAULT` and `FULL` without overwriting existing columns, and intra-batch `Insert/Update -> Delete` preserves full payload into staging `Upsert` so `NOT NULL` target columns never fail.
+  - Added dual-source/target schema inspection & compatibility validator (`CdcRelationalMirrorPreflightService`, `POST /api/v1/cdc-streams/inspect-mirror-schema`, wired into `PreflightAsync` & `ActivateAsync`), modularized the CDC Next.js console (`cdc-form-state.ts`, `cdc-relational-mirror-section.tsx`, `use-cdc-stream-actions.ts`, shared `@/lib/etl-column-mapping.ts`), and added interactive **探测映射 / Inspect** + **Auto Match** controls across `zh-Hans`, `zh-Hant`, and `en`.
+- **Object-Store CDC Lakehouse Manifest & Checkpoint Index (`CdcTargetMode.ExternalSink = 2` / `DataIntegration` / `Observability`)**:
+  - Implemented `CdcObjectStorageLakehouseWriter`: after each Parquet or JSONL CDC data object PUT succeeds on `ObjectStorage` (`S3` / `MinIO`), idempotently writes an immutable per-batch manifest `{prefix}/{dest}/_swapmid/manifests/{lsnToken}_{runId}.json` (`StartLsn`, `EndLsn`, `OpCounts`, `TableCounts`, `Sha256Hex`, `SchemaBaselineHash`) and a bounded sliding-window checkpoint index `{prefix}/{dest}/_swapmid/latest.json` (max `100` recent files), instrumented by `swapmid_cdc_object_storage_manifests_total{format}`.
+  - Surfaced live `_swapmid/latest.json` probe status (`ManifestDirectory`, `ManifestLatestKey`, `LatestManifestJson`) inside `GetSinkTemplateAsync` and `CdcSinkTemplateDialog`, added Grafana Overview Panel 9 (Capture P95 Duration, Schema Drift Rate, and Lakehouse Manifest Rate), and enriched MCP `diagnose_cdc_streams` with monitored tables, poll cadence, mapping counts, soft-delete columns, and `mirrorCompatibility`.
+
 ## [1.7.0] - 2026-11-17
 
 ### Added

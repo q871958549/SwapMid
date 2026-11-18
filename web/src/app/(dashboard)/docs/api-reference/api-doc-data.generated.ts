@@ -110,7 +110,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "config",
                 "cnName": "",
                 "type": "string",
-                "description": "可公开回显的配置 JSON。关系型只包含\r\nprovider/host/port/database/username/targetResourceGroup/encrypt/trustServerCertificate 白名单字段；\r\nREST API 与文件类型固定返回空对象，绝不透传存储原文。",
+                "description": "可公开回显的配置 JSON。关系型只包含\nprovider/host/port/database/username/targetResourceGroup/encrypt/trustServerCertificate 白名单字段；\nREST API 与文件类型固定返回空对象，绝不透传存储原文。",
                 "nullable": true
               },
               {
@@ -188,7 +188,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "config",
                 "cnName": "",
                 "type": "string",
-                "description": "完整连接配置 JSON。关系型更新仅在连接目标与 TLS 姿态不变时允许省略 password；\r\nREST API/文件类型的存量配置不可回显，更新时必须重新提交完整非空对象。",
+                "description": "完整连接配置 JSON。关系型更新仅在连接目标与 TLS 姿态不变时允许省略 password；\nREST API/文件类型的存量配置不可回显，更新时必须重新提交完整非空对象。",
                 "required": true
               },
               {
@@ -232,7 +232,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "config",
                 "cnName": "",
                 "type": "string",
-                "description": "可公开回显的配置 JSON。关系型只包含\r\nprovider/host/port/database/username/targetResourceGroup/encrypt/trustServerCertificate 白名单字段；\r\nREST API 与文件类型固定返回空对象，绝不透传存储原文。",
+                "description": "可公开回显的配置 JSON。关系型只包含\nprovider/host/port/database/username/targetResourceGroup/encrypt/trustServerCertificate 白名单字段；\nREST API 与文件类型固定返回空对象，绝不透传存储原文。",
                 "nullable": true
               },
               {
@@ -326,7 +326,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "config",
                 "cnName": "",
                 "type": "string",
-                "description": "可公开回显的配置 JSON。关系型只包含\r\nprovider/host/port/database/username/targetResourceGroup/encrypt/trustServerCertificate 白名单字段；\r\nREST API 与文件类型固定返回空对象，绝不透传存储原文。",
+                "description": "可公开回显的配置 JSON。关系型只包含\nprovider/host/port/database/username/targetResourceGroup/encrypt/trustServerCertificate 白名单字段；\nREST API 与文件类型固定返回空对象，绝不透传存储原文。",
                 "nullable": true
               },
               {
@@ -413,7 +413,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "config",
                 "cnName": "",
                 "type": "string",
-                "description": "完整连接配置 JSON。关系型更新仅在连接目标与 TLS 姿态不变时允许省略 password；\r\nREST API/文件类型的存量配置不可回显，更新时必须重新提交完整非空对象。",
+                "description": "完整连接配置 JSON。关系型更新仅在连接目标与 TLS 姿态不变时允许省略 password；\nREST API/文件类型的存量配置不可回显，更新时必须重新提交完整非空对象。",
                 "required": true
               },
               {
@@ -457,7 +457,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "config",
                 "cnName": "",
                 "type": "string",
-                "description": "可公开回显的配置 JSON。关系型只包含\r\nprovider/host/port/database/username/targetResourceGroup/encrypt/trustServerCertificate 白名单字段；\r\nREST API 与文件类型固定返回空对象，绝不透传存储原文。",
+                "description": "可公开回显的配置 JSON。关系型只包含\nprovider/host/port/database/username/targetResourceGroup/encrypt/trustServerCertificate 白名单字段；\nREST API 与文件类型固定返回空对象，绝不透传存储原文。",
                 "nullable": true
               },
               {
@@ -545,7 +545,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "config",
                 "cnName": "",
                 "type": "string",
-                "description": "待测试的完整连接配置 JSON；按已保存数据源测试时，只有连接目标与 TLS 姿态不变\r\n才允许省略关系型 password。",
+                "description": "待测试的完整连接配置 JSON；按已保存数据源测试时，只有连接目标与 TLS 姿态不变\n才允许省略关系型 password。",
                 "required": true
               }
             ],
@@ -590,7 +590,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "config",
                 "cnName": "",
                 "type": "string",
-                "description": "待测试的完整连接配置 JSON；按已保存数据源测试时，只有连接目标与 TLS 姿态不变\r\n才允许省略关系型 password。",
+                "description": "待测试的完整连接配置 JSON；按已保存数据源测试时，只有连接目标与 TLS 姿态不变\n才允许省略关系型 password。",
                 "required": true
               }
             ],
@@ -2477,7 +2477,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "evidenceReference",
                 "cnName": "",
                 "type": "string",
-                "description": "结构化证据引用。仅允许 incident:/change:/work-order:/dba-evidence: 前缀，\r\n后接 8–128 位 ASCII 字母数字、短横线或下划线组成的不透明编号；不得粘贴 URL、SQL、\r\n连接串、令牌或密钥。示例：incident:INC-2026-ETL-0001。",
+                "description": "结构化证据引用。仅允许 incident:/change:/work-order:/dba-evidence: 前缀，\n后接 8–128 位 ASCII 字母数字、短横线或下划线组成的不透明编号；不得粘贴 URL、SQL、\n连接串、令牌或密钥。示例：incident:INC-2026-ETL-0001。",
                 "required": true
               }
             ],
@@ -2741,7 +2741,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "verificationNote",
                 "cnName": "",
                 "type": "string",
-                "description": "新客户端应提交结构化核验证据引用：incident:/change:/work-order:/dba-evidence:\r\n前缀后接 8–128 位不透明编号。为兼容已发布客户端，HTTP 契约仍接收旧 8–512\r\n字符说明；服务端不会保存旧说明正文，而会替换为不可逆的安全占位引用。\r\n不得粘贴 URL、SQL、连接串、令牌或密钥。",
+                "description": "新客户端应提交结构化核验证据引用：incident:/change:/work-order:/dba-evidence:\n前缀后接 8–128 位不透明编号。为兼容已发布客户端，HTTP 契约仍接收旧 8–512\n字符说明；服务端不会保存旧说明正文，而会替换为不可逆的安全占位引用。\n不得粘贴 URL、SQL、连接串、令牌或密钥。",
                 "required": true
               }
             ],
@@ -8134,7 +8134,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "ids",
                 "cnName": "",
                 "type": "Guid[]",
-                "description": "实体 Id 列表。上限见 SwapMid.SharedKernel.BatchOperationLimits.MaxIdsPerRequest——**超限整批拒绝**\r\n（400），不截断：静默只处理前 N 个会让用户以为全做完了，是比报错糟得多的失败形态。",
+                "description": "实体 Id 列表。上限见 SwapMid.SharedKernel.BatchOperationLimits.MaxIdsPerRequest——**超限整批拒绝**\n（400），不截断：静默只处理前 N 个会让用户以为全做完了，是比报错糟得多的失败形态。",
                 "required": true
               }
             ],
@@ -11700,7 +11700,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "ids",
                 "cnName": "",
                 "type": "Guid[]",
-                "description": "实体 Id 列表。上限见 SwapMid.SharedKernel.BatchOperationLimits.MaxIdsPerRequest——**超限整批拒绝**\r\n（400），不截断：静默只处理前 N 个会让用户以为全做完了，是比报错糟得多的失败形态。",
+                "description": "实体 Id 列表。上限见 SwapMid.SharedKernel.BatchOperationLimits.MaxIdsPerRequest——**超限整批拒绝**\n（400），不截断：静默只处理前 N 个会让用户以为全做完了，是比报错糟得多的失败形态。",
                 "required": true
               }
             ],
@@ -12798,7 +12798,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "ids",
                 "cnName": "",
                 "type": "Guid[]",
-                "description": "实体 Id 列表。上限见 SwapMid.SharedKernel.BatchOperationLimits.MaxIdsPerRequest——**超限整批拒绝**\r\n（400），不截断：静默只处理前 N 个会让用户以为全做完了，是比报错糟得多的失败形态。",
+                "description": "实体 Id 列表。上限见 SwapMid.SharedKernel.BatchOperationLimits.MaxIdsPerRequest——**超限整批拒绝**\n（400），不截断：静默只处理前 N 个会让用户以为全做完了，是比报错糟得多的失败形态。",
                 "required": true
               }
             ],
@@ -14176,7 +14176,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "ids",
                 "cnName": "",
                 "type": "Guid[]",
-                "description": "实体 Id 列表。上限见 SwapMid.SharedKernel.BatchOperationLimits.MaxIdsPerRequest——**超限整批拒绝**\r\n（400），不截断：静默只处理前 N 个会让用户以为全做完了，是比报错糟得多的失败形态。",
+                "description": "实体 Id 列表。上限见 SwapMid.SharedKernel.BatchOperationLimits.MaxIdsPerRequest——**超限整批拒绝**\n（400），不截断：静默只处理前 N 个会让用户以为全做完了，是比报错糟得多的失败形态。",
                 "required": true
               }
             ],
@@ -14221,14 +14221,14 @@ export const API_MODULES: ApiModule[] = [
                 "name": "ids",
                 "cnName": "",
                 "type": "Guid[]",
-                "description": "员工 Id 列表（语义同 SwapMid.EnterpriseManagement.BatchIdsInput.Ids）。\r\n            上限同 SwapMid.SharedKernel.BatchOperationLimits.MaxIdsPerRequest（超限整批 400 拒绝，不截断）。\r\n            要覆盖全员规模请改用 SwapMid.EnterpriseManagement.BulkGenerateAccountsInput——那条按条件在服务端查询，\r\n            不受任何 id 列表长度限制，正是「批量上限」这类约束该留的正门。",
+                "description": "员工 Id 列表（语义同 SwapMid.EnterpriseManagement.BatchIdsInput.Ids）。\n            上限同 SwapMid.SharedKernel.BatchOperationLimits.MaxIdsPerRequest（超限整批 400 拒绝，不截断）。\n            要覆盖全员规模请改用 SwapMid.EnterpriseManagement.BulkGenerateAccountsInput——那条按条件在服务端查询，\n            不受任何 id 列表长度限制，正是「批量上限」这类约束该留的正门。",
                 "required": true
               },
               {
                 "name": "roleNames",
                 "cnName": "",
                 "type": "string[]",
-                "description": "批量开通时追加授予的角色名（可选；null/空=沿用现行为，仅授予默认角色）。\r\n            语义与 SwapMid.EnterpriseManagement.BulkGenerateAccountsInput.RoleNames 完全一致：\r\n            追加于默认角色之上（并集，不替换），重复项幂等去重；含不存在的角色名整批前置拒绝（零账号创建）。\r\n            非空时要求调用者另持账号域「分配角色」权限（AccountManagement.Users.Update），且系统内置角色（isStatic，如 admin）不可授予。",
+                "description": "批量开通时追加授予的角色名（可选；null/空=沿用现行为，仅授予默认角色）。\n            语义与 SwapMid.EnterpriseManagement.BulkGenerateAccountsInput.RoleNames 完全一致：\n            追加于默认角色之上（并集，不替换），重复项幂等去重；含不存在的角色名整批前置拒绝（零账号创建）。\n            非空时要求调用者另持账号域「分配角色」权限（AccountManagement.Users.Update），且系统内置角色（isStatic，如 admin）不可授予。",
                 "required": false
               }
             ],
@@ -14353,7 +14353,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "roleNames",
                 "cnName": "",
                 "type": "string[]",
-                "description": "批量开通时追加授予的角色名（可选；null/空=沿用现行为，仅授予默认角色）。\r\n            语义为在默认角色基础上\"追加\"（并集，不替换），与默认角色重复的项自动幂等去重。\r\n            全部角色名须已存在，否则整批前置拒绝（不创建任何账号），不进入逐条容错。\r\n            非空时要求调用者另持账号域「分配角色」权限（AccountManagement.Users.Update），且系统内置角色（isStatic，如 admin）不可授予。",
+                "description": "批量开通时追加授予的角色名（可选；null/空=沿用现行为，仅授予默认角色）。\n            语义为在默认角色基础上\"追加\"（并集，不替换），与默认角色重复的项自动幂等去重。\n            全部角色名须已存在，否则整批前置拒绝（不创建任何账号），不进入逐条容错。\n            非空时要求调用者另持账号域「分配角色」权限（AccountManagement.Users.Update），且系统内置角色（isStatic，如 admin）不可授予。",
                 "required": false
               }
             ],
@@ -16533,7 +16533,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "changes",
                 "cnName": "",
                 "type": "string[]",
-                "description": "变更摘要行（形如 `{roleName} +[a,b] -[c]`，已剥离固定前缀 `[RolePermissionChange] `、\r\n            行首保留角色名；通常一条 PUT 请求对应一行;若该次请求未产生实际权限变化，为空列表。\r\n            消费端按 `+[...]`/`-[...]` 括号锚点解析,勿依赖行首形态）。",
+                "description": "变更摘要行（形如 `{roleName} +[a,b] -[c]`，已剥离固定前缀 `[RolePermissionChange] `、\n            行首保留角色名；通常一条 PUT 请求对应一行;若该次请求未产生实际权限变化，为空列表。\n            消费端按 `+[...]`/`-[...]` 括号锚点解析,勿依赖行首形态）。",
                 "nullable": true
               }
             ]
@@ -18758,7 +18758,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "supportsParameterizedRun",
                 "cnName": "",
                 "type": "boolean",
-                "description": "是否已接入统一执行管道（IScheduledJobHandler），支持带参 / 演练执行——\r\n            全部受管控任务均已接入，无论启用与否都可据此「立即执行」（恒 true，字段保留供前端按接口收缩演进）。",
+                "description": "是否已接入统一执行管道（IScheduledJobHandler），支持带参 / 演练执行——\n            全部受管控任务均已接入，无论启用与否都可据此「立即执行」（恒 true，字段保留供前端按接口收缩演进）。",
                 "nullable": false
               },
               {
@@ -18814,14 +18814,14 @@ export const API_MODULES: ApiModule[] = [
                 "name": "isLongRunning",
                 "cnName": "",
                 "type": "boolean",
-                "description": "长任务（实时查外部库的报表 / 全量同步，单次数十秒到分钟级）：前端「立即执行」默认走后台入队\r\n            （RunInBackground），入队后到执行历史看进度；演练仍同步等待结果。",
+                "description": "长任务（实时查外部库的报表 / 全量同步，单次数十秒到分钟级）：前端「立即执行」默认走后台入队\n            （RunInBackground），入队后到执行历史看进度；演练仍同步等待结果。",
                 "nullable": false
               },
               {
                 "name": "mutexGroup",
                 "cnName": "",
                 "type": "string",
-                "description": "运行时互斥组；同组任务不会并发执行。空值表示仅按自身 JobKey 防止重复执行。\r\n该字段只用于发布检查与管控页解释，不提供修改入口。",
+                "description": "运行时互斥组；同组任务不会并发执行。空值表示仅按自身 JobKey 防止重复执行。\n该字段只用于发布检查与管控页解释，不提供修改入口。",
                 "nullable": true
               },
               {
@@ -18900,7 +18900,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "runInBackground",
                 "cnName": "",
                 "type": "boolean",
-                "description": "后台执行（F6）：入队立即返回（结果 Queued=true），进度与结果看执行历史——供长任务\r\n（跨库批量归档 / 全量对账同步等长耗时作业）避免顶着 HTTP 超时。\r\n仅正式模式生效：演练必须同步等结果（操作者在弹窗前等摘要与测试邮件），传 true 且 DryRun=true 时报错。",
+                "description": "后台执行（F6）：入队立即返回（结果 Queued=true），进度与结果看执行历史——供长任务\n（跨库批量归档 / 全量对账同步等长耗时作业）避免顶着 HTTP 超时。\n仅正式模式生效：演练必须同步等结果（操作者在弹窗前等摘要与测试邮件），传 true 且 DryRun=true 时报错。",
                 "required": false
               }
             ],

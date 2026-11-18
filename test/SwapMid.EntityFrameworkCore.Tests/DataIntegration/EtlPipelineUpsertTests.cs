@@ -292,13 +292,12 @@ public class EtlPipelineUpsertTests
             }
             else
             {
+                NpgsqlConnection.ClearAllPools();
                 await using var adminConn = new NpgsqlConnection(baseConnStr);
                 await adminConn.OpenAsync();
                 await adminConn.ExecuteAsync(
-                    $"""
-                    SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{dbName}';
-                    DROP DATABASE IF EXISTS "{dbName}";
-                    """);
+                    $"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{dbName}'");
+                await adminConn.ExecuteAsync($"DROP DATABASE IF EXISTS \"{dbName}\"");
             }
         }
     }

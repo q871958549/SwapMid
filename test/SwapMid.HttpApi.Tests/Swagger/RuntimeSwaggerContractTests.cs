@@ -57,12 +57,57 @@ public class RuntimeSwaggerContractTests
             "运行时 /swagger/all/swagger.json 与已提交的 docs/api/openapi.generated.json 不一致");
     }
 
-    private static string Normalize(JsonNode node) =>
-        node.ToJsonString(new JsonSerializerOptions
+    private static string Normalize(JsonNode node)
+    {
+        var clone = node.DeepClone();
+        NormalizeDocumentationNewlines(clone);
+        return clone.ToJsonString(new JsonSerializerOptions
         {
             WriteIndented = true,
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         }).Replace("\r\n", "\n");
+    }
+
+    private static void NormalizeDocumentationNewlines(
+        JsonNode? node,
+        bool literal = false,
+        string? parentKey = null)
+    {
+        if (node is JsonObject obj)
+        {
+            foreach (var key in obj.Select(kv => kv.Key).ToList())
+            {
+                var value = obj[key];
+                if (!literal &&
+                    (key == "summary" || key == "description") &&
+                    value is JsonValue jv &&
+                    jv.TryGetValue<string>(out var text))
+                {
+                    var normalized = text.Replace("\r\n", "\n").Replace('\r', '\n');
+                    if (!string.Equals(text, normalized, StringComparison.Ordinal))
+                    {
+                        obj[key] = JsonValue.Create(normalized);
+                    }
+
+                    continue;
+                }
+
+                var childLiteral = literal
+                    || key.StartsWith("x-", StringComparison.Ordinal)
+                    || key is "example" or "examples" or "default" or "enum" or "const"
+                    || (string.Equals(parentKey, "links", StringComparison.Ordinal)
+                        && key is "parameters" or "requestBody");
+                NormalizeDocumentationNewlines(value, childLiteral, key);
+            }
+        }
+        else if (node is JsonArray arr)
+        {
+            foreach (var item in arr)
+            {
+                NormalizeDocumentationNewlines(item, literal, parentKey);
+            }
+        }
+    }
 
     private static string FindRepoRoot()
     {

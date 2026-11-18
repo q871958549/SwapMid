@@ -18,7 +18,7 @@
     <PackageReference Include="Confluent.Kafka" Version="2.16.0" />
     <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="MailKit" Version="4.17.0" /><!-- SMTP 通知渠道（MailKit ≥4.16.0 / MimeKit ≥4.15.1 安全基线） -->
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.2" />
     <PackageReference Include="Microsoft.SqlServer.TransactSql.ScriptDom" Version="180.59.2" /><!-- ETL SQL Server sourceQuery AST 只读边界 -->
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.0.0" />
     <PackageReference Include="MiniExcel" Version="1.45.0" /><!-- 开发者文档·数据库表字典 Excel 导出 -->

@@ -177,8 +177,8 @@ jobs:
         run: |
           docker compose -f docker/docker-compose.yml --env-file docker/.env.example config --quiet
           GRAFANA_ADMIN_PASSWORD=ci-placeholder docker compose -f docker/docker-compose.yml -f docker/docker-compose.observability.yml --env-file docker/.env.example config --quiet
-          helm lint charts/swapmid
-          helm template swapmid charts/swapmid >/dev/null
+          helm lint charts/swapmid --set secret.existingSecret=ci-placeholder
+          helm template swapmid charts/swapmid --set secret.existingSecret=ci-placeholder >/dev/null
 
       - name: Build production container images (migrator, api, web)
         run: |

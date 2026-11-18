@@ -4,6 +4,17 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-11-18
+
+### Fixed & Added (Open-Source Release & Kubernetes Readiness)
+- **Helm Chart Pod Health Probes, Singleton Lease Envs & CI Secret Validation (`charts/swapmid/`, `.github/workflows/`)**:
+  - Updated `charts/swapmid/templates/web-deployment.yaml` liveness and readiness probes from non-existent `/api/health` and `/api/ready` paths to SwapMid's live `/build-meta` probe, injected per-pod `POD_NAME` + `WEB_SINGLETON_LEASE_KEY` + `WEB_SINGLETON_LEASE_TTL_MS` + `SWAPMID_API_READY_FALLBACK_URL` required by `scripts/start-production.mjs`, and avoided multi-replica lease contention in Kubernetes.
+  - Updated `.github/workflows/ci.yml` and `.github/workflows/release.yml` to supply `--set secret.existingSecret=ci-placeholder` for `helm lint` / `helm template` validation while keeping fail-closed `required` secret enforcement in `charts/swapmid/templates/secret.yaml`.
+  - Fixed `.github/workflows/release.yml` OCI build-arg from unused `APP_RELEASE` to `RELEASE_SHA=${{ github.sha }}` so published GHCR container images carry accurate `org.opencontainers.image.revision` metadata.
+- **Public Documentation, Security Policy & Turnkey MySQL Binlog -> Delta Lake Blueprint**:
+  - Updated `README.md`, `README.zh-CN.md`, `SECURITY.md` (`2.0.x` supported baseline + private advisory URL), `.github/ISSUE_TEMPLATE/config.yml`, `.github/PULL_REQUEST_TEMPLATE.md`, and `docs/operations-and-upgrade.md` (Section `7.7` covering MySQL/MariaDB `ROW`+`FULL` binlog & Delta Lake `_delta_log` operations).
+  - Added runnable example blueprint [`examples/mysql-binlog-deltalake-cdc/`](./examples/mysql-binlog-deltalake-cdc/) and indexed it in [`examples/README.md`](./examples/README.md).
+
 ## [2.0.0] - 2026-11-18
 
 ### Added

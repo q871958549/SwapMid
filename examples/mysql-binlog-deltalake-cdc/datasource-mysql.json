@@ -1,0 +1,7 @@
+{
+  "name": "MySQL 8.4 Binlog Source",
+  "type": 0,
+  "description": "MySQL 8.4 source configured with binlog_format=ROW and binlog_row_image=FULL for CDC",
+  "isEnabled": true,
+  "config": "{\"provider\":\"MySql\",\"host\":\"mysql\",\"port\":3306,\"database\":\"swapmid_cdc\",\"targetResourceGroup\":\"demo-mysql-primary\",\"username\":\"swapmid_cdc\",\"password\":\"<SET_PASSWORD>\",\"encrypt\":false,\"trustServerCertificate\":true}"
+}

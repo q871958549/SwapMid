@@ -14,18 +14,22 @@ English | **[简体中文](README.zh-CN.md)**
 
 ## Highlights
 
-- **Streaming Data Integration, Atomic Upsert & Schema Pre-flight**
-  - Multi-source connectors across **PostgreSQL**, **SQL Server**, **MySQL**, **REST APIs**, and **CSV / Excel** files with connector capability discovery and zero-row **Schema Pre-flight** diagnostics (`POST /api/v1/data-pipelines/preflight-schema`).
+- **Heterogeneous CDC Engine, Relational Mirror & Apache Delta Lakehouse**
+  - Capture consistent snapshots and row-level changes across **PostgreSQL Logical Replication (`pgoutput`)**, **SQL Server Change Tracking (`CHANGETABLE`)**, and **MySQL / MariaDB Row-Based Binlog (`ROW` + `FULL`)**, with `WAL`/`Binlog` lag telemetry, replication pre-flight diagnostics, and automatic upstream **Schema Drift** circuit-breaking (`Ignore` / `Warn` / `PauseAndAlert`).
+  - Route CDC streams into the **Message Bus**, **Relational Table Mirrors** (`FieldMappings` + `SoftDelete` tombstones with resurrection clearing), or external **Kafka** / **ClickHouse** (`ReplacingMergeTree` auto-DDL) / **S3 & MinIO Object Storage (`Parquet`/`JSONL`)**.
+  - Emit native **Apache Delta Lake `_delta_log/{version:D20}.json`** transaction logs with S3 `If-None-Match: *` optimistic concurrency, automatic or on-demand `OPTIMIZE` small-file compaction, and ready-to-run **DuckDB `delta_scan()` / ClickHouse / Spark / Polars** analytics SQL.
+- **Streaming Data Integration, Visual Field Mapper & Atomic Upsert**
+  - Multi-source connectors across **PostgreSQL**, **SQL Server**, **MySQL**, **REST APIs**, and **CSV / Excel** files, plus **Kafka**, **ClickHouse**, and **Object Storage** sinks (`DataIntegration:Sinks` SSRF allowlist), interactive **PipelineFieldMapperPanel**, and zero-row **Schema Pre-flight** diagnostics (`POST /api/v1/data-pipelines/preflight-schema`).
   - Batch streaming execution (`append`, `truncate`, and watermark-guarded dialect-native atomic `upsert`), paired with transactional **Target Receipt v1** (`__swapmid_etl_receipt_v1`) to guarantee idempotent target writes.
 - **Durable Message Bus, CloudEvents 1.0 & Cross-Engine Outbox**
   - Automatic transactional Outbox bridge (`DataIntegration` -> `MessageBus`) emits idempotent `pipeline.execution.*` events onto `integration.pipeline.events` whenever a pipeline run finishes.
-  - Topic/subscription routing with structured filtering (`subject:<glob>`, `$.jsonPath=value`, `;`-joined `AND`), persistent delivery attempts, exponential backoff retries, and manual dead-letter replay.
+  - Topic/subscription routing with structured filtering (`subject:<glob>`, `$.jsonPath=value`, `;`-joined `AND`), persistent delivery attempts, exponential backoff retries, and set-based batch dead-letter replay (`POST /api/v1/message-records/batch-replay`).
   - Built-in **HTTP Webhook** (CNCF **CloudEvents v1.0** `ce-*` headers + `HMAC-SHA256` `X-SwapMid-Signature` + outbound SSRF guard), **RabbitMQ**, and **BotWebhook** (Generic JSON, Slack, Feishu/Lark, DingTalk, WeCom) channels.
 - **Governed API Gateway, Event Ingress & Controlled MCP Server**
   - Dynamic API groups and route forwarding (`/api/gateway/{**path}`, fail-closed by default via `ApiGateway:Enabled=false`) with DNS-rebinding-safe SSRF protection, per-client route-group ACLs, sliding-window rate limiting (`429` + `Retry-After`), and idempotent partner event ingress (`POST /api/gateway/events/{topicName}`).
-  - Opt-in RBAC-enforced **MCP Server** (`POST /api/mcp`, default `Mcp:Enabled=false`) exposing read-only diagnostics and `Draft`-only pipeline authoring for AI operators.
+  - Opt-in RBAC-enforced **MCP Server** (`POST /api/mcp`, default `Mcp:Enabled=false`) exposing 6 read-only/diagnostic/draft tools (including `diagnose_cdc_streams` and `Draft`-only pipeline authoring) with **100% `/api/v1` OpenAPI summary coverage (`192/192`)**.
 - **Zero-Browser-Token BFF Console & Optional External OIDC SSO**
-  - Next.js 16 BFF stores OAuth2 tokens exclusively in Redis behind `HttpOnly` session cookies (`swapmid_sid`), supporting both local credentials and S256 PKCE **External OIDC Federation** (`AuthServer:ExternalOidc`).
+  - Next.js `16.4.6` BFF stores OAuth2 tokens exclusively in Redis behind `HttpOnly` session cookies (`swapmid_sid`), enforces cloud-persisted table views with zero background 404s, and supports both local credentials and S256 PKCE **External OIDC Federation** (`AuthServer:ExternalOidc`).
 - **Cloud-Native Helm & Turnkey Observability**
   - Official Kubernetes Helm v3 chart ([`charts/swapmid/`](charts/swapmid/)), runnable integration blueprints ([`examples/`](examples/)), Prometheus + Grafana + Alertmanager closed-loop observability overlay ([`docker/docker-compose.observability.yml`](docker/docker-compose.observability.yml)), and [Operations & Upgrade Runbook](docs/operations-and-upgrade.md).
 
@@ -112,7 +116,7 @@ pnpm dev
 
 | Domain | Key Capabilities | Primary Paths |
 | --- | --- | --- |
-| **Data Integration** | Data sources, field mappings, streaming ETL pipelines, Cron runs, Target Receipt v1 (`__swapmid_etl_receipt_v1`) | `src/SwapMid.*/DataIntegration` · `scripts/data-integration/target-receipt-v1/` |
+| **Data Integration** | Data sources & sinks (`Kafka`/`ClickHouse`/`S3 Parquet`), visual field mapper, streaming ETL pipelines, heterogeneous CDC (`pgoutput`/`SQL Server CT`/`MySQL Binlog`), Delta Lake (`_delta_log`), Target Receipt v1 | `src/SwapMid.*/DataIntegration` · `web/src/app/(dashboard)/data-integration` |
 | **Message Bus** | Topics, subscriptions, outbox records, delivery attempts, HMAC HTTP webhooks, RabbitMQ, Bot webhooks | `src/SwapMid.*/MessageBus` · `web/src/app/(dashboard)/message-bus` |
 | **API Management** | API groups, gateway routes (`/api/gateway/*`), interactive test console, OpenIddict third-party apps | `src/SwapMid.*/ApiManagement` · `web/src/app/(dashboard)/api-management` |
 | **Scheduling** | Unified Cron job definitions, distributed execution locks, manual trigger & execution logs | `src/SwapMid.*/Scheduling` · `web/src/app/(dashboard)/system/scheduled-jobs` |
@@ -127,9 +131,9 @@ pnpm dev
 Run the same checks enforced in [CI](.github/workflows/ci.yml):
 
 ```bash
-# Backend build (zero warnings) & full test suite
-dotnet build SwapMid.slnx -c Release --warnaserror
-dotnet test SwapMid.slnx -c Release
+# Backend build (zero warnings via common.props) & full test suite
+dotnet build SwapMid.slnx -c Release --nologo
+dotnet test SwapMid.slnx -c Release --no-build --nologo
 
 # Frontend typecheck, dead-code/cycle check, ESLint + i18n audit, UI ratchet & tests
 cd web
@@ -147,7 +151,7 @@ pnpm build
 
 ## Roadmap, Contributing & Security
 
-- Architecture & long-term roadmap (`v0.2.0` -> `v1.0.0 LTS`): **[docs/roadmap.md](docs/roadmap.md)** · **[CHANGELOG.md](CHANGELOG.md)**
+- Architecture & long-term roadmap (`v0.2.0` -> `v2.0+`): **[docs/roadmap.md](docs/roadmap.md)** · **[CHANGELOG.md](CHANGELOG.md)**
 - Contribution workflow and coding standards: **[CONTRIBUTING.md](CONTRIBUTING.md)**
 - Vulnerability disclosure policy: **[SECURITY.md](SECURITY.md)**
 

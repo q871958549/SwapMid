@@ -1,6 +1,6 @@
-# SwapMid Operations & Upgrade Runbook (`v1.0 LTS`)
+# SwapMid Operations & Upgrade Runbook (`v1.0 LTS` → `v2.0+`)
 
-This runbook documents production security hardening, backup/restore procedures, zero-downtime upgrade choreography (Docker Compose & Kubernetes Helm), **Target Receipt v1** DBA reconciliation, and closed-loop observability for **SwapMid `v1.0 LTS`**.
+This runbook documents production security hardening, backup/restore procedures, zero-downtime upgrade choreography (Docker Compose & Kubernetes Helm), **Target Receipt v1** DBA reconciliation, heterogeneous CDC (`pgoutput`, SQL Server Change Tracking, MySQL Binlog), Apache Delta Lake (`_delta_log`), and closed-loop observability for **SwapMid `v1.0 LTS` through `v2.0+`**.
 
 ---
 
@@ -44,7 +44,7 @@ Before exposing SwapMid to corporate networks or partner traffic, verify all sev
 
 ## 3. Zero-Downtime Upgrade Procedure
 
-SwapMid enforces backward-compatible additive schema migrations across `v1.x` releases:
+SwapMid enforces backward-compatible additive schema migrations across `v1.x` and `v2.x` releases:
 
 ### Kubernetes (Helm `charts/swapmid/`)
 1. Review release notes in [`CHANGELOG.md`](../CHANGELOG.md).
@@ -138,3 +138,7 @@ GRAFANA_ADMIN_PASSWORD="ChangeMe_Grafana!2026" \
 6. **SQL Server Change Tracking CDC & Lakehouse Small-File Compaction (`v1.9.0+`)**:
    - Create `sourceType = 1` (`SqlServerChangeTracking`) CDC streams against SQL Server databases with database-level (`ALTER DATABASE ... SET CHANGE_TRACKING = ON`) and table-level (`ALTER TABLE ... ENABLE CHANGE_TRACKING`) tracking enabled on primary-keyed tables (optionally enabling `ALLOW_SNAPSHOT_ISOLATION ON` for lock-free baseline snapshots). No PostgreSQL `Publication` or `Replication Slot` is required. SwapMid validates `CHANGE_TRACKING_MIN_VALID_VERSION` on every capture and alerts operators via `CdcReplicationPreconditionFailed` if checkpoint retention expires.
    - For `CdcTargetMode.ExternalSink = 2` targeting `ObjectStorage` (`S3` / `MinIO`), set optional `lakehouseCompactMinFiles` (`2..100`) to automatically consolidate small Parquet/JSONL objects into `compact_{runId}.*` files and clean up superseded fragments, or trigger manual compaction via **查看模板 -> 合并分片** (`POST /api/v1/cdc-streams/{id}/compact-lakehouse`). Monitor `swapmid_cdc_lakehouse_compactions_total` and copy ready-to-run DuckDB / ClickHouse `s3()` / Spark SQL queries directly from `LakehouseQuerySql` inside **Sink Template**.
+7. **MySQL / MariaDB Row-Based Binlog CDC & Apache Delta Lake `_delta_log` Protocol (`v2.0.0+`)**:
+   - Configure the upstream MySQL 8.x / MariaDB server with `--server-id>=1 --log-bin=mysql-bin --binlog-format=ROW --binlog-row-image=FULL`. Grant the SwapMid DataSource account `REPLICATION SLAVE`, `REPLICATION CLIENT` (or `BINLOG MONITOR` on MariaDB), and `SELECT` on monitored tables (plus `RELOAD` / `LOCK TABLES` for `FLUSH TABLES WITH READ LOCK` consistent baseline snapshots; SwapMid automatically falls back to `LOCK TABLES ... READ` when `RELOAD` is withheld).
+   - Create `sourceType = 2` (`MySqlBinlog`) streams pointing at `{database}.{table}` names (no Publication/Slot required). Pre-flight validates binary log settings, purged-binlog watermark reachability, per-table primary keys, and byte-level lag (`walLagBytes`).
+   - For Apache Parquet object-storage Lakehouse targets (`CdcTargetMode.ExternalSink = 2`, `ObjectStorage`), set `lakehouseTableFormat = 1` (`DeltaLake`) to write standard Delta Protocol v1/v2 transaction log commits under `{prefix}/{dest}/_delta_log/{version:D20}.json` (`commitInfo`, `protocol`, `metaData`, `add`, and atomic `OPTIMIZE` compaction `remove` + `add` actions) protected by S3 `If-None-Match: *` optimistic concurrency control and idempotent `swapmidRunId` replay. Inspect live version badges (`Delta Lake vN`), `_delta_log/` directories, and executable DuckDB (`delta_scan('s3://...')`) / Apache Spark (`format("delta")`) / Polars (`pl.scan_delta(...)`) queries inside **Sink Template**.

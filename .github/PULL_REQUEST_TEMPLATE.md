@@ -13,7 +13,7 @@
 
 ## Verification Checklist
 
-- [ ] Backend builds and passes tests with zero warnings (`dotnet test SwapMid.slnx -c Release -warnaserror`)
+- [ ] Backend builds and passes tests with zero warnings (`dotnet build SwapMid.slnx -c Release --nologo && dotnet test SwapMid.slnx -c Release --no-build --nologo`)
 - [ ] If backend endpoints or DTOs changed, OpenAPI contracts & docs were regenerated (`cd web && pnpm sync:api --skip-portal && pnpm api-summary:baseline`)
 - [ ] If user-facing copy changed, `zh-Hans` / `zh-Hant` / `en` dictionaries are synchronized (`cd web && pnpm lint`)
 - [ ] Frontend gates pass (`npx tsc --noEmit && pnpm check:deps && pnpm check:ui && pnpm test:run && pnpm build`)

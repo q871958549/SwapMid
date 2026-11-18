@@ -6,6 +6,7 @@ Runnable end-to-end integration blueprints demonstrating SwapMid's three core en
 | :--- | :--- | :--- |
 | [`postgres-incremental-upsert/`](./postgres-incremental-upsert/) | `DataIntegration` | Atomic staging + PostgreSQL `ON CONFLICT` incremental upsert with watermark protection and Target Receipt v1 |
 | [`postgres-pgoutput-cdc/`](./postgres-pgoutput-cdc/) | `DataIntegration` + `MessageBus` | PostgreSQL `wal_level=logical` (`pgoutput`) CDC stream with `ConfirmedFlushLsn` checkpoint advancement and CloudEvents fanout |
+| [`mysql-binlog-deltalake-cdc/`](./mysql-binlog-deltalake-cdc/) | `DataIntegration` (`MySqlBinlog` + `DeltaLake`) | MySQL 8.4 `ROW`+`FULL` Binlog CDC with consistent snapshot, native Apache Delta Lake `_delta_log` commits (`If-None-Match: *`), and automatic `OPTIMIZE` compaction |
 | [`s3-parquet-lakehouse/`](./s3-parquet-lakehouse/) | `DataIntegration` (`ObjectStorage`) | S3 / MinIO bounded-memory Apache Parquet writer with SigV4 signing, schema-on-write projection, and `RunId`-keyed paths |
 | [`clickhouse-analytics-sink/`](./clickhouse-analytics-sink/) | `DataIntegration` (`ClickHouse`) | ClickHouse HTTP `JSONEachRow` batch writer with `system.columns` pre-flight compatibility checks and SSRF guards |
 | [`kafka-event-stream-sink/`](./kafka-event-stream-sink/) | `DataIntegration` (`Kafka`) | Streaming batch producer with zstd/lz4 compression, TLS/SASL posture, and destination topic validation |

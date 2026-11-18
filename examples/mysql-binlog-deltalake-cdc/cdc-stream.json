@@ -1,0 +1,16 @@
+{
+  "name": "mysql-orders-delta",
+  "description": "Stream consistent snapshot and ROW+FULL binlog changes from swapmid_cdc.orders into Apache Delta Lake (_delta_log)",
+  "sourceId": "<MYSQL_DATASOURCE_ID>",
+  "sourceType": 2,
+  "monitoredTables": "swapmid_cdc.orders",
+  "initialSnapshotEnabled": true,
+  "pollIntervalSeconds": 15,
+  "maxBatchSize": 500,
+  "targetMode": 2,
+  "targetSinkId": "<MINIO_SINK_ID>",
+  "targetSinkDestination": "orders/delta",
+  "lakehouseTableFormat": 1,
+  "lakehouseCompactMinFiles": 2,
+  "schemaDriftPolicy": 2
+}

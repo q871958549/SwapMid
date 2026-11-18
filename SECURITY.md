@@ -4,10 +4,10 @@
 
 | Version | Supported |
 | ------- | --------- |
-| `1.3.x` (`main`, Current) | :white_check_mark: |
-| `1.2.x` | :white_check_mark: |
-| `1.1.x` | :white_check_mark: |
+| `2.0.x` (`main`, Current) | :white_check_mark: |
+| `1.9.x` | :white_check_mark: (Upgrade recommended) |
 | `1.0.x` (LTS) | :white_check_mark: |
+| `1.1.x` – `1.8.x` | :x: (Upgrade to `2.0.x`) |
 | `< 1.0.0` (pre-release) | :x: |
 
 ## Built-in Security Controls
@@ -15,9 +15,9 @@
 SwapMid is designed with fail-closed security boundaries across the middleware and BFF layers:
 
 - **Zero Browser Token Exposure**: OAuth2 / OpenIddict tokens are held server-side in Redis-backed encrypted/isolated sessions; browser clients interact exclusively via HttpOnly session cookies and `/api/proxy/*` BFF routes.
-- **SSRF & Outbound Delivery Guards**: HTTP Webhook delivery in Message Bus and REST connectors enforce URL validation and private/loopback network protections unless explicitly allowlisted by operators.
+- **SSRF & Outbound Delivery Guards**: HTTP Webhook delivery in Message Bus, REST connectors, and External Sinks (`Kafka` / `ClickHouse` / `S3 & MinIO ObjectStorage`) enforce URL validation and private/loopback network protections (`AllowedHosts` / `AllowedPrivateNetworks`) unless explicitly allowlisted by operators.
 - **Webhook Authenticity**: Outbound HTTP subscriptions support HMAC-SHA256 signing (`X-SwapMid-Signature: sha256=...`), and inbound Prometheus Alertmanager webhooks validate `X-SwapMid-Alert-Token` using constant-time comparison.
-- **ETL Execution & Target Receipt Safety**: Mutating pipeline triggers require explicit policy checks, idempotent `RunId` coordination, and TLS certificate validation (`Encrypt=true`, `TrustServerCertificate=false`) for Target Receipt v1 verification.
+- **ETL Execution, CDC & Delta Lake Safety**: Mutating pipeline triggers require explicit policy checks, idempotent `RunId` coordination, and TLS certificate validation (`Encrypt=true`, `TrustServerCertificate=false`) for Target Receipt v1 verification; Delta Lake `_delta_log/` commits enforce S3 `If-None-Match: *` optimistic concurrency and bounded error sanitization (`EtlFailureBoundaryGuardTests`) so connection strings/SQL/credentials never leak into logs or DB failure rows.
 - **Impersonation Guard**: Account impersonation enforces 5 invariants (explicit permission, active target, non-self, non-admin target, mandatory audit trail) and cannot be chained.
 - **Supply-Chain Hardening**: `common.props` enforces `NuGetAudit` (`all` / `low`) with warnings treated as errors, and `web/pnpm-workspace.yaml` enforces a 24-hour `minimumReleaseAge` observation window.
 
@@ -25,7 +25,7 @@ SwapMid is designed with fail-closed security boundaries across the middleware a
 
 **Please do not report security vulnerabilities through public GitHub issues, discussions, or pull requests.**
 
-Instead, please report suspected vulnerabilities privately via **GitHub Private Vulnerability Reporting** (`Security` -> `Report a vulnerability` in the repository navigation).
+Instead, please report suspected vulnerabilities privately via **[GitHub Private Vulnerability Reporting](https://github.com/q871958549/SwapMid/security/advisories/new)** (`Security` -> `Report a vulnerability` in the repository navigation).
 
 When reporting, please include:
 

@@ -41,12 +41,20 @@ spec:
               value: "production"
             - name: PORT
               value: "3000"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: COOKIE_SECURE
               value: {{ .Values.publicUrls.cookieSecure | quote }}
             - name: SESSION_STORE_MODE
               value: "redis"
             - name: REDIS_URL
               value: {{ .Values.externalRedis.bffUrl | quote }}
+            - name: WEB_SINGLETON_LEASE_KEY
+              value: "swapmid:helm:web:$(POD_NAME):v1"
+            - name: WEB_SINGLETON_LEASE_TTL_MS
+              value: "30000"
             - name: INTERNAL_API_URL
               value: {{ printf "http://%s-api:%v" (include "swapmid.fullname" .) .Values.api.service.port | quote }}
             - name: NEXT_PUBLIC_API_URL
@@ -55,6 +63,8 @@ spec:
               value: {{ default .Chart.AppVersion .Values.web.image.tag | quote }}
             - name: SWAPMID_API_READY_URL
               value: {{ printf "http://%s-api:%v/health/ready" (include "swapmid.fullname" .) .Values.api.service.port | quote }}
+            - name: SWAPMID_API_READY_FALLBACK_URL
+              value: {{ printf "http://%s-api:%v/health-status" (include "swapmid.fullname" .) .Values.api.service.port | quote }}
             - name: NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef:
@@ -63,16 +73,16 @@ spec:
                   optional: true
           livenessProbe:
             httpGet:
-              path: /api/health
+              path: /build-meta
               port: http
-            initialDelaySeconds: 10
+            initialDelaySeconds: 30
             periodSeconds: 15
             timeoutSeconds: 5
           readinessProbe:
             httpGet:
-              path: /api/ready
+              path: /build-meta
               port: http
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             periodSeconds: 10
             timeoutSeconds: 5
           resources:

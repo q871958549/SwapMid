@@ -1,0 +1,7 @@
+{
+  "name": "MinIO Delta Lakehouse (Parquet)",
+  "description": "S3-compatible object storage sink writing Apache Parquet shards with native Delta Lake _delta_log commits.",
+  "type": 5,
+  "config": "{\"provider\":\"minio\",\"endpoint\":\"http://minio:9000\",\"region\":\"us-east-1\",\"bucket\":\"swapmid-lake\",\"prefix\":\"cdc\",\"format\":\"parquet\",\"pathStyle\":true,\"targetResourceGroup\":\"lakehouse-minio-primary\",\"accessKey\":\"REPLACE_WITH_MINIO_ACCESS_KEY\",\"secretKey\":\"REPLACE_WITH_MINIO_SECRET_KEY\"}",
+  "isEnabled": true
+}

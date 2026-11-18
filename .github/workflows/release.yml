@@ -82,7 +82,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            APP_RELEASE=${{ github.ref_name }}
+            RELEASE_SHA=${{ github.sha }}
           cache-from: type=gha,scope=swapmid-${{ matrix.component }}
           cache-to: type=gha,mode=max,scope=swapmid-${{ matrix.component }}
 
@@ -109,7 +109,7 @@ jobs:
 
       - name: Lint, package & push Helm chart
         run: |
-          helm lint charts/swapmid
+          helm lint charts/swapmid --set secret.existingSecret=ci-placeholder
           RAW_TAG="${{ github.event_name == 'workflow_dispatch' && (inputs.tag || '0.0.0-edge') || github.ref_name }}"
           CHART_VERSION="${RAW_TAG#v}"
           if [[ "${CHART_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then

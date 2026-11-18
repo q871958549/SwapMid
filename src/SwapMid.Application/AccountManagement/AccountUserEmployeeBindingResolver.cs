@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using SwapMid.SharedKernel.Employees;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.DependencyInjection;
 
 namespace SwapMid.AccountManagement;
@@ -98,6 +99,73 @@ public class AccountUserEmployeeBindingResolver : ITransientDependency
             Phone = employee.Phone,
             Status = employee.Status,
         };
+    }
+
+    /// <summary>账号绑定表单专用在职员工候选选项（批量映射企业、部门与岗位名称）。</summary>
+    public async Task<ListResultDto<AccountEmployeeOptionDto>> GetEmployeeOptionsAsync()
+    {
+        var employees = await _employeeDirectory.GetActiveListAsync();
+        if (employees.Count == 0)
+        {
+            return new ListResultDto<AccountEmployeeOptionDto>();
+        }
+
+        var enterpriseNames = await _organizationDirectory.GetEnterpriseNamesAsync(
+            employees.Select(employee => employee.EnterpriseId));
+        var departmentNames = (await _organizationDirectory.GetDepartmentListAsync())
+            .ToDictionary(department => department.Id, department => department.Name);
+        var positionNames = await _organizationDirectory.GetPositionNamesAsync(
+            employees.Where(employee => employee.PositionId.HasValue).Select(employee => employee.PositionId!.Value));
+
+        var items = employees
+            .OrderBy(employee => employee.EmployeeNo, StringComparer.OrdinalIgnoreCase)
+            .Select(employee => new AccountEmployeeOptionDto
+            {
+                Id = employee.Id,
+                UserId = employee.UserId,
+                EmployeeNo = employee.EmployeeNo,
+                Name = employee.Name,
+                EnterpriseId = employee.EnterpriseId,
+                EnterpriseName = enterpriseNames.GetValueOrDefault(employee.EnterpriseId),
+                DepartmentId = employee.DepartmentId,
+                DepartmentName = employee.DepartmentId.HasValue
+                    ? departmentNames.GetValueOrDefault(employee.DepartmentId.Value)
+                    : null,
+                Email = employee.Email,
+                Phone = employee.Phone,
+                Position = employee.PositionId.HasValue
+                    ? positionNames.GetValueOrDefault(employee.PositionId.Value) ?? employee.PositionText
+                    : employee.PositionText,
+                Status = employee.Status,
+            })
+            .ToList();
+
+        return new ListResultDto<AccountEmployeeOptionDto>(items);
+    }
+
+    /// <summary>账号管理页部门筛选下拉专用轻量部门列表。</summary>
+    public async Task<ListResultDto<AccountDepartmentOptionDto>> GetDepartmentOptionsAsync()
+    {
+        var departments = await _organizationDirectory.GetDepartmentListAsync();
+        if (departments.Count == 0)
+        {
+            return new ListResultDto<AccountDepartmentOptionDto>();
+        }
+
+        var enterpriseNames = await _organizationDirectory.GetEnterpriseNamesAsync(
+            departments.Select(department => department.EnterpriseId));
+
+        var items = departments
+            .OrderBy(department => department.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(department => new AccountDepartmentOptionDto
+            {
+                Id = department.Id,
+                Name = department.Name,
+                EnterpriseName = enterpriseNames.GetValueOrDefault(department.EnterpriseId),
+            })
+            .ToList();
+
+        return new ListResultDto<AccountDepartmentOptionDto>(items);
     }
 
     private static void ApplyEmployee(AccountUserDto dto, EmployeeSnapshot employee)

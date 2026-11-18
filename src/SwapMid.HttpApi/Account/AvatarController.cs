@@ -64,14 +64,14 @@ public class AvatarController : SwapMidController
     public Task<IActionResult> GetMineAsync()
         => GetAsync(_currentUser.GetId());
 
-    /// <summary>指定用户头像；无头像返回 404，前端 AvatarImage 自动回退首字母。</summary>
+    /// <summary>指定用户头像；无自定义头像返回 204 NoContent，前端 AvatarImage 自动回退首字母。</summary>
     [HttpGet("{userId:guid}")]
     public async Task<IActionResult> GetAsync(Guid userId)
     {
         var avatar = await _avatarManager.GetAsync(userId);
         if (avatar == null)
         {
-            return NotFound();
+            return NoContent();
         }
 
         // no-cache：头像 URL 固定（/avatars/me、/avatars/{id}），换头像后 URL 不变；令浏览器每次校验，

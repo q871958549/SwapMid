@@ -45,21 +45,24 @@ public class AccountSettingsAppService : ApplicationService, IAccountSettingsApp
         return await GetDefaultsAsync();
     }
 
+    [AllowAnonymous]
+    public Task<AccountPasswordPolicyDto> GetPasswordPolicyAsync()
+        => ReadPasswordPolicyAsync();
+
     [Authorize]
     public async Task<AccountSecuritySettingsDto> GetSecurityAsync()
     {
         var defaults = await GetDefaultsAsync();
-        // ⚠️ 不能读 IOptions<IdentityOptions>.Value：它是进程启动时的静态快照（实测保存后
-        // 新请求仍回显旧值，DB 已写新值）。规则一律走 SettingProvider 读当前设置。
+        var policy = await ReadPasswordPolicyAsync();
         return new AccountSecuritySettingsDto
         {
             DefaultPassword = defaults.DefaultPassword,
             ForceChangePasswordOnFirstLogin = await GetForceChangeAsync(),
-            PasswordRequiredLength = await SettingProvider.GetAsync(IdentitySettingNames.Password.RequiredLength, 6),
-            PasswordRequireDigit = await SettingProvider.GetAsync(IdentitySettingNames.Password.RequireDigit, true),
-            PasswordRequireLowercase = await SettingProvider.GetAsync(IdentitySettingNames.Password.RequireLowercase, true),
-            PasswordRequireUppercase = await SettingProvider.GetAsync(IdentitySettingNames.Password.RequireUppercase, true),
-            PasswordRequireNonAlphanumeric = await SettingProvider.GetAsync(IdentitySettingNames.Password.RequireNonAlphanumeric, true),
+            PasswordRequiredLength = policy.RequiredLength,
+            PasswordRequireDigit = policy.RequireDigit,
+            PasswordRequireLowercase = policy.RequireLowercase,
+            PasswordRequireUppercase = policy.RequireUppercase,
+            PasswordRequireNonAlphanumeric = policy.RequireNonAlphanumeric,
         };
     }
 
@@ -105,15 +108,30 @@ public class AccountSettingsAppService : ApplicationService, IAccountSettingsApp
     private async Task<bool> GetForceChangeAsync()
         => (await _settingManager.GetOrNullGlobalAsync(SwapMidSettings.AccountForceChangePasswordOnFirstLogin) ?? "true") != "false";
 
+    // ⚠️ 不能读 IOptions<IdentityOptions>.Value：它是进程启动时的静态快照（实测保存后
+    // 新请求仍回显旧值，DB 已写新值）。规则一律走 SettingProvider 读当前设置。
+    private async Task<AccountPasswordPolicyDto> ReadPasswordPolicyAsync()
+    {
+        return new AccountPasswordPolicyDto
+        {
+            RequiredLength = await SettingProvider.GetAsync(IdentitySettingNames.Password.RequiredLength, 6),
+            RequireDigit = await SettingProvider.GetAsync(IdentitySettingNames.Password.RequireDigit, true),
+            RequireLowercase = await SettingProvider.GetAsync(IdentitySettingNames.Password.RequireLowercase, true),
+            RequireUppercase = await SettingProvider.GetAsync(IdentitySettingNames.Password.RequireUppercase, true),
+            RequireNonAlphanumeric = await SettingProvider.GetAsync(IdentitySettingNames.Password.RequireNonAlphanumeric, true),
+        };
+    }
+
     private async Task ValidateDefaultPasswordAsync(string password)
     {
+        var policy = await ReadPasswordPolicyAsync();
         ValidateDefaultPassword(
             password,
-            await SettingProvider.GetAsync(IdentitySettingNames.Password.RequiredLength, 6),
-            await SettingProvider.GetAsync(IdentitySettingNames.Password.RequireDigit, true),
-            await SettingProvider.GetAsync(IdentitySettingNames.Password.RequireLowercase, true),
-            await SettingProvider.GetAsync(IdentitySettingNames.Password.RequireUppercase, true),
-            await SettingProvider.GetAsync(IdentitySettingNames.Password.RequireNonAlphanumeric, true));
+            policy.RequiredLength,
+            policy.RequireDigit,
+            policy.RequireLowercase,
+            policy.RequireUppercase,
+            policy.RequireNonAlphanumeric);
     }
 
     private static void ValidateDefaultPassword(

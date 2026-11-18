@@ -22,9 +22,12 @@ public class PipelineExecutionController : SwapMidController, IPipelineExecution
     private readonly IPipelineExecutionAppService _service;
     public PipelineExecutionController(IPipelineExecutionAppService service) { _service = service; }
 
+    /// <summary>分页查询 ETL 管道执行历史与状态记录。</summary>
     [HttpGet] public Task<PagedResultDto<PipelineExecutionDto>> GetListAsync(GetPipelineExecutionListInput input) => _service.GetListAsync(input);
+    /// <summary>获取单条 ETL 执行记录详情及投递目标快照。</summary>
     [HttpGet("{id}")] public Task<PipelineExecutionDto> GetAsync(Guid id) => _service.GetAsync(id);
 
+    /// <summary>人工终态裁决 OutcomeUnknown 状态下的不确定管道执行结果。</summary>
     [Authorize(SwapMidPermissions.DataIntegration.PipelineExecutions.ResolveOutcome)]
     [HttpPost("{id}/resolve-outcome")]
     [ProducesResponseType(

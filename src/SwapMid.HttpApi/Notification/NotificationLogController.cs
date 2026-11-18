@@ -19,6 +19,7 @@ public class NotificationLogController : SwapMidController, INotificationLogAppS
         _service = service;
     }
 
+    /// <summary>分页查询通知发送流水日志。</summary>
     [HttpGet]
     public Task<PagedResultDto<NotificationLogDto>> GetListAsync(GetNotificationLogListInput input)
         => _service.GetListAsync(input);

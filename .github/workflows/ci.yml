@@ -63,17 +63,33 @@ jobs:
             sleep 1
           done
 
-      - name: Run unit, architecture & PostgreSQL 18 contract test suites
+      - name: Start SQL Server 2022 container for Change Tracking CDC contracts
+        run: |
+          docker run -d --name mssql-cdc \
+            -e ACCEPT_EULA=Y \
+            -e MSSQL_SA_PASSWORD='SwapMidCiOnly_Sql2022!' \
+            -e MSSQL_PID=Developer \
+            -p 1433:1433 \
+            mcr.microsoft.com/mssql/server:2022-latest
+          for i in $(seq 1 45); do
+            if docker exec mssql-cdc /opt/mssql-tools18/bin/sqlcmd -S 127.0.0.1 -U sa -P 'SwapMidCiOnly_Sql2022!' -C -Q "SELECT 1" >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Run unit, architecture, PostgreSQL 18 & SQL Server 2022 contract test suites
         env:
           SWAPMID_POSTGRES_TEST_CONNECTION: Host=127.0.0.1;Port=5432;Database=postgres;Username=postgres;Password=SwapMidCiOnly_2026!
           SWAPMID_RUN_POSTGRES_CONTRACT_TESTS: '1'
           SWAPMID_POSTGRES_CDC_TEST_CONNECTION: Host=127.0.0.1;Port=55432;Database=postgres;Username=postgres;Password=SwapMidCiOnly_2026!
           SWAPMID_RUN_POSTGRES_CDC_CONTRACT_TESTS: '1'
+          SWAPMID_SQLSERVER_TEST_CONNECTION: Server=127.0.0.1,1433;User Id=sa;Password=SwapMidCiOnly_Sql2022!;TrustServerCertificate=True;Encrypt=False
         run: dotnet test SwapMid.slnx --no-build -c Release --nologo --verbosity normal
 
-      - name: Stop CDC PostgreSQL container
+      - name: Stop CDC database containers
         if: always()
-        run: docker rm -f postgres-cdc >/dev/null 2>&1 || true
+        run: docker rm -f postgres-cdc mssql-cdc >/dev/null 2>&1 || true
 
   frontend:
     name: Frontend (Next.js 16)

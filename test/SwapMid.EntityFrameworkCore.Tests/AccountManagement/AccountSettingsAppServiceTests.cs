@@ -52,11 +52,18 @@ public class AccountSettingsAppServiceTests : SwapMidEntityFrameworkCoreTestBase
         using var scope = ServiceProvider.CreateScope();
         var fresh = scope.ServiceProvider.GetRequiredService<IAccountSettingsAppService>();
         var security = await fresh.GetSecurityAsync();
+        var policy = await fresh.GetPasswordPolicyAsync();
 
         security.PasswordRequiredLength.ShouldBe(10);
         security.PasswordRequireDigit.ShouldBeTrue();
         security.PasswordRequireLowercase.ShouldBeFalse();
         security.PasswordRequireUppercase.ShouldBeTrue();
         security.PasswordRequireNonAlphanumeric.ShouldBeFalse();
+
+        policy.RequiredLength.ShouldBe(10);
+        policy.RequireDigit.ShouldBeTrue();
+        policy.RequireLowercase.ShouldBeFalse();
+        policy.RequireUppercase.ShouldBeTrue();
+        policy.RequireNonAlphanumeric.ShouldBeFalse();
     }
 }

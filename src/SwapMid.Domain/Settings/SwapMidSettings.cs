@@ -16,6 +16,8 @@ public static class SwapMidSettings
     public const string PreferenceFontSize = Prefix + ".Preference.FontSize";
     public const string PreferenceLanguage = Prefix + ".Preference.Language";
     public const string PreferenceSidebarCollapsed = Prefix + ".Preference.SidebarCollapsed";
+    public const string PreferenceTableDensity = Prefix + ".Preference.TableDensity";
+    public const string PreferenceTableViews = Prefix + ".Preference.TableViews";
 
     // ==================== 定时任务 Cron 待同步队列 ====================
     public const string ScheduledJobsPendingCron = Prefix + ".ScheduledJobs.PendingCron";

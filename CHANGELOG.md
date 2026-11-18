@@ -4,6 +4,24 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.1] - 2026-11-18
+
+### Added
+- **Cloud Table-Preference Sync & Navigation Telemetry (`Layout` / `SwapMid.HttpApi` / `web/`)**:
+  - Added `ITablePreferenceAppService`, `TablePreferenceAppService` (backed by user-level `AbpSettings` `PreferenceTableDensity` & `PreferenceTableViews` with `128 KiB` / `200`-table bounds and `SwapMid:LAY:002` guard, requiring zero EF migrations), `TablePreferenceController` (`GET /api/v1/table-preference`, `PUT /api/v1/table-preference/table`, `PUT /api/v1/table-preference/density`), and `TablePreferenceAppServiceTests`.
+  - Added `[Authorize] POST /api/v1/nav-usage` (`NavUsageController`) logging sanitized structured domain/group/href navigation usage telemetry (`204 No Content`).
+- **100% `/api/v1` OpenAPI `<summary>` Coverage & SQL Server 2022 Linux CI Gate (`SwapMid.HttpApi` / `.github/workflows/ci.yml`)**:
+  - Documented all remaining `27` controllers in `SwapMid.HttpApi` with accurate XML `<summary>` annotations and tightened `docs/api/summary-coverage-baseline.json` to `0` missing summaries (`100.0%` coverage).
+  - Extended `SqlServerCdcLocalDbContractTests` with `SqlServerContractFactAttribute` (`SWAPMID_SQLSERVER_TEST_CONNECTION` support alongside Windows LocalDB) and provisioned an `mcr.microsoft.com/mssql/server:2022-latest` CI step in `.github/workflows/ci.yml`.
+
+### Changed & Fixed
+- **Next.js `16.4.6` Security Upgrade (`web/`)**:
+  - Upgraded `next` and `eslint-config-next` from `16.4.3` to `16.4.6`, resolving the `SecurityFatalError` build warning while maintaining all `security-dependency-contract` invariants.
+- **Zero-404 Default Avatar Fallback & Public Password Policy Endpoint (`Account/AvatarController.cs`, `AccountSettingsController.cs`)**:
+  - Returned `204 No Content` from `AvatarController.GetAsync` when a user has not uploaded a custom avatar so browser `<img>` elements fall back cleanly to Radix `<AvatarFallback>` initials with zero HTTP `404` network/console errors.
+  - Added anonymous `GET /api/v1/account-management/password-policy` (`AccountPasswordPolicyDto` / `IAccountSettingsAppService.GetPasswordPolicyAsync`, exposing live password complexity rules without leaking `defaultPassword`), eliminating SSR and UI `404` errors across `/login`, `/profile`, `/account-management/users`, and the change-password dialog.
+  - Added `[Authorize(SwapMidPermissions.AccountManagement.Users.Default)]` read-only option projections `GET /api/v1/account-users/employee-options` & `GET /api/v1/account-users/department-options` (`AccountUserController` / `AccountUserEmployeeBindingResolver`), resolving pre-existing `400 Bad Request` route collisions on `/account-management/users` while keeping Account/Enterprise permissions decoupled.
+
 ## [1.9.0] - 2026-11-18
 
 ### Added

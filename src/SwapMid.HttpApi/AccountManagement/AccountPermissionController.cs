@@ -17,10 +17,12 @@ public class AccountPermissionController : SwapMidController, IAccountPermission
         _service = service;
     }
 
+    /// <summary>查询指定角色的权限树及已授予项。</summary>
     [HttpGet]
     public Task<AccountRolePermissionDto> GetRolePermissionsAsync(string roleName)
         => _service.GetRolePermissionsAsync(roleName);
 
+    /// <summary>更新指定角色的权限授予状态。</summary>
     [HttpPut]
     public Task UpdateRolePermissionsAsync(string roleName, AccountPermissionUpdateDto input)
         => _service.UpdateRolePermissionsAsync(roleName, input);

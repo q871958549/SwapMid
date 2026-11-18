@@ -12,30 +12,53 @@ using Xunit;
 
 namespace SwapMid.DataIntegration;
 
+public sealed class SqlServerContractFactAttribute : FactAttribute
+{
+    public const string ConnectionEnvVar = "SWAPMID_SQLSERVER_TEST_CONNECTION";
+
+    public SqlServerContractFactAttribute()
+    {
+        var hasLocalDb = string.Equals(
+            Environment.GetEnvironmentVariable("RUN_SQLSERVER_LOCALDB_CONTRACT_TESTS"),
+            "1",
+            StringComparison.Ordinal);
+        var hasConn = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(ConnectionEnvVar));
+        if (!hasLocalDb && !hasConn)
+        {
+            Skip = $"Requires SQL Server instance ({ConnectionEnvVar} or RUN_SQLSERVER_LOCALDB_CONTRACT_TESTS=1).";
+        }
+    }
+}
+
 /// <summary>
-/// 真实 SQL Server Change Tracking CDC 合约测试（使用 Windows LocalDB，需设置 RUN_SQLSERVER_LOCALDB_CONTRACT_TESTS=1）。
+/// 真实 SQL Server Change Tracking CDC 合约测试（支持 Windows LocalDB 或外部/CI SQL Server 连接串）。
 /// 覆盖：DB/Table Change Tracking 预检、一致性全量快照、INSERT/UPDATE/DELETE CHANGETABLE 捕获、
 /// 关系表字段重映射 + 软删除墓碑列及上游 Schema 漂移对比。
 /// </summary>
 public sealed class SqlServerCdcLocalDbContractTests
 {
-    [SqlServerLocalDbContractFact]
+    [SqlServerContractFact]
     [Trait("Category", "SqlServerContract")]
     public async Task ChangeTracking_Snapshot_Delta_SchemaDrift_And_SoftDelete_Mirror_Should_Work_On_LocalDb()
     {
         var dbName = $"SwapMidCtCdc_{Guid.NewGuid():N}";
-        var masterConnStr = new SqlConnectionStringBuilder
-        {
-            DataSource = @"(localdb)\MSSQLLocalDB",
-            InitialCatalog = "master",
-            IntegratedSecurity = true,
-            TrustServerCertificate = true,
-            ConnectTimeout = 5,
-        }.ConnectionString;
-        var dbConnStr = new SqlConnectionStringBuilder(masterConnStr)
+        var envConn = Environment.GetEnvironmentVariable(SqlServerContractFactAttribute.ConnectionEnvVar);
+        var masterBuilder = !string.IsNullOrWhiteSpace(envConn)
+            ? new SqlConnectionStringBuilder(envConn) { InitialCatalog = "master", ConnectTimeout = 10 }
+            : new SqlConnectionStringBuilder
+            {
+                DataSource = @"(localdb)\MSSQLLocalDB",
+                InitialCatalog = "master",
+                IntegratedSecurity = true,
+                TrustServerCertificate = true,
+                ConnectTimeout = 5,
+            };
+        var masterConnStr = masterBuilder.ConnectionString;
+        var dbBuilder = new SqlConnectionStringBuilder(masterConnStr)
         {
             InitialCatalog = dbName,
-        }.ConnectionString;
+        };
+        var dbConnStr = dbBuilder.ConnectionString;
 
         await ExecuteSqlAsync(masterConnStr, $"""
             CREATE DATABASE [{dbName}];
@@ -68,11 +91,21 @@ public sealed class SqlServerCdcLocalDbContractTests
                 """);
 
             var factory = new LocalDbConnectionFactory(dbConnStr);
+            var dsConfig = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                provider = "sqlserver",
+                host = dbBuilder.DataSource,
+                database = dbName,
+                username = dbBuilder.IntegratedSecurity ? null : dbBuilder.UserID,
+                password = dbBuilder.IntegratedSecurity ? null : dbBuilder.Password,
+                integratedSecurity = dbBuilder.IntegratedSecurity,
+                trustServerCertificate = dbBuilder.TrustServerCertificate,
+            });
             var ds = new DataSource(
                 Guid.NewGuid(),
                 "localdb-ct-src",
                 DataSourceType.RelationalDatabase,
-                $$"""{"provider":"sqlserver","host":"(localdb)\\MSSQLLocalDB","database":"{{dbName}}","integratedSecurity":true,"trustServerCertificate":true}""");
+                dsConfig);
 
             const string mappingsJson =
                 """[{"sourceColumn":"src_order_id","targetColumn":"order_id"},{"sourceColumn":"src_customer","targetColumn":"customer_code"},{"sourceColumn":"src_amount","targetColumn":"net_amount"}]""";

@@ -17,6 +17,7 @@ public class SystemHealthController : SwapMidController, ISystemHealthAppService
         _service = service;
     }
 
+    /// <summary>执行并返回平台核心组件（数据库 / Redis / 队列 / CDC / ETL / 网关指标）系统健康体检快照。</summary>
     [HttpGet]
     public Task<SystemHealthDto> GetAsync()
         => _service.GetAsync();

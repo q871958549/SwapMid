@@ -328,6 +328,14 @@ public class AccountUserAppService : ApplicationService, IAccountUserAppService
     public Task<BoundEmployeeInfoDto?> GetBoundEmployeeAsync(Guid id)
         => _bindingResolver.GetBoundEmployeeInfoAsync(id);
 
+    [Authorize(SwapMidPermissions.AccountManagement.Users.Default)]
+    public Task<ListResultDto<AccountEmployeeOptionDto>> GetEmployeeOptionsAsync()
+        => _bindingResolver.GetEmployeeOptionsAsync();
+
+    [Authorize(SwapMidPermissions.AccountManagement.Users.Default)]
+    public Task<ListResultDto<AccountDepartmentOptionDto>> GetDepartmentOptionsAsync()
+        => _bindingResolver.GetDepartmentOptionsAsync();
+
     private async Task<AccountUserDto> ToDtoAsync(IdentityUserDto user)
     {
         var roleNames = await _roleNamesResolver.GetRoleNamesByUserIdsAsync(new[] { user.Id });

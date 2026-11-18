@@ -36,4 +36,10 @@ public interface IAccountUserAppService : IApplicationService
     /// <summary>获取账号绑定员工的基本信息（按 Employee.UserId 反查；无绑定返回 null）。
     /// 权限语义="账号管理员查看账号的绑定档案"，不要求调用者持有员工域权限。</summary>
     Task<BoundEmployeeInfoDto?> GetBoundEmployeeAsync(Guid id);
+
+    /// <summary>获取账号绑定表单专用在职员工候选选项（权限挂 AccountManagement.Users.Default）。</summary>
+    Task<ListResultDto<AccountEmployeeOptionDto>> GetEmployeeOptionsAsync();
+
+    /// <summary>获取账号列表部门筛选专用部门选项（权限挂 AccountManagement.Users.Default）。</summary>
+    Task<ListResultDto<AccountDepartmentOptionDto>> GetDepartmentOptionsAsync();
 }

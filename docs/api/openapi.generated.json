@@ -11,6 +11,7 @@
         "tags": [
           "AccountPermission"
         ],
+        "summary": "查询指定角色的权限树及已授予项。",
         "parameters": [
           {
             "name": "roleName",
@@ -168,6 +169,7 @@
         "tags": [
           "AccountPermission"
         ],
+        "summary": "更新指定角色的权限授予状态。",
         "parameters": [
           {
             "name": "roleName",
@@ -332,6 +334,7 @@
         "tags": [
           "AccountRole"
         ],
+        "summary": "分页查询角色列表。",
         "parameters": [
           {
             "name": "Filter",
@@ -399,17 +402,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -540,6 +543,7 @@
         "tags": [
           "AccountRole"
         ],
+        "summary": "创建新角色。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -708,6 +712,7 @@
         "tags": [
           "AccountRole"
         ],
+        "summary": "获取单个角色详情。",
         "parameters": [
           {
             "name": "id",
@@ -866,6 +871,7 @@
         "tags": [
           "AccountRole"
         ],
+        "summary": "更新角色基本信息与描述。",
         "parameters": [
           {
             "name": "id",
@@ -1043,6 +1049,7 @@
         "tags": [
           "AccountRole"
         ],
+        "summary": "删除指定角色。",
         "parameters": [
           {
             "name": "id",
@@ -1189,6 +1196,7 @@
         "tags": [
           "AccountRole"
         ],
+        "summary": "复制已有角色及其权限授予集合生成新角色。",
         "parameters": [
           {
             "name": "id",
@@ -1405,17 +1413,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.RolePermissionChangeDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.RolePermissionChangeDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.RolePermissionChangeDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.RolePermissionChangeDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.RolePermissionChangeDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.RolePermissionChangeDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -1548,6 +1556,7 @@
         "tags": [
           "AccountSettings"
         ],
+        "summary": "获取账号默认初始化策略配置。",
         "responses": {
           "200": {
             "description": "OK",
@@ -1695,6 +1704,7 @@
         "tags": [
           "AccountSettings"
         ],
+        "summary": "更新账号默认初始化策略配置。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1858,11 +1868,162 @@
         }
       }
     },
+    "/api/v1/account-management/password-policy": {
+      "get": {
+        "tags": [
+          "AccountSettings"
+        ],
+        "summary": "匿名读取当前密码复杂度公开规则（供登录改密与账号表单提示使用，不含敏感默认密码）。",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapMid.AccountManagement.AccountPasswordPolicyDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapMid.AccountManagement.AccountPasswordPolicyDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapMid.AccountManagement.AccountPasswordPolicyDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not Implemented",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/account-management/settings/security": {
       "get": {
         "tags": [
           "AccountSettings"
         ],
+        "summary": "获取账号密码复杂度与锁定安全策略配置。",
         "responses": {
           "200": {
             "description": "OK",
@@ -2010,6 +2171,7 @@
         "tags": [
           "AccountSettings"
         ],
+        "summary": "更新账号密码复杂度与锁定安全策略配置。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -2178,6 +2340,7 @@
         "tags": [
           "AccountUser"
         ],
+        "summary": "分页筛选登录账号列表。",
         "parameters": [
           {
             "name": "Filter",
@@ -2279,17 +2442,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountUserDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountUserDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountUserDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountUserDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountUserDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountUserDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -2420,6 +2583,7 @@
         "tags": [
           "AccountUser"
         ],
+        "summary": "创建登录账号。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -2588,6 +2752,7 @@
         "tags": [
           "AccountUser"
         ],
+        "summary": "获取单个登录账号详情。",
         "parameters": [
           {
             "name": "id",
@@ -2746,6 +2911,7 @@
         "tags": [
           "AccountUser"
         ],
+        "summary": "更新登录账号资料与角色。",
         "parameters": [
           {
             "name": "id",
@@ -2923,6 +3089,7 @@
         "tags": [
           "AccountUser"
         ],
+        "summary": "删除指定登录账号。",
         "parameters": [
           {
             "name": "id",
@@ -3223,6 +3390,7 @@
         "tags": [
           "AccountUser"
         ],
+        "summary": "根据在职员工记录批量/单个生成登录账号。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -3391,23 +3559,24 @@
         "tags": [
           "AccountUser"
         ],
+        "summary": "获取当前允许指派的角色列表。",
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -3540,23 +3709,24 @@
         "tags": [
           "AccountUser"
         ],
+        "summary": "获取用于人员指派/穿梭框展示的轻量账号摘要列表。",
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountUserLiteDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountUserLiteDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountUserLiteDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountUserLiteDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountUserLiteDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountUserLiteDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -3689,6 +3859,7 @@
         "tags": [
           "AccountUser"
         ],
+        "summary": "为选定账号集合批量追加/移除/覆盖角色。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -3857,6 +4028,7 @@
         "tags": [
           "AccountUser"
         ],
+        "summary": "将指定账号密码重置为系统默认密码。",
         "parameters": [
           {
             "name": "id",
@@ -4003,6 +4175,7 @@
         "tags": [
           "AccountUser"
         ],
+        "summary": "按角色整体配置绑定成员账号集合。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -4327,6 +4500,306 @@
         }
       }
     },
+    "/api/v1/account-users/employee-options": {
+      "get": {
+        "tags": [
+          "AccountUser"
+        ],
+        "summary": "获取可用于账号绑定及资料带出的在职员工选项列表。",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountEmployeeOptionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountEmployeeOptionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountEmployeeOptionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not Implemented",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account-users/department-options": {
+      "get": {
+        "tags": [
+          "AccountUser"
+        ],
+        "summary": "获取账号管理页部门筛选下拉选项列表。",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountDepartmentOptionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountDepartmentOptionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountDepartmentOptionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not Implemented",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/notification/webhooks/alertmanager": {
       "post": {
         "tags": [
@@ -4517,6 +4990,7 @@
         "tags": [
           "ApiGroup"
         ],
+        "summary": "分页查询 API 路由分组列表。",
         "parameters": [
           {
             "name": "Filter",
@@ -4584,17 +5058,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiGroupDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiGroupDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiGroupDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiGroupDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiGroupDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiGroupDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -4725,6 +5199,7 @@
         "tags": [
           "ApiGroup"
         ],
+        "summary": "创建 API 路由分组。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -4893,6 +5368,7 @@
         "tags": [
           "ApiGroup"
         ],
+        "summary": "获取单个 API 路由分组详情。",
         "parameters": [
           {
             "name": "id",
@@ -5051,6 +5527,7 @@
         "tags": [
           "ApiGroup"
         ],
+        "summary": "更新 API 路由分组配置。",
         "parameters": [
           {
             "name": "id",
@@ -5228,6 +5705,7 @@
         "tags": [
           "ApiGroup"
         ],
+        "summary": "删除指定 API 路由分组。",
         "parameters": [
           {
             "name": "id",
@@ -5374,6 +5852,7 @@
         "tags": [
           "ApiRoute"
         ],
+        "summary": "分页查询动态网关路由列表。",
         "parameters": [
           {
             "name": "Filter",
@@ -5458,17 +5937,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiRouteDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiRouteDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiRouteDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiRouteDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiRouteDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiRouteDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -5599,6 +6078,7 @@
         "tags": [
           "ApiRoute"
         ],
+        "summary": "创建动态网关转发路由。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -5767,6 +6247,7 @@
         "tags": [
           "ApiRoute"
         ],
+        "summary": "获取单条动态网关路由详情。",
         "parameters": [
           {
             "name": "id",
@@ -5925,6 +6406,7 @@
         "tags": [
           "ApiRoute"
         ],
+        "summary": "更新动态网关转发路由。",
         "parameters": [
           {
             "name": "id",
@@ -6102,6 +6584,7 @@
         "tags": [
           "ApiRoute"
         ],
+        "summary": "删除指定网关路由。",
         "parameters": [
           {
             "name": "id",
@@ -6248,6 +6731,7 @@
         "tags": [
           "ApiRoute"
         ],
+        "summary": "启用指定网关路由参与转发。",
         "parameters": [
           {
             "name": "id",
@@ -6394,6 +6878,7 @@
         "tags": [
           "ApiRoute"
         ],
+        "summary": "停用指定网关路由转发。",
         "parameters": [
           {
             "name": "id",
@@ -6540,6 +7025,7 @@
         "tags": [
           "AuditLog"
         ],
+        "summary": "分页检索系统 API 请求与安全审计日志。",
         "parameters": [
           {
             "name": "StartTime",
@@ -6634,17 +7120,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.AuditLogDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.AuditLogDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.AuditLogDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.AuditLogDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.AuditLogDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.AuditLogDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -6777,6 +7263,7 @@
         "tags": [
           "AuditLog"
         ],
+        "summary": "获取单条审计日志的完整动作及参数变更明细。",
         "parameters": [
           {
             "name": "id",
@@ -6963,17 +7450,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AuditUserLookupDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AuditUserLookupDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AuditUserLookupDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AuditUserLookupDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AuditUserLookupDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AuditUserLookupDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -7542,7 +8029,7 @@
         "tags": [
           "Avatar"
         ],
-        "summary": "指定用户头像；无头像返回 404，前端 AvatarImage 自动回退首字母。",
+        "summary": "指定用户头像；无自定义头像返回 204 NoContent，前端 AvatarImage 自动回退首字母。",
         "parameters": [
           {
             "name": "userId",
@@ -7742,17 +8229,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.CdcStreamDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.CdcStreamDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.CdcStreamDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.CdcStreamDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.CdcStreamDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.CdcStreamDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -10486,6 +10973,7 @@
         "tags": [
           "CodeRule"
         ],
+        "summary": "分页查询业务单据自动编码规则列表。",
         "parameters": [
           {
             "name": "Filter",
@@ -10537,17 +11025,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.CodeRuleDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.CodeRuleDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.CodeRuleDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.CodeRuleDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.CodeRuleDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.CodeRuleDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -10678,6 +11166,7 @@
         "tags": [
           "CodeRule"
         ],
+        "summary": "创建业务对象编码规则。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -10846,6 +11335,7 @@
         "tags": [
           "CodeRule"
         ],
+        "summary": "获取单条编码规则配置详情。",
         "parameters": [
           {
             "name": "id",
@@ -11004,6 +11494,7 @@
         "tags": [
           "CodeRule"
         ],
+        "summary": "更新编码规则前缀、日期格式与流水号步长配置。",
         "parameters": [
           {
             "name": "id",
@@ -11181,6 +11672,7 @@
         "tags": [
           "CodeRule"
         ],
+        "summary": "删除指定编码规则。",
         "parameters": [
           {
             "name": "id",
@@ -11327,6 +11819,7 @@
         "tags": [
           "CodeRule"
         ],
+        "summary": "按指定业务对象类型即时原子生成下一个唯一业务编号。",
         "parameters": [
           {
             "name": "entityType",
@@ -11644,6 +12137,7 @@
         "tags": [
           "CompanyDepartment"
         ],
+        "summary": "分页查询组织部门树及列表。",
         "parameters": [
           {
             "name": "EnterpriseId",
@@ -11740,17 +12234,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.CompanyDepartmentDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.CompanyDepartmentDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.CompanyDepartmentDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.CompanyDepartmentDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.CompanyDepartmentDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.CompanyDepartmentDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -11881,6 +12375,7 @@
         "tags": [
           "CompanyDepartment"
         ],
+        "summary": "创建新部门。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -12049,6 +12544,7 @@
         "tags": [
           "CompanyDepartment"
         ],
+        "summary": "获取单个部门详情。",
         "parameters": [
           {
             "name": "id",
@@ -12207,6 +12703,7 @@
         "tags": [
           "CompanyDepartment"
         ],
+        "summary": "更新部门名称、上级或排序设置。",
         "parameters": [
           {
             "name": "id",
@@ -12384,6 +12881,7 @@
         "tags": [
           "CompanyDepartment"
         ],
+        "summary": "删除指定部门。",
         "parameters": [
           {
             "name": "id",
@@ -12530,6 +13028,7 @@
         "tags": [
           "CompanyDepartment"
         ],
+        "summary": "按 Id 集合批量删除部门。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -12698,6 +13197,7 @@
         "tags": [
           "CompanyDepartment"
         ],
+        "summary": "批量启用或停用选定部门。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -12866,6 +13366,7 @@
         "tags": [
           "CurrentUserPermission"
         ],
+        "summary": "查询当前登录用户的有效权限编码清单。",
         "responses": {
           "200": {
             "description": "OK",
@@ -13176,6 +13677,7 @@
         "tags": [
           "DataDictionary"
         ],
+        "summary": "分页查询数据字典类型定义列表。",
         "parameters": [
           {
             "name": "Filter",
@@ -13227,17 +13729,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.DataDictionaryDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.DataDictionaryDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.DataDictionaryDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.DataDictionaryDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.DataDictionaryDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.DataDictionaryDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -13368,6 +13870,7 @@
         "tags": [
           "DataDictionary"
         ],
+        "summary": "创建数据字典类型定义。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -13536,6 +14039,7 @@
         "tags": [
           "DataDictionary"
         ],
+        "summary": "获取单个数据字典类型详情。",
         "parameters": [
           {
             "name": "id",
@@ -13694,6 +14198,7 @@
         "tags": [
           "DataDictionary"
         ],
+        "summary": "更新数据字典类型名称与描述。",
         "parameters": [
           {
             "name": "id",
@@ -13871,6 +14376,7 @@
         "tags": [
           "DataDictionary"
         ],
+        "summary": "删除指定数据字典类型及所属条目。",
         "parameters": [
           {
             "name": "id",
@@ -14017,6 +14523,7 @@
         "tags": [
           "DataDictionary"
         ],
+        "summary": "查询指定数据字典类型下的全部条目选项。",
         "parameters": [
           {
             "name": "dictionaryId",
@@ -14034,17 +14541,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -14177,6 +14684,7 @@
         "tags": [
           "DataDictionary"
         ],
+        "summary": "新增数据字典条目。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -14345,6 +14853,7 @@
         "tags": [
           "DataDictionary"
         ],
+        "summary": "更新数据字典条目显示名、值与排序。",
         "parameters": [
           {
             "name": "itemId",
@@ -14522,6 +15031,7 @@
         "tags": [
           "DataDictionary"
         ],
+        "summary": "删除指定数据字典条目。",
         "parameters": [
           {
             "name": "itemId",
@@ -14668,6 +15178,7 @@
         "tags": [
           "DataDictionary"
         ],
+        "summary": "按字典唯一编码读取启用中的数据字典条目集合（供业务表单下拉消费）。",
         "parameters": [
           {
             "name": "code",
@@ -14684,17 +15195,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -14827,6 +15338,7 @@
         "tags": [
           "DataPipeline"
         ],
+        "summary": "分页查询数据管道定义列表。",
         "parameters": [
           {
             "name": "Filter",
@@ -14911,17 +15423,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataPipelineDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataPipelineDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataPipelineDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataPipelineDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataPipelineDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataPipelineDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -15052,6 +15564,7 @@
         "tags": [
           "DataPipeline"
         ],
+        "summary": "创建数据管道草稿（需经 Schema 预检及激活方可执行）。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -15220,6 +15733,7 @@
         "tags": [
           "DataPipeline"
         ],
+        "summary": "获取单条数据管道详情。",
         "parameters": [
           {
             "name": "id",
@@ -15378,6 +15892,7 @@
         "tags": [
           "DataPipeline"
         ],
+        "summary": "更新数据管道配置（字段映射、增量模式及 Cron 调度）。",
         "parameters": [
           {
             "name": "id",
@@ -15555,6 +16070,7 @@
         "tags": [
           "DataPipeline"
         ],
+        "summary": "删除指定数据管道。",
         "parameters": [
           {
             "name": "id",
@@ -15701,6 +16217,7 @@
         "tags": [
           "DataPipeline"
         ],
+        "summary": "按确定性 RunId 立即幂等触发一次 ETL 数据管道执行。",
         "parameters": [
           {
             "name": "id",
@@ -15870,6 +16387,7 @@
         "tags": [
           "DataPipeline"
         ],
+        "summary": "激活数据管道（建立 Target Receipt v1 / Sink 就绪状态并注册定时调度）。",
         "parameters": [
           {
             "name": "id",
@@ -16016,6 +16534,7 @@
         "tags": [
           "DataPipeline"
         ],
+        "summary": "暂停数据管道并移除 Hangfire 定时轮询。",
         "parameters": [
           {
             "name": "id",
@@ -16490,6 +17009,7 @@
         "tags": [
           "DataSource"
         ],
+        "summary": "分页查询数据集成数据源及外部接收端列表（凭证字段脱敏）。",
         "parameters": [
           {
             "name": "Filter",
@@ -16565,17 +17085,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataSourceDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataSourceDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataSourceDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataSourceDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataSourceDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataSourceDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -16706,6 +17226,7 @@
         "tags": [
           "DataSource"
         ],
+        "summary": "创建数据源连接配置。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -16874,6 +17395,7 @@
         "tags": [
           "DataSource"
         ],
+        "summary": "获取单个数据源配置详情。",
         "parameters": [
           {
             "name": "id",
@@ -17032,6 +17554,7 @@
         "tags": [
           "DataSource"
         ],
+        "summary": "更新数据源连接配置（修改范围受密码凭证重填校验约束）。",
         "parameters": [
           {
             "name": "id",
@@ -17209,6 +17732,7 @@
         "tags": [
           "DataSource"
         ],
+        "summary": "删除指定数据源。",
         "parameters": [
           {
             "name": "id",
@@ -17355,6 +17879,7 @@
         "tags": [
           "DataSource"
         ],
+        "summary": "基于提交的配置参数探测上游数据库或外部接收端连通性。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17523,6 +18048,7 @@
         "tags": [
           "DataSource"
         ],
+        "summary": "使用已保存密钥合并探测指定数据源的实时连通性。",
         "parameters": [
           {
             "name": "id",
@@ -17702,6 +18228,7 @@
         "tags": [
           "DbSchema"
         ],
+        "summary": "查询平台主库实时数据库表目录概览。",
         "parameters": [
           {
             "name": "filter",
@@ -17876,6 +18403,7 @@
         "tags": [
           "DbSchema"
         ],
+        "summary": "获取平台主库单张物理表的列、主键、索引及外键字典详情。",
         "parameters": [
           {
             "name": "tableName",
@@ -18035,6 +18563,7 @@
         "tags": [
           "DbSchema"
         ],
+        "summary": "导出平台主库数据库表字典为 Excel 工作簿。",
         "parameters": [
           {
             "name": "domainGroup",
@@ -18196,6 +18725,7 @@
         "tags": [
           "DbSchema"
         ],
+        "summary": "导出平台主库数据库表字典为 Markdown 文档。",
         "parameters": [
           {
             "name": "domainGroup",
@@ -18357,6 +18887,7 @@
         "tags": [
           "DbSchema"
         ],
+        "summary": "列出支持表结构字典探测的已配置外部数据库源。",
         "responses": {
           "200": {
             "description": "OK",
@@ -18515,6 +19046,7 @@
         "tags": [
           "DbSchema"
         ],
+        "summary": "探测外部数据源指定库内的表目录清单。",
         "parameters": [
           {
             "name": "sourceKey",
@@ -18690,6 +19222,7 @@
         "tags": [
           "DbSchema"
         ],
+        "summary": "探测外部数据源单张物理表的列结构与主键约束详情。",
         "parameters": [
           {
             "name": "sourceKey",
@@ -18857,6 +19390,7 @@
         "tags": [
           "Employee"
         ],
+        "summary": "分页查询员工档案列表。",
         "parameters": [
           {
             "name": "EnterpriseId",
@@ -18977,17 +19511,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EmployeeDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EmployeeDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EmployeeDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EmployeeDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EmployeeDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EmployeeDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -19118,6 +19652,7 @@
         "tags": [
           "Employee"
         ],
+        "summary": "创建员工档案记录。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19286,6 +19821,7 @@
         "tags": [
           "Employee"
         ],
+        "summary": "获取单个员工档案详情。",
         "parameters": [
           {
             "name": "id",
@@ -19444,6 +19980,7 @@
         "tags": [
           "Employee"
         ],
+        "summary": "更新员工所属组织部门、岗位及在职状态。",
         "parameters": [
           {
             "name": "id",
@@ -19621,6 +20158,7 @@
         "tags": [
           "Employee"
         ],
+        "summary": "删除指定员工档案。",
         "parameters": [
           {
             "name": "id",
@@ -19767,6 +20305,7 @@
         "tags": [
           "Employee"
         ],
+        "summary": "按 Id 集合批量删除员工档案。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19935,6 +20474,7 @@
         "tags": [
           "Employee"
         ],
+        "summary": "批量变更选定员工在职/离职状态。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20103,6 +20643,7 @@
         "tags": [
           "Employee"
         ],
+        "summary": "按员工 Id 列表批量开通对应系统账号。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20271,6 +20812,7 @@
         "tags": [
           "Employee"
         ],
+        "summary": "全量/筛选批量为未开通账号的在职员工生成登录账号。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20514,17 +21056,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EnterpriseDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EnterpriseDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EnterpriseDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EnterpriseDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EnterpriseDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EnterpriseDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -21605,6 +22147,7 @@
         "tags": [
           "JobScheduling"
         ],
+        "summary": "查询所有已注册定时任务的调度状态与元数据清单。",
         "responses": {
           "200": {
             "description": "OK",
@@ -21763,6 +22306,7 @@
         "tags": [
           "JobScheduling"
         ],
+        "summary": "启用或停用指定后台定时任务并修改 Cron 表达式。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -21917,6 +22461,7 @@
         "tags": [
           "JobScheduling"
         ],
+        "summary": "手动立即触发或演练（DryRun）执行一次定时任务。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -22085,6 +22630,7 @@
         "tags": [
           "JobScheduling"
         ],
+        "summary": "解析并预览给定 Cron 表达式未来数次的预计触发时间。",
         "parameters": [
           {
             "name": "cron",
@@ -22255,6 +22801,7 @@
         "tags": [
           "JobScheduling"
         ],
+        "summary": "获取定时任务整体启用数及近期执行成功/失败统计概览。",
         "responses": {
           "200": {
             "description": "OK",
@@ -22404,6 +22951,7 @@
         "tags": [
           "MessageRecord"
         ],
+        "summary": "分页查询消息总线事件投递记录。",
         "parameters": [
           {
             "name": "TopicId",
@@ -22488,17 +23036,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageRecordDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageRecordDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageRecordDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageRecordDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageRecordDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageRecordDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -22631,6 +23179,7 @@
         "tags": [
           "MessageRecord"
         ],
+        "summary": "获取单条消息记录详情。",
         "parameters": [
           {
             "name": "id",
@@ -22791,6 +23340,7 @@
         "tags": [
           "MessageRecord"
         ],
+        "summary": "查看指定消息历次下游投递尝试明细（状态码、耗时与失败摘要）。",
         "parameters": [
           {
             "name": "id",
@@ -22960,6 +23510,7 @@
         "tags": [
           "MessageRecord"
         ],
+        "summary": "向指定消息主题手动发布 CloudEvents 消息。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -23128,6 +23679,7 @@
         "tags": [
           "MessageRecord"
         ],
+        "summary": "手动重放投递单条消息记录。",
         "parameters": [
           {
             "name": "id",
@@ -23443,6 +23995,7 @@
         "tags": [
           "MessageSubscription"
         ],
+        "summary": "分页查询消息订阅与投递渠道配置列表。",
         "parameters": [
           {
             "name": "TopicId",
@@ -23519,17 +24072,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageSubscriptionDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageSubscriptionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageSubscriptionDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageSubscriptionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageSubscriptionDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageSubscriptionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -23660,6 +24213,7 @@
         "tags": [
           "MessageSubscription"
         ],
+        "summary": "创建消息订阅（支持 HTTP Webhook、RabbitMQ 与 BotWebhook 渠道）。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -23828,6 +24382,7 @@
         "tags": [
           "MessageSubscription"
         ],
+        "summary": "获取单条消息订阅详情。",
         "parameters": [
           {
             "name": "id",
@@ -23986,6 +24541,7 @@
         "tags": [
           "MessageSubscription"
         ],
+        "summary": "更新消息订阅目标、过滤规则与重试配置。",
         "parameters": [
           {
             "name": "id",
@@ -24163,6 +24719,7 @@
         "tags": [
           "MessageSubscription"
         ],
+        "summary": "删除指定消息订阅。",
         "parameters": [
           {
             "name": "id",
@@ -24309,6 +24866,7 @@
         "tags": [
           "MessageTopic"
         ],
+        "summary": "分页查询消息总线主题列表。",
         "parameters": [
           {
             "name": "Filter",
@@ -24384,17 +24942,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageTopicDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageTopicDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageTopicDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageTopicDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageTopicDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageTopicDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -24525,6 +25083,7 @@
         "tags": [
           "MessageTopic"
         ],
+        "summary": "创建新消息主题。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -24693,6 +25252,7 @@
         "tags": [
           "MessageTopic"
         ],
+        "summary": "获取单个消息主题详情。",
         "parameters": [
           {
             "name": "id",
@@ -24851,6 +25411,7 @@
         "tags": [
           "MessageTopic"
         ],
+        "summary": "更新消息主题描述与配置。",
         "parameters": [
           {
             "name": "id",
@@ -25028,6 +25589,7 @@
         "tags": [
           "MessageTopic"
         ],
+        "summary": "删除指定消息主题。",
         "parameters": [
           {
             "name": "id",
@@ -25174,6 +25736,7 @@
         "tags": [
           "NavPreference"
         ],
+        "summary": "读取当前登录用户的导航菜单排序偏好及管理员标志。",
         "responses": {
           "200": {
             "description": "OK",
@@ -25321,6 +25884,7 @@
         "tags": [
           "NavPreference"
         ],
+        "summary": "保存导航菜单自定义排序（管理员写全局默认，其余用户写个人配置）。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -25475,6 +26039,7 @@
         "tags": [
           "NavPreference"
         ],
+        "summary": "重置当前用户或全局默认导航排序。",
         "responses": {
           "200": {
             "description": "OK"
@@ -25605,11 +26170,161 @@
         }
       }
     },
+    "/api/v1/nav-usage": {
+      "post": {
+        "tags": [
+          "NavUsage"
+        ],
+        "summary": "记录当前用户访问侧栏导航项的结构化度量日志。",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapMid.Layout.NavUsageInputDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapMid.Layout.NavUsageInputDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapMid.Layout.NavUsageInputDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not Implemented",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/notification/logs": {
       "get": {
         "tags": [
           "NotificationLog"
         ],
+        "summary": "分页查询通知发送流水日志。",
         "parameters": [
           {
             "name": "Source",
@@ -25667,17 +26382,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationLogDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationLogDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationLogDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationLogDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationLogDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationLogDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -25810,6 +26525,7 @@
         "tags": [
           "NotificationRecipient"
         ],
+        "summary": "分页查询通知接收人配置列表。",
         "parameters": [
           {
             "name": "Sorting",
@@ -25845,17 +26561,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationRecipientDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationRecipientDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationRecipientDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationRecipientDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationRecipientDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationRecipientDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -25986,6 +26702,7 @@
         "tags": [
           "NotificationRecipient"
         ],
+        "summary": "创建通知接收人订阅规则。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -26313,6 +27030,7 @@
         "tags": [
           "NotificationRecipient"
         ],
+        "summary": "获取单个通知接收人详情。",
         "parameters": [
           {
             "name": "id",
@@ -26471,6 +27189,7 @@
         "tags": [
           "NotificationRecipient"
         ],
+        "summary": "更新通知接收人联系方式及订阅来源规则。",
         "parameters": [
           {
             "name": "id",
@@ -26648,6 +27367,7 @@
         "tags": [
           "NotificationRecipient"
         ],
+        "summary": "删除指定通知接收人。",
         "parameters": [
           {
             "name": "id",
@@ -26794,6 +27514,7 @@
         "tags": [
           "NotificationSettings"
         ],
+        "summary": "获取平台通知中心（邮件 SMTP / 通用 BotWebhook / Alertmanager）配置（密钥脱敏）。",
         "responses": {
           "200": {
             "description": "OK",
@@ -26941,6 +27662,7 @@
         "tags": [
           "NotificationSettings"
         ],
+        "summary": "更新平台通知渠道参数与凭据配置。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -27095,6 +27817,7 @@
         "tags": [
           "NotificationSettings"
         ],
+        "summary": "向指定邮件或 Webhook 渠道发送一条测试通知以验证配置连通性。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -27263,6 +27986,7 @@
         "tags": [
           "NotificationSettings"
         ],
+        "summary": "轮换并重新生成 Alertmanager 告警 Webhook 接入令牌。",
         "responses": {
           "200": {
             "description": "OK",
@@ -27412,6 +28136,7 @@
         "tags": [
           "PipelineExecution"
         ],
+        "summary": "分页查询 ETL 管道执行历史与状态记录。",
         "parameters": [
           {
             "name": "PipelineId",
@@ -27506,17 +28231,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.PipelineExecutionDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.PipelineExecutionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.PipelineExecutionDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.PipelineExecutionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.PipelineExecutionDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.PipelineExecutionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -27649,6 +28374,7 @@
         "tags": [
           "PipelineExecution"
         ],
+        "summary": "获取单条 ETL 执行记录详情及投递目标快照。",
         "parameters": [
           {
             "name": "id",
@@ -27809,6 +28535,7 @@
         "tags": [
           "PipelineExecution"
         ],
+        "summary": "人工终态裁决 OutcomeUnknown 状态下的不确定管道执行结果。",
         "parameters": [
           {
             "name": "id",
@@ -28389,6 +29116,7 @@
         "tags": [
           "Position"
         ],
+        "summary": "分页查询岗位定义列表。",
         "parameters": [
           {
             "name": "EnterpriseId",
@@ -28492,17 +29220,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.PositionDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.PositionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.PositionDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.PositionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.PositionDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.PositionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -28633,6 +29361,7 @@
         "tags": [
           "Position"
         ],
+        "summary": "创建新岗位。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -28801,6 +29530,7 @@
         "tags": [
           "Position"
         ],
+        "summary": "获取单个岗位详情。",
         "parameters": [
           {
             "name": "id",
@@ -28959,6 +29689,7 @@
         "tags": [
           "Position"
         ],
+        "summary": "更新岗位名称、编码及所属部门关联。",
         "parameters": [
           {
             "name": "id",
@@ -29136,6 +29867,7 @@
         "tags": [
           "Position"
         ],
+        "summary": "删除指定岗位。",
         "parameters": [
           {
             "name": "id",
@@ -29282,6 +30014,7 @@
         "tags": [
           "Position"
         ],
+        "summary": "按 Id 集合批量删除岗位。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -29450,6 +30183,7 @@
         "tags": [
           "Position"
         ],
+        "summary": "批量启用或停用选定岗位。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -29704,17 +30438,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Scheduling.ScheduledJobExecutionDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Scheduling.ScheduledJobExecutionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Scheduling.ScheduledJobExecutionDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Scheduling.ScheduledJobExecutionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Scheduling.ScheduledJobExecutionDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]"
+                  "$ref": "#/components/schemas/Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Scheduling.ScheduledJobExecutionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]"
                 }
               }
             }
@@ -29847,6 +30581,7 @@
         "tags": [
           "SystemHealth"
         ],
+        "summary": "执行并返回平台核心组件（数据库 / Redis / 队列 / CDC / ETL / 网关指标）系统健康体检快照。",
         "responses": {
           "200": {
             "description": "OK",
@@ -29991,11 +30726,472 @@
         }
       }
     },
+    "/api/v1/table-preference": {
+      "get": {
+        "tags": [
+          "TablePreference"
+        ],
+        "summary": "读取当前登录用户的表格视图及行密度偏好快照。",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapMid.Layout.TablePreferenceSnapshotDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapMid.Layout.TablePreferenceSnapshotDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapMid.Layout.TablePreferenceSnapshotDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not Implemented",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/table-preference/table": {
+      "put": {
+        "tags": [
+          "TablePreference"
+        ],
+        "summary": "保存或清除单张表格的列序、显隐、列宽及命名预设偏好。",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapMid.Layout.SaveTableViewPreferenceInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapMid.Layout.SaveTableViewPreferenceInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapMid.Layout.SaveTableViewPreferenceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not Implemented",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/table-preference/density": {
+      "put": {
+        "tags": [
+          "TablePreference"
+        ],
+        "summary": "保存当前用户的全局表格行密度偏好（standard / compact）。",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapMid.Layout.SaveTableDensityInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapMid.Layout.SaveTableDensityInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapMid.Layout.SaveTableDensityInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not Implemented",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Volo.Abp.Http.RemoteServiceErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/third-party-clients": {
       "get": {
         "tags": [
           "ThirdPartyClient"
         ],
+        "summary": "查询受托管的第三方 OAuth2 客户端列表。",
         "responses": {
           "200": {
             "description": "OK",
@@ -30152,6 +31348,7 @@
         "tags": [
           "ThirdPartyClient"
         ],
+        "summary": "创建 OpenIddict client_credentials 第三方客户端并返回初始密钥。",
         "requestBody": {
           "content": {
             "application/json": {
@@ -30320,6 +31517,7 @@
         "tags": [
           "ThirdPartyClient"
         ],
+        "summary": "轮换重置第三方客户端密钥（Secret）。",
         "parameters": [
           {
             "name": "clientId",
@@ -30658,6 +31856,7 @@
         "tags": [
           "ThirdPartyClient"
         ],
+        "summary": "注销并删除第三方客户端凭据。",
         "parameters": [
           {
             "name": "clientId",
@@ -31115,6 +32314,123 @@
         },
         "additionalProperties": false,
         "description": "账号默认设置（初始密码）。"
+      },
+      "SwapMid.AccountManagement.AccountDepartmentOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "部门 ID。",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "部门名称。",
+            "nullable": true
+          },
+          "enterpriseName": {
+            "type": "string",
+            "description": "所属企业名称。",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "账号管理页部门筛选下拉专用轻量部门选项（与部门主数据权限解耦）。"
+      },
+      "SwapMid.AccountManagement.AccountEmployeeOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "员工档案 ID。",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "description": "已绑定账号 ID（未绑定为 null）。",
+            "format": "uuid",
+            "nullable": true
+          },
+          "employeeNo": {
+            "type": "string",
+            "description": "员工工号。",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "员工姓名。",
+            "nullable": true
+          },
+          "enterpriseId": {
+            "type": "string",
+            "description": "所属企业 ID。",
+            "format": "uuid"
+          },
+          "enterpriseName": {
+            "type": "string",
+            "description": "所属企业名称。",
+            "nullable": true
+          },
+          "departmentId": {
+            "type": "string",
+            "description": "所属部门 ID。",
+            "format": "uuid",
+            "nullable": true
+          },
+          "departmentName": {
+            "type": "string",
+            "description": "所属部门名称。",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "description": "员工邮箱。",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "description": "员工手机号。",
+            "nullable": true
+          },
+          "position": {
+            "type": "string",
+            "description": "岗位名称。",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/SwapMid.EnterpriseManagement.EmployeeStatus"
+          }
+        },
+        "additionalProperties": false,
+        "description": "账号管理页关联员工下拉专用在职员工选项（与员工主数据权限解耦）。"
+      },
+      "SwapMid.AccountManagement.AccountPasswordPolicyDto": {
+        "type": "object",
+        "properties": {
+          "requiredLength": {
+            "type": "integer",
+            "description": "密码最小长度。",
+            "format": "int32"
+          },
+          "requireDigit": {
+            "type": "boolean",
+            "description": "密码是否必须包含数字。"
+          },
+          "requireLowercase": {
+            "type": "boolean",
+            "description": "密码是否必须包含小写字母。"
+          },
+          "requireUppercase": {
+            "type": "boolean",
+            "description": "密码是否必须包含大写字母。"
+          },
+          "requireNonAlphanumeric": {
+            "type": "boolean",
+            "description": "密码是否必须包含非字母数字字符（特殊符号）。"
+          }
+        },
+        "additionalProperties": false,
+        "description": "密码复杂度公开规则（供登录改密、账号表单与个人中心前端提示使用，不含默认密码等敏感配置）。"
       },
       "SwapMid.AccountManagement.AccountPermissionDto": {
         "type": "object",
@@ -35198,6 +36514,32 @@
         "additionalProperties": false,
         "description": "当前用户生效的导航顺序偏好。"
       },
+      "SwapMid.Layout.NavUsageInputDto": {
+        "required": [
+          "domain",
+          "group",
+          "href"
+        ],
+        "type": "object",
+        "properties": {
+          "domain": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "group": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "href": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "SwapMid.Layout.SaveNavOrderInput": {
         "type": "object",
         "properties": {
@@ -35209,6 +36551,37 @@
         },
         "additionalProperties": false,
         "description": "保存导航顺序入参。"
+      },
+      "SwapMid.Layout.SaveTableDensityInput": {
+        "required": [
+          "density"
+        ],
+        "type": "object",
+        "properties": {
+          "density": {
+            "maxLength": 32,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SwapMid.Layout.SaveTableViewPreferenceInput": {
+        "required": [
+          "tableKey"
+        ],
+        "type": "object",
+        "properties": {
+          "tableKey": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "view": {
+            "$ref": "#/components/schemas/SwapMid.Layout.TableViewPreferenceDto"
+          }
+        },
+        "additionalProperties": false
       },
       "SwapMid.Layout.SaveUserPreferenceInput": {
         "type": "object",
@@ -35232,6 +36605,173 @@
         },
         "additionalProperties": false,
         "description": "保存界面偏好入参（仅传入的字段被更新，null 表示不改该项）。"
+      },
+      "SwapMid.Layout.TablePreferenceSnapshotDto": {
+        "type": "object",
+        "properties": {
+          "density": {
+            "type": "string",
+            "nullable": true
+          },
+          "tables": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SwapMid.Layout.TableViewPreferenceDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SwapMid.Layout.TableSavedColumnFilterDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SwapMid.Layout.TableSavedPresetDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "order": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "visibility": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "nullable": true
+          },
+          "sizing": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "pinned": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "search": {
+            "type": "string",
+            "nullable": true
+          },
+          "sortItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SwapMid.Layout.TableSavedSortItemDto"
+            },
+            "nullable": true
+          },
+          "columnFilters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SwapMid.Layout.TableSavedColumnFilterDto"
+            },
+            "nullable": true
+          },
+          "urlFilters": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SwapMid.Layout.TableSavedSortItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "desc": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SwapMid.Layout.TableViewPreferenceDto": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "visibility": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "nullable": true
+          },
+          "sizing": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "pinned": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "customPageSizes": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "presets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SwapMid.Layout.TableSavedPresetDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "SwapMid.Layout.UserPreferenceDto": {
         "type": "object",
@@ -37003,7 +38543,33 @@
         "additionalProperties": false,
         "description": "系统体检总报告。总状态 = 所有检查项里最差的一项（Unknown 不拉低总状态）。"
       },
-      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountDepartmentOptionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SwapMid.AccountManagement.AccountDepartmentOptionDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountEmployeeOptionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SwapMid.AccountManagement.AccountEmployeeOptionDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37016,7 +38582,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountUserLiteDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AccountUserLiteDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37029,7 +38595,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AuditUserLookupDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.AccountManagement.AuditUserLookupDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37042,7 +38608,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.ListResultDto`1[[SwapMid.SystemManagement.DataDictionaryItemDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37055,7 +38621,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountRoleDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37072,7 +38638,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountUserDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.AccountUserDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37089,7 +38655,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.RolePermissionChangeDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.AccountManagement.RolePermissionChangeDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37106,7 +38672,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiGroupDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiGroupDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37123,7 +38689,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiRouteDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.ApiManagement.ApiRouteDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37140,7 +38706,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.CdcStreamDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.CdcStreamDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37157,7 +38723,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataPipelineDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataPipelineDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37174,7 +38740,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataSourceDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.DataSourceDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37191,7 +38757,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.PipelineExecutionDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.DataIntegration.PipelineExecutionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37208,7 +38774,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.CompanyDepartmentDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.CompanyDepartmentDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37225,7 +38791,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EmployeeDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EmployeeDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37242,7 +38808,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EnterpriseDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.EnterpriseDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37259,7 +38825,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.PositionDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.EnterpriseManagement.PositionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37276,7 +38842,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageRecordDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageRecordDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37293,7 +38859,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageSubscriptionDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageSubscriptionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37310,7 +38876,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageTopicDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.MessageBus.MessageTopicDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37327,7 +38893,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationLogDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationLogDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37344,7 +38910,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationRecipientDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Notification.NotificationRecipientDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37361,7 +38927,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Scheduling.ScheduledJobExecutionDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.Scheduling.ScheduledJobExecutionDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37378,7 +38944,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.AuditLogDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.AuditLogDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37395,7 +38961,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.CodeRuleDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.CodeRuleDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37412,7 +38978,7 @@
         },
         "additionalProperties": false
       },
-      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.DataDictionaryDto, SwapMid.Application.Contracts, Version=1.9.0.0, Culture=neutral, PublicKeyToken=null]]": {
+      "Volo.Abp.Application.Dtos.PagedResultDto`1[[SwapMid.SystemManagement.DataDictionaryDto, SwapMid.Application.Contracts, Version=1.9.1.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
           "items": {
@@ -37589,6 +39155,10 @@
       "name": "NavPreference"
     },
     {
+      "name": "NavUsage",
+      "description": "导航菜单使用度量上报端点。"
+    },
+    {
       "name": "NotificationLog"
     },
     {
@@ -37610,6 +39180,10 @@
     },
     {
       "name": "SystemHealth"
+    },
+    {
+      "name": "TablePreference",
+      "description": "当前用户的表格视图与行密度云端偏好端点。"
     },
     {
       "name": "ThirdPartyClient",

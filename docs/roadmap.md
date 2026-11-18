@@ -1,4 +1,4 @@
-# SwapMid Roadmap (`v0.2` → `v1.0 LTS`)
+# SwapMid Roadmap (`v0.2` → `v2.0+`)
 
 SwapMid focuses on being a **correctness-first, single-stack, agent-ready enterprise data swap and integration control plane** built on **.NET 10 (ABP v10.1)** and **Next.js 16**.
 
@@ -28,7 +28,9 @@ Every milestone adheres to five non-negotiable engineering invariants:
 | **`v1.5.0`** *(Released)* | **Deterministic Kafka Key Ordering, Sink DDL Templates & Batch Replay** | Per-event Kafka partition keys (`TargetSinkKeyColumns` + `EtlSourceBatch.PartitionKeys`), one-click ClickHouse DDL & CDC schema template dialog (`GET /api/v1/cdc-streams/{id}/sink-template`), set-based `POST /api/v1/message-records/batch-replay`, and Prometheus `SwapMidCdcCaptureFailures` / `SwapMidCdcWalLagHigh` alert rules |
 | **`v1.6.0`** *(Released)* | **Consistent CDC Initial Snapshot, Keyed ClickHouse Auto-DDL, Grafana CDC & MCP** | PostgreSQL `EXPORT_SNAPSHOT` + `REPEATABLE READ` baseline snapshot (`InitialSnapshotEnabled` + `/snapshot`), keyed ClickHouse `ReplacingMergeTree` DDL & `/provision-sink`, MCP `diagnose_cdc_streams` tool, Grafana CDC dashboard panels, and active CI PG 18 `wal_level=logical` contracts |
 | **`v1.7.0`** *(Released)* | **CDC Relational Row-Level Mirror (`Upsert`/`Delete`) & Schema Drift Guardrails** | Direct `CdcTargetMode.RelationalTable` materialization across PostgreSQL / SQL Server / MySQL (`TargetDeletePolicy`, `EXPORT_SNAPSHOT` + staging `Upsert` + atomic `Delete`), upstream DDL `SchemaDriftPolicy` (`Ignore` / `Warn` / `PauseAndAlert`) with Hangfire circuit-breaking, `NotificationService` alerts, `accept-schema` recovery, and `SwapMidCdcSchemaDriftDetected` alerting |
-| **`v1.8.0`** *(Current)* | **CDC Field Remapping, Soft-Delete Tombstones & Object-Store Lakehouse Manifests** | Explicit `TargetFieldMappings` projection + `CdcDeletePolicy.SoftDelete` tombstones with intra-batch `NOT NULL` safety & resurrection clearing, dual-source `inspect-mirror-schema` preflight & interactive visual mapper UI, immutable S3/MinIO `_swapmid/manifests/*.json` + bounded `_swapmid/latest.json` Lakehouse checkpoint index (`swapmid_cdc_object_storage_manifests_total`), and Grafana Panel 9 CDC P95 observability |
+| **`v1.8.0`** *(Released)* | **CDC Field Remapping, Soft-Delete Tombstones & Object-Store Lakehouse Manifests** | Explicit `TargetFieldMappings` projection + `CdcDeletePolicy.SoftDelete` tombstones with intra-batch `NOT NULL` safety & resurrection clearing, dual-source `inspect-mirror-schema` preflight & interactive visual mapper UI, immutable S3/MinIO `_swapmid/manifests/*.json` + bounded `_swapmid/latest.json` Lakehouse checkpoint index (`swapmid_cdc_object_storage_manifests_total`), and Grafana Panel 9 CDC P95 observability |
+| **`v1.9.0`** *(Released)* | **SQL Server Change Tracking CDC & Lakehouse Small-File Compaction** | Heterogeneous `CdcSourceType` (`SqlServerChangeTracking = 1`) via native `CHANGETABLE(CHANGES ...)` + retention/drift checks, `CdcObjectStorageCompactionService` (Parquet/JSONL small-file consolidation + auto-threshold + `/compact-lakehouse`), DuckDB/ClickHouse/Spark analytics SQL, Grafana Panel 9 compaction series, and React `#418` hydration fix |
+| **`v1.9.1`** *(Current)* | **Security & Runtime Polish, 100% OpenAPI Summaries & SQL Server CI** | Next.js `16.4.6` security upgrade, zero-404 UI runtime (`ITablePreferenceAppService` cloud table persistence, `/api/v1/nav-usage` logging, `204` default avatar fallback), 100% `/api/v1` XML `<summary>` OpenAPI coverage, and Linux SQL Server 2022 Change Tracking CI gate |
 
 ---
 
@@ -87,6 +89,13 @@ Every milestone adheres to five non-negotiable engineering invariants:
   - Extended `CdcStreamDefinition` with `SourceType` and `LakehouseCompactMinFiles` (`AddCdcSourceTypeAndLakehouseCompaction`), and implemented `SqlServerCdcCaptureService` (`CHANGETABLE(CHANGES ...)`, `CHANGE_TRACKING_MIN_VALID_VERSION` retention guard, `Snapshot` / `REPEATABLE READ + HOLDLOCK` baseline, `INFORMATION_SCHEMA.COLUMNS` schema drift evaluation) feeding the shared `CdcStreamDeliveryDispatcher` across all targets. Verified live on Windows `(localdb)\MSSQLLocalDB`.
 - **Object-Store Lakehouse Small-File Compaction & Cross-Engine Analytics SQL**:
   - Implemented `CdcObjectStorageCompactionService` (Parquet `RowGroup` merge + JSONL consolidation, immutable compaction manifest, atomic `_swapmid/latest.json` swap, optional superseded fragment cleanup, auto-compaction trigger, and `POST /api/v1/cdc-streams/{id}/compact-lakehouse`), `LakehouseQuerySql` generation (`DuckDB`, `ClickHouse s3()`, `Spark`), Prometheus compaction metrics, Grafana Panel 9 compaction series, and React `#418` hydration fixes.
+
+### `v1.9.1` — Security & Runtime Polish, 100% OpenAPI Summaries & SQL Server CI
+- **Next.js `16.4.6` Security Baseline & Zero Console 404s (`web/` / `Layout` / `Account`)**:
+  - Upgraded `next` and `eslint-config-next` cleanly from `16.4.3` to `16.4.6` (resolving first-build `SecurityFatalError` advisories while preserving `minimatch`/`brace-expansion` supply-chain contracts).
+  - Implemented user-scoped cloud table preferences (`ITablePreferenceAppService`, `TablePreferenceController` `/api/v1/table-preference`), structured navigation usage telemetry (`NavUsageController` `/api/v1/nav-usage`), anonymous `GET /api/v1/account-management/password-policy` (`AccountSettingsController`), permission-decoupled `GET /api/v1/account-users/{employee-options,department-options}` (`AccountUserController`), and `204 No Content` empty-avatar responses in `AvatarController`, eliminating all background `404`/`400` noise across SSR and authenticated pages.
+- **100% `/api/v1` OpenAPI Summary Coverage & Cross-Platform SQL Server CDC CI**:
+  - Added accurate XML `<summary>` annotations across all remaining `SwapMid.HttpApi` controllers (`100%` coverage in `check:api-summary`), refreshed `docs/api/summary-coverage-baseline.json`, and enabled `SWAPMID_SQLSERVER_TEST_CONNECTION` + SQL Server 2022 container execution for `SqlServerCdcLocalDbContractTests` in `.github/workflows/ci.yml`.
 
 ---
 

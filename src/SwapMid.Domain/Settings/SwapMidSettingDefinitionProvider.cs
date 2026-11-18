@@ -36,6 +36,14 @@ public class SwapMidSettingDefinitionProvider : SettingDefinitionProvider
                 SwapMidSettings.PreferenceSidebarCollapsed,
                 defaultValue: "false",
                 isVisibleToClients: true),
+            new SettingDefinition(
+                SwapMidSettings.PreferenceTableDensity,
+                defaultValue: "standard",
+                isVisibleToClients: true),
+            new SettingDefinition(
+                SwapMidSettings.PreferenceTableViews,
+                defaultValue: "{}",
+                isVisibleToClients: false),
 
             new SettingDefinition(
                 SwapMidSettings.ScheduledJobsPendingCron,

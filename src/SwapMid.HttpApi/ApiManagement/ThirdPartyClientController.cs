@@ -22,13 +22,16 @@ public class ThirdPartyClientController : SwapMidController, IThirdPartyClientAp
         _service = service;
     }
 
+    /// <summary>查询受托管的第三方 OAuth2 客户端列表。</summary>
     [HttpGet]
     public Task<List<ThirdPartyClientDto>> GetListAsync() => _service.GetListAsync();
 
+    /// <summary>创建 OpenIddict client_credentials 第三方客户端并返回初始密钥。</summary>
     [HttpPost]
     public Task<ThirdPartyClientCredentialDto> CreateAsync(CreateThirdPartyClientDto input)
         => _service.CreateAsync(input);
 
+    /// <summary>轮换重置第三方客户端密钥（Secret）。</summary>
     [HttpPost("{clientId}/reset-secret")]
     public Task<ThirdPartyClientCredentialDto> ResetSecretAsync(string clientId)
         => _service.ResetSecretAsync(clientId);
@@ -40,6 +43,7 @@ public class ThirdPartyClientController : SwapMidController, IThirdPartyClientAp
         [FromBody] UpdateThirdPartyClientPolicyDto input)
         => _service.UpdatePolicyAsync(clientId, input);
 
+    /// <summary>注销并删除第三方客户端凭据。</summary>
     [HttpDelete("{clientId}")]
     public Task DeleteAsync(string clientId) => _service.DeleteAsync(clientId);
 }

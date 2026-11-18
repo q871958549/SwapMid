@@ -19,10 +19,12 @@ public class AuditLogController : SwapMidController, IAuditLogAppService
         _service = service;
     }
 
+    /// <summary>分页检索系统 API 请求与安全审计日志。</summary>
     [HttpGet]
     public Task<PagedResultDto<AuditLogDto>> GetListAsync(GetAuditLogListInput input)
         => _service.GetListAsync(input);
 
+    /// <summary>获取单条审计日志的完整动作及参数变更明细。</summary>
     [HttpGet("{id}")]
     public Task<AuditLogDto> GetAsync(Guid id)
         => _service.GetAsync(id);

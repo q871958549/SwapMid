@@ -277,6 +277,27 @@ async function main() {
   assert.ok(Array.isArray(tables) && tables.length >= 10, `Expected >=10 platform DB tables, got ${tables?.length}`)
   const authProviders = await apiJson('/api/v1/auth-providers')
   assert.equal(typeof authProviders.externalOidcEnabled, 'boolean')
+  const passwordPolicy = await apiJson('/api/v1/account-management/password-policy')
+  assert.ok(Number.isInteger(passwordPolicy.requiredLength) && passwordPolicy.requiredLength >= 6)
+  assert.equal('defaultPassword' in passwordPolicy, false, 'Public password-policy must not leak defaultPassword')
+  const tablePref = await apiJson('/api/v1/table-preference', { token })
+  assert.ok(tablePref.density === 'standard' || tablePref.density === 'compact')
+  const navUsageRes = await fetch(`${API_BASE}/api/v1/nav-usage`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ domain: 'platform', group: 'system', href: '/system/health' }),
+    signal: AbortSignal.timeout(10_000),
+  })
+  assert.equal(navUsageRes.status, 204, `Expected /api/v1/nav-usage 204, got ${navUsageRes.status}`)
+  const avatarRes = await fetch(`${API_BASE}/api/v1/avatars/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(10_000),
+  })
+  assert.ok(avatarRes.status === 200 || avatarRes.status === 204, `Expected /api/v1/avatars/me 200/204, got ${avatarRes.status}`)
+  const empOptions = await apiJson('/api/v1/account-users/employee-options', { token })
+  assert.ok(Array.isArray(empOptions.items), 'Expected items array from /api/v1/account-users/employee-options')
+  const deptOptions = await apiJson('/api/v1/account-users/department-options', { token })
+  assert.ok(Array.isArray(deptOptions.items), 'Expected items array from /api/v1/account-users/department-options')
 
   const mcpRes = await fetch(`${API_BASE}/api/mcp`, {
     method: 'POST',

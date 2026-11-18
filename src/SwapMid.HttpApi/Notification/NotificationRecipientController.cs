@@ -22,6 +22,7 @@ public class NotificationRecipientController : SwapMidController, INotificationR
         _service = service;
     }
 
+    /// <summary>分页查询通知接收人配置列表。</summary>
     [HttpGet]
     public Task<PagedResultDto<NotificationRecipientDto>> GetListAsync(PagedAndSortedResultRequestDto input) => _service.GetListAsync(input);
 
@@ -29,15 +30,19 @@ public class NotificationRecipientController : SwapMidController, INotificationR
     [HttpGet("sources")]
     public Task<List<string>> GetSourcesAsync() => _service.GetSourcesAsync();
 
+    /// <summary>获取单个通知接收人详情。</summary>
     [HttpGet("{id}")]
     public Task<NotificationRecipientDto> GetAsync(Guid id) => _service.GetAsync(id);
 
+    /// <summary>创建通知接收人订阅规则。</summary>
     [HttpPost]
     public Task<NotificationRecipientDto> CreateAsync(CreateUpdateNotificationRecipientDto input) => _service.CreateAsync(input);
 
+    /// <summary>更新通知接收人联系方式及订阅来源规则。</summary>
     [HttpPut("{id}")]
     public Task<NotificationRecipientDto> UpdateAsync(Guid id, CreateUpdateNotificationRecipientDto input) => _service.UpdateAsync(id, input);
 
+    /// <summary>删除指定通知接收人。</summary>
     [HttpDelete("{id}")]
     public Task DeleteAsync(Guid id) => _service.DeleteAsync(id);
 }

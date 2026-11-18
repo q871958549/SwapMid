@@ -18,6 +18,7 @@ public class CurrentUserPermissionController : SwapMidController, ICurrentUserPe
         _service = service;
     }
 
+    /// <summary>查询当前登录用户的有效权限编码清单。</summary>
     [HttpGet]
     public Task<CurrentUserPermissionDto> GetAsync()
         => _service.GetAsync();

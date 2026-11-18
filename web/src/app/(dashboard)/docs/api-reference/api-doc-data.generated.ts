@@ -17,8 +17,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/data-sources",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页查询数据集成数据源及外部接收端列表（凭证字段脱敏）。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "filter",
@@ -160,8 +160,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/data-sources",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "创建数据源连接配置。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "name",
@@ -282,8 +282,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/data-sources/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单个数据源配置详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -376,8 +376,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/data-sources/{id}",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新数据源连接配置（修改范围受密码凭证重填校验约束）。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -507,8 +507,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "DELETE",
             "path": "/api/v1/data-sources/{id}",
-            "summary": "删除",
-            "summaryDocumented": false,
+            "summary": "删除指定数据源。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -522,8 +522,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/data-sources/{id}/test-connection",
-            "summary": "test-connection",
-            "summaryDocumented": false,
+            "summary": "使用已保存密钥合并探测指定数据源的实时连通性。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -576,8 +576,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/data-sources/test-connection",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "基于提交的配置参数探测上游数据库或外部接收端连通性。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "type",
@@ -627,8 +627,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/data-pipelines",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页查询数据管道定义列表。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "filter",
@@ -819,8 +819,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/data-pipelines",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "创建数据管道草稿（需经 Schema 预检及激活方可执行）。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "name",
@@ -997,8 +997,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/data-pipelines/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单条数据管道详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -1133,8 +1133,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/data-pipelines/{id}",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新数据管道配置（字段映射、增量模式及 Cron 调度）。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -1320,8 +1320,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "DELETE",
             "path": "/api/v1/data-pipelines/{id}",
-            "summary": "删除",
-            "summaryDocumented": false,
+            "summary": "删除指定数据管道。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -1335,8 +1335,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/data-pipelines/{id}/activate",
-            "summary": "激活",
-            "summaryDocumented": false,
+            "summary": "激活数据管道（建立 Target Receipt v1 / Sink 就绪状态并注册定时调度）。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -1350,8 +1350,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/data-pipelines/{id}/execute",
-            "summary": "执行",
-            "summaryDocumented": false,
+            "summary": "按确定性 RunId 立即幂等触发一次 ETL 数据管道执行。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -1598,8 +1598,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/data-pipelines/{id}/pause",
-            "summary": "暂停",
-            "summaryDocumented": false,
+            "summary": "暂停数据管道并移除 Hangfire 定时轮询。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -1881,8 +1881,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/pipeline-executions",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页查询 ETL 管道执行历史与状态记录。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "pipelineId",
@@ -2185,8 +2185,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/pipeline-executions/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单条 ETL 执行记录详情及投递目标快照。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -2711,8 +2711,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/pipeline-executions/{id}/resolve-outcome",
-            "summary": "resolve-outcome",
-            "summaryDocumented": false,
+            "summary": "人工终态裁决 OutcomeUnknown 状态下的不确定管道执行结果。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -6528,8 +6528,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/message-topics",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页查询消息总线主题列表。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "filter",
@@ -6671,8 +6671,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/message-topics",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "创建新消息主题。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "name",
@@ -6800,8 +6800,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/message-topics/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单个消息主题详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -6894,8 +6894,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/message-topics/{id}",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新消息主题描述与配置。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -7032,8 +7032,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "DELETE",
             "path": "/api/v1/message-topics/{id}",
-            "summary": "删除",
-            "summaryDocumented": false,
+            "summary": "删除指定消息主题。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -7053,8 +7053,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/message-subscriptions",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页查询消息订阅与投递渠道配置列表。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "topicId",
@@ -7224,8 +7224,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/message-subscriptions",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "创建消息订阅（支持 HTTP Webhook、RabbitMQ 与 BotWebhook 渠道）。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "topicId",
@@ -7402,8 +7402,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/message-subscriptions/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单条消息订阅详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -7524,8 +7524,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/message-subscriptions/{id}",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新消息订阅目标、过滤规则与重试配置。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -7711,8 +7711,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "DELETE",
             "path": "/api/v1/message-subscriptions/{id}",
-            "summary": "删除",
-            "summaryDocumented": false,
+            "summary": "删除指定消息订阅。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -7732,8 +7732,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/message-records",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页查询消息总线事件投递记录。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "topicId",
@@ -7875,8 +7875,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/message-records/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单条消息记录详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -7962,8 +7962,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/message-records/{id}/attempts",
-            "summary": "attempts",
-            "summaryDocumented": false,
+            "summary": "查看指定消息历次下游投递尝试明细（状态码、耗时与失败摘要）。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -8035,8 +8035,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/message-records/{id}/replay",
-            "summary": "重放",
-            "summaryDocumented": false,
+            "summary": "手动重放投递单条消息记录。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -8095,8 +8095,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/message-records/publish",
-            "summary": "发布",
-            "summaryDocumented": false,
+            "summary": "向指定消息主题手动发布 CloudEvents 消息。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "topicId",
@@ -8210,8 +8210,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/api-groups",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页查询 API 路由分组列表。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "filter",
@@ -8332,8 +8332,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/api-groups",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "创建 API 路由分组。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "name",
@@ -8433,8 +8433,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/api-groups/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单个 API 路由分组详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -8513,8 +8513,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/api-groups/{id}",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新 API 路由分组配置。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -8623,8 +8623,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "DELETE",
             "path": "/api/v1/api-groups/{id}",
-            "summary": "删除",
-            "summaryDocumented": false,
+            "summary": "删除指定 API 路由分组。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -8644,8 +8644,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/api-routes",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页查询动态网关路由列表。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "filter",
@@ -8815,8 +8815,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/api-routes",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "创建动态网关转发路由。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "groupId",
@@ -8979,8 +8979,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/api-routes/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单条动态网关路由详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -9094,8 +9094,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/api-routes/{id}",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新动态网关转发路由。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -9267,8 +9267,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "DELETE",
             "path": "/api/v1/api-routes/{id}",
-            "summary": "删除",
-            "summaryDocumented": false,
+            "summary": "删除指定网关路由。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -9282,8 +9282,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/api-routes/{id}/disable",
-            "summary": "停用",
-            "summaryDocumented": false,
+            "summary": "停用指定网关路由转发。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -9297,8 +9297,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/api-routes/{id}/enable",
-            "summary": "启用",
-            "summaryDocumented": false,
+            "summary": "启用指定网关路由参与转发。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -9318,8 +9318,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/third-party-clients",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "查询受托管的第三方 OAuth2 客户端列表。",
+            "summaryDocumented": true,
             "responseFields": [
               {
                 "name": "id",
@@ -9375,8 +9375,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/third-party-clients",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "创建 OpenIddict client_credentials 第三方客户端并返回初始密钥。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "clientId",
@@ -9441,8 +9441,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "DELETE",
             "path": "/api/v1/third-party-clients/{clientId}",
-            "summary": "删除",
-            "summaryDocumented": false,
+            "summary": "注销并删除第三方客户端凭据。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "clientId",
@@ -9538,8 +9538,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/third-party-clients/{clientId}/reset-secret",
-            "summary": "reset-secret",
-            "summaryDocumented": false,
+            "summary": "轮换重置第三方客户端密钥（Secret）。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "clientId",
@@ -10404,8 +10404,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/departments",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页查询组织部门树及列表。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "enterpriseId",
@@ -10715,8 +10715,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/departments",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "创建新部门。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "enterpriseId",
@@ -11033,8 +11033,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/departments/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单个部门详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -11274,8 +11274,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/departments/{id}",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新部门名称、上级或排序设置。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -11601,8 +11601,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "DELETE",
             "path": "/api/v1/departments/{id}",
-            "summary": "删除",
-            "summaryDocumented": false,
+            "summary": "删除指定部门。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -11616,8 +11616,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/departments/batch-delete",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "按 Id 集合批量删除部门。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "ids",
@@ -11661,8 +11661,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/departments/batch-set-enabled",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "批量启用或停用选定部门。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "ids",
@@ -11719,8 +11719,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/positions",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页查询岗位定义列表。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "enterpriseId",
@@ -11988,8 +11988,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/positions",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "创建新岗位。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "enterpriseId",
@@ -12243,8 +12243,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/positions/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单个岗位详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -12435,8 +12435,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/positions/{id}",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新岗位名称、编码及所属部门关联。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -12699,8 +12699,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "DELETE",
             "path": "/api/v1/positions/{id}",
-            "summary": "删除",
-            "summaryDocumented": false,
+            "summary": "删除指定岗位。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -12714,8 +12714,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/positions/batch-delete",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "按 Id 集合批量删除岗位。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "ids",
@@ -12759,8 +12759,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/positions/batch-set-enabled",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "批量启用或停用选定岗位。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "ids",
@@ -12817,8 +12817,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/employees",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页查询员工档案列表。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "enterpriseId",
@@ -13156,8 +13156,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/employees",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "创建员工档案记录。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "enterpriseId",
@@ -13488,8 +13488,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/employees/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单个员工档案详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -13736,8 +13736,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/employees/{id}",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新员工所属组织部门、岗位及在职状态。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -14077,8 +14077,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "DELETE",
             "path": "/api/v1/employees/{id}",
-            "summary": "删除",
-            "summaryDocumented": false,
+            "summary": "删除指定员工档案。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -14092,8 +14092,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/employees/batch-delete",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "按 Id 集合批量删除员工档案。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "ids",
@@ -14137,8 +14137,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/employees/batch-generate-accounts",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "按员工 Id 列表批量开通对应系统账号。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "ids",
@@ -14203,8 +14203,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/employees/batch-set-status",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "批量变更选定员工在职/离职状态。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "ids",
@@ -14255,8 +14255,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/employees/bulk-generate-accounts",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "全量/筛选批量为未开通账号的在职员工生成登录账号。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "enterpriseId",
@@ -14342,8 +14342,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/account-users",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页筛选登录账号列表。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "filter",
@@ -14562,8 +14562,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/account-users",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "创建登录账号。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "userName",
@@ -14768,8 +14768,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/account-users/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单个登录账号详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -14918,8 +14918,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/account-users/{id}",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新登录账号资料与角色。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -15126,8 +15126,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "DELETE",
             "path": "/api/v1/account-users/{id}",
-            "summary": "删除",
-            "summaryDocumented": false,
+            "summary": "删除指定登录账号。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -15228,8 +15228,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/account-users/{id}/reset-password",
-            "summary": "reset-password",
-            "summaryDocumented": false,
+            "summary": "将指定账号密码重置为系统默认密码。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -15265,8 +15265,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/account-users/assignable-roles",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "获取当前允许指派的角色列表。",
+            "summaryDocumented": true,
             "responseFields": [
               {
                 "name": "id",
@@ -15364,8 +15364,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/account-users/batch-set-roles",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "为选定账号集合批量追加/移除/覆盖角色。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "userIds",
@@ -15422,9 +15422,130 @@ export const API_MODULES: ApiModule[] = [
           },
           {
             "method": "GET",
+            "path": "/api/v1/account-users/department-options",
+            "summary": "获取账号管理页部门筛选下拉选项列表。",
+            "summaryDocumented": true,
+            "responseFields": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "description": "部门 ID。",
+                "nullable": false
+              },
+              {
+                "name": "name",
+                "cnName": "",
+                "type": "string",
+                "description": "部门名称。",
+                "nullable": true
+              },
+              {
+                "name": "enterpriseName",
+                "cnName": "",
+                "type": "string",
+                "description": "所属企业名称。",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/account-users/employee-options",
+            "summary": "获取可用于账号绑定及资料带出的在职员工选项列表。",
+            "summaryDocumented": true,
+            "responseFields": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "description": "员工档案 ID。",
+                "nullable": false
+              },
+              {
+                "name": "userId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "已绑定账号 ID（未绑定为 null）。",
+                "nullable": true
+              },
+              {
+                "name": "employeeNo",
+                "cnName": "",
+                "type": "string",
+                "description": "员工工号。",
+                "nullable": true
+              },
+              {
+                "name": "name",
+                "cnName": "",
+                "type": "string",
+                "description": "员工姓名。",
+                "nullable": true
+              },
+              {
+                "name": "enterpriseId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "所属企业 ID。",
+                "nullable": false
+              },
+              {
+                "name": "enterpriseName",
+                "cnName": "",
+                "type": "string",
+                "description": "所属企业名称。",
+                "nullable": true
+              },
+              {
+                "name": "departmentId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "所属部门 ID。",
+                "nullable": true
+              },
+              {
+                "name": "departmentName",
+                "cnName": "",
+                "type": "string",
+                "description": "所属部门名称。",
+                "nullable": true
+              },
+              {
+                "name": "email",
+                "cnName": "",
+                "type": "string",
+                "description": "员工邮箱。",
+                "nullable": true
+              },
+              {
+                "name": "phone",
+                "cnName": "",
+                "type": "string",
+                "description": "员工手机号。",
+                "nullable": true
+              },
+              {
+                "name": "position",
+                "cnName": "",
+                "type": "string",
+                "description": "岗位名称。",
+                "nullable": true
+              },
+              {
+                "name": "status",
+                "cnName": "",
+                "type": "EmployeeStatus",
+                "description": "状态；取值：0=Active（在职）；1=Suspended（停薪留职）；2=Resigned（离职）",
+                "nullable": false
+              }
+            ]
+          },
+          {
+            "method": "GET",
             "path": "/api/v1/account-users/for-assignment",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "获取用于人员指派/穿梭框展示的轻量账号摘要列表。",
+            "summaryDocumented": true,
             "responseFields": [
               {
                 "name": "id",
@@ -15459,8 +15580,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/account-users/generate-from-employee",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "根据在职员工记录批量/单个生成登录账号。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "employeeId",
@@ -15518,8 +15639,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/account-users/set-role-members",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "按角色整体配置绑定成员账号集合。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "roleName",
@@ -15620,8 +15741,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/account-roles",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页查询角色列表。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "filter",
@@ -15770,8 +15891,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/account-roles",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "创建新角色。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "name",
@@ -15906,8 +16027,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/account-roles/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单个角色详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -16014,8 +16135,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/account-roles/{id}",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新角色基本信息与描述。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -16159,8 +16280,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "DELETE",
             "path": "/api/v1/account-roles/{id}",
-            "summary": "删除",
-            "summaryDocumented": false,
+            "summary": "删除指定角色。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -16174,8 +16295,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/account-roles/{id}/copy",
-            "summary": "copy",
-            "summaryDocumented": false,
+            "summary": "复制已有角色及其权限授予集合生成新角色。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -16349,8 +16470,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/account-roles/{roleName}/permissions",
-            "summary": "permissions",
-            "summaryDocumented": false,
+            "summary": "查询指定角色的权限树及已授予项。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "roleName",
@@ -16401,8 +16522,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/account-roles/{roleName}/permissions",
-            "summary": "permissions",
-            "summaryDocumented": false,
+            "summary": "更新指定角色的权限授予状态。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "roleName",
@@ -16440,13 +16561,56 @@ export const API_MODULES: ApiModule[] = [
       },
       {
         "id": "AccountSettings",
-        "title": "账号安全设置 /account-management/settings/defaults",
+        "title": "账号安全设置 /account-management/password-policy",
         "endpoints": [
           {
             "method": "GET",
+            "path": "/api/v1/account-management/password-policy",
+            "summary": "匿名读取当前密码复杂度公开规则（供登录改密与账号表单提示使用，不含敏感默认密码）。",
+            "summaryDocumented": true,
+            "responseFields": [
+              {
+                "name": "requiredLength",
+                "cnName": "",
+                "type": "integer",
+                "description": "密码最小长度。",
+                "nullable": false
+              },
+              {
+                "name": "requireDigit",
+                "cnName": "",
+                "type": "boolean",
+                "description": "密码是否必须包含数字。",
+                "nullable": false
+              },
+              {
+                "name": "requireLowercase",
+                "cnName": "",
+                "type": "boolean",
+                "description": "密码是否必须包含小写字母。",
+                "nullable": false
+              },
+              {
+                "name": "requireUppercase",
+                "cnName": "",
+                "type": "boolean",
+                "description": "密码是否必须包含大写字母。",
+                "nullable": false
+              },
+              {
+                "name": "requireNonAlphanumeric",
+                "cnName": "",
+                "type": "boolean",
+                "description": "密码是否必须包含非字母数字字符（特殊符号）。",
+                "nullable": false
+              }
+            ]
+          },
+          {
+            "method": "GET",
             "path": "/api/v1/account-management/settings/defaults",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "获取账号默认初始化策略配置。",
+            "summaryDocumented": true,
             "responseFields": [
               {
                 "name": "defaultPassword",
@@ -16460,8 +16624,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/account-management/settings/defaults",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新账号默认初始化策略配置。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "defaultPassword",
@@ -16484,8 +16648,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/account-management/settings/security",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "获取账号密码复杂度与锁定安全策略配置。",
+            "summaryDocumented": true,
             "responseFields": [
               {
                 "name": "defaultPassword",
@@ -16541,8 +16705,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/account-management/settings/security",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新账号密码复杂度与锁定安全策略配置。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "defaultPassword",
@@ -16707,8 +16871,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/my-permissions",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "查询当前登录用户的有效权限编码清单。",
+            "summaryDocumented": true,
             "responseFields": [
               {
                 "name": "grantedPermissions",
@@ -16785,8 +16949,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/code-rules",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页查询业务单据自动编码规则列表。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "filter",
@@ -16949,8 +17113,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/code-rules",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "创建业务对象编码规则。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "entityType",
@@ -17148,8 +17312,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/code-rules/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单条编码规则配置详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -17284,8 +17448,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/code-rules/{id}",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新编码规则前缀、日期格式与流水号步长配置。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -17492,8 +17656,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "DELETE",
             "path": "/api/v1/code-rules/{id}",
-            "summary": "删除",
-            "summaryDocumented": false,
+            "summary": "删除指定编码规则。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -17536,8 +17700,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/code-rules/generate",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "按指定业务对象类型即时原子生成下一个唯一业务编号。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "entityType",
@@ -17557,8 +17721,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/data-dictionaries",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页查询数据字典类型定义列表。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "filter",
@@ -17672,8 +17836,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/data-dictionaries",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "创建数据字典类型定义。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "code",
@@ -17780,8 +17944,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/data-dictionaries/{dictionaryId}/items",
-            "summary": "items",
-            "summaryDocumented": false,
+            "summary": "查询指定数据字典类型下的全部条目选项。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "dictionaryId",
@@ -17874,8 +18038,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/data-dictionaries/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单个数据字典类型详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -17961,8 +18125,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/data-dictionaries/{id}",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新数据字典类型名称与描述。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -18078,8 +18242,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "DELETE",
             "path": "/api/v1/data-dictionaries/{id}",
-            "summary": "删除",
-            "summaryDocumented": false,
+            "summary": "删除指定数据字典类型及所属条目。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -18093,8 +18257,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/data-dictionaries/by-code/{code}/items",
-            "summary": "items",
-            "summaryDocumented": false,
+            "summary": "按字典唯一编码读取启用中的数据字典条目集合（供业务表单下拉消费）。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "code",
@@ -18187,8 +18351,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/data-dictionaries/items",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "新增数据字典条目。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "dictionaryId",
@@ -18316,8 +18480,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/data-dictionaries/items/{itemId}",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新数据字典条目显示名、值与排序。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "itemId",
@@ -18454,8 +18618,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "DELETE",
             "path": "/api/v1/data-dictionaries/items/{itemId}",
-            "summary": "删除",
-            "summaryDocumented": false,
+            "summary": "删除指定数据字典条目。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "itemId",
@@ -18475,8 +18639,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/scheduled-jobs",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "查询所有已注册定时任务的调度状态与元数据清单。",
+            "summaryDocumented": true,
             "responseFields": [
               {
                 "name": "key",
@@ -18609,8 +18773,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/scheduled-jobs/preview-cron",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "解析并预览给定 Cron 表达式未来数次的预计触发时间。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "cron",
@@ -18624,8 +18788,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/scheduled-jobs/run",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "手动立即触发或演练（DryRun）执行一次定时任务。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "key",
@@ -18704,8 +18868,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/scheduled-jobs/set-enabled",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "启用或停用指定后台定时任务并修改 Cron 表达式。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "key",
@@ -18733,8 +18897,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/scheduled-jobs/stats",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "获取定时任务整体启用数及近期执行成功/失败统计概览。",
+            "summaryDocumented": true,
             "responseFields": [
               {
                 "name": "enabledCount",
@@ -18966,8 +19130,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/audit-logs",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页检索系统 API 请求与安全审计日志。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "startTime",
@@ -19193,8 +19357,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/audit-logs/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单条审计日志的完整动作及参数变更明细。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -19363,8 +19527,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/system-health",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "执行并返回平台核心组件（数据库 / Redis / 队列 / CDC / ETL / 网关指标）系统健康体检快照。",
+            "summaryDocumented": true,
             "responseFields": [
               {
                 "name": "overallStatus",
@@ -19455,8 +19619,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/notification/settings",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "获取平台通知中心（邮件 SMTP / 通用 BotWebhook / Alertmanager）配置（密钥脱敏）。",
+            "summaryDocumented": true,
             "responseFields": [
               {
                 "name": "webhookEnabled",
@@ -19568,8 +19732,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/notification/settings",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新平台通知渠道参数与凭据配置。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "webhookEnabled",
@@ -19667,14 +19831,14 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/notification/settings/alert-token",
-            "summary": "新建",
-            "summaryDocumented": false
+            "summary": "轮换并重新生成 Alertmanager 告警 Webhook 接入令牌。",
+            "summaryDocumented": true
           },
           {
             "method": "POST",
             "path": "/api/v1/notification/settings/test",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "向指定邮件或 Webhook 渠道发送一条测试通知以验证配置连通性。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "channel",
@@ -19724,8 +19888,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/notification/recipients",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页查询通知接收人配置列表。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "sorting",
@@ -19832,8 +19996,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/notification/recipients",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "创建通知接收人订阅规则。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "name",
@@ -19961,8 +20125,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/notification/recipients/{id}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取单个通知接收人详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -20055,8 +20219,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "PUT",
             "path": "/api/v1/notification/recipients/{id}",
-            "summary": "更新",
-            "summaryDocumented": false,
+            "summary": "更新通知接收人联系方式及订阅来源规则。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -20193,8 +20357,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "DELETE",
             "path": "/api/v1/notification/recipients/{id}",
-            "summary": "删除",
-            "summaryDocumented": false,
+            "summary": "删除指定通知接收人。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "id",
@@ -20220,8 +20384,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/notification/logs",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "分页查询通知发送流水日志。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "source",
@@ -20444,8 +20608,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/db-schema/export/excel",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "导出平台主库数据库表字典为 Excel 工作簿。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "domainGroup",
@@ -20459,8 +20623,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/db-schema/export/markdown",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "导出平台主库数据库表字典为 Markdown 文档。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "domainGroup",
@@ -20474,8 +20638,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/db-schema/external/{sourceKey}/tables",
-            "summary": "tables",
-            "summaryDocumented": false,
+            "summary": "探测外部数据源指定库内的表目录清单。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "sourceKey",
@@ -20533,8 +20697,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/db-schema/external/{sourceKey}/tables/{tableName}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "探测外部数据源单张物理表的列结构与主键约束详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "sourceKey",
@@ -20683,8 +20847,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/db-schema/external/sources",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "列出支持表结构字典探测的已配置外部数据库源。",
+            "summaryDocumented": true,
             "responseFields": [
               {
                 "name": "key",
@@ -20712,8 +20876,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/db-schema/tables",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "查询平台主库实时数据库表目录概览。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "filter",
@@ -20771,8 +20935,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/db-schema/tables/{tableName}",
-            "summary": "查询详情",
-            "summaryDocumented": false,
+            "summary": "获取平台主库单张物理表的列、主键、索引及外键字典详情。",
+            "summaryDocumented": true,
             "queryParams": [
               {
                 "name": "tableName",
@@ -20928,8 +21092,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/nav-preference",
-            "summary": "查询列表",
-            "summaryDocumented": false,
+            "summary": "读取当前登录用户的导航菜单排序偏好及管理员标志。",
+            "summaryDocumented": true,
             "responseFields": [
               {
                 "name": "value",
@@ -20950,8 +21114,8 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/nav-preference",
-            "summary": "新建",
-            "summaryDocumented": false,
+            "summary": "保存导航菜单自定义排序（管理员写全局默认，其余用户写个人配置）。",
+            "summaryDocumented": true,
             "requestBody": [
               {
                 "name": "value",
@@ -20965,8 +21129,43 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "POST",
             "path": "/api/v1/nav-preference/reset",
-            "summary": "新建",
-            "summaryDocumented": false
+            "summary": "重置当前用户或全局默认导航排序。",
+            "summaryDocumented": true
+          }
+        ]
+      },
+      {
+        "id": "NavUsage",
+        "title": "导航使用统计 /nav-usage",
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/api/v1/nav-usage",
+            "summary": "记录当前用户访问侧栏导航项的结构化度量日志。",
+            "summaryDocumented": true,
+            "requestBody": [
+              {
+                "name": "domain",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "group",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "href",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": true
+              }
+            ]
           }
         ]
       },
@@ -21035,6 +21234,120 @@ export const API_MODULES: ApiModule[] = [
         ]
       },
       {
+        "id": "TablePreference",
+        "title": "列表视图偏好 /table-preference",
+        "endpoints": [
+          {
+            "method": "GET",
+            "path": "/api/v1/table-preference",
+            "summary": "读取当前登录用户的表格视图及行密度偏好快照。",
+            "summaryDocumented": true,
+            "responseFields": [
+              {
+                "name": "density",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "tables",
+                "cnName": "",
+                "type": "object",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "PUT",
+            "path": "/api/v1/table-preference/density",
+            "summary": "保存当前用户的全局表格行密度偏好（standard / compact）。",
+            "summaryDocumented": true,
+            "requestBody": [
+              {
+                "name": "density",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": true
+              }
+            ]
+          },
+          {
+            "method": "PUT",
+            "path": "/api/v1/table-preference/table",
+            "summary": "保存或清除单张表格的列序、显隐、列宽及命名预设偏好。",
+            "summaryDocumented": true,
+            "requestBody": [
+              {
+                "name": "tableKey",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": true
+              },
+              {
+                "name": "view",
+                "cnName": "",
+                "type": "TableViewPreferenceDto",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "view.order",
+                "cnName": "",
+                "type": "string[]",
+                "description": "排序号（越小越靠前）",
+                "required": false
+              },
+              {
+                "name": "view.visibility",
+                "cnName": "",
+                "type": "object",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "view.sizing",
+                "cnName": "",
+                "type": "object",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "view.pinned",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "view.pageSize",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "view.customPageSizes",
+                "cnName": "",
+                "type": "integer[]",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "view.presets",
+                "cnName": "",
+                "type": "TableSavedPresetDto[]",
+                "description": "",
+                "required": false
+              }
+            ]
+          }
+        ]
+      },
+      {
         "id": "Avatar",
         "title": "个人头像 /avatars",
         "endpoints": [
@@ -21047,7 +21360,7 @@ export const API_MODULES: ApiModule[] = [
           {
             "method": "GET",
             "path": "/api/v1/avatars/{userId}",
-            "summary": "指定用户头像；无头像返回 404，前端 AvatarImage 自动回退首字母。",
+            "summary": "指定用户头像；无自定义头像返回 204 NoContent，前端 AvatarImage 自动回退首字母。",
             "summaryDocumented": true,
             "queryParams": [
               {

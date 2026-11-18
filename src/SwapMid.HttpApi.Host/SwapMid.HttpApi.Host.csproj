@@ -90,7 +90,7 @@
     <!-- 安全钉版：MessagePack 经 ABP Studio Client → MagicOnion 7.0.6 传递引入，3.1.1 含高危漏洞
          GHSA-hv8m-jj95-wg3x（LZ4 解压越界读 → DoS），3.1.7 起修复（同 3.1.x 补丁，兼容 MagicOnion）。
          待上游 MagicOnion / ABP Studio Client 提升 MessagePack 版本后可移除此钉版。 -->
-    <PackageReference Include="MessagePack" Version="3.1.9" />
+    <PackageReference Include="MessagePack" Version="3.1.12" />
   </ItemGroup>
 
   <ItemGroup>

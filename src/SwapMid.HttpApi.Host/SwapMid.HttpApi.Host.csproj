@@ -18,7 +18,7 @@
     <PackageReference Include="IdentityModel" Version="7.0.0" />
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
     <PackageReference Include="AspNetCore.HealthChecks.UI.InMemory.Storage" Version="9.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.15" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageReference Include="Serilog.Enrichers.Span" Version="3.1.0" /><!-- D6：把 TraceId/SpanId 注入 Serilog 日志(Seq)，与既有 ABP CorrelationId 并存 -->
     <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />

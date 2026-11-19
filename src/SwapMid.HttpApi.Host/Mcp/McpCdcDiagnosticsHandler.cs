@@ -63,6 +63,7 @@ internal static class McpCdcDiagnosticsHandler
                 stream.Id,
                 stream.Name,
                 stream.SourceType,
+                webhookIngressPath = stream.SourceType == CdcSourceType.PushWebhook ? $"/api/v1/cdc-webhooks/{stream.Id:D}" : null,
                 stream.Status,
                 stream.MonitoredTables,
                 stream.PollIntervalSeconds,

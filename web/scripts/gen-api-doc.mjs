@@ -27,7 +27,7 @@ const OUT = resolve(ROOT, 'src/app/(dashboard)/docs/api-reference/api-doc-data.g
 
 // ── 业务域定义（对齐根 CLAUDE.md《业务模块地图》，有序）。新增 controller 时在对应域 tags 补一行 ──
 const DOMAINS = [
-  { id: 'data-integration', title: '数据集成', description: '多源关系型/REST/文件连接管理、流式 ETL 管道、PostgreSQL 逻辑复制 CDC、Cron 调度、目标回执对账与执行恢复。', tags: ['DataSource', 'DataPipeline', 'DataPipelineSchemaPreflight', 'PipelineExecution', 'CdcStream'] },
+  { id: 'data-integration', title: '数据集成', description: '多源关系型/REST/文件连接管理、流式 ETL 管道、多源与 Push Webhook CDC、Cron 调度、目标回执对账与执行恢复。', tags: ['DataSource', 'DataPipeline', 'DataPipelineSchemaPreflight', 'PipelineExecution', 'CdcStream', 'CdcWebhookIngress'] },
   { id: 'message-bus', title: '消息总线', description: '主题发布、订阅过滤与 HTTP Webhook / RabbitMQ / 通用 Bot Webhook 可靠投递与重放。', tags: ['MessageTopic', 'MessageSubscription', 'MessageRecord'] },
   { id: 'api-management', title: 'API 网关与管理', description: '对外 API 分组、路由转发、在线调试台与 OpenIddict 客户端凭据。', tags: ['ApiGroup', 'ApiRoute', 'ThirdPartyClient'] },
   { id: 'enterprise', title: '组织主数据', description: '企业、部门、岗位与员工基础主数据。', tags: ['Enterprise', 'CompanyDepartment', 'Position', 'Employee', 'EmployeeLookup'] },
@@ -39,7 +39,7 @@ const DOMAINS = [
 ]
 
 const TAG_CN = {
-  DataSource: '数据源', DataPipeline: '数据管道', DataPipelineSchemaPreflight: '管道结构预检与连接器能力', PipelineExecution: '管道执行记录', CdcStream: 'PostgreSQL CDC 实时流',
+  DataSource: '数据源', DataPipeline: '数据管道', DataPipelineSchemaPreflight: '管道结构预检与连接器能力', PipelineExecution: '管道执行记录', CdcStream: '多源 CDC 实时流', CdcWebhookIngress: 'Push Webhook CDC 事件接入',
   MessageTopic: '消息主题', MessageSubscription: '消息订阅', MessageRecord: '消息投递记录',
   ApiGroup: 'API 分组', ApiRoute: 'API 路由', ThirdPartyClient: '第三方客户端凭据',
   Enterprise: '企业', CompanyDepartment: '部门', Position: '岗位', Employee: '员工', EmployeeLookup: '员工检索目录',

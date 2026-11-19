@@ -81,6 +81,19 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
         }
 
         var (stream, source, targetSink) = await LoadExecutionInputsAsync(id, requireActiveStatus, cancellationToken);
+        if (stream.SourceType == CdcSourceType.PushWebhook)
+        {
+            return new CdcCaptureResultDto
+            {
+                StreamId = id,
+                PreviousCheckpointLsn = stream.CheckpointLsn,
+                NewCheckpointLsn = stream.CheckpointLsn,
+                CapturedEventCount = 0,
+                DeliveredCount = 0,
+                CapturedAtUtc = DateTime.UtcNow,
+                Message = $"Push Webhook 推送模式不执行主动拉取；请通过 POST /api/v1/cdc-webhooks/{id:D} 推送 HMAC-SHA256 签名事件批次。",
+            };
+        }
 
         try
         {
@@ -201,6 +214,11 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
         }
 
         var (stream, source, targetSink) = await LoadExecutionInputsAsync(id, requireActiveStatus: false, cancellationToken);
+        if (stream.SourceType == CdcSourceType.PushWebhook)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", "Push Webhook 推送模式不支持全量基线快照，请直接向 Webhook 接入端点推送签名事件批次。");
+        }
 
         try
         {

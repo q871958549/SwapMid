@@ -21,6 +21,9 @@ internal static partial class CdcStreamMappingHelpers
             case CdcSourceType.MySqlBinlog:
                 MySqlBinlogCdcCaptureService.EnsureMySqlSource(source);
                 break;
+            case CdcSourceType.PushWebhook:
+                CdcWebhookIngressService.EnsurePushWebhookSource(source);
+                break;
             default:
                 PgOutputCdcCaptureService.EnsurePostgreSqlSource(source);
                 break;
@@ -45,6 +48,8 @@ internal static partial class CdcStreamMappingHelpers
                 ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
                     .WithData("Reason", "MySQL Binlog 捕获引擎未启用。"))
                 .EvaluateSchemaAsync(source, stream, cancellationToken),
+            CdcSourceType.PushWebhook => Task.FromResult(
+                CdcSchemaDriftEvaluator.Compare(stream.SchemaBaselineJson, Array.Empty<CdcCapturedTableSchema>())),
             _ => pgCaptureService.EvaluateSchemaAsync(source, stream, cancellationToken),
         };
     }
@@ -67,6 +72,7 @@ internal static partial class CdcStreamMappingHelpers
                 ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
                     .WithData("Reason", "MySQL Binlog 捕获引擎未启用。"))
                 .PreflightAsync(source, stream, cancellationToken),
+            CdcSourceType.PushWebhook => CdcWebhookIngressService.BuildPreflight(source, stream),
             _ => await pgCaptureService.PreflightAsync(source, stream, cancellationToken),
         };
     }
@@ -92,6 +98,11 @@ internal static partial class CdcStreamMappingHelpers
         if (sourceType == CdcSourceType.MySqlBinlog)
         {
             return MySqlBinlogCdcCaptureService.ValidateCheckpoint(rawCheckpoint).Token;
+        }
+
+        if (sourceType == CdcSourceType.PushWebhook)
+        {
+            return CdcWebhookIngressService.NormalizeWebhookCheckpoint(rawCheckpoint);
         }
 
         return CdcProtocolHelpers.ValidateLsn(rawCheckpoint).ToString();

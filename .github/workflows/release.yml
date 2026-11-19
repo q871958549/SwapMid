@@ -117,7 +117,17 @@ jobs:
           else
             helm package charts/swapmid --destination /tmp/charts
           fi
-          helm push /tmp/charts/swapmid-*.tgz "oci://ghcr.io/${{ steps.meta_owner.outputs.owner }}/charts"
+          for attempt in 1 2 3; do
+            if helm push /tmp/charts/swapmid-*.tgz "oci://ghcr.io/${{ steps.meta_owner.outputs.owner }}/charts"; then
+              break
+            fi
+            if [[ "${attempt}" -eq 3 ]]; then
+              echo "helm push failed after 3 attempts" >&2
+              exit 1
+            fi
+            echo "Transient GHCR OCI push error (attempt ${attempt}/3); retrying in 10s..."
+            sleep 10
+          done
 
   github-release:
     name: Create GitHub Release

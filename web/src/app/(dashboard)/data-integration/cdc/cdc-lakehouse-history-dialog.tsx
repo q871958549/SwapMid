@@ -52,50 +52,56 @@ export function CdcLakehouseHistoryDialog({
 
   return (
     <Dialog open={!!state} onOpenChange={(open) => { if (!open) onClose() }}>
-      {state && (
-        <ScrollableDialogContent
-          title={t('lakehouseHistoryDialogTitle', { name: state.stream.name })}
-          description={state.history.summary ?? undefined}
-          className="sm:max-w-3xl"
-          footer={<Button variant="outline" onClick={onClose}>{tc('close')}</Button>}
-        >
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-2.5">
-              <div className="rounded-md border bg-muted/30 px-3 py-2">
-                <div className="text-xs text-muted-foreground">{t('historyCurrentVersionLabel')}</div>
-                <div className="mt-0.5 font-mono text-sm font-medium">
-                  {state.history.currentVersion !== null && state.history.currentVersion !== undefined
-                    ? `v${state.history.currentVersion}`
-                    : '-'}
-                </div>
-              </div>
-              <div className="rounded-md border bg-muted/30 px-3 py-2">
-                <div className="text-xs text-muted-foreground">{t('historySelectedVersionLabel')}</div>
-                <div className="mt-0.5 flex items-center gap-1.5 font-mono text-sm font-medium">
-                  <History className="size-3.5 text-primary" />
-                  <span>
-                    {state.history.selectedVersion !== null && state.history.selectedVersion !== undefined
-                      ? `v${state.history.selectedVersion}`
+      {state && (() => {
+        const isIceberg = Number(state.history.tableFormat ?? state.stream.lakehouseTableFormat ?? 0) === 2
+        return (
+          <ScrollableDialogContent
+            title={isIceberg
+              ? t('icebergHistoryDialogTitle', { name: state.stream.name })
+              : t('lakehouseHistoryDialogTitle', { name: state.stream.name })}
+            description={state.history.summary ?? undefined}
+            className="sm:max-w-3xl"
+            footer={<Button variant="outline" onClick={onClose}>{tc('close')}</Button>}
+          >
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-2.5">
+                <div className="rounded-md border bg-muted/30 px-3 py-2">
+                  <div className="text-xs text-muted-foreground">{t('historyCurrentVersionLabel')}</div>
+                  <div className="mt-0.5 font-mono text-sm font-medium">
+                    {state.history.currentVersion !== null && state.history.currentVersion !== undefined
+                      ? `v${state.history.currentVersion}`
                       : '-'}
-                  </span>
+                  </div>
+                </div>
+                <div className="rounded-md border bg-muted/30 px-3 py-2">
+                  <div className="text-xs text-muted-foreground">{t('historySelectedVersionLabel')}</div>
+                  <div className="mt-0.5 flex items-center gap-1.5 font-mono text-sm font-medium">
+                    <History className="size-3.5 text-primary" />
+                    <span>
+                      {state.history.selectedVersion !== null && state.history.selectedVersion !== undefined
+                        ? `v${state.history.selectedVersion}`
+                        : '-'}
+                    </span>
+                  </div>
+                </div>
+                <div className="rounded-md border bg-muted/30 px-3 py-2">
+                  <div className="text-xs text-muted-foreground">{t('historySnapshotStatsLabel')}</div>
+                  <div className="mt-0.5 font-mono text-sm font-medium">
+                    {`${state.history.selectedActiveFileCount ?? 0} · ${state.history.selectedTotalRecordCount ?? 0} rows (${formatByteSize(state.history.selectedTotalBytes)})`}
+                  </div>
                 </div>
               </div>
-              <div className="rounded-md border bg-muted/30 px-3 py-2">
-                <div className="text-xs text-muted-foreground">{t('historySnapshotStatsLabel')}</div>
-                <div className="mt-0.5 font-mono text-sm font-medium">
-                  {`${state.history.selectedActiveFileCount ?? 0} · ${state.history.selectedTotalRecordCount ?? 0} rows (${formatByteSize(state.history.selectedTotalBytes)})`}
+
+              {state.history.deltaLogDirectory && (
+                <div className="font-mono text-xs text-muted-foreground break-all">
+                  {`${isIceberg ? 'Iceberg Metadata' : 'Delta Log'}: ${state.history.deltaLogDirectory}`}
                 </div>
-              </div>
-            </div>
+              )}
 
-            {state.history.deltaLogDirectory && (
-              <div className="font-mono text-xs text-muted-foreground break-all">
-                {`Delta Log: ${state.history.deltaLogDirectory}`}
-              </div>
-            )}
-
-            <div className="space-y-1.5">
-              <span className="text-xs font-medium text-muted-foreground">{t('historyTimelineTitle')}</span>
+              <div className="space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {isIceberg ? t('icebergHistoryTimelineTitle') : t('historyTimelineTitle')}
+                </span>
               {state.history.commits && state.history.commits.length > 0 ? (
                 <div className="divide-y rounded-md border text-xs">
                   {state.history.commits.map((commit) => {
@@ -245,7 +251,8 @@ export function CdcLakehouseHistoryDialog({
             )}
           </div>
         </ScrollableDialogContent>
-      )}
+        )
+      })()}
     </Dialog>
   )
 }

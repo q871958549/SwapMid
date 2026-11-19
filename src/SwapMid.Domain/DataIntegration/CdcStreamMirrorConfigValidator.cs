@@ -215,8 +215,8 @@ public static partial class CdcStreamMirrorConfigValidator
             return LakehouseTableFormat.SwapMidManifest;
         }
 
-        return format == LakehouseTableFormat.DeltaLake
-            ? LakehouseTableFormat.DeltaLake
+        return format is LakehouseTableFormat.DeltaLake or LakehouseTableFormat.ApacheIceberg
+            ? format
             : LakehouseTableFormat.SwapMidManifest;
     }
 

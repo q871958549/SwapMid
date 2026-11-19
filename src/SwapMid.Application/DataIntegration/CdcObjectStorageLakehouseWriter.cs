@@ -71,6 +71,9 @@ internal static class CdcObjectStorageLakehouseWriter
         public string LatestManifestKey { get; set; } = string.Empty;
         public string LatestDataObjectKey { get; set; } = string.Empty;
         public long? LatestDeltaVersion { get; set; }
+        public long? LatestIcebergSequenceNumber { get; set; }
+        public long? LatestIcebergSnapshotId { get; set; }
+        public string? LatestIcebergMetadataLocation { get; set; }
         public int CompactionCount { get; set; }
         public DateTime? LastCompactedAtUtc { get; set; }
         public DateTime UpdatedAtUtc { get; set; }
@@ -127,7 +130,8 @@ internal static class CdcObjectStorageLakehouseWriter
 
         var config = ObjectStorageSinkConfigContract.ParseForWrite(targetSink.Config, requireSecretKey: true);
         var committedAtUtc = DateTime.UtcNow;
-        var isInitialSnapshot = !string.IsNullOrWhiteSpace(idempotencyKeyOverride);
+        var isInitialSnapshot = !string.IsNullOrWhiteSpace(idempotencyKeyOverride) &&
+            !idempotencyKeyOverride.StartsWith("webhook:", StringComparison.OrdinalIgnoreCase);
         var lsnToken = BuildSafeLsnToken(batchEndLsn?.ToString() ?? changes[^1].Lsn, isInitialSnapshot);
         var manifestKey = config.BuildBatchManifestKey(destination, lsnToken, runId);
 
@@ -195,6 +199,7 @@ internal static class CdcObjectStorageLakehouseWriter
         latestDoc.LatestDataObjectKey = uploaded.ObjectKey;
         latestDoc.UpdatedAtUtc = committedAtUtc;
 
+        var alreadyCommitted = latestDoc.RecentFiles.Any(f => f.RunId == runId);
         latestDoc.RecentFiles.RemoveAll(f => string.Equals(f.ManifestKey, manifestKey, StringComparison.Ordinal));
         latestDoc.RecentFiles.Add(new CdcLatestDataFileEntry
         {
@@ -216,7 +221,8 @@ internal static class CdcObjectStorageLakehouseWriter
                 .ToList();
         }
 
-        if (stream.LakehouseTableFormat == LakehouseTableFormat.DeltaLake &&
+        if (!alreadyCommitted &&
+            stream.LakehouseTableFormat == LakehouseTableFormat.DeltaLake &&
             string.Equals(uploaded.Format, "parquet", StringComparison.OrdinalIgnoreCase))
         {
             latestDoc.LatestDeltaVersion = await DeltaLakeCommitWriter.CommitAppendAsync(
@@ -233,6 +239,28 @@ internal static class CdcObjectStorageLakehouseWriter
                 isInitialSnapshot,
                 committedAtUtc,
                 cancellationToken);
+        }
+        else if (!alreadyCommitted &&
+                 stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg &&
+                 string.Equals(uploaded.Format, "parquet", StringComparison.OrdinalIgnoreCase))
+        {
+            var receipt = await IcebergV2CommitWriter.CommitAppendAsync(
+                writer.HttpClientFactory,
+                writer.Configuration,
+                config,
+                destination,
+                stream,
+                latestDoc,
+                runId,
+                uploaded.ObjectKey,
+                uploaded.ByteSize,
+                uploaded.RowCount,
+                isInitialSnapshot,
+                committedAtUtc,
+                cancellationToken);
+            latestDoc.LatestIcebergSequenceNumber = receipt.SequenceNumber;
+            latestDoc.LatestIcebergSnapshotId = receipt.SnapshotId;
+            latestDoc.LatestIcebergMetadataLocation = receipt.MetadataLocationKey;
         }
 
         await PutJsonObjectAsync(

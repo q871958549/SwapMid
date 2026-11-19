@@ -126,9 +126,11 @@ export function CdcStreamsClient({
         <div className="space-y-0.5">
           <div>{row.original.sourceName || '-'}</div>
           <div className="font-mono text-[11px] text-muted-foreground">
-            {Number(row.original.sourceType ?? 0) === 2
-              ? 'MySQL Binlog'
-              : (Number(row.original.sourceType ?? 0) === 1 ? 'SQL Server CT' : 'PostgreSQL')}
+            {Number(row.original.sourceType ?? 0) === 3
+              ? 'Push Webhook'
+              : (Number(row.original.sourceType ?? 0) === 2
+                  ? 'MySQL Binlog'
+                  : (Number(row.original.sourceType ?? 0) === 1 ? 'SQL Server CT' : 'PostgreSQL'))}
           </div>
         </div>
       ),
@@ -137,12 +139,21 @@ export function CdcStreamsClient({
       accessorKey: 'slotName',
       enableSorting: false,
       header: ({ column }) => <DataTableColumnHeader column={column} title={t('colSlotPublication')} />,
-      cell: ({ row }) => (
-        <div className="space-y-0.5 font-mono text-xs">
-          <div>{row.original.slotName}</div>
-          <div className="text-muted-foreground">{row.original.publicationName}</div>
-        </div>
-      ),
+      cell: ({ row }) => Number(row.original.sourceType ?? 0) === 3
+        ? (
+            <div className="space-y-0.5 font-mono text-xs">
+              <div className="max-w-[200px] truncate" title={`/api/v1/cdc-webhooks/${row.original.id}`}>
+                {`/api/v1/cdc-webhooks/${row.original.id}`}
+              </div>
+              <div className="text-muted-foreground">HMAC-SHA256</div>
+            </div>
+          )
+        : (
+            <div className="space-y-0.5 font-mono text-xs">
+              <div>{row.original.slotName}</div>
+              <div className="text-muted-foreground">{row.original.publicationName}</div>
+            </div>
+          ),
     },
     {
       id: 'target',

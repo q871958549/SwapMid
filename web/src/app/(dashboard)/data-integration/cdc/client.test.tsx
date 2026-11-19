@@ -991,4 +991,112 @@ describe('CdcStreamsClient', () => {
       expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/evaluate-contract`, { method: 'POST' })
     })
   })
+
+  it('supports PushWebhook source validation, ApacheIceberg v2 format, and Iceberg Time-Travel + live preview', async () => {
+    expect(detectCdcSourceTypeFromSource('wh-1', [
+      { id: 'wh-1', name: 'Webhook Secret Source', type: 1, config: '{}' },
+    ])).toBe('3')
+
+    const validPushIcebergForm = {
+      ...defaultCdcForm,
+      name: 'orders-webhook-iceberg',
+      sourceId: 'wh-1',
+      sourceType: '3' as const,
+      publicationName: '',
+      slotName: '',
+      monitoredTables: '',
+      initialSnapshotEnabled: true,
+      targetMode: '2' as const,
+      targetSinkId: 's3-1',
+      targetSinkDestination: 'orders/iceberg',
+      lakehouseTableFormat: '2' as const,
+      catalogType: '2' as const,
+      catalogSinkId: 'rest-ic-1',
+      catalogNamespace: 'swapmid_iceberg',
+      catalogTableName: 'orders_v2',
+    }
+    expect(isCdcFormValid(validPushIcebergForm)).toBe(true)
+
+    const body = toCdcBody(validPushIcebergForm)
+    expect(body.sourceType).toBe(3)
+    expect(body.lakehouseTableFormat).toBe(2)
+    expect(body.initialSnapshotEnabled).toBe(false)
+    expect(body.autoCreatePublicationAndSlot).toBe(false)
+
+    const roundTrip = toCdcForm(makeStream({
+      sourceType: 3,
+      targetMode: 2,
+      targetSinkId: 's3-1',
+      targetSinkDestination: 'orders/iceberg',
+      lakehouseTableFormat: 2,
+    }))
+    expect(roundTrip.sourceType).toBe('3')
+    expect(roundTrip.lakehouseTableFormat).toBe('2')
+
+    mocks.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          destination: 'orders/iceberg',
+          tableFormat: 2,
+          deltaLogDirectory: 'warehouse/orders/iceberg/metadata',
+          currentVersion: 2,
+          selectedVersion: 2,
+          totalCommitCount: 2,
+          selectedActiveFileCount: 1,
+          selectedTotalBytes: 2048,
+          selectedTotalRecordCount: 4,
+          commits: [
+            { version: 2, timestampUtc: '2026-11-19T05:00:00Z', operation: 'REPLACE', addedFileCount: 1, removedFileCount: 2, totalRecordCount: 4, deltaCommitKey: 'warehouse/orders/iceberg/metadata/v2.metadata.json' },
+          ],
+          activeFiles: [
+            { relativePath: 'compact_iceberg.parquet', objectKey: 'warehouse/orders/iceberg/compact_iceberg.parquet', sizeBytes: 2048, recordCount: 4, addedAtVersion: 2 },
+          ],
+          timeTravelQuerySql: "SELECT * FROM iceberg_scan('s3://lake/warehouse/orders/iceberg/metadata/v2.metadata.json') LIMIT 100;",
+          summary: 'Apache Iceberg v2 · v2',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          destination: 'orders/iceberg',
+          tableFormat: 2,
+          fileFormat: 'parquet',
+          selectedVersion: 2,
+          scannedFileCount: 1,
+          totalActiveFileCount: 1,
+          missingFileCount: 0,
+          rowCount: 1,
+          truncated: false,
+          columns: ['op', 'after_json'],
+          rows: [{ op: 'insert', after_json: '{"order_no":"IC-2026-01"}' }],
+          sourceFiles: ['warehouse/orders/iceberg/compact_iceberg.parquet'],
+          summary: '已加载 v2 样本 1 行',
+        }),
+      })
+
+    renderClient(makeStream({
+      sourceType: 3,
+      status: 1,
+      targetMode: 2,
+      targetSinkId: SOURCE_ID,
+      targetSinkType: 5,
+      targetSinkName: 'minio-iceberg',
+      targetSinkDestination: 'orders/iceberg',
+      lakehouseTableFormat: 2,
+    }))
+
+    expect(screen.queryByRole('button', { name: '立即捕获' })).toBeNull()
+    expect(screen.queryByRole('button', { name: '全量快照' })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Time-Travel' }))
+    expect(await screen.findByText(/Iceberg Metadata: warehouse\/orders\/iceberg\/metadata/)).toBeTruthy()
+    expect(screen.getByText('compact_iceberg.parquet')).toBeTruthy()
+    expect(screen.getByText(/iceberg_scan/)).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '加载实时数据预览' }))
+    expect(await screen.findByText('{"order_no":"IC-2026-01"}')).toBeTruthy()
+  })
 })

@@ -4,6 +4,25 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-11-19
+
+### Added
+- **Native Apache Iceberg v2 Table Protocol (`LakehouseTableFormat.ApacheIceberg = 2`)**:
+  - Added pure-.NET, zero-JVM `IcebergV2CommitWriter` (`IcebergV2CommitWriter.cs` + `IcebergV2CommitWriter.JsonBuilder.cs`) writing spec-compliant Iceberg v2 `metadata/v{seq}.metadata.json`, companion `metadata/snap-{snapshotId}-manifest.json`, and `metadata/version-hint.text` with S3 `If-None-Match: *` CAS optimistic concurrency (`412` retry + `swapmid-run-id` idempotent crash replay) and atomic `replace` compaction snapshots preserving historical Parquet fragments.
+  - Added `IcebergV2MetadataReader` integrated into `DeltaLakeHistoryReader` and `CdcLakehouseDataPreviewService` for point-in-time Iceberg v2 Time-Travel (`v1..vN`), Zero-Infra live Parquet row preview, executable DuckDB `iceberg_scan(...)` / Trino `FOR VERSION AS OF` / Spark SQL templates, Prometheus counter `swapmid_cdc_iceberg_commits_total{operation,outcome}`, and `metadata-location` + `swapmid.iceberg_snapshot_id` pass-through in `ExternalLakehouseCatalogSyncService`.
+- **Serverless Authenticated Push Webhook CDC Source (`CdcSourceType.PushWebhook = 3`)**:
+  - Added fail-closed `POST /api/v1/cdc-webhooks/{streamId}` (`CdcWebhookIngressController` + `CdcWebhookIngressService`) verifying `X-SwapMid-Signature: sha256=<hex>` in constant time (`CryptographicOperations.FixedTimeEquals`) against encrypted `webhookSecret`/`hmacSecret` stored in the bound `RestApi` DataSource (zero plaintext secrets on `CdcStreamDefinition`), bounded `<= 2 MiB` body streaming, `X-SwapMid-Delivery-Id` idempotency, monotonic `webhook:{seq}` checkpoints, optional `schema.table` filtering, full downstream fanout (MessageBus, Kafka, ClickHouse, Relational Mirror, Delta Lake, and Apache Iceberg v2), Prometheus counter `swapmid_cdc_webhook_ingests_total{outcome}`, and MCP `webhookIngressPath` discovery.
+- **Automated Chaos SLA Throughput & RPO=0 Benchmark Suite**:
+  - Extended `ChaosResilienceContractTests` with Scenario 4 (Iceberg v2 `412` CAS race + `swapmid-run-id` crash replay) and Scenario 5 (Push Webhook forged HMAC `401` rejection + valid signed replay -> Iceberg v2 commit).
+  - Added `ChaosSlaThroughputBenchmarkTests` measuring end-to-end 1,000-row Parquet + Delta Lake / Apache Iceberg v2 commit throughput, P50/P95/P99 latency, Time-Travel replay, Data Contract SLA compliance, and out-of-order replay idempotency (`RPO = 0`), recorded in [docs/benchmarks/resilience-and-chaos.md](docs/benchmarks/resilience-and-chaos.md).
+- **Frontend CDC Console & OpenAPI Coverage**:
+  - Updated `/data-integration/cdc` forms, table badges (`Push Webhook`, `Iceberg v2`, `Iceberg · vN`), and Iceberg v2 Time-Travel + live Parquet preview dialogs across `zh-Hans`, `zh-Hant`, and `en` (`2,087` i18n keys, `0` CJK in `en.json`).
+  - Expanded OpenAPI `/api/v1` summary coverage to **100.0% (197/197 endpoints)** across 9 domains (`CdcWebhookIngress` categorized under Data Integration).
+
+### Fixed
+- **Out-of-Order Lakehouse Replay Deduplication**: Hardened `CdcObjectStorageLakehouseWriter.DeliverWithManifestAsync` to detect already-committed deterministic `RunId` entries in `latest.json` before issuing duplicate Delta Lake or Iceberg v2 commits on out-of-order webhook/CDC replays.
+- **GHCR OCI Helm Push Retry Resilience**: Added a 3-attempt backoff retry loop around `helm push` in `.github/workflows/release.yml` to absorb transient GHCR OCI blob propagation races.
+
 ## [2.2.0] - 2026-11-19
 
 ### Added

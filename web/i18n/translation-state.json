@@ -7425,6 +7425,30 @@
       "traditionalSourceHash": "1f34da9837689d428f9689cf",
       "traditionalHash": "ac900a20a1df32e020f41b46"
     },
+    "DataIntegration.cdc.sourceTypePushWebhook": {
+      "sourceHash": "387e627bb0c0899da4e2e498",
+      "englishHash": "3e32bab8b569ab75eeff8117",
+      "traditionalSourceHash": "f04be9a971a00c009cb9a64b",
+      "traditionalHash": "b56959e35250a0c3621a2496"
+    },
+    "DataIntegration.cdc.sourceTypePushWebhookHint": {
+      "sourceHash": "30539bb208055cf739835faf",
+      "englishHash": "bda7855d34fa774de3f49026",
+      "traditionalSourceHash": "7ba56f33c5077749705f09d0",
+      "traditionalHash": "0830d5a27f431ecbcb53430f"
+    },
+    "DataIntegration.cdc.sourceFieldPushWebhookLabel": {
+      "sourceHash": "e3aa61f67ebd28522aede187",
+      "englishHash": "18f2e13cfef19e7914037813",
+      "traditionalSourceHash": "f5d2d65c55fa9bbfd7d828ee",
+      "traditionalHash": "63991bd2f4c398885c2b9eef"
+    },
+    "DataIntegration.cdc.sourcePushWebhookPlaceholder": {
+      "sourceHash": "cbb474391255930abe1d6b21",
+      "englishHash": "829909dacac6e631cab5ebe6",
+      "traditionalSourceHash": "e2c96f245c4a1cd5c62d739b",
+      "traditionalHash": "0d4934a1c34960e4b2f644bd"
+    },
     "DataIntegration.cdc.publicationFieldLabel": {
       "sourceHash": "6f9a62c5434b526751e67998",
       "englishHash": "22a0c2233088eeb9d243af35",
@@ -7466,6 +7490,12 @@
       "englishHash": "fa87d9831de669477a95d035",
       "traditionalSourceHash": "b179a29e8aa828fdd33a74e3",
       "traditionalHash": "b48cec696dc6a2c2a2239e89"
+    },
+    "DataIntegration.cdc.monitoredTablesPushWebhookHint": {
+      "sourceHash": "c447c4bdfb0078c518a6cb50",
+      "englishHash": "bd9ec32b8ca48f688c5c616c",
+      "traditionalSourceHash": "aa139497c6cfa7671b5b36d8",
+      "traditionalHash": "6a16fb9d2df1d3af8521d697"
     },
     "DataIntegration.cdc.autoCreateSwitchLabel": {
       "sourceHash": "41d44ad94108c64690c4a325",
@@ -8337,11 +8367,17 @@
       "traditionalSourceHash": "2dae530c6eb83bd1e21edd63",
       "traditionalHash": "7824342b9da5001c9b8cafcd"
     },
+    "DataIntegration.cdc.lakehouseFormatApacheIceberg": {
+      "sourceHash": "e4cb11f8486dfe964d455807",
+      "englishHash": "a73887bab5db580646afc0ee",
+      "traditionalSourceHash": "96f60580be2c28a352f4ca7c",
+      "traditionalHash": "dece850438cedf757eaf876f"
+    },
     "DataIntegration.cdc.lakehouseTableFormatHint": {
-      "sourceHash": "7063e05d4a12962beb219f81",
-      "englishHash": "62f63f14d31bbe28f6a3ae60",
-      "traditionalSourceHash": "eda1aa1baf5e9fbcfdaec4a9",
-      "traditionalHash": "2284046373ef71c9588c61ff"
+      "sourceHash": "11c8e5c0942a6b4ead85cc12",
+      "englishHash": "f17238bb883cc790018326f0",
+      "traditionalSourceHash": "be17cd27e7ec786de5db549b",
+      "traditionalHash": "1c0d03d0b33bdaa119192a57"
     },
     "DataIntegration.cdc.lakehouseCompactMinFilesFieldLabel": {
       "sourceHash": "670ac6e65987660bb181afe3",
@@ -8576,6 +8612,18 @@
       "englishHash": "13581bdaff84ee1546b8d758",
       "traditionalSourceHash": "10b001f7e143993d493ad5cc",
       "traditionalHash": "13581bdaff84ee1546b8d758"
+    },
+    "DataIntegration.cdc.icebergHistoryDialogTitle": {
+      "sourceHash": "671c25d1b33d15d57e09e31f",
+      "englishHash": "df0c59aa480741a5a0b707f1",
+      "traditionalSourceHash": "939f7b81be7495b3714d1d38",
+      "traditionalHash": "df0c59aa480741a5a0b707f1"
+    },
+    "DataIntegration.cdc.icebergHistoryTimelineTitle": {
+      "sourceHash": "98fd7703bf8434e11fc05f99",
+      "englishHash": "7e89bed228198d2f0fe25ace",
+      "traditionalSourceHash": "9f9bcd18b2b781023669a85e",
+      "traditionalHash": "c066bb738b6f9626e02c151b"
     },
     "DataIntegration.cdc.historyCurrentVersionLabel": {
       "sourceHash": "778ac0ce0e60f50ec8111545",

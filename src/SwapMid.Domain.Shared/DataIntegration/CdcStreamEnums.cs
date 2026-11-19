@@ -13,6 +13,9 @@ public enum CdcSourceType
 
     /// <summary>MySQL / MariaDB 二进制日志行级复制（Binlog ROW Image）。</summary>
     MySqlBinlog = 2,
+
+    /// <summary>Push Webhook 认证推送事件流（HMAC-SHA256 签名直推）。</summary>
+    PushWebhook = 3,
 }
 
 /// <summary>
@@ -25,6 +28,9 @@ public enum LakehouseTableFormat
 
     /// <summary>同时提交 Apache Delta Lake 事务日志（_delta_log/*.json）及 OPTIMIZE 合并记录。</summary>
     DeltaLake = 1,
+
+    /// <summary>同时提交 Apache Iceberg v2 表元数据（metadata/v*.metadata.json + 快照清单）与版本指针（version-hint.text）。</summary>
+    ApacheIceberg = 2,
 }
 
 /// <summary>

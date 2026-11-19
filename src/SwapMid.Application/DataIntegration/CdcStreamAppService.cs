@@ -150,7 +150,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         stream.ConfigureDataContract(input.MaxFreshnessLagSeconds, input.MaxAllowedWalLagBytes, input.RequiredColumns);
 
         await _streamRepository.UpdateAsync(stream, autoSave: true);
-        await _scheduleSynchronizer.SyncAsync(stream.Id, stream.Status, stream.PollIntervalSeconds);
+        var effectiveScheduleStatus = stream.SourceType == CdcSourceType.PushWebhook ? CdcStreamStatus.Paused : stream.Status;
+        await _scheduleSynchronizer.SyncAsync(stream.Id, effectiveScheduleStatus, stream.PollIntervalSeconds);
         return await EnrichDtoAsync(stream);
     }
 
@@ -245,7 +246,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
 
         stream.Activate();
         await _streamRepository.UpdateAsync(stream, autoSave: true, cancellationToken: cancellationToken);
-        await _scheduleSynchronizer.SyncAsync(stream.Id, stream.Status, stream.PollIntervalSeconds, cancellationToken);
+        var effectiveScheduleStatus = stream.SourceType == CdcSourceType.PushWebhook ? CdcStreamStatus.Paused : stream.Status;
+        await _scheduleSynchronizer.SyncAsync(stream.Id, effectiveScheduleStatus, stream.PollIntervalSeconds, cancellationToken);
     }
 
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]

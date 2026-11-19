@@ -32,6 +32,12 @@ public sealed class CdcRelationalMirrorPreflightService : ITransientDependency
         InspectCdcMirrorSchemaInput input,
         CancellationToken cancellationToken)
     {
+        if (input.SourceType == CdcSourceType.PushWebhook)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", "Push Webhook 源为无模式事件推送，不支持双端关系表结构预检；可直接配置目标表与主键列。");
+        }
+
         CdcStreamMappingHelpers.EnsureSourceMatchesType(input.SourceType, source);
 
         if (target.Type != DataSourceType.RelationalDatabase)

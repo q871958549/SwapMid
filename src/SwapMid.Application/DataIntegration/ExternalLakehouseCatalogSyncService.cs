@@ -154,7 +154,9 @@ public sealed partial class ExternalLakehouseCatalogSyncService : ITransientDepe
                 : $"s3://{storageCfg.Bucket}/{tableDir}";
 
             var deltaVersion = versionOverride;
-            if (!deltaVersion.HasValue && stream.LakehouseTableFormat == LakehouseTableFormat.DeltaLake)
+            long? icebergSnapshotId = null;
+            string? icebergMetadataUri = null;
+            if (stream.LakehouseTableFormat is LakehouseTableFormat.DeltaLake or LakehouseTableFormat.ApacheIceberg)
             {
                 var latestJson = await CdcObjectStorageLakehouseWriter.TryGetObjectStorageJsonAsync(
                     _httpClientFactory,
@@ -162,7 +164,22 @@ public sealed partial class ExternalLakehouseCatalogSyncService : ITransientDepe
                     storageCfg,
                     storageCfg.BuildLatestManifestKey(destination),
                     cancellationToken);
-                deltaVersion = TryReadLatestVersion(latestJson);
+                var latestMeta = TryReadLatestLakehouseMeta(latestJson);
+                if (!deltaVersion.HasValue)
+                {
+                    deltaVersion = stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg
+                        ? latestMeta.IcebergSequenceNumber
+                        : latestMeta.DeltaVersion;
+                }
+
+                if (stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg)
+                {
+                    icebergSnapshotId = latestMeta.IcebergSnapshotId;
+                    if (!string.IsNullOrWhiteSpace(latestMeta.IcebergMetadataLocation))
+                    {
+                        icebergMetadataUri = $"s3://{storageCfg.Bucket}/{latestMeta.IcebergMetadataLocation.TrimStart('/')}";
+                    }
+                }
             }
 
             var restCfg = ParseCatalogRestConfig(catalogSink.Config);
@@ -173,8 +190,8 @@ public sealed partial class ExternalLakehouseCatalogSyncService : ITransientDepe
 
             var columns = ResolveCatalogColumns(stream);
             var fullIdentifier = stream.CatalogType == LakehouseCatalogType.UnityCatalogRest
-                ? await SyncUnityCatalogAsync(restCfg, stream, locationUri, deltaVersion, columns, cancellationToken)
-                : await SyncIcebergRestAsync(restCfg, stream, locationUri, deltaVersion, columns, cancellationToken);
+                ? await SyncUnityCatalogAsync(restCfg, stream, locationUri, deltaVersion, icebergSnapshotId, icebergMetadataUri, columns, cancellationToken)
+                : await SyncIcebergRestAsync(restCfg, stream, locationUri, deltaVersion, icebergSnapshotId, icebergMetadataUri, columns, cancellationToken);
 
             var versionLabel = deltaVersion.HasValue ? $"v{deltaVersion.Value}" : "manifest";
             var okMessage = $"已同步表 {fullIdentifier}（{versionLabel}）至 {(stream.CatalogType == LakehouseCatalogType.UnityCatalogRest ? "Unity Catalog" : "Apache Iceberg REST")}。";
@@ -234,14 +251,21 @@ public sealed partial class ExternalLakehouseCatalogSyncService : ITransientDepe
         CdcStreamDefinition stream,
         string locationUri,
         long? deltaVersion,
+        long? icebergSnapshotId,
+        string? icebergMetadataUri,
         IReadOnlyList<CatalogColumnDescriptor> columns,
         CancellationToken cancellationToken)
     {
         var (catalogName, schemaName, tableName) = ResolveUnityThreeLevelName(restCfg, stream);
         var fullName = $"{catalogName}.{schemaName}.{tableName}";
-        var format = stream.LakehouseTableFormat == LakehouseTableFormat.DeltaLake ? "DELTA" : "PARQUET";
+        var format = stream.LakehouseTableFormat switch
+        {
+            LakehouseTableFormat.DeltaLake => "DELTA",
+            LakehouseTableFormat.ApacheIceberg => "ICEBERG",
+            _ => "PARQUET",
+        };
 
-        var properties = BuildMetadataProperties(stream, locationUri, deltaVersion);
+        var properties = BuildMetadataProperties(stream, locationUri, deltaVersion, icebergSnapshotId, icebergMetadataUri);
         var createBody = new
         {
             name = tableName,
@@ -292,6 +316,8 @@ public sealed partial class ExternalLakehouseCatalogSyncService : ITransientDepe
         CdcStreamDefinition stream,
         string locationUri,
         long? deltaVersion,
+        long? icebergSnapshotId,
+        string? icebergMetadataUri,
         IReadOnlyList<CatalogColumnDescriptor> columns,
         CancellationToken cancellationToken)
     {
@@ -315,7 +341,7 @@ public sealed partial class ExternalLakehouseCatalogSyncService : ITransientDepe
             EnsureHttpSuccess(nsResp, "Iceberg REST 命名空间初始化");
         }
 
-        var properties = BuildMetadataProperties(stream, locationUri, deltaVersion);
+        var properties = BuildMetadataProperties(stream, locationUri, deltaVersion, icebergSnapshotId, icebergMetadataUri);
         var createUri = BuildEndpointUri(restCfg.BaseUri, $"/v1{prefixSeg}/namespaces/{escapedNs}/tables");
         var createBody = new
         {

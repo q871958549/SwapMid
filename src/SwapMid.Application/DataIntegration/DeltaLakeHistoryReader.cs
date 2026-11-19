@@ -63,6 +63,20 @@ public sealed class DeltaLakeHistoryReader : ITransientDependency
             ? TryDeserializeLatest(latestJson)
             : null;
 
+        if (stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg)
+        {
+            return await IcebergV2MetadataReader.ReadAsync(
+                _httpClientFactory,
+                _configuration,
+                stream,
+                config,
+                destination,
+                latestDoc,
+                requestedVersion,
+                boundedMax,
+                cancellationToken);
+        }
+
         if (stream.LakehouseTableFormat != LakehouseTableFormat.DeltaLake)
         {
             return new CdcLakehouseHistoryDto
@@ -74,7 +88,7 @@ public sealed class DeltaLakeHistoryReader : ITransientDependency
                 CurrentVersion = null,
                 SelectedVersion = null,
                 TotalCommitCount = 0,
-                Summary = "当前 CDC 流未开启 Apache Delta Lake（_delta_log），可在配置中开启 Delta Lake 协议后查看 Time-Travel 提交时间线。",
+                Summary = "当前 CDC 流未开启 Apache Delta Lake（_delta_log）或 Apache Iceberg v2 表协议，可在配置中开启后查看 Time-Travel 提交时间线。",
             };
         }
 

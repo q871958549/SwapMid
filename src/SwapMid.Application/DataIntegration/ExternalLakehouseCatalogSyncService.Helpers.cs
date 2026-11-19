@@ -30,18 +30,40 @@ public sealed partial class ExternalLakehouseCatalogSyncService
     private static Dictionary<string, string> BuildMetadataProperties(
         CdcStreamDefinition stream,
         string locationUri,
-        long? deltaVersion)
+        long? version,
+        long? icebergSnapshotId,
+        string? icebergMetadataUri)
     {
+        var formatTag = stream.LakehouseTableFormat switch
+        {
+            LakehouseTableFormat.DeltaLake => "delta",
+            LakehouseTableFormat.ApacheIceberg => "iceberg",
+            _ => "swapmid-manifest",
+        };
         var props = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["swapmid.stream_id"] = stream.Id.ToString("D"),
             ["swapmid.stream_name"] = stream.Name,
-            ["swapmid.table_format"] = stream.LakehouseTableFormat == LakehouseTableFormat.DeltaLake ? "delta" : "swapmid-manifest",
+            ["swapmid.table_format"] = formatTag,
             ["swapmid.location"] = locationUri,
         };
-        if (deltaVersion.HasValue)
+        if (version.HasValue)
         {
-            props["swapmid.delta_version"] = deltaVersion.Value.ToString(CultureInfo.InvariantCulture);
+            var versionKey = stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg
+                ? "swapmid.iceberg_sequence_number"
+                : "swapmid.delta_version";
+            props[versionKey] = version.Value.ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (icebergSnapshotId.HasValue)
+        {
+            props["swapmid.iceberg_snapshot_id"] = icebergSnapshotId.Value.ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (!string.IsNullOrWhiteSpace(icebergMetadataUri))
+        {
+            props["metadata-location"] = icebergMetadataUri;
+            props["swapmid.metadata_location"] = icebergMetadataUri;
         }
 
         if (!string.IsNullOrWhiteSpace(stream.CheckpointLsn))
@@ -104,11 +126,11 @@ public sealed partial class ExternalLakehouseCatalogSyncService
             ? stream.Name
             : $"{stream.CatalogNamespace}.{stream.CatalogTableName}";
 
-    private static long? TryReadLatestVersion(string? latestJson)
+    private static LatestLakehouseMeta TryReadLatestLakehouseMeta(string? latestJson)
     {
         if (string.IsNullOrWhiteSpace(latestJson))
         {
-            return null;
+            return default;
         }
 
         try
@@ -116,13 +138,23 @@ public sealed partial class ExternalLakehouseCatalogSyncService
             var doc = JsonSerializer.Deserialize<CdcObjectStorageLakehouseWriter.CdcLatestCheckpointDocument>(
                 latestJson,
                 CdcObjectStorageLakehouseWriter.JsonOptions);
-            return doc?.LatestDeltaVersion;
+            return new LatestLakehouseMeta(
+                doc?.LatestDeltaVersion,
+                doc?.LatestIcebergSequenceNumber,
+                doc?.LatestIcebergSnapshotId,
+                doc?.LatestIcebergMetadataLocation);
         }
         catch (JsonException)
         {
-            return null;
+            return default;
         }
     }
+
+    private readonly record struct LatestLakehouseMeta(
+        long? DeltaVersion,
+        long? IcebergSequenceNumber,
+        long? IcebergSnapshotId,
+        string? IcebergMetadataLocation);
 
     private static CatalogRestConfig ParseCatalogRestConfig(string? rawConfig)
     {

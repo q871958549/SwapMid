@@ -1,31 +1,49 @@
 # Resilience, Crash-Recovery & Chaos Benchmark Matrix
 
-This document summarizes the automated fault-injection guarantees continuously verified across SwapMid's ETL Target Receipt v1 coordinator, Delta Lake optimistic concurrency protocol, and CDC Open Catalog integration.
+This document summarizes the automated fault-injection guarantees and reproducible streaming SLA throughput benchmarks continuously verified across SwapMid's ETL `Target Receipt v1` coordinator, Apache Delta Lake (`_delta_log`), native Apache Iceberg v2 (`metadata/v*.metadata.json`), authenticated Push Webhook CDC ingress, and External Open Catalog integration.
 
-All scenarios run automatically on every commit in [CI](../../.github/workflows/ci.yml) (`dotnet test SwapMid.slnx`) without requiring manual intervention.
+All scenarios and throughput assertions run automatically on every commit in [CI](../../.github/workflows/ci.yml) (`dotnet test SwapMid.slnx`) without requiring manual intervention.
 
 ## 1. Fault-Injection & Chaos Verification Matrix
 
 | Scenario | Fault Injected | Invariant / Protocol Exercised | Verified Outcome | Automated Proof |
 | :--- | :--- | :--- | :--- | :--- |
-| **Mid-flight Crash (`OutcomeUnknown`)** | Commit returns ambiguous timeout / process crash mid-flight | Per-target `TargetResourceGroup` quarantine fence + `RunId` idempotent replay + `__swapmid_etl_receipt_v1` verification | Concurrent runs on same target blocked; same `RunId` replays safely without re-executing; exact machine receipt converges state to `Succeeded` with zero duplicate writes | [ChaosResilienceContractTests](../../test/SwapMid.EntityFrameworkCore.Tests/DataIntegration/ChaosResilienceContractTests.cs) & [TargetReceiptVerificationTests](../../test/SwapMid.EntityFrameworkCore.Tests/DataIntegration/TargetReceiptVerificationTests.cs) |
-| **Delta Lake `_delta_log` Concurrent CAS Race** | Competing writer claims `_delta_log/{v+1}.json` right after pre-check GET | Conditional PUT `If-None-Match: *` -> `412 PreconditionFailed` detection -> retry on next monotonic version + `swapmidRunId` crash replay | Advances atomically onto `v+2`; replaying the crashed run with identical `swapmidRunId` recognizes its own log entry and skips duplicate writes | [DeltaLakeCommitWriterTests](../../test/SwapMid.Application.Tests/DataIntegration/DeltaLakeCommitWriterTests.cs) & [ChaosResilienceContractTests](../../test/SwapMid.EntityFrameworkCore.Tests/DataIntegration/ChaosResilienceContractTests.cs) |
-| **Delta Lake Time-Travel Across Compactions** | `OPTIMIZE` merges small Parquet files (`remove` + `add(dataChange=false)`) | Full replay of `add` / `remove` actions across `_delta_log/{v:D20}.json` (`VERSION AS OF v`) | Current version shows post-compaction files; querying historical `v1` accurately reconstructs pre-compaction files & exact row count | [DeltaLakeHistoryReaderTests](../../test/SwapMid.Application.Tests/DataIntegration/DeltaLakeHistoryReaderTests.cs) |
-| **External Catalog `503` Outage During CDC** | Unity Catalog / Iceberg REST returns `HTTP 503` (including simulated secret echo) | Non-blocking best-effort `TryBestEffortSyncAsync` isolated from CDC WAL/Binlog checkpoint commit | CDC stream stays `Active`, `CheckpointLsn` & captured counts never roll back, secret strings never leak into `CatalogLastSyncStatus`, recovery succeeds later | [ChaosResilienceContractTests](../../test/SwapMid.EntityFrameworkCore.Tests/DataIntegration/ChaosResilienceContractTests.cs) & [ExternalLakehouseCatalogSyncTests](../../test/SwapMid.Application.Tests/DataIntegration/ExternalLakehouseCatalogSyncTests.cs) |
-| **SSRF Metadata Endpoint in Catalog REST Config** | Catalog `RestApi` points to `169.254.169.254` or un-allowlisted private IP | Fail-closed `DataIntegrationSinkEndpointPolicy` validation prior to `HttpClient.SendAsync` | Blocked with `BusinessException` before opening any outbound socket | [ExternalLakehouseCatalogSyncTests](../../test/SwapMid.Application.Tests/DataIntegration/ExternalLakehouseCatalogSyncTests.cs) |
+| **1. Mid-flight Crash (`OutcomeUnknown`)** | Commit returns ambiguous timeout / process crash mid-flight | Per-target `TargetResourceGroup` quarantine fence + `RunId` idempotent replay + `__swapmid_etl_receipt_v1` verification | Concurrent runs on same target blocked; same `RunId` replays safely without re-executing; exact machine receipt converges state to `Succeeded` with zero duplicate writes (`RPO = 0`) | [ChaosResilienceContractTests](../../test/SwapMid.EntityFrameworkCore.Tests/DataIntegration/ChaosResilienceContractTests.cs) & [TargetReceiptVerificationTests](../../test/SwapMid.EntityFrameworkCore.Tests/DataIntegration/TargetReceiptVerificationTests.cs) |
+| **2. Delta Lake `_delta_log` Concurrent CAS Race** | Competing writer claims `_delta_log/{v+1}.json` right after pre-check GET | Conditional PUT `If-None-Match: *` -> `412 PreconditionFailed` detection -> retry on next monotonic version + `swapmidRunId` crash replay | Advances atomically onto `v+2`; replaying the crashed run with identical `swapmidRunId` recognizes its own log entry and skips duplicate writes | [DeltaLakeCommitWriterTests](../../test/SwapMid.Application.Tests/DataIntegration/DeltaLakeCommitWriterTests.cs) & [ChaosResilienceContractTests](../../test/SwapMid.EntityFrameworkCore.Tests/DataIntegration/ChaosResilienceContractTests.cs) |
+| **3. External Catalog `503` Outage During CDC** | Unity Catalog / Iceberg REST returns `HTTP 503` (including simulated secret echo) | Non-blocking best-effort `TryBestEffortSyncAsync` isolated from CDC WAL/Binlog checkpoint commit | CDC stream stays `Active`, `CheckpointLsn` & captured counts never roll back, secret strings never leak into `CatalogLastSyncStatus`, recovery succeeds later | [ChaosResilienceContractTests](../../test/SwapMid.EntityFrameworkCore.Tests/DataIntegration/ChaosResilienceContractTests.cs) & [ExternalLakehouseCatalogSyncTests](../../test/SwapMid.Application.Tests/DataIntegration/ExternalLakehouseCatalogSyncTests.cs) |
+| **4. Apache Iceberg v2 Concurrent CAS Race** | Competing writer claims `metadata/v2.metadata.json` right before conditional PUT | S3 `If-None-Match: *` -> `412 PreconditionFailed` retry -> `metadata/v3.metadata.json` + `version-hint.text` + `swapmid-run-id` crash replay | Advances atomically to sequence `v3`; stale caller replay detects its own `swapmid-run-id` inside `snapshots[]` and converges without creating `v4` (`RPO = 0`) | [IcebergV2CommitAndReaderTests](../../test/SwapMid.Application.Tests/DataIntegration/IcebergV2CommitAndReaderTests.cs) & [ChaosResilienceContractTests](../../test/SwapMid.EntityFrameworkCore.Tests/DataIntegration/ChaosResilienceContractTests.cs) |
+| **5. Push Webhook Forged HMAC & Iceberg v2 Replay** | Attacker sends forged `X-SwapMid-Signature` before valid HMAC-SHA256 signed event batch | Fail-closed constant-time `CryptographicOperations.FixedTimeEquals` check prior to stream status check or JSON body parsing | Forged call rejected with `401 Unauthorized` and `0` object-store writes; valid signed payload commits Parquet + Iceberg v2 `v1.metadata.json` + monotonic `webhook:2` checkpoint + `Healthy` SLA | [CdcWebhookIngressServiceTests](../../test/SwapMid.Application.Tests/DataIntegration/CdcWebhookIngressServiceTests.cs) & [ChaosResilienceContractTests](../../test/SwapMid.EntityFrameworkCore.Tests/DataIntegration/ChaosResilienceContractTests.cs) |
+| **6. Time-Travel & Live Preview Across Compactions** | `OPTIMIZE` (Delta) / `REPLACE` (Iceberg v2) merges small Parquet files while preserving history | Full snapshot replay (`_delta_log` / `metadata/v*.metadata.json` + `snap-*-manifest.json`) + bounded Zero-Infra Parquet decoding (`4 MiB`/file, `<= 50` rows) | Latest version serves compacted file; historical `v1` Time-Travel reconstructs exact pre-compaction files & rows; vacuumed `404` fragments degrade cleanly | [DeltaLakeHistoryReaderTests](../../test/SwapMid.Application.Tests/DataIntegration/DeltaLakeHistoryReaderTests.cs), [IcebergV2CommitAndReaderTests](../../test/SwapMid.Application.Tests/DataIntegration/IcebergV2CommitAndReaderTests.cs) & [CdcLakehouseDataPreviewServiceTests](../../test/SwapMid.Application.Tests/DataIntegration/CdcLakehouseDataPreviewServiceTests.cs) |
+| **7. SSRF Metadata Endpoint in Sink / Catalog Config** | Sink or Catalog `RestApi` points to `169.254.169.254` or un-allowlisted private IP | Fail-closed `DataIntegrationSinkEndpointPolicy` validation prior to `HttpClient.SendAsync` | Blocked with `BusinessException` before opening any outbound socket | [ExternalLakehouseCatalogSyncTests](../../test/SwapMid.Application.Tests/DataIntegration/ExternalLakehouseCatalogSyncTests.cs) |
 
-## 2. Reproducing Locally
+## 2. Automated 1,000-Event Streaming SLA & Throughput Benchmarks
+
+Executed by [ChaosSlaThroughputBenchmarkTests](../../test/SwapMid.Application.Tests/DataIntegration/ChaosSlaThroughputBenchmarkTests.cs) (`10` batches × `100` CDC rows = `1,000` rows, real `Parquet.Net` encoding + S3 SigV4 signing + atomic CAS metadata commits + out-of-order crash replay of batch #5 + mid-history Time-Travel replay + Zero-Infra Parquet preview + Data Contract SLA evaluation):
+
+| Lakehouse Protocol | Workload | Total Elapsed | Throughput | Batch P50 | Batch P95 / P99 | Time-Travel Replay (`latest` + mid-version) | Out-of-Order Batch #5 Replay | Data Contract SLA | RPO |
+| :--- | :--- | ---: | ---: | ---: | ---: | ---: | :--- | :--- | :---: |
+| **Apache Delta Lake (`_delta_log`)** | 1,000 rows (10 × 100 Parquet) | `161.4 ms` | **`6,197 rows/s`** | `3.69 ms` | `111.57 ms` *(includes cold Parquet JIT)* | `3.17 ms` | Converged idempotently (`10` commits, `0` duplicates) | `Healthy` | **`0`** |
+| **Apache Iceberg v2 (`metadata.json`)** | 1,000 rows (10 × 100 Parquet) | `63.8 ms` | **`15,684 rows/s`** | `4.24 ms` | `18.74 ms` | `1.05 ms` | Converged idempotently (`10` snapshots, `0` duplicates) | `Healthy` | **`0`** |
+
+> Measured on .NET 10.0.15 (x64, in-process S3 SigV4 handler verifying real Parquet serialization, SHA-256 hashing, SigV4 signing, conditional `If-None-Match: *` CAS semantics, and Parquet reader decoding). Live network latency adds S3/MinIO round-trip RTT per commit.
+
+## 3. Reproducing Locally
 
 ```bash
-# Run full chaos, contract, and unit suites
-dotnet test test/SwapMid.Application.Tests/SwapMid.Application.Tests.csproj --filter "FullyQualifiedName~DeltaLake|FullyQualifiedName~ExternalLakehouseCatalogSync" --nologo
-dotnet test test/SwapMid.EntityFrameworkCore.Tests/SwapMid.EntityFrameworkCore.Tests.csproj --filter "FullyQualifiedName~ChaosResilienceContractTests" --nologo
+# Run full chaos, Iceberg v2, Push Webhook, and 1,000-row SLA benchmark suites
+dotnet test test/SwapMid.Application.Tests/SwapMid.Application.Tests.csproj \
+  --filter "FullyQualifiedName~DeltaLake|FullyQualifiedName~IcebergV2|FullyQualifiedName~CdcWebhookIngress|FullyQualifiedName~ExternalLakehouseCatalogSync|FullyQualifiedName~ChaosSlaThroughputBenchmarkTests" \
+  --logger "console;verbosity=detailed" --nologo
+
+dotnet test test/SwapMid.EntityFrameworkCore.Tests/SwapMid.EntityFrameworkCore.Tests.csproj \
+  --filter "FullyQualifiedName~ChaosResilienceContractTests" --nologo
 ```
 
-## 3. Architecture & Static Boundary Enforcement
+## 4. Architecture & Static Boundary Enforcement
 
 Beyond functional fault tests, SwapMid runs Roslyn AST architecture guards in CI:
 
 - **Failure Boundary Guard** (`EtlFailureBoundaryGuardTests`): forbids leaking driver/HTTP exception messages or credential strings in any `catch` block across `DataIntegration` services; only `PipelineExecutionFailurePolicy.DescribeFailure` and redacted `SinkConfigContractHelpers` diagnostics are permitted.
 - **File Length Guard** (`FileLengthGuardTests`): enforces `<= 500` lines per production `.cs` file to maintain modular separation of concerns.
+- **Host Authorization Contract** (`DataIntegrationCrudAuthorizationContractTests`): verifies every public `DataIntegration` AppService entry enforces host-only isolation and exact ABP permission policies.
 - **UI & BFF Storage Contract** (`browser-storage-policy-contract.test.ts` + `ui-health.mjs`): forbids OAuth token exposure or unallowlisted `localStorage` usage in frontend modules.

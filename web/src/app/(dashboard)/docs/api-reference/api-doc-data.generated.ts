@@ -7,7 +7,7 @@ export const API_MODULES: ApiModule[] = [
   {
     "id": "data-integration",
     "title": "数据集成",
-    "description": "多源关系型/REST/文件连接管理、流式 ETL 管道、PostgreSQL 逻辑复制 CDC、Cron 调度、目标回执对账与执行恢复。",
+    "description": "多源关系型/REST/文件连接管理、流式 ETL 管道、多源与 Push Webhook CDC、Cron 调度、目标回执对账与执行恢复。",
     "baseUrl": "/api/v1",
     "sections": [
       {
@@ -3217,7 +3217,7 @@ export const API_MODULES: ApiModule[] = [
       },
       {
         "id": "CdcStream",
-        "title": "PostgreSQL CDC 实时流 /cdc-streams",
+        "title": "多源 CDC 实时流 /cdc-streams",
         "endpoints": [
           {
             "method": "GET",
@@ -3308,7 +3308,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook",
                 "nullable": false
               },
               {
@@ -3469,7 +3469,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "lakehouseTableFormat",
                 "cnName": "",
                 "type": "LakehouseTableFormat",
-                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake；2=ApacheIceberg",
                 "nullable": false
               },
               {
@@ -3757,7 +3757,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook",
                 "required": false
               },
               {
@@ -3897,7 +3897,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "lakehouseTableFormat",
                 "cnName": "",
                 "type": "LakehouseTableFormat",
-                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake；2=ApacheIceberg",
                 "required": false
               },
               {
@@ -4004,7 +4004,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook",
                 "nullable": false
               },
               {
@@ -4165,7 +4165,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "lakehouseTableFormat",
                 "cnName": "",
                 "type": "LakehouseTableFormat",
-                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake；2=ApacheIceberg",
                 "nullable": false
               },
               {
@@ -4476,7 +4476,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook",
                 "nullable": false
               },
               {
@@ -4637,7 +4637,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "lakehouseTableFormat",
                 "cnName": "",
                 "type": "LakehouseTableFormat",
-                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake；2=ApacheIceberg",
                 "nullable": false
               },
               {
@@ -4934,7 +4934,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook",
                 "required": false
               },
               {
@@ -5074,7 +5074,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "lakehouseTableFormat",
                 "cnName": "",
                 "type": "LakehouseTableFormat",
-                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake；2=ApacheIceberg",
                 "required": false
               },
               {
@@ -5181,7 +5181,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook",
                 "nullable": false
               },
               {
@@ -5342,7 +5342,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "lakehouseTableFormat",
                 "cnName": "",
                 "type": "LakehouseTableFormat",
-                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake；2=ApacheIceberg",
                 "nullable": false
               },
               {
@@ -5803,7 +5803,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook",
                 "nullable": false
               },
               {
@@ -5964,7 +5964,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "lakehouseTableFormat",
                 "cnName": "",
                 "type": "LakehouseTableFormat",
-                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake；2=ApacheIceberg",
                 "nullable": false
               },
               {
@@ -6552,7 +6552,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "tableFormat",
                 "cnName": "",
                 "type": "LakehouseTableFormat",
-                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake；2=ApacheIceberg",
                 "nullable": false
               },
               {
@@ -6786,7 +6786,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "tableFormat",
                 "cnName": "",
                 "type": "LakehouseTableFormat",
-                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake；2=ApacheIceberg",
                 "nullable": false
               },
               {
@@ -7559,7 +7559,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook",
                 "required": false
               },
               {
@@ -7814,6 +7814,78 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "string",
                 "description": "面向操作员的诊断说明（不含敏感连接串或驱动原文）。",
+                "nullable": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "CdcWebhookIngress",
+        "title": "Push Webhook CDC 事件接入 /cdc-webhooks",
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/api/v1/cdc-webhooks/{streamId}",
+            "summary": "接收 HMAC-SHA256 签名的 Push Webhook CDC 变更事件批次并投递至下游目标",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": ""
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "deliveryId",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "acceptedEventCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "deliveredCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "checkpointLsn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "receivedAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "message",
+                "cnName": "",
+                "type": "string",
+                "description": "",
                 "nullable": true
               }
             ]

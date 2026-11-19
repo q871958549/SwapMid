@@ -310,6 +310,18 @@ internal readonly record struct ObjectStorageSinkConfig(
     internal string BuildDeltaCommitKey(string destination, long version)
         => $"{BuildDeltaLogDirectory(destination)}/{version:D20}.json";
 
+    internal string BuildIcebergMetadataDirectory(string destination)
+        => $"{BuildDestinationDirectory(destination)}/metadata";
+
+    internal string BuildIcebergVersionHintKey(string destination)
+        => $"{BuildIcebergMetadataDirectory(destination)}/version-hint.text";
+
+    internal string BuildIcebergMetadataKey(string destination, long sequenceNumber)
+        => $"{BuildIcebergMetadataDirectory(destination)}/v{sequenceNumber}.metadata.json";
+
+    internal string BuildIcebergManifestKey(string destination, long snapshotId)
+        => $"{BuildIcebergMetadataDirectory(destination)}/snap-{snapshotId}-manifest.json";
+
     internal string ToRelativeTablePath(string destination, string objectKey)
     {
         var basePrefix = BuildDestinationDirectory(destination).TrimEnd('/') + "/";

@@ -15,7 +15,7 @@ export interface CdcFormState {
   name: string
   description: string
   sourceId: string
-  sourceType: '0' | '1' | '2'
+  sourceType: '0' | '1' | '2' | '3'
   publicationName: string
   slotName: string
   monitoredTables: string
@@ -34,7 +34,7 @@ export interface CdcFormState {
   softDeleteTimestampColumn: string
   targetFieldMappings: CdcFieldMappingDto[]
   lakehouseCompactMinFiles: string
-  lakehouseTableFormat: '0' | '1'
+  lakehouseTableFormat: '0' | '1' | '2'
   catalogType: '0' | '1' | '2'
   catalogSinkId: string
   catalogNamespace: string
@@ -97,18 +97,22 @@ export function normalizeCatalogType(catalogType: number | undefined): '0' | '1'
   return '0'
 }
 
-export function normalizeSourceType(sourceType: number | undefined): '0' | '1' | '2' {
+export function normalizeSourceType(sourceType: number | undefined): '0' | '1' | '2' | '3' {
   if (Number(sourceType) === 1) return '1'
   if (Number(sourceType) === 2) return '2'
+  if (Number(sourceType) === 3) return '3'
   return '0'
 }
 
-export function normalizeLakehouseTableFormat(format: number | undefined): '0' | '1' {
-  return Number(format) === 1 ? '1' : '0'
+export function normalizeLakehouseTableFormat(format: number | undefined): '0' | '1' | '2' {
+  if (Number(format) === 1) return '1'
+  if (Number(format) === 2) return '2'
+  return '0'
 }
 
-export function detectCdcSourceTypeFromSource(sourceId: string, sources: CdcSourceOption[]): '0' | '1' | '2' {
+export function detectCdcSourceTypeFromSource(sourceId: string, sources: CdcSourceOption[]): '0' | '1' | '2' | '3' {
   const matched = sources.find(s => s.id === sourceId)
+  if (matched?.type === 1) return '3'
   if (!matched?.config) return '0'
   try {
     const parsed = JSON.parse(matched.config) as { provider?: unknown }
@@ -220,8 +224,8 @@ export function toCdcBody(form: CdcFormState) {
     publicationName: sourceType === 0 ? form.publicationName.trim() : (form.publicationName.trim() || null),
     slotName: sourceType === 0 ? form.slotName.trim() : (form.slotName.trim() || null),
     monitoredTables: form.monitoredTables.trim() || null,
-    autoCreatePublicationAndSlot: form.autoCreatePublicationAndSlot,
-    initialSnapshotEnabled: form.initialSnapshotEnabled,
+    autoCreatePublicationAndSlot: sourceType === 0 ? form.autoCreatePublicationAndSlot : false,
+    initialSnapshotEnabled: sourceType === 3 ? false : form.initialSnapshotEnabled,
     pollIntervalSeconds: Number.isFinite(poll) ? poll : 15,
     maxBatchSize: Number.isFinite(batch) ? batch : 500,
     targetMode: mode,

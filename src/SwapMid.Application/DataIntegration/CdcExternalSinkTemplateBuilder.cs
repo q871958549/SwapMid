@@ -78,6 +78,10 @@ internal static class CdcExternalSinkTemplateBuilder
             {
                 deltaLogDir = cfg.BuildDeltaLogDirectory(destination);
             }
+            else if (stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg)
+            {
+                deltaLogDir = cfg.BuildIcebergMetadataDirectory(destination);
+            }
 
             lakehouseQuerySql = BuildLakehouseQuerySql(cfg, destination, stream.LakehouseTableFormat);
             if (probeService != null && !string.IsNullOrWhiteSpace(cfg.SecretKey))
@@ -94,7 +98,9 @@ internal static class CdcExternalSinkTemplateBuilder
                         var parsed = JsonSerializer.Deserialize<CdcObjectStorageLakehouseWriter.CdcLatestCheckpointDocument>(
                             latestManifestJson,
                             CdcObjectStorageLakehouseWriter.JsonOptions);
-                        latestDeltaVersion = parsed?.LatestDeltaVersion;
+                        latestDeltaVersion = stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg
+                            ? parsed?.LatestIcebergSequenceNumber
+                            : parsed?.LatestDeltaVersion;
                     }
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -155,6 +161,21 @@ internal static class CdcExternalSinkTemplateBuilder
         var ext = cfg.Format == "jsonl" ? "jsonl" : "parquet";
         var chFormat = cfg.Format == "jsonl" ? "JSONEachRow" : "Parquet";
         var chUrl = $"{cfg.Endpoint.TrimEnd('/')}/{cfg.Bucket}/{baseDir}/*.{ext}";
+
+        if (tableFormat == LakehouseTableFormat.ApacheIceberg && ext == "parquet")
+        {
+            return $"""
+                -- DuckDB (Apache Iceberg v2 原生快照扫描：s3://{cfg.Bucket}/{baseDir}/metadata/version-hint.text)
+                SELECT * FROM iceberg_scan('s3://{cfg.Bucket}/{baseDir}');
+
+                -- Trino / Apache Spark SQL (Apache Iceberg v2 Catalog / Time-Travel)
+                SELECT * FROM iceberg_catalog.ns.table LIMIT 100;
+                -- SELECT * FROM iceberg_catalog.ns.table.snapshots;
+
+                -- Python PyIceberg / DuckDB 元数据直读
+                -- duckdb.sql("SELECT * FROM iceberg_scan('s3://{cfg.Bucket}/{baseDir}')")
+                """;
+        }
 
         if (tableFormat == LakehouseTableFormat.DeltaLake && ext == "parquet")
         {

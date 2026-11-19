@@ -64,9 +64,16 @@ internal static partial class CdcStreamMappingHelpers
         {
             CdcSourceType.SqlServerChangeTracking => "dbo",
             CdcSourceType.MySqlBinlog => RelationalDataSourceConnection.Parse(source.Config).Database?.Trim() ?? string.Empty,
+            CdcSourceType.PushWebhook => "webhook",
             _ => "public",
         };
         var parsedTables = CdcProtocolHelpers.ParseMonitoredTables(input.MonitoredTables, defaultSchema: defaultSchema);
+        if (input.SourceType == CdcSourceType.PushWebhook && input.InitialSnapshotEnabled)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", "Push Webhook 推送模式不支持初始全量快照（InitialSnapshotEnabled），请关闭初始快照选项。");
+        }
+
         if (input.SourceType == CdcSourceType.SqlServerChangeTracking && parsedTables.Count == 0)
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
@@ -84,12 +91,14 @@ internal static partial class CdcStreamMappingHelpers
         {
             CdcSourceType.SqlServerChangeTracking => BuildIdentifierFallback(input.PublicationName, "sqlserver_ct"),
             CdcSourceType.MySqlBinlog => BuildIdentifierFallback(input.PublicationName, "mysql_binlog"),
+            CdcSourceType.PushWebhook => BuildIdentifierFallback(input.PublicationName, "push_webhook"),
             _ => CdcProtocolHelpers.ValidateReplicationIdentifier(input.PublicationName, "PublicationName"),
         };
         var slot = input.SourceType switch
         {
             CdcSourceType.SqlServerChangeTracking => BuildIdentifierFallback(input.SlotName, $"ct_{name}"),
             CdcSourceType.MySqlBinlog => BuildIdentifierFallback(input.SlotName, $"binlog_{name}"),
+            CdcSourceType.PushWebhook => BuildIdentifierFallback(input.SlotName, $"webhook_{name}"),
             _ => CdcProtocolHelpers.ValidateReplicationIdentifier(input.SlotName, "SlotName"),
         };
         var normalizedTables = parsedTables.Count > 0
@@ -254,22 +263,25 @@ internal static partial class CdcStreamMappingHelpers
                     input.LakehouseCompactMinFiles);
             }
 
-            if (input.LakehouseTableFormat == LakehouseTableFormat.DeltaLake)
+            if (input.LakehouseTableFormat is LakehouseTableFormat.DeltaLake or LakehouseTableFormat.ApacheIceberg)
             {
+                var formatName = input.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg
+                    ? "Apache Iceberg v2"
+                    : "Apache Delta Lake（_delta_log）";
                 if (externalSink?.Type != DataSourceType.ObjectStorage)
                 {
                     throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-                        .WithData("Reason", "仅 ObjectStorage 接收端支持开启 Apache Delta Lake（_delta_log）表协议。");
+                        .WithData("Reason", $"仅 ObjectStorage 接收端支持开启 {formatName} 表协议。");
                 }
 
                 var storageCfg = ObjectStorageSinkConfigContract.ParseForWrite(externalSink.Config, requireSecretKey: false);
                 if (!string.Equals(storageCfg.Format, "parquet", StringComparison.OrdinalIgnoreCase))
                 {
                     throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-                        .WithData("Reason", "Delta Lake（_delta_log）表协议要求 ObjectStorage 接收端采用 Parquet 格式。");
+                        .WithData("Reason", $"{formatName} 表协议要求 ObjectStorage 接收端采用 Parquet 格式。");
                 }
 
-                lakehouseTableFormat = LakehouseTableFormat.DeltaLake;
+                lakehouseTableFormat = input.LakehouseTableFormat;
             }
         }
 

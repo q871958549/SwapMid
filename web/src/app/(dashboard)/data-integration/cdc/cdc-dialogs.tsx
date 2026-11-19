@@ -232,9 +232,11 @@ export function CdcCheckpointDialog({
                 value={value}
                 onChange={e => onValueChange(e.target.value)}
                 placeholder={
-                  Number(target.sourceType ?? 0) === 2
-                    ? 'mysql-bin.000003:197'
-                    : (Number(target.sourceType ?? 0) === 1 ? '42' : '0/16B6C50')
+                  Number(target.sourceType ?? 0) === 3
+                    ? 'webhook:0'
+                    : (Number(target.sourceType ?? 0) === 2
+                        ? 'mysql-bin.000003:197'
+                        : (Number(target.sourceType ?? 0) === 1 ? '42' : '0/16B6C50'))
                 }
                 className="font-mono"
               />
@@ -354,9 +356,13 @@ export function CdcSinkTemplateDialog({
               )}
               {state.template.deltaLogDirectory && (
                 <StatusBadge tone="info">
-                  {state.template.latestDeltaVersion !== null && state.template.latestDeltaVersion !== undefined
-                    ? `Delta Lake v${state.template.latestDeltaVersion}`
-                    : 'Delta Lake'}
+                  {Number(state.stream.lakehouseTableFormat ?? 0) === 2
+                    ? (state.template.latestDeltaVersion !== null && state.template.latestDeltaVersion !== undefined
+                        ? `Iceberg v2 · v${state.template.latestDeltaVersion}`
+                        : 'Iceberg v2')
+                    : (state.template.latestDeltaVersion !== null && state.template.latestDeltaVersion !== undefined
+                        ? `Delta Lake v${state.template.latestDeltaVersion}`
+                        : 'Delta Lake')}
                 </StatusBadge>
               )}
             </div>
@@ -448,7 +454,7 @@ export function CdcSinkTemplateDialog({
                 )}
                 {state.template.deltaLogDirectory && (
                   <div className="font-mono text-muted-foreground break-all">
-                    {`Delta Log: ${state.template.deltaLogDirectory}`}
+                    {`${Number(state.stream.lakehouseTableFormat ?? 0) === 2 ? 'Iceberg Metadata' : 'Delta Log'}: ${state.template.deltaLogDirectory}`}
                   </div>
                 )}
                 {state.template.latestManifestJson && (

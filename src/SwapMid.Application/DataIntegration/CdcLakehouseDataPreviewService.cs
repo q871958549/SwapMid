@@ -83,7 +83,7 @@ public sealed class CdcLakehouseDataPreviewService : ITransientDependency
                 FileFormat = config.Format,
                 SelectedVersion = selectedVersion,
                 Summary = selectedVersion.HasValue
-                    ? $"Delta Lake v{selectedVersion.Value} 当前无活跃数据分片可供预览。"
+                    ? $"{(stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg ? "Apache Iceberg" : "Delta Lake")} v{selectedVersion.Value} 当前无活跃数据分片可供预览。"
                     : "目标 Lakehouse 路径尚未写入任何数据分片，请先执行快照或触发捕获。",
             };
         }
@@ -177,7 +177,7 @@ public sealed class CdcLakehouseDataPreviewService : ITransientDependency
         long? requestedVersion,
         CancellationToken cancellationToken)
     {
-        if (stream.LakehouseTableFormat == LakehouseTableFormat.DeltaLake)
+        if (stream.LakehouseTableFormat is LakehouseTableFormat.DeltaLake or LakehouseTableFormat.ApacheIceberg)
         {
             var history = await _deltaHistoryReader.ReadAsync(
                 stream,

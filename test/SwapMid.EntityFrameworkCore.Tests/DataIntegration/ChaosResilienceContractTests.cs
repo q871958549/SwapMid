@@ -278,11 +278,155 @@ public sealed class ChaosResilienceContractTests : SwapMidEntityFrameworkCoreTes
         afterRecover.CatalogLastSyncedAt.ShouldNotBeNull();
     }
 
+    [Fact]
+    public async Task Scenario_4_IcebergV2_Cas_412_Race_And_Same_RunId_Replay_Should_Converge_Idempotently()
+    {
+        var store = new Dictionary<string, string>(StringComparer.Ordinal);
+        var stream = new CdcStreamDefinition(
+            Guid.NewGuid(),
+            "chaos-iceberg-cas",
+            Guid.NewGuid(),
+            "push_webhook",
+            "webhook_iceberg",
+            CdcTargetMode.ExternalSink,
+            targetSinkId: Guid.NewGuid(),
+            targetSinkDestination: "orders/iceberg_chaos",
+            sourceType: CdcSourceType.PushWebhook,
+            lakehouseTableFormat: LakehouseTableFormat.ApacheIceberg);
+
+        var s3Handler = new ChaosS3AndCatalogHandler(store, forceConflictOnVersion1Once: false)
+        {
+            ForceConflictOnIcebergV2Once = true,
+        };
+        var factory = Substitute.For<IHttpClientFactory>();
+        factory.CreateClient(Arg.Any<string>()).Returns(_ => new HttpClient(s3Handler, disposeHandler: false));
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DataIntegration:Sinks:AllowedHosts"] = "198.51.100.77",
+            })
+            .Build();
+        var s3Cfg = new ObjectStorageSinkConfig(
+            "minio", "http://198.51.100.77:9000", "us-east-1", "lake", "cdc", "parquet", true, "ak", "sk", "");
+        var latestDoc = new CdcObjectStorageLakehouseWriter.CdcLatestCheckpointDocument
+        {
+            StreamId = stream.Id,
+            StreamName = stream.Name,
+            Destination = "orders/iceberg_chaos",
+        };
+
+        var r1 = await IcebergV2CommitWriter.CommitAppendAsync(
+            factory, config, s3Cfg, "orders/iceberg_chaos", stream, latestDoc,
+            Guid.NewGuid(), "cdc/orders/iceberg_chaos/run_1.parquet", 512, 5, false, DateTime.UtcNow, CancellationToken.None);
+        r1.SequenceNumber.ShouldBe(1);
+
+        var runA = Guid.NewGuid();
+        var committed = await IcebergV2CommitWriter.CommitAppendAsync(
+            factory, config, s3Cfg, "orders/iceberg_chaos", stream, latestDoc,
+            runA, $"cdc/orders/iceberg_chaos/run_{runA:N}.parquet", 1024, 12, false, DateTime.UtcNow, CancellationToken.None);
+        committed.SequenceNumber.ShouldBe(3);
+
+        // Crash replay with stale hint converges cleanly onto v3 without writing v4!
+        latestDoc.LatestIcebergSequenceNumber = 1;
+        var replayed = await IcebergV2CommitWriter.CommitAppendAsync(
+            factory, config, s3Cfg, "orders/iceberg_chaos", stream, latestDoc,
+            runA, $"cdc/orders/iceberg_chaos/run_{runA:N}.parquet", 1024, 12, false, DateTime.UtcNow, CancellationToken.None);
+        replayed.SequenceNumber.ShouldBe(3);
+        replayed.SnapshotId.ShouldBe(committed.SnapshotId);
+        store.ContainsKey("/lake/cdc/orders/iceberg_chaos/metadata/v4.metadata.json").ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Scenario_5_PushWebhook_Forged_Hmac_Should_Reject_And_Valid_Signed_Push_Should_Commit_IcebergV2()
+    {
+        const string secret = "whsec_chaos_scenario_5_secret_key_99";
+        var webhookSrc = await _dataSourceAppService.CreateAsync(new DataSourceCreateUpdateDto
+        {
+            Name = $"chaos-wh-{Guid.NewGuid():N}"[..32],
+            Type = DataSourceType.RestApi,
+            Config = $$"""{"webhookSecret":"{{secret}}"}""",
+        });
+        var minioSink = await _dataSourceAppService.CreateAsync(new DataSourceCreateUpdateDto
+        {
+            Name = $"chaos-iceberg-{Guid.NewGuid():N}"[..32],
+            Type = DataSourceType.ObjectStorage,
+            Config = """{"provider":"minio","endpoint":"http://198.51.100.77:9000","region":"us-east-1","bucket":"lake","prefix":"cdc","format":"parquet","pathStyle":true,"accessKey":"ak","secretKey":"sk"}""",
+        });
+
+        var created = await _cdcAppService.CreateAsync(new CdcStreamCreateUpdateDto
+        {
+            Name = $"chaos-wh-iceberg-{Guid.NewGuid():N}"[..32],
+            SourceId = webhookSrc.Id,
+            SourceType = CdcSourceType.PushWebhook,
+            TargetMode = CdcTargetMode.ExternalSink,
+            TargetSinkId = minioSink.Id,
+            TargetSinkDestination = "events/webhook_iceberg",
+            LakehouseTableFormat = LakehouseTableFormat.ApacheIceberg,
+            MaxFreshnessLagSeconds = 120,
+        });
+
+        var preflight = await _cdcAppService.PreflightAsync(created.Id);
+        preflight.IsReady.ShouldBeTrue();
+        await _cdcAppService.ActivateAsync(created.Id);
+
+        var store = new Dictionary<string, string>(StringComparer.Ordinal);
+        var handler = new ChaosS3AndCatalogHandler(store, forceConflictOnVersion1Once: false);
+        var factory = Substitute.For<IHttpClientFactory>();
+        factory.CreateClient(Arg.Any<string>()).Returns(_ => new HttpClient(handler, disposeHandler: false));
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DataIntegration:Sinks:AllowedHosts"] = "198.51.100.77",
+            })
+            .Build();
+
+        var objectWriter = new ObjectStorageEtlSinkWriter(factory, config);
+        var distributedLock = GetRequiredService<Volo.Abp.DistributedLocking.IAbpDistributedLock>();
+        var ingress = new CdcWebhookIngressService(
+            _cdcStreamRepository,
+            _dataSourceRepository,
+            Substitute.For<SwapMid.SharedKernel.IntegrationEvents.IIntegrationEventPublisher>(),
+            executionCoordinator: null!,
+            Substitute.For<IEtlRelationalConnectionFactory>(),
+            distributedLock,
+            _unitOfWorkManager,
+            _failurePolicy,
+            NullLogger<CdcWebhookIngressService>.Instance,
+            sinkWriters: [objectWriter]);
+
+        var payload = Encoding.UTF8.GetBytes(
+            """[{"schema":"app","table":"orders","op":"insert","data":{"id":501,"total":88.5}},{"schema":"app","table":"orders","op":"update","data":{"id":501,"total":99.0}}]""");
+
+        // 1. Forged signature -> fail-closed 401 with zero S3 writes
+        var forged = await ingress.IngestAsync(created.Id, payload, "sha256=" + new string('a', 64), "chaos-del-1");
+        forged.Outcome.ShouldBe(CdcWebhookIngestOutcome.Unauthorized);
+        store.Count.ShouldBe(0);
+
+        // 2. Valid HMAC-SHA256 -> commits Parquet + Iceberg v2 v1.metadata.json + version-hint.text + webhook:2 checkpoint
+        var validSig = CdcWebhookIngressService.ComputeSignature(secret, payload);
+        var accepted = await ingress.IngestAsync(created.Id, payload, validSig, "chaos-del-1");
+        accepted.Outcome.ShouldBe(CdcWebhookIngestOutcome.Accepted);
+        accepted.Result.ShouldNotBeNull();
+        accepted.Result.AcceptedEventCount.ShouldBe(2);
+        accepted.Result.DeliveredCount.ShouldBe(2);
+        accepted.Result.CheckpointLsn.ShouldBe("webhook:2");
+
+        store.ContainsKey("/lake/cdc/events/webhook_iceberg/metadata/version-hint.text").ShouldBeTrue();
+        store["/lake/cdc/events/webhook_iceberg/metadata/version-hint.text"].ShouldBe("1");
+        store.ContainsKey("/lake/cdc/events/webhook_iceberg/metadata/v1.metadata.json").ShouldBeTrue();
+
+        var refreshed = await _cdcAppService.GetAsync(created.Id);
+        refreshed.CheckpointLsn.ShouldBe("webhook:2");
+        refreshed.TotalCapturedCount.ShouldBe(2);
+        refreshed.ContractStatus.ShouldBe(CdcContractStatus.Healthy);
+    }
+
     private sealed class ChaosS3AndCatalogHandler : HttpMessageHandler
     {
         private readonly Dictionary<string, string> _objects;
         private bool _injectConflictOnce;
         public bool CatalogOutage503 { get; set; }
+        public bool ForceConflictOnIcebergV2Once { get; set; }
 
         public ChaosS3AndCatalogHandler(Dictionary<string, string> objects, bool forceConflictOnVersion1Once)
         {
@@ -318,6 +462,9 @@ public sealed class ChaosResilienceContractTests : SwapMidEntityFrameworkCoreTes
 
             if (request.Method == HttpMethod.Put)
             {
+                var hasIfNoneMatch = request.Headers.TryGetValues("If-None-Match", out var vals) &&
+                                     string.Join(",", vals).Contains('*', StringComparison.Ordinal);
+
                 if (_injectConflictOnce && path.EndsWith("00000000000000000001.json", StringComparison.Ordinal))
                 {
                     _injectConflictOnce = false;
@@ -325,7 +472,14 @@ public sealed class ChaosResilienceContractTests : SwapMidEntityFrameworkCoreTes
                     return new HttpResponseMessage(HttpStatusCode.PreconditionFailed);
                 }
 
-                if (_objects.ContainsKey(path))
+                if (ForceConflictOnIcebergV2Once && path.EndsWith("/metadata/v2.metadata.json", StringComparison.Ordinal))
+                {
+                    ForceConflictOnIcebergV2Once = false;
+                    _objects[path] = """{"format-version":2,"last-sequence-number":2,"current-snapshot-id":99902,"snapshots":[{"sequence-number":2,"snapshot-id":99902,"timestamp-ms":1763510000000,"summary":{"operation":"append","swapmid-run-id":"competing-writer"}}],"snapshot-log":[],"metadata-log":[]}""";
+                    return new HttpResponseMessage(HttpStatusCode.PreconditionFailed);
+                }
+
+                if (hasIfNoneMatch && _objects.ContainsKey(path))
                 {
                     return new HttpResponseMessage(HttpStatusCode.PreconditionFailed);
                 }

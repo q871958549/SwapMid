@@ -139,7 +139,7 @@ public sealed class CdcObjectStorageCompactionService : ITransientDependency
                 stream,
                 targetSink,
                 compactMin,
-                deleteCompactedFiles: stream.LakehouseTableFormat != LakehouseTableFormat.DeltaLake,
+                deleteCompactedFiles: stream.LakehouseTableFormat == LakehouseTableFormat.SwapMidManifest,
                 cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
@@ -270,6 +270,27 @@ public sealed class CdcObjectStorageCompactionService : ITransientDependency
                     totalRows,
                     nowUtc,
                     cancellationToken);
+            }
+            else if (stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg &&
+                     string.Equals(config.Format, "parquet", StringComparison.OrdinalIgnoreCase))
+            {
+                var receipt = await IcebergV2CommitWriter.CommitReplaceCompactionAsync(
+                    _httpClientFactory,
+                    _configuration,
+                    config,
+                    destination,
+                    stream,
+                    latestDoc,
+                    compactRunId,
+                    candidates.Select(c => c.DataObjectKey).ToList(),
+                    outputKey,
+                    outputByteSize,
+                    totalRows,
+                    nowUtc,
+                    cancellationToken);
+                latestDoc.LatestIcebergSequenceNumber = receipt.SequenceNumber;
+                latestDoc.LatestIcebergSnapshotId = receipt.SnapshotId;
+                latestDoc.LatestIcebergMetadataLocation = receipt.MetadataLocationKey;
             }
 
             await CdcObjectStorageLakehouseWriter.PutJsonObjectAsync(

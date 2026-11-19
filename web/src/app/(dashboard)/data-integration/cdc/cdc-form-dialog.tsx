@@ -50,7 +50,8 @@ export function CdcFormDialog({
   const rc = useTranslations('DataIntegration.common')
   const tc = useTranslations('Common')
 
-  const sourceOptions: ComboboxOption[] = sources.map(s => ({ value: s.id, label: s.name }))
+  const isPushWebhook = crud.form.sourceType === '3'
+  const dbSourceOptions: ComboboxOption[] = sources.map(s => ({ value: s.id, label: s.name }))
   const relOptions: ComboboxOption[] = (relationalTargets && relationalTargets.length > 0 ? relationalTargets : sources)
     .map(s => ({ value: s.id, label: s.name }))
   const sinkOptions: ComboboxOption[] = sinks.map(s => ({
@@ -58,6 +59,7 @@ export function CdcFormDialog({
     label: `${s.name} (${getSinkTypeTag(s.type)})`,
   }))
   const catalogOptions: ComboboxOption[] = catalogSources.map(s => ({ value: s.id, label: s.name }))
+  const sourceOptions: ComboboxOption[] = isPushWebhook ? catalogOptions : dbSourceOptions
   const pipelineOptions: ComboboxOption[] = pipelines.map(p => ({ value: p.id, label: p.name }))
   const topicNames = Array.from(new Set([DEFAULT_CDC_TOPIC, ...topics.map(item => item.name).filter(Boolean)]))
   const topicOptions: ComboboxOption[] = topicNames.map(name => ({ value: name, label: name }))
@@ -85,14 +87,18 @@ export function CdcFormDialog({
           />
         </div>
         <div className="space-y-1.5">
-          <Label>{t('sourceFieldLabel')}</Label>
+          <Label>{isPushWebhook ? t('sourceFieldPushWebhookLabel') : t('sourceFieldLabel')}</Label>
           <Combobox
             options={sourceOptions}
             value={crud.form.sourceId}
-            onChange={v => crud.set({ sourceId: v, sourceType: detectCdcSourceTypeFromSource(v, sources) })}
-            placeholder={t('sourcePlaceholder')}
+            onChange={v => crud.set(
+              isPushWebhook
+                ? { sourceId: v, sourceType: '3', initialSnapshotEnabled: false }
+                : { sourceId: v, sourceType: detectCdcSourceTypeFromSource(v, sources) },
+            )}
+            placeholder={isPushWebhook ? t('sourcePushWebhookPlaceholder') : t('sourcePlaceholder')}
             searchPlaceholder={t('sourceSearchPlaceholder')}
-            emptyText={t('sourceEmptyText')}
+            emptyText={isPushWebhook ? t('catalogSinkEmptyText') : t('sourceEmptyText')}
           />
         </div>
       </div>
@@ -101,13 +107,23 @@ export function CdcFormDialog({
         <Label>{t('sourceTypeFieldLabel')}</Label>
         <Select
           value={crud.form.sourceType ?? '0'}
-          onValueChange={v => crud.set({ sourceType: normalizeSourceType(Number(v)) })}
+          onValueChange={(v) => {
+            const next = normalizeSourceType(Number(v))
+            const validList = next === '3' ? catalogSources : sources
+            const keepSource = validList.some(s => s.id === crud.form.sourceId)
+            crud.set({
+              sourceType: next,
+              sourceId: keepSource ? crud.form.sourceId : '',
+              ...(next === '3' ? { initialSnapshotEnabled: false } : {}),
+            })
+          }}
         >
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="0">{t('sourceTypePostgres')}</SelectItem>
             <SelectItem value="1">{t('sourceTypeSqlServerCt')}</SelectItem>
             <SelectItem value="2">{t('sourceTypeMySqlBinlog')}</SelectItem>
+            <SelectItem value="3">{t('sourceTypePushWebhook')}</SelectItem>
           </SelectContent>
         </Select>
         {crud.form.sourceType === '1' && (
@@ -115,6 +131,9 @@ export function CdcFormDialog({
         )}
         {crud.form.sourceType === '2' && (
           <p className="text-xs text-muted-foreground">{t('sourceTypeMySqlBinlogHint')}</p>
+        )}
+        {isPushWebhook && (
+          <p className="text-xs text-muted-foreground">{t('sourceTypePushWebhookHint')}</p>
         )}
       </div>
 
@@ -147,16 +166,20 @@ export function CdcFormDialog({
           value={crud.form.monitoredTables}
           onChange={e => crud.set({ monitoredTables: e.target.value })}
           placeholder={
-            crud.form.sourceType === '2'
-              ? 'appdb.orders'
-              : (crud.form.sourceType === '1' ? 'dbo.orders' : t('monitoredTablesPlaceholder'))
+            isPushWebhook
+              ? 'webhook.orders'
+              : (crud.form.sourceType === '2'
+                  ? 'appdb.orders'
+                  : (crud.form.sourceType === '1' ? 'dbo.orders' : t('monitoredTablesPlaceholder')))
           }
           className="font-mono"
         />
         <p className="text-xs text-muted-foreground">
-          {crud.form.sourceType === '2'
-            ? t('monitoredTablesMySqlHint')
-            : (crud.form.sourceType === '1' ? t('monitoredTablesSqlServerHint') : t('monitoredTablesHint'))}
+          {isPushWebhook
+            ? t('monitoredTablesPushWebhookHint')
+            : (crud.form.sourceType === '2'
+                ? t('monitoredTablesMySqlHint')
+                : (crud.form.sourceType === '1' ? t('monitoredTablesSqlServerHint') : t('monitoredTablesHint')))}
         </p>
       </div>
 
@@ -174,17 +197,19 @@ export function CdcFormDialog({
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/30 px-3 py-2">
-        <div className="space-y-0.5">
-          <Label htmlFor="cdc-initial-snapshot">{t('initialSnapshotSwitchLabel')}</Label>
-          <p className="text-xs text-muted-foreground">{t('initialSnapshotHint')}</p>
+      {!isPushWebhook && (
+        <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/30 px-3 py-2">
+          <div className="space-y-0.5">
+            <Label htmlFor="cdc-initial-snapshot">{t('initialSnapshotSwitchLabel')}</Label>
+            <p className="text-xs text-muted-foreground">{t('initialSnapshotHint')}</p>
+          </div>
+          <Switch
+            id="cdc-initial-snapshot"
+            checked={crud.form.initialSnapshotEnabled}
+            onCheckedChange={v => crud.set({ initialSnapshotEnabled: v })}
+          />
         </div>
-        <Switch
-          id="cdc-initial-snapshot"
-          checked={crud.form.initialSnapshotEnabled}
-          onCheckedChange={v => crud.set({ initialSnapshotEnabled: v })}
-        />
-      </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
@@ -323,6 +348,7 @@ export function CdcFormDialog({
                   <SelectContent>
                     <SelectItem value="0">{t('lakehouseFormatSwapMid')}</SelectItem>
                     <SelectItem value="1">{t('lakehouseFormatDeltaLake')}</SelectItem>
+                    <SelectItem value="2">{t('lakehouseFormatApacheIceberg')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">{t('lakehouseTableFormatHint')}</p>

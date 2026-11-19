@@ -102,10 +102,13 @@ export function CdcTargetCell({ stream }: { stream: CdcStreamDto }) {
             {`Key: ${stream.targetSinkKeyColumns}`}
           </div>
         )}
-        {(isSoftDelete || mappingCount > 0 || (mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.lakehouseTableFormat ?? 0) === 1) || (mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.catalogType ?? 0) > 0)) && (
+        {(isSoftDelete || mappingCount > 0 || (mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.lakehouseTableFormat ?? 0) > 0) || (mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.catalogType ?? 0) > 0)) && (
           <div className="flex flex-wrap gap-1 pt-0.5">
             {mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.lakehouseTableFormat ?? 0) === 1 && (
               <StatusBadge tone="info">Delta Lake</StatusBadge>
+            )}
+            {mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.lakehouseTableFormat ?? 0) === 2 && (
+              <StatusBadge tone="info">Iceberg v2</StatusBadge>
             )}
             {mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.catalogType ?? 0) > 0 && (
               <StatusBadge tone="neutral" title={stream.catalogLastSyncStatus ?? undefined}>
@@ -178,8 +181,11 @@ export function CdcRowActions({
   const t = useTranslations('DataIntegration.cdc')
   const busy = !!busyKind
   const isActive = Number(row.status) === CDC_STATUS_ACTIVE
+  const isPushWebhook = Number(row.sourceType ?? 0) === 3
   const isExternalSink = Number(row.targetMode) === CDC_TARGET_EXTERNAL_SINK
-  const isDeltaLake = isExternalSink && Number(row.lakehouseTableFormat ?? 0) === 1 && row.targetSinkType === 5
+  const hasLakehouseTimeTravel = isExternalSink &&
+    (Number(row.lakehouseTableFormat ?? 0) === 1 || Number(row.lakehouseTableFormat ?? 0) === 2) &&
+    row.targetSinkType === 5
   const hasExternalCatalog = isExternalSink && Number(row.catalogType ?? 0) > 0
 
   if (!canManage && !isExternalSink) return null
@@ -194,7 +200,7 @@ export function CdcRowActions({
           {t('sinkTemplateMenuItem')}
         </DropdownMenuItem>
       )}
-      {isDeltaLake && onLakehouseHistory && (
+      {hasLakehouseTimeTravel && onLakehouseHistory && (
         <DropdownMenuItem disabled={busy} onClick={() => onLakehouseHistory(row)}>
           {busyKind === 'history'
             ? <Loader2 className="mr-2 size-3.5 animate-spin" />
@@ -241,21 +247,25 @@ export function CdcRowActions({
               {t('activateMenuItem')}
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem
-            disabled={busy || !isActive}
-            onClick={() => onCaptureNow(row)}
-          >
-            {busyKind === 'capture'
-              ? <Loader2 className="mr-2 size-3.5 animate-spin" />
-              : <Play className="mr-2 size-3.5" />}
-            {isActive ? t('captureNowMenuItem') : t('captureRequiresActiveMenuItem')}
-          </DropdownMenuItem>
-          <DropdownMenuItem disabled={busy} onClick={() => onSnapshot(row)}>
-            {busyKind === 'snapshot'
-              ? <Loader2 className="mr-2 size-3.5 animate-spin" />
-              : <DatabaseBackup className="mr-2 size-3.5" />}
-            {t('snapshotMenuItem')}
-          </DropdownMenuItem>
+          {!isPushWebhook && (
+            <>
+              <DropdownMenuItem
+                disabled={busy || !isActive}
+                onClick={() => onCaptureNow(row)}
+              >
+                {busyKind === 'capture'
+                  ? <Loader2 className="mr-2 size-3.5 animate-spin" />
+                  : <Play className="mr-2 size-3.5" />}
+                {isActive ? t('captureNowMenuItem') : t('captureRequiresActiveMenuItem')}
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={busy} onClick={() => onSnapshot(row)}>
+                {busyKind === 'snapshot'
+                  ? <Loader2 className="mr-2 size-3.5 animate-spin" />
+                  : <DatabaseBackup className="mr-2 size-3.5" />}
+                {t('snapshotMenuItem')}
+              </DropdownMenuItem>
+            </>
+          )}
           <DropdownMenuItem disabled={busy} onClick={() => onCheckpointReset(row)}>
             <RotateCcw className="mr-2 size-3.5" />
             {t('resetCheckpointMenuItem')}

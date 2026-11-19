@@ -156,6 +156,16 @@ public static partial class PlatformMetrics
         "Lakehouse 零外部计算集群实时数据预览执行计数（固定低基数标签 format）",
         new CounterConfiguration { LabelNames = ["format"] });
 
+    public static readonly Counter CdcIcebergCommitsTotal = Metrics.CreateCounter(
+        "swapmid_cdc_iceberg_commits_total",
+        "Apache Iceberg v2 表元数据快照原子提交计数（固定低基数标签 operation/outcome）",
+        new CounterConfiguration { LabelNames = ["operation", "outcome"] });
+
+    public static readonly Counter CdcWebhookIngestsTotal = Metrics.CreateCounter(
+        "swapmid_cdc_webhook_ingests_total",
+        "Push Webhook CDC 认证推送接入结果计数（固定低基数标签 outcome）",
+        new CounterConfiguration { LabelNames = ["outcome"] });
+
     private static readonly string[] EtlExecutionAdmissionOutcomes =
     [
         "acquired", "busy", "idempotent_replay", "coordination_failure",
@@ -217,6 +227,15 @@ public static partial class PlatformMetrics
         PublishSingleLabelSeries(CdcContractEvaluationsTotal, ["unconfigured", "healthy", "warning", "breached"]);
         PublishSingleLabelSeries(CdcContractViolationsTotal, ["freshness", "required_columns", "wal_lag", "schema_drift"]);
         PublishSingleLabelSeries(CdcLakehousePreviewsTotal, ["parquet", "jsonl"]);
+        foreach (var op in new[] { "append", "replace" })
+        {
+            foreach (var outcome in new[] { "succeeded", "retried", "failed" })
+            {
+                CdcIcebergCommitsTotal.WithLabels(op, outcome).Publish();
+            }
+        }
+
+        PublishSingleLabelSeries(CdcWebhookIngestsTotal, ["accepted", "rejected_auth", "rejected_inactive", "rejected_payload", "failed"]);
     }
 
     internal static void PublishEtlExecutionSeries(

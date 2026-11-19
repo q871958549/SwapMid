@@ -37,4 +37,10 @@ public static class CdcStreamConsts
 
     public const int MinLakehouseCompactMinFiles = 2;
     public const int MaxLakehouseCompactMinFiles = 100;
+
+    public const int MaxCatalogNamespaceLength = 128;
+    public const int MaxCatalogTableNameLength = 128;
+    public const int MaxCatalogLastSyncStatusLength = 512;
+    public const int DefaultLakehouseHistoryMaxCommits = 32;
+    public const int MaxLakehouseHistoryMaxCommits = 200;
 }

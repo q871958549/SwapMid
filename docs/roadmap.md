@@ -101,9 +101,22 @@ Every milestone adheres to five non-negotiable engineering invariants:
 
 ---
 
-## Next Evolution (`v2.1+` Post-2.0 Backlog)
+## `v2.1.0`: Delta Lake Time-Travel、Open Catalog 互操作、混沌韧性与安全基线（Completed）
 
-1. **Oracle LogMiner & Cloud Serverless CDC Sources**:
-   - Extend `ICdcStreamAppService` and `CdcStreamCaptureCoordinator` with `OracleLogMiner` alongside PostgreSQL `pgoutput`, SQL Server Change Tracking, and MySQL / MariaDB `Binlog`.
-2. **External Hive Metastore / Unity Catalog / REST Iceberg Synchronization**:
-   - Optionally register SwapMid Delta Lake (`_delta_log/*.json`) and `_swapmid/manifests/*.json` table commits directly with an external REST Iceberg / Hive Metastore / Unity Catalog service.
+1. **Delta Lake `_delta_log` Time-Travel Inspector（`GET /api/v1/cdc-streams/{id}/lakehouse-history`）**：
+   - 服务端解析不可变 `_delta_log/{version:D20}.json` 时间线（`SNAPSHOT` / `STREAMING UPDATE` / `OPTIMIZE`），确定性重构任意历史版本 `VERSION AS OF v` 的活跃 Parquet 分片快照、行数与字节统计，并在控制台输出可执行 DuckDB `read_parquet([...])` 与 Spark `VERSION AS OF v` 检索 SQL。
+2. **外部开放目录互操作（Unity Catalog REST & Apache Iceberg REST）**：
+   - 基于既有加密 `RestApi` `DataSource` 凭据与 `DataIntegrationSinkEndpointPolicy` SSRF 守卫扩展 `CatalogSinkId`、`CatalogNamespace`、`CatalogTableName` 与状态审计列，支持手动（`POST /api/v1/cdc-streams/{id}/sync-catalog`）与写入/快照/合并后非阻塞 Best-Effort 目录同步（`swapmid_cdc_catalog_syncs_total` Prometheus 指标 + MCP `diagnose_cdc_streams` 诊断字段），目录故障绝不阻断 CDC 位点推进。
+3. **混沌故障注入契约与开箱湖仓沙箱（`docs/benchmarks/resilience-and-chaos.md`）**：
+   - 交付 `ChaosResilienceContractTests`（Mid-Flight Crash + `Target Receipt v1` 无重放、Delta Lake `412` CAS 竞态 + `swapmidRunId` 幂等重放、Catalog `503` 雪崩零阻断校验）并修复只读 `DataSource` 实体的 `AsNoTracking` 并发戳竞态；新增一键 `docker/docker-compose.lakehouse-demo.yml`（MySQL 8.4 `ROW`+`FULL` + Chainguard MinIO），零开放 Dependabot 安全告警与 CI Actions 全升级。
+
+---
+
+## Next Evolution (`v2.2+` AI-Era Open-Source Competitiveness)
+
+1. **AI-Native Schema & Mapping Copilot + Data Contract SLA Engine**:
+   - Combine SwapMid's controlled MCP Server with deterministic DDL/Type-Family inference to auto-propose `columnMappings`, detect downstream Data Contract regressions, and gate breaking changes before runtime execution.
+2. **Zero-Infra Embedded DuckDB Instant Lakehouse Preview & Query Console**:
+   - Inspect live MinIO/S3 Parquet fragments and `_delta_log` Time-Travel diffs directly from the browser BFF console without deploying external compute clusters.
+3. **Oracle LogMiner & Serverless Push Webhook CDC Sources**:
+   - Extend `ICdcStreamAppService` and `CdcStreamCaptureCoordinator` with `OracleLogMiner` and authenticated serverless CDC webhook ingestion alongside PostgreSQL `pgoutput`, SQL Server Change Tracking, and MySQL / MariaDB `Binlog`.

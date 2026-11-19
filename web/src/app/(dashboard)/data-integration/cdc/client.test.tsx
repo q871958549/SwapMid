@@ -66,6 +66,10 @@ vi.mock('@/lib/crud/use-crud-form', () => ({
       targetFieldMappings: [],
       lakehouseTableFormat: '0',
       lakehouseCompactMinFiles: '',
+      catalogType: '0',
+      catalogSinkId: '',
+      catalogNamespace: '',
+      catalogTableName: '',
       schemaDriftPolicy: '0',
     },
     openEdit: mocks.openEdit,
@@ -733,5 +737,146 @@ describe('CdcStreamsClient', () => {
     expect(await screen.findByText('Delta Lake v2')).toBeTruthy()
     expect(screen.getByText(/Delta Log: cdc\/orders\/delta\/_delta_log/)).toBeTruthy()
     expect(screen.getByText(/delta_scan\('s3:\/\/lakehouse\/cdc\/orders\/delta'\)/)).toBeTruthy()
+  })
+
+  it('validates External Open Catalog configuration and round-trips catalog fields', () => {
+    const validCatalogForm = {
+      ...defaultCdcForm,
+      name: 'mysql-uc-delta',
+      sourceId: SOURCE_ID,
+      sourceType: '2' as const,
+      monitoredTables: 'swapmid_cdc.orders',
+      targetMode: '2' as const,
+      targetSinkId: 's3-1',
+      targetSinkDestination: 'orders/delta',
+      lakehouseTableFormat: '1' as const,
+      catalogType: '1' as const,
+      catalogSinkId: 'rest-uc-1',
+      catalogNamespace: 'analytics.swapmid_cdc',
+      catalogTableName: 'orders',
+    }
+    expect(isCdcFormValid(validCatalogForm)).toBe(true)
+    expect(isCdcFormValid({ ...validCatalogForm, catalogSinkId: '' })).toBe(false)
+    expect(isCdcFormValid({ ...validCatalogForm, catalogNamespace: '..bad' })).toBe(false)
+    expect(isCdcFormValid({ ...validCatalogForm, catalogTableName: 'bad table!' })).toBe(false)
+
+    const body = toCdcBody(validCatalogForm)
+    expect(body.catalogType).toBe(1)
+    expect(body.catalogSinkId).toBe('rest-uc-1')
+    expect(body.catalogNamespace).toBe('analytics.swapmid_cdc')
+    expect(body.catalogTableName).toBe('orders')
+
+    const roundTrip = toCdcForm(makeStream({
+      targetMode: 2,
+      targetSinkId: 's3-1',
+      targetSinkDestination: 'orders/delta',
+      lakehouseTableFormat: 1,
+      catalogType: 2,
+      catalogSinkId: 'rest-iceberg-1',
+      catalogNamespace: 'swapmid_cdc',
+      catalogTableName: 'orders_ic',
+    }))
+    expect(roundTrip.catalogType).toBe('2')
+    expect(roundTrip.catalogSinkId).toBe('rest-iceberg-1')
+    expect(roundTrip.catalogNamespace).toBe('swapmid_cdc')
+    expect(roundTrip.catalogTableName).toBe('orders_ic')
+  })
+
+  it('opens Time-Travel dialog, switches version v1, and triggers Sync Catalog action', async () => {
+    mocks.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          destination: 'orders/delta',
+          tableFormat: 1,
+          deltaLogDirectory: 'cdc/orders/delta/_delta_log',
+          currentVersion: 2,
+          selectedVersion: 2,
+          totalCommitCount: 3,
+          selectedActiveFileCount: 1,
+          selectedTotalBytes: 2048,
+          selectedTotalRecordCount: 15,
+          commits: [
+            { version: 2, timestampUtc: '2026-11-19T00:05:00Z', operation: 'OPTIMIZE', addedFileCount: 1, removedFileCount: 2, totalRecordCount: 15, deltaCommitKey: 'k2' },
+            { version: 1, timestampUtc: '2026-11-19T00:02:00Z', operation: 'STREAMING UPDATE', addedFileCount: 1, removedFileCount: 0, totalRecordCount: 5, deltaCommitKey: 'k1' },
+          ],
+          activeFiles: [
+            { relativePath: 'compact_2.parquet', objectKey: 'cdc/orders/delta/compact_2.parquet', sizeBytes: 2048, recordCount: 15, addedAtVersion: 2 },
+          ],
+          timeTravelQuerySql: 'SELECT * FROM delta.`s3a://swapmid-lake/cdc/orders/delta` VERSION AS OF 2;',
+          summary: 'Delta Lake v2',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          destination: 'orders/delta',
+          tableFormat: 1,
+          deltaLogDirectory: 'cdc/orders/delta/_delta_log',
+          currentVersion: 2,
+          selectedVersion: 1,
+          totalCommitCount: 3,
+          selectedActiveFileCount: 2,
+          selectedTotalBytes: 1536,
+          selectedTotalRecordCount: 15,
+          commits: [
+            { version: 2, timestampUtc: '2026-11-19T00:05:00Z', operation: 'OPTIMIZE', addedFileCount: 1, removedFileCount: 2, totalRecordCount: 15, deltaCommitKey: 'k2' },
+            { version: 1, timestampUtc: '2026-11-19T00:02:00Z', operation: 'STREAMING UPDATE', addedFileCount: 1, removedFileCount: 0, totalRecordCount: 5, deltaCommitKey: 'k1' },
+          ],
+          activeFiles: [
+            { relativePath: 'part_0.parquet', objectKey: 'cdc/orders/delta/part_0.parquet', sizeBytes: 1024, recordCount: 10, addedAtVersion: 0 },
+            { relativePath: 'part_1.parquet', objectKey: 'cdc/orders/delta/part_1.parquet', sizeBytes: 512, recordCount: 5, addedAtVersion: 1 },
+          ],
+          timeTravelQuerySql: 'SELECT * FROM delta.`s3a://swapmid-lake/cdc/orders/delta` VERSION AS OF 1;',
+          summary: 'Delta Lake v1',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          catalogType: 1,
+          synced: true,
+          syncedVersion: 2,
+          catalogTableIdentifier: 'analytics.swapmid_cdc.orders',
+          syncedAtUtc: '2026-11-19T00:06:00Z',
+          message: '已同步表 analytics.swapmid_cdc.orders（v2）',
+        }),
+      })
+
+    renderClient(makeStream({
+      sourceType: 2,
+      targetMode: 2,
+      targetSinkId: SOURCE_ID,
+      targetSinkType: 5,
+      targetSinkName: 'minio-delta',
+      targetSinkDestination: 'orders/delta',
+      lakehouseTableFormat: 1,
+      catalogType: 1,
+      catalogSinkId: 'rest-uc-1',
+      catalogNamespace: 'analytics.swapmid_cdc',
+      catalogTableName: 'orders',
+    }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Time-Travel' }))
+    expect(await screen.findByText('compact_2.parquet')).toBeTruthy()
+    expect(screen.getByText(/VERSION AS OF 2/)).toBeTruthy()
+
+    const v1Button = screen.getByRole('button', { name: /STREAMING UPDATE/ })
+    fireEvent.click(v1Button)
+    expect(await screen.findByText('part_1.parquet')).toBeTruthy()
+    expect(screen.getByText(/VERSION AS OF 1/)).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }))
+    await waitFor(() => {
+      expect(screen.queryByText(/VERSION AS OF 1/)).toBeNull()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '同步目录' }))
+    await waitFor(() => {
+      expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/sync-catalog`, { method: 'POST' })
+    })
   })
 })

@@ -220,6 +220,47 @@ public static partial class CdcStreamMirrorConfigValidator
             : LakehouseTableFormat.SwapMidManifest;
     }
 
+    public static LakehouseCatalogType NormalizeCatalogType(
+        CdcTargetMode targetMode,
+        LakehouseCatalogType catalogType)
+    {
+        if (targetMode != CdcTargetMode.ExternalSink || !Enum.IsDefined(catalogType))
+        {
+            return LakehouseCatalogType.None;
+        }
+
+        return catalogType;
+    }
+
+    public static string? NormalizeCatalogIdentifier(
+        string? value,
+        int maxLength,
+        string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var trimmed = Check.Length(value.Trim(), parameterName, maxLength)!;
+        foreach (var ch in trimmed)
+        {
+            if (!(char.IsLetterOrDigit(ch) || ch is '_' or '-' or '.'))
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", $"{parameterName} 仅允许字母、数字、下划线、连字符及点分隔符。");
+            }
+        }
+
+        if (trimmed.StartsWith('.') || trimmed.EndsWith('.') || trimmed.Contains("..", StringComparison.Ordinal))
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", $"{parameterName} 不可包含空段或首尾点分隔符。");
+        }
+
+        return trimmed;
+    }
+
     private sealed class CdcFieldMappingRuleInput
     {
         public string? SourceColumn { get; set; }

@@ -69,11 +69,13 @@ async function fetchInitialData(
   const cdcSources = sources.items.filter(isCdcSupportedSource)
   const relationalTargets = sources.items.filter(s => s.type === 0)
   const sinks = sources.items.filter(s => s.type === 3 || s.type === 4 || s.type === 5)
+  const catalogSources = sources.items.filter(s => s.type === 1)
   return {
     streams,
     sources: cdcSources.length > 0 ? cdcSources : relationalTargets,
     relationalTargets,
     sinks,
+    catalogSources,
     pipelines: pipelines.items,
     topics: topics.items,
   }
@@ -102,7 +104,7 @@ async function CdcStreamsPageData({
   const pageIndex = Math.max(0, (Number(sp.page) || 1) - 1)
   const sorting = parseSortParam(sp.sort)
   const status = sp.status && ['0', '1', '2', '3'].includes(sp.status) ? sp.status : 'all'
-  const { streams, sources, relationalTargets, sinks, pipelines, topics } = await fetchInitialData(
+  const { streams, sources, relationalTargets, sinks, catalogSources, pipelines, topics } = await fetchInitialData(
     pageIndex,
     pageSize,
     sp.q,
@@ -117,6 +119,7 @@ async function CdcStreamsPageData({
       sources={sources}
       relationalTargets={relationalTargets}
       sinks={sinks}
+      catalogSources={catalogSources}
       pipelines={pipelines}
       topics={topics}
       initialPage={pageIndex}

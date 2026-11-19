@@ -27,6 +27,7 @@ import {
   CdcSinkTemplateDialog,
 } from './cdc-dialogs'
 import { CdcFormDialog } from './cdc-form-dialog'
+import { CdcLakehouseHistoryDialog } from './cdc-lakehouse-history-dialog'
 import {
   type CdcFormState,
   type CdcPipelineOption,
@@ -49,6 +50,7 @@ export function CdcStreamsClient({
   sources,
   relationalTargets,
   sinks = [],
+  catalogSources = [],
   pipelines,
   topics,
   initialPage = 0,
@@ -65,6 +67,7 @@ export function CdcStreamsClient({
   sources: CdcSourceOption[]
   relationalTargets?: CdcSourceOption[]
   sinks?: CdcSourceOption[]
+  catalogSources?: CdcSourceOption[]
   pipelines: CdcPipelineOption[]
   topics: CdcTopicOption[]
   initialPage?: number
@@ -187,6 +190,8 @@ export function CdcStreamsClient({
           canManage={canManage}
           canDelete={canDelete}
           onSinkTemplate={item => void actions.handleSinkTemplate(item)}
+          onLakehouseHistory={item => void actions.handleOpenHistory(item)}
+          onSyncCatalog={item => void actions.handleSyncCatalog(item)}
           onPreflight={item => void actions.handlePreflight(item)}
           onLifecycle={(item, action) => void actions.handleLifecycle(item, action)}
           onCaptureNow={item => void actions.handleCaptureNow(item)}
@@ -251,6 +256,7 @@ export function CdcStreamsClient({
         sources={sources}
         relationalTargets={relationalTargets}
         sinks={sinks}
+        catalogSources={catalogSources}
         pipelines={pipelines}
         topics={topics}
       />
@@ -278,7 +284,18 @@ export function CdcStreamsClient({
         compacting={actions.compactSubmitting}
         onProvision={() => void actions.handleProvisionSink()}
         onCompact={() => void actions.handleCompactLakehouse()}
+        onOpenHistory={() => {
+          const stream = actions.sinkTemplateState?.stream
+          actions.setSinkTemplateState(null)
+          if (stream) void actions.handleOpenHistory(stream)
+        }}
         onClose={() => actions.setSinkTemplateState(null)}
+      />
+      <CdcLakehouseHistoryDialog
+        state={actions.historyState}
+        loadingVersion={actions.historyLoadingVersion}
+        onSelectVersion={(stream, version) => void actions.handleOpenHistory(stream, version)}
+        onClose={() => actions.setHistoryState(null)}
       />
       <DeleteConfirm
         crud={crud}

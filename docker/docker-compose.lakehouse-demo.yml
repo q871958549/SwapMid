@@ -1,0 +1,65 @@
+# Turnkey MySQL 8.4 Binlog CDC + MinIO Delta Lakehouse Sandbox Overlay for SwapMid
+# Usage:
+#   docker compose -f docker/docker-compose.yml -f docker/docker-compose.lakehouse-demo.yml --env-file docker/.env up -d
+
+services:
+  api:
+    environment:
+      DataIntegration__Sinks__AllowedHosts: "${DATA_INTEGRATION_SINKS_ALLOWED_HOSTS:-mysql,minio}"
+      DataIntegration__Sinks__AllowedPrivateNetworks: "${DATA_INTEGRATION_SINKS_ALLOWED_PRIVATE_NETWORKS:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}"
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    command:
+      - "--server-id=101"
+      - "--log-bin=mysql-bin"
+      - "--binlog-format=ROW"
+      - "--binlog-row-image=FULL"
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DEMO_MYSQL_ROOT_PASSWORD:-SwapMid_Demo_Root!2026}"
+      MYSQL_DATABASE: "${DEMO_MYSQL_DATABASE:-swapmid_cdc}"
+      MYSQL_USER: "${DEMO_MYSQL_CDC_USER:-swapmid_cdc}"
+      MYSQL_PASSWORD: "${DEMO_MYSQL_CDC_PASSWORD:-SwapMid_Demo_Cdc!2026}"
+    volumes:
+      - ./lakehouse-demo/01-orders.sql:/docker-entrypoint-initdb.d/01-orders.sql:ro
+      - ./lakehouse-demo/02-cdc-user.sh:/docker-entrypoint-initdb.d/02-cdc-user.sh:ro
+      - mysql_demo_data:/var/lib/mysql
+    ports:
+      - "${MYSQL_DEMO_PORT:-13306}:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  minio:
+    image: cgr.dev/chainguard/minio:latest
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: "${DEMO_MINIO_ROOT_USER:-swapmid_minio}"
+      MINIO_ROOT_PASSWORD: "${DEMO_MINIO_ROOT_PASSWORD:-SwapMid_Demo_Minio!2026}"
+    volumes:
+      - minio_demo_data:/data
+    ports:
+      - "${MINIO_API_PORT:-19000}:9000"
+      - "${MINIO_CONSOLE_PORT:-19001}:9001"
+
+  minio-init:
+    image: cgr.dev/chainguard/minio-client:latest
+    restart: on-failure
+    depends_on:
+      - minio
+    environment:
+      MC_HOST_local: "http://${DEMO_MINIO_ROOT_USER:-swapmid_minio}:${DEMO_MINIO_ROOT_PASSWORD:-SwapMid_Demo_Minio!2026}@minio:9000"
+    command:
+      - "--config-dir"
+      - "/tmp/mc"
+      - "mb"
+      - "--ignore-existing"
+      - "local/${DEMO_MINIO_BUCKET:-swapmid-lake}"
+
+volumes:
+  mysql_demo_data:
+  minio_demo_data:

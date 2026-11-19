@@ -183,6 +183,9 @@ public static class DataIntegrationEntityTypeConfigurations
             b.Property(x => x.TargetFieldMappingsJson).HasMaxLength(CdcStreamConsts.MaxTargetFieldMappingsJsonLength);
             b.Property(x => x.SoftDeleteColumn).HasMaxLength(CdcStreamConsts.MaxSoftDeleteColumnLength);
             b.Property(x => x.SoftDeleteTimestampColumn).HasMaxLength(CdcStreamConsts.MaxSoftDeleteTimestampColumnLength);
+            b.Property(x => x.CatalogNamespace).HasMaxLength(CdcStreamConsts.MaxCatalogNamespaceLength);
+            b.Property(x => x.CatalogTableName).HasMaxLength(CdcStreamConsts.MaxCatalogTableNameLength);
+            b.Property(x => x.CatalogLastSyncStatus).HasMaxLength(CdcStreamConsts.MaxCatalogLastSyncStatusLength);
             b.Property(x => x.SchemaBaselineHash).HasMaxLength(CdcStreamConsts.MaxSchemaBaselineHashLength);
             b.Property(x => x.SchemaBaselineJson).HasMaxLength(CdcStreamConsts.MaxSchemaBaselineJsonLength);
             b.Property(x => x.SchemaDriftSummary).HasMaxLength(CdcStreamConsts.MaxSchemaDriftSummaryLength);
@@ -193,6 +196,7 @@ public static class DataIntegrationEntityTypeConfigurations
             b.Property(x => x.TargetMode).HasConversion<int>();
             b.Property(x => x.TargetDeletePolicy).HasConversion<int>();
             b.Property(x => x.LakehouseTableFormat).HasConversion<int>();
+            b.Property(x => x.CatalogType).HasConversion<int>();
             b.Property(x => x.SchemaDriftPolicy).HasConversion<int>();
             b.Property(x => x.SnapshotStatus).HasConversion<int>();
             b.Property(x => x.Status).HasConversion<int>();
@@ -200,6 +204,7 @@ public static class DataIntegrationEntityTypeConfigurations
             b.HasIndex(x => x.Status);
             b.HasIndex(x => x.SourceId);
             b.HasIndex(x => x.TargetSinkId);
+            b.HasIndex(x => x.CatalogSinkId);
 
             b.HasOne<DataSource>()
                 .WithMany()
@@ -216,6 +221,12 @@ public static class DataIntegrationEntityTypeConfigurations
             b.HasOne<DataSource>()
                 .WithMany()
                 .HasForeignKey(x => x.TargetSinkId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            b.HasOne<DataSource>()
+                .WithMany()
+                .HasForeignKey(x => x.CatalogSinkId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .IsRequired(false);
         });

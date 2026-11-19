@@ -1,17 +1,13 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
-using SwapMid.Monitoring;
 using SwapMid.Notification;
 using SwapMid.Permissions;
 using SwapMid.SharedKernel.IntegrationEvents;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
@@ -32,6 +28,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     private readonly SqlServerCdcCaptureService? _sqlServerCaptureService;
     private readonly MySqlBinlogCdcCaptureService? _mySqlCaptureService;
     private readonly CdcObjectStorageCompactionService? _lakehouseCompactor;
+    private readonly DeltaLakeHistoryReader? _deltaHistoryReader;
+    private readonly ExternalLakehouseCatalogSyncService? _catalogSyncService;
 
     public CdcStreamAppService(
         ICdcStreamRepository streamRepository,
@@ -45,7 +43,9 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         CdcRelationalMirrorPreflightService? mirrorPreflightService = null,
         SqlServerCdcCaptureService? sqlServerCaptureService = null,
         CdcObjectStorageCompactionService? lakehouseCompactor = null,
-        MySqlBinlogCdcCaptureService? mySqlCaptureService = null)
+        MySqlBinlogCdcCaptureService? mySqlCaptureService = null,
+        DeltaLakeHistoryReader? deltaHistoryReader = null,
+        ExternalLakehouseCatalogSyncService? catalogSyncService = null)
     {
         _streamRepository = streamRepository;
         _sourceRepository = sourceRepository;
@@ -59,17 +59,9 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         _sqlServerCaptureService = sqlServerCaptureService;
         _mySqlCaptureService = mySqlCaptureService;
         _lakehouseCompactor = lakehouseCompactor;
+        _deltaHistoryReader = deltaHistoryReader;
+        _catalogSyncService = catalogSyncService;
     }
-
-    private static readonly IReadOnlyDictionary<string, string> SortingWhitelist =
-        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["name"] = "name",
-            ["status"] = "status",
-            ["lastcapturedat"] = "lastcapturedat",
-            ["totalcapturedcount"] = "totalcapturedcount",
-            ["creationtime"] = "creationtime",
-        };
 
     public async Task<PagedResultDto<CdcStreamDto>> GetListAsync(GetCdcStreamListInput input)
     {
@@ -79,7 +71,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
 
         var sorting = ListQuerySortingExtensions.ResolveWhitelistedSorting(
             input.Sorting,
-            SortingWhitelist,
+            CdcStreamMappingHelpers.StreamSortingWhitelist,
             defaultSorting: "creationtime DESC",
             logger: Logger,
             idFieldName: null);
@@ -143,7 +135,11 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             normalized.SoftDeleteTimestampColumn,
             normalized.SourceType,
             normalized.LakehouseCompactMinFiles,
-            normalized.LakehouseTableFormat);
+            normalized.LakehouseTableFormat,
+            normalized.CatalogType,
+            normalized.CatalogSinkId,
+            normalized.CatalogNamespace,
+            normalized.CatalogTableName);
 
         await _streamRepository.InsertAsync(stream, autoSave: true);
         return await EnrichDtoAsync(stream);
@@ -188,7 +184,11 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             normalized.SoftDeleteTimestampColumn,
             normalized.SourceType,
             normalized.LakehouseCompactMinFiles,
-            normalized.LakehouseTableFormat);
+            normalized.LakehouseTableFormat,
+            normalized.CatalogType,
+            normalized.CatalogSinkId,
+            normalized.CatalogNamespace,
+            normalized.CatalogTableName);
 
         await _streamRepository.UpdateAsync(stream, autoSave: true);
         await _scheduleSynchronizer.SyncAsync(stream.Id, stream.Status, stream.PollIntervalSeconds);
@@ -418,6 +418,19 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     }
 
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    public Task<CdcAcceptSchemaResultDto> AcceptSchemaBaselineAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
+            base.CurrentTenant.Id,
+            SwapMidPermissions.DataIntegration.CdcStreams.Manage);
+
+        return CdcStreamMappingHelpers.AcceptSchemaBaselineCoreAsync(
+            id, _streamRepository, _sourceRepository, _captureService, _sqlServerCaptureService, _mySqlCaptureService, _notificationService, Logger, cancellationToken);
+    }
+
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
     public async Task<CdcLakehouseCompactionResultDto> CompactLakehouseAsync(
         Guid id,
         CompactCdcLakehouseInput input,
@@ -431,11 +444,33 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             .WithData("Reason", "Lakehouse 分片压缩服务未启用。");
         var (stream, sink) = await CdcStreamMappingHelpers.LoadExternalSinkContextAsync(
             id, "仅外部接收端（ObjectStorage）模式的 CDC 流支持 Lakehouse 分片合并。", _streamRepository, _sourceRepository, cancellationToken);
-        return await compactor.CompactAsync(stream, sink, input.MinFiles, input.DeleteCompactedFiles, cancellationToken);
+        var result = await compactor.CompactAsync(stream, sink, input.MinFiles, input.DeleteCompactedFiles, cancellationToken);
+        if (result.Compacted && _catalogSyncService != null)
+        {
+            await _catalogSyncService.TryBestEffortSyncAsync(stream, sink, versionOverride: null, cancellationToken);
+        }
+
+        return result;
+    }
+
+    public async Task<CdcLakehouseHistoryDto> GetLakehouseHistoryAsync(
+        Guid id,
+        GetCdcLakehouseHistoryInput input,
+        CancellationToken cancellationToken = default)
+    {
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
+            base.CurrentTenant.Id,
+            SwapMidPermissions.DataIntegration.CdcStreams.Default);
+
+        var reader = _deltaHistoryReader ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+            .WithData("Reason", "Delta Lake Time-Travel 历史读取服务未启用。");
+        var (stream, sink) = await CdcStreamMappingHelpers.LoadExternalSinkContextAsync(
+            id, "仅外部接收端（ObjectStorage）模式的 CDC 流支持查询 Delta Lake Time-Travel 提交历史。", _streamRepository, _sourceRepository, cancellationToken);
+        return await reader.ReadAsync(stream, sink, input.Version, input.MaxCommits, cancellationToken);
     }
 
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
-    public async Task<CdcAcceptSchemaResultDto> AcceptSchemaBaselineAsync(
+    public Task<CdcCatalogSyncResultDto> SyncCatalogAsync(
         Guid id,
         CancellationToken cancellationToken = default)
     {
@@ -443,49 +478,11 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             base.CurrentTenant.Id,
             SwapMidPermissions.DataIntegration.CdcStreams.Manage);
 
-        var stream = await _streamRepository.GetAsync(id, cancellationToken: cancellationToken);
-        var source = await _sourceRepository.GetAsync(stream.SourceId, cancellationToken: cancellationToken);
-        var eval = await CdcStreamMappingHelpers.EvaluateSchemaForStreamAsync(
-            _captureService, _sqlServerCaptureService, _mySqlCaptureService, source, stream, cancellationToken);
-        if (eval.CurrentJson == "[]")
-        {
-            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-                .WithData("Reason", "未能读取到上游监控表或发布表的列定义，无法建立 Schema 基线。");
-        }
-
-        var hadDrift = stream.SchemaDriftDetected;
-        stream.UpdateSchemaBaseline(eval.CurrentHash, eval.CurrentJson);
-        await _streamRepository.UpdateAsync(stream, autoSave: true, cancellationToken: cancellationToken);
-        PlatformMetrics.CdcSchemaDriftEventsTotal.WithLabels("accepted").Inc();
-
-        if (hadDrift)
-        {
-            await CdcStreamMappingHelpers.NotifySchemaAcceptedAsync(
-                stream,
-                eval.CurrentHash,
-                _notificationService,
-                Logger,
-                cancellationToken);
-        }
-
-        return new CdcAcceptSchemaResultDto
-        {
-            StreamId = stream.Id,
-            SchemaBaselineHash = eval.CurrentHash,
-            AcceptedAtUtc = DateTime.UtcNow,
-            Message = $"已更新上游 Schema 基线（{eval.CurrentHash[..12]}），可正常激活或继续捕获。",
-        };
+        var syncService = _catalogSyncService ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+            .WithData("Reason", "外部开放目录元数据同步服务未启用。");
+        return syncService.SyncAsync(id, cancellationToken);
     }
 
-    private async Task<CdcStreamDto> EnrichDtoAsync(CdcStreamDefinition stream)
-    {
-        var source = await _sourceRepository.FindAsync(stream.SourceId);
-        var pipeline = stream.TargetPipelineId.HasValue
-            ? await _pipelineRepository.FindAsync(stream.TargetPipelineId.Value)
-            : null;
-        var sink = stream.TargetSinkId.HasValue
-            ? await _sourceRepository.FindAsync(stream.TargetSinkId.Value)
-            : null;
-        return CdcStreamMappingHelpers.MapToDto(stream, source?.Name, pipeline?.Name, sink);
-    }
+    private Task<CdcStreamDto> EnrichDtoAsync(CdcStreamDefinition stream)
+        => CdcStreamMappingHelpers.EnrichDtoAsync(stream, _sourceRepository, _pipelineRepository);
 }

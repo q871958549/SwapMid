@@ -28,6 +28,21 @@ public enum LakehouseTableFormat
 }
 
 /// <summary>
+/// Lakehouse 外部开放元数据目录（Open Catalog REST）同步协议类型。
+/// </summary>
+public enum LakehouseCatalogType
+{
+    /// <summary>不同步到外部元数据目录，仅保留对象存储本地 Manifest / _delta_log。</summary>
+    None = 0,
+
+    /// <summary>Databricks / Apache Unity Catalog OSS REST API（/api/2.1/unity-catalog）。</summary>
+    UnityCatalogRest = 1,
+
+    /// <summary>Apache Iceberg REST Catalog API（/v1/namespaces/{ns}/tables）。</summary>
+    IcebergRest = 2,
+}
+
+/// <summary>
 /// PostgreSQL 逻辑复制（pgoutput）与多源 CDC 流运行状态。
 /// </summary>
 public enum CdcStreamStatus

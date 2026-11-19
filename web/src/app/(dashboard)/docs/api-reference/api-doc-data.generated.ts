@@ -3473,6 +3473,62 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": false
               },
               {
+                "name": "catalogType",
+                "cnName": "",
+                "type": "LakehouseCatalogType",
+                "description": "取值：0=None；1=UnityCatalogRest；2=IcebergRest",
+                "nullable": false
+              },
+              {
+                "name": "catalogSinkId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogSinkName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogNamespace",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogTableName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogLastSyncedVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogLastSyncedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogLastSyncStatus",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "schemaDriftPolicy",
                 "cnName": "",
                 "type": "CdcSchemaDriftPolicy",
@@ -3789,6 +3845,34 @@ export const API_MODULES: ApiModule[] = [
                 "required": false
               },
               {
+                "name": "catalogType",
+                "cnName": "",
+                "type": "LakehouseCatalogType",
+                "description": "取值：0=None；1=UnityCatalogRest；2=IcebergRest",
+                "required": false
+              },
+              {
+                "name": "catalogSinkId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "catalogNamespace",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "catalogTableName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
                 "name": "schemaDriftPolicy",
                 "cnName": "",
                 "type": "CdcSchemaDriftPolicy",
@@ -4006,6 +4090,62 @@ export const API_MODULES: ApiModule[] = [
                 "type": "LakehouseTableFormat",
                 "description": "取值：0=SwapMidManifest；1=DeltaLake",
                 "nullable": false
+              },
+              {
+                "name": "catalogType",
+                "cnName": "",
+                "type": "LakehouseCatalogType",
+                "description": "取值：0=None；1=UnityCatalogRest；2=IcebergRest",
+                "nullable": false
+              },
+              {
+                "name": "catalogSinkId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogSinkName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogNamespace",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogTableName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogLastSyncedVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogLastSyncedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogLastSyncStatus",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
               },
               {
                 "name": "schemaDriftPolicy",
@@ -4368,6 +4508,62 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": false
               },
               {
+                "name": "catalogType",
+                "cnName": "",
+                "type": "LakehouseCatalogType",
+                "description": "取值：0=None；1=UnityCatalogRest；2=IcebergRest",
+                "nullable": false
+              },
+              {
+                "name": "catalogSinkId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogSinkName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogNamespace",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogTableName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogLastSyncedVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogLastSyncedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogLastSyncStatus",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "schemaDriftPolicy",
                 "cnName": "",
                 "type": "CdcSchemaDriftPolicy",
@@ -4693,6 +4889,34 @@ export const API_MODULES: ApiModule[] = [
                 "required": false
               },
               {
+                "name": "catalogType",
+                "cnName": "",
+                "type": "LakehouseCatalogType",
+                "description": "取值：0=None；1=UnityCatalogRest；2=IcebergRest",
+                "required": false
+              },
+              {
+                "name": "catalogSinkId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "catalogNamespace",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "catalogTableName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
                 "name": "schemaDriftPolicy",
                 "cnName": "",
                 "type": "CdcSchemaDriftPolicy",
@@ -4910,6 +5134,62 @@ export const API_MODULES: ApiModule[] = [
                 "type": "LakehouseTableFormat",
                 "description": "取值：0=SwapMidManifest；1=DeltaLake",
                 "nullable": false
+              },
+              {
+                "name": "catalogType",
+                "cnName": "",
+                "type": "LakehouseCatalogType",
+                "description": "取值：0=None；1=UnityCatalogRest；2=IcebergRest",
+                "nullable": false
+              },
+              {
+                "name": "catalogSinkId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogSinkName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogNamespace",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogTableName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogLastSyncedVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogLastSyncedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogLastSyncStatus",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
               },
               {
                 "name": "schemaDriftPolicy",
@@ -5422,6 +5702,62 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": false
               },
               {
+                "name": "catalogType",
+                "cnName": "",
+                "type": "LakehouseCatalogType",
+                "description": "取值：0=None；1=UnityCatalogRest；2=IcebergRest",
+                "nullable": false
+              },
+              {
+                "name": "catalogSinkId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogSinkName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogNamespace",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogTableName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogLastSyncedVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogLastSyncedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogLastSyncStatus",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "schemaDriftPolicy",
                 "cnName": "",
                 "type": "CdcSchemaDriftPolicy",
@@ -5704,6 +6040,240 @@ export const API_MODULES: ApiModule[] = [
               },
               {
                 "name": "message",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/cdc-streams/{id}/lakehouse-history",
+            "summary": "查询 Delta Lake _delta_log 提交时间线及任意历史版本活跃分片文件快照（Time-Travel）",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              },
+              {
+                "name": "version",
+                "cnName": "",
+                "type": "integer",
+                "required": false,
+                "description": ""
+              },
+              {
+                "name": "maxCommits",
+                "cnName": "",
+                "type": "integer",
+                "required": false,
+                "description": ""
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "destination",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "tableFormat",
+                "cnName": "",
+                "type": "LakehouseTableFormat",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "nullable": false
+              },
+              {
+                "name": "deltaLogDirectory",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "currentVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "selectedVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "totalCommitCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "selectedActiveFileCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "selectedTotalBytes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "selectedTotalRecordCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "commits",
+                "cnName": "",
+                "type": "CdcDeltaCommitSummaryDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "commits[].version",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "commits[].timestampUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "commits[].operation",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "commits[].engineInfo",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "commits[].swapMidRunId",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "commits[].snapshotMode",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "commits[].addedFileCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "commits[].removedFileCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "commits[].totalRecordCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "commits[].deltaCommitKey",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "activeFiles",
+                "cnName": "",
+                "type": "CdcDeltaActiveFileDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "activeFiles[].relativePath",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "activeFiles[].objectKey",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "activeFiles[].sizeBytes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "activeFiles[].recordCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "activeFiles[].addedAtVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "timeTravelQuerySql",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "summary",
                 "cnName": "",
                 "type": "string",
                 "description": "",
@@ -6298,6 +6868,79 @@ export const API_MODULES: ApiModule[] = [
               },
               {
                 "name": "completedAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "message",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/cdc-streams/{id}/sync-catalog",
+            "summary": "手动将当前 Lakehouse 最新表位置与列 Schema 注册或同步到外部 Unity Catalog / Iceberg REST 目录",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "catalogType",
+                "cnName": "",
+                "type": "LakehouseCatalogType",
+                "description": "取值：0=None；1=UnityCatalogRest；2=IcebergRest",
+                "nullable": false
+              },
+              {
+                "name": "synced",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "syncedVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "catalogTableIdentifier",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "locationUri",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "syncedAtUtc",
                 "cnName": "",
                 "type": "DateTime",
                 "description": "",

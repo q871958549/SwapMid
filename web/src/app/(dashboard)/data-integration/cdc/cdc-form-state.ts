@@ -35,6 +35,10 @@ export interface CdcFormState {
   targetFieldMappings: CdcFieldMappingDto[]
   lakehouseCompactMinFiles: string
   lakehouseTableFormat: '0' | '1'
+  catalogType: '0' | '1' | '2'
+  catalogSinkId: string
+  catalogNamespace: string
+  catalogTableName: string
   schemaDriftPolicy: '0' | '1' | '2'
 }
 
@@ -64,7 +68,27 @@ export const defaultCdcForm: CdcFormState = {
   targetFieldMappings: [],
   lakehouseCompactMinFiles: '',
   lakehouseTableFormat: '0',
+  catalogType: '0',
+  catalogSinkId: '',
+  catalogNamespace: '',
+  catalogTableName: '',
   schemaDriftPolicy: '0',
+}
+
+export const CATALOG_IDENTIFIER_PATTERN = /^[A-Za-z0-9_.-]+$/
+
+export function isValidCatalogIdentifier(value: string): boolean {
+  const trimmed = value.trim()
+  if (!trimmed || trimmed.startsWith('.') || trimmed.endsWith('.') || trimmed.includes('..')) {
+    return false
+  }
+  return CATALOG_IDENTIFIER_PATTERN.test(trimmed)
+}
+
+export function normalizeCatalogType(catalogType: number | undefined): '0' | '1' | '2' {
+  if (Number(catalogType) === 1) return '1'
+  if (Number(catalogType) === 2) return '2'
+  return '0'
 }
 
 export function normalizeSourceType(sourceType: number | undefined): '0' | '1' | '2' {
@@ -146,6 +170,10 @@ export function toCdcForm(item: CdcStreamDto): CdcFormState {
     targetFieldMappings: mappings,
     lakehouseCompactMinFiles: item.lakehouseCompactMinFiles ? String(item.lakehouseCompactMinFiles) : '',
     lakehouseTableFormat: normalizeLakehouseTableFormat(item.lakehouseTableFormat),
+    catalogType: normalizeCatalogType(item.catalogType),
+    catalogSinkId: item.catalogSinkId ?? '',
+    catalogNamespace: item.catalogNamespace ?? '',
+    catalogTableName: item.catalogTableName ?? '',
     schemaDriftPolicy: normalizeDriftPolicy(item.schemaDriftPolicy),
   }
 }
@@ -162,6 +190,8 @@ export function toCdcBody(form: CdcFormState) {
     ? Number.parseInt(form.lakehouseCompactMinFiles.trim(), 10)
     : null
   const tableFormat = mode === 2 ? Number(normalizeLakehouseTableFormat(Number(form.lakehouseTableFormat))) : 0
+  const catalogTypeNum = mode === 2 ? Number(normalizeCatalogType(Number(form.catalogType))) : 0
+  const useCatalog = mode === 2 && catalogTypeNum > 0
   const cleanMappings = mode === 3
     ? form.targetFieldMappings
         .map(m => ({
@@ -197,6 +227,10 @@ export function toCdcBody(form: CdcFormState) {
       : null,
     lakehouseCompactMinFiles: compactMin !== null && Number.isFinite(compactMin) ? compactMin : null,
     lakehouseTableFormat: tableFormat,
+    catalogType: catalogTypeNum,
+    catalogSinkId: useCatalog ? (form.catalogSinkId.trim() || null) : null,
+    catalogNamespace: useCatalog ? (form.catalogNamespace.trim() || null) : null,
+    catalogTableName: useCatalog ? (form.catalogTableName.trim() || null) : null,
     schemaDriftPolicy: Number(form.schemaDriftPolicy) === 1 ? 1 : (Number(form.schemaDriftPolicy) === 2 ? 2 : 0),
   }
 }
@@ -214,6 +248,12 @@ export function isCdcFormValid(form: CdcFormState): boolean {
   if (form.targetMode === '2' && form.lakehouseCompactMinFiles.trim().length > 0) {
     const minFiles = Number.parseInt(form.lakehouseCompactMinFiles.trim(), 10)
     if (!Number.isFinite(minFiles) || minFiles < 2 || minFiles > 100) return false
+  }
+  if (form.targetMode === '2' && normalizeCatalogType(Number(form.catalogType)) !== '0') {
+    if (!form.catalogSinkId.trim()) return false
+    if (!isValidCatalogIdentifier(form.catalogNamespace) || !isValidCatalogIdentifier(form.catalogTableName)) {
+      return false
+    }
   }
   if (form.targetMode === '0') {
     return form.targetTopicName.trim().length > 0

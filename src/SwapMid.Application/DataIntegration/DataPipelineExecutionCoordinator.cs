@@ -347,14 +347,8 @@ public sealed partial class DataPipelineExecutionCoordinator : ITransientDepende
             includeDetails: false,
             cancellationToken: cancellationToken);
         ValidatePipeline(pipeline);
-        var source = await _sourceRepository.GetAsync(
-            pipeline.SourceId,
-            includeDetails: false,
-            cancellationToken: cancellationToken);
-        var target = await _sourceRepository.GetAsync(
-            pipeline.TargetId!.Value,
-            includeDetails: false,
-            cancellationToken: cancellationToken);
+        var source = await ReadDataSourceReadOnlyAsync(pipeline.SourceId, cancellationToken);
+        var target = await ReadDataSourceReadOnlyAsync(pipeline.TargetId!.Value, cancellationToken);
         var executionIdentity = BuildExecutionIdentity(
             pipeline,
             source,
@@ -489,4 +483,8 @@ public sealed partial class DataPipelineExecutionCoordinator : ITransientDepende
             executionIdentity.CreateContext(executionId, pipeline.Id));
     }
 
+    private Task<DataSource> ReadDataSourceReadOnlyAsync(Guid id, CancellationToken cancellationToken)
+        => _sourceRepository is IDataSourceRepository customRepo
+            ? customRepo.GetAsNoTrackingAsync(id, cancellationToken)
+            : _sourceRepository.GetAsync(id, includeDetails: false, cancellationToken: cancellationToken);
 }

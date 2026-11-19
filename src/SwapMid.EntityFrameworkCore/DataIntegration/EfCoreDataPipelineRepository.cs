@@ -75,10 +75,13 @@ public class EfCoreDataPipelineRepository :
                         FOR UPDATE
                         """,
                         dataSourceId)
+                    .AsNoTracking()
                     .SingleOrDefaultAsync(cancellationToken)
-                : await dataSources.SingleOrDefaultAsync(
-                    item => item.Id == dataSourceId,
-                    cancellationToken);
+                : await dataSources
+                    .AsNoTracking()
+                    .SingleOrDefaultAsync(
+                        item => item.Id == dataSourceId,
+                        cancellationToken);
             if (dataSource == null)
             {
                 throw new EntityNotFoundException(

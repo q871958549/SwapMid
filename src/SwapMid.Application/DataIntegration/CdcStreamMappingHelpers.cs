@@ -28,7 +28,11 @@ internal sealed record NormalizedCdcStreamInput(
     string? SoftDeleteColumn,
     string? SoftDeleteTimestampColumn,
     int? LakehouseCompactMinFiles,
-    LakehouseTableFormat LakehouseTableFormat);
+    LakehouseTableFormat LakehouseTableFormat,
+    LakehouseCatalogType CatalogType,
+    Guid? CatalogSinkId,
+    string? CatalogNamespace,
+    string? CatalogTableName);
 
 /// <summary>
 /// <see cref="CdcStreamAppService"/> 的输入规范化与 DTO 映射辅助类。
@@ -269,6 +273,55 @@ internal static partial class CdcStreamMappingHelpers
             }
         }
 
+        var catalogType = CdcStreamMirrorConfigValidator.NormalizeCatalogType(input.TargetMode, input.CatalogType);
+        Guid? catalogSinkId = null;
+        string? catalogNamespace = null;
+        string? catalogTableName = null;
+        if (catalogType != LakehouseCatalogType.None)
+        {
+            var externalSink = input.TargetSinkId.HasValue
+                ? await sourceRepository.FindAsync(input.TargetSinkId.Value)
+                : null;
+            if (externalSink?.Type != DataSourceType.ObjectStorage)
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", "仅 ObjectStorage 接收端支持同步元数据到外部开放目录（Unity Catalog / Iceberg REST）。");
+            }
+
+            if (!input.CatalogSinkId.HasValue)
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", "启用外部开放目录同步时必须选择 Catalog REST（RestApi）数据源。");
+            }
+
+            var catalogDataSource = await sourceRepository.FindAsync(input.CatalogSinkId.Value);
+            if (catalogDataSource == null)
+            {
+                throw new EntityNotFoundException(typeof(DataSource), input.CatalogSinkId.Value);
+            }
+
+            if (catalogDataSource.Type != DataSourceType.RestApi)
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", $"外部 Catalog 服务连接必须为 RestApi 类型数据源，当前为 {catalogDataSource.Type}。");
+            }
+
+            catalogSinkId = catalogDataSource.Id;
+            catalogNamespace = CdcStreamMirrorConfigValidator.NormalizeCatalogIdentifier(
+                input.CatalogNamespace,
+                CdcStreamConsts.MaxCatalogNamespaceLength,
+                nameof(input.CatalogNamespace));
+            catalogTableName = CdcStreamMirrorConfigValidator.NormalizeCatalogIdentifier(
+                input.CatalogTableName,
+                CdcStreamConsts.MaxCatalogTableNameLength,
+                nameof(input.CatalogTableName));
+            if (string.IsNullOrWhiteSpace(catalogNamespace) || string.IsNullOrWhiteSpace(catalogTableName))
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", "启用外部开放目录同步时必须填写 Catalog 命名空间（CatalogNamespace）与目标表名（CatalogTableName）。");
+            }
+        }
+
         return new NormalizedCdcStreamInput(
             name,
             input.SourceType,
@@ -284,7 +337,11 @@ internal static partial class CdcStreamMappingHelpers
             softDeleteColumn,
             softDeleteTimestampColumn,
             lakehouseCompactMinFiles,
-            lakehouseTableFormat);
+            lakehouseTableFormat,
+            catalogType,
+            catalogSinkId,
+            catalogNamespace,
+            catalogTableName);
     }
 
     internal static async Task<CdcPreflightResultDto> BuildPreflightWithMirrorCheckAsync(
@@ -392,70 +449,6 @@ internal static partial class CdcStreamMappingHelpers
                 notifyEx.GetType().FullName ?? notifyEx.GetType().Name);
         }
     }
-
-    internal static CdcStreamDto MapToDto(
-        CdcStreamDefinition stream,
-        string? sourceName,
-        string? targetPipelineName,
-        DataSource? targetSink) => new()
-    {
-        Id = stream.Id,
-        CreationTime = stream.CreationTime,
-        CreatorId = stream.CreatorId,
-        LastModificationTime = stream.LastModificationTime,
-        LastModifierId = stream.LastModifierId,
-        IsDeleted = stream.IsDeleted,
-        DeleterId = stream.DeleterId,
-        DeletionTime = stream.DeletionTime,
-        Name = stream.Name,
-        Description = stream.Description,
-        SourceId = stream.SourceId,
-        SourceName = sourceName,
-        SourceType = stream.SourceType,
-        PublicationName = stream.PublicationName,
-        SlotName = stream.SlotName,
-        MonitoredTables = stream.MonitoredTables,
-        AutoCreatePublicationAndSlot = stream.AutoCreatePublicationAndSlot,
-        PollIntervalSeconds = stream.PollIntervalSeconds,
-        MaxBatchSize = stream.MaxBatchSize,
-        TargetMode = stream.TargetMode,
-        TargetTopicName = stream.TargetTopicName,
-        TargetPipelineId = stream.TargetPipelineId,
-        TargetPipelineName = targetPipelineName,
-        TargetSinkId = stream.TargetSinkId,
-        TargetSinkName = targetSink?.Name,
-        TargetSinkType = targetSink?.Type,
-        TargetSinkDestination = stream.TargetSinkDestination,
-        TargetSinkKeyColumns = stream.TargetSinkKeyColumns,
-        TargetDeletePolicy = stream.TargetDeletePolicy,
-        TargetFieldMappings = CdcStreamMirrorConfigValidator.ParseFieldMappings(stream.TargetFieldMappingsJson)
-            .Select(m => new CdcFieldMappingDto
-            {
-                SourceColumn = m.SourceColumn,
-                TargetColumn = m.TargetColumn,
-            })
-            .ToList(),
-        SoftDeleteColumn = stream.SoftDeleteColumn,
-        SoftDeleteTimestampColumn = stream.SoftDeleteTimestampColumn,
-        LakehouseCompactMinFiles = stream.LakehouseCompactMinFiles,
-        LakehouseTableFormat = stream.LakehouseTableFormat,
-        SchemaDriftPolicy = stream.SchemaDriftPolicy,
-        SchemaBaselineHash = stream.SchemaBaselineHash,
-        SchemaDriftDetected = stream.SchemaDriftDetected,
-        SchemaDriftSummary = stream.SchemaDriftSummary,
-        SchemaDriftDetectedAt = stream.SchemaDriftDetectedAt,
-        InitialSnapshotEnabled = stream.InitialSnapshotEnabled,
-        SnapshotStatus = stream.SnapshotStatus,
-        SnapshotCompletedAt = stream.SnapshotCompletedAt,
-        SnapshotRowCount = stream.SnapshotRowCount,
-        Status = stream.Status,
-        CheckpointLsn = stream.CheckpointLsn,
-        LastCapturedAt = stream.LastCapturedAt,
-        LastCapturedCount = stream.LastCapturedCount,
-        TotalCapturedCount = stream.TotalCapturedCount,
-        LastErrorCode = stream.LastErrorCode,
-        LastErrorMessage = stream.LastErrorMessage,
-    };
 
     private static string BuildIdentifierFallback(string? raw, string defaultValue)
     {

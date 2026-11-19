@@ -136,6 +136,11 @@ public static partial class PlatformMetrics
         "CDC 对象存储 Lakehouse 累计被合并的小文件分片数（固定低基数标签 format）",
         new CounterConfiguration { LabelNames = ["format"] });
 
+    public static readonly Counter CdcCatalogSyncsTotal = Metrics.CreateCounter(
+        "swapmid_cdc_catalog_syncs_total",
+        "CDC Lakehouse 外部开放目录（Unity Catalog / Iceberg REST）元数据同步计数（固定低基数标签 catalog_type/outcome）",
+        new CounterConfiguration { LabelNames = ["catalog_type", "outcome"] });
+
     private static readonly string[] EtlExecutionAdmissionOutcomes =
     [
         "acquired", "busy", "idempotent_replay", "coordination_failure",
@@ -183,6 +188,14 @@ public static partial class PlatformMetrics
             foreach (var outcome in new[] { "succeeded", "skipped", "failed" })
             {
                 CdcLakehouseCompactionsTotal.WithLabels(format, outcome).Publish();
+            }
+        }
+
+        foreach (var catalogType in new[] { "unity_catalog", "iceberg_rest" })
+        {
+            foreach (var outcome in new[] { "succeeded", "failed", "skipped" })
+            {
+                CdcCatalogSyncsTotal.WithLabels(catalogType, outcome).Publish();
             }
         }
     }

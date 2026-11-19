@@ -392,4 +392,72 @@ public class CdcStreamAppServiceTests : SwapMidEntityFrameworkCoreTestBase
         loaded.SoftDeleteColumn.ShouldBe("is_deleted");
         loaded.TargetFieldMappings.Count.ShouldBe(2);
     }
+
+    [Fact]
+    public async Task Should_Validate_And_RoundTrip_Lakehouse_Catalog_Sync_Configuration()
+    {
+        var pgSrc = await _dataSourceAppService.CreateAsync(new DataSourceCreateUpdateDto
+        {
+            Name = $"pg-cat-{Guid.NewGuid():N}"[..32],
+            Type = DataSourceType.RelationalDatabase,
+            Config = """{"provider":"postgresql","host":"127.0.0.1","port":5432,"database":"swapmid","username":"postgres"}""",
+        });
+        var minioSink = await _dataSourceAppService.CreateAsync(new DataSourceCreateUpdateDto
+        {
+            Name = $"minio-cat-{Guid.NewGuid():N}"[..32],
+            Type = DataSourceType.ObjectStorage,
+            Config = """{"provider":"minio","endpoint":"http://127.0.0.1:9000","region":"us-east-1","bucket":"lake","prefix":"cdc","format":"parquet","pathStyle":true,"accessKey":"ak","secretKey":"sk"}""",
+        });
+        var restCatalog = await _dataSourceAppService.CreateAsync(new DataSourceCreateUpdateDto
+        {
+            Name = $"uc-cat-{Guid.NewGuid():N}"[..32],
+            Type = DataSourceType.RestApi,
+            Config = """{"baseUrl":"http://127.0.0.1:8080"}""",
+        });
+
+        var invalidCatalogTypeEx = await Should.ThrowAsync<BusinessException>(() =>
+            _cdcAppService.CreateAsync(new CdcStreamCreateUpdateDto
+            {
+                Name = $"cat-bad-sink-{Guid.NewGuid():N}"[..32],
+                SourceId = pgSrc.Id,
+                PublicationName = "pub_cat1",
+                SlotName = "slot_cat1",
+                MonitoredTables = "public.orders",
+                TargetMode = CdcTargetMode.ExternalSink,
+                TargetSinkId = minioSink.Id,
+                TargetSinkDestination = "orders/delta",
+                LakehouseTableFormat = LakehouseTableFormat.DeltaLake,
+                CatalogType = LakehouseCatalogType.UnityCatalogRest,
+                CatalogSinkId = pgSrc.Id,
+                CatalogNamespace = "analytics.swapmid",
+                CatalogTableName = "orders",
+            }));
+        invalidCatalogTypeEx.Code.ShouldBe(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid);
+
+        var created = await _cdcAppService.CreateAsync(new CdcStreamCreateUpdateDto
+        {
+            Name = $"cat-valid-{Guid.NewGuid():N}"[..32],
+            SourceId = pgSrc.Id,
+            PublicationName = "pub_cat_ok",
+            SlotName = "slot_cat_ok",
+            MonitoredTables = "public.orders",
+            TargetMode = CdcTargetMode.ExternalSink,
+            TargetSinkId = minioSink.Id,
+            TargetSinkDestination = "orders/delta",
+            LakehouseTableFormat = LakehouseTableFormat.DeltaLake,
+            CatalogType = LakehouseCatalogType.UnityCatalogRest,
+            CatalogSinkId = restCatalog.Id,
+            CatalogNamespace = "analytics.swapmid",
+            CatalogTableName = "orders",
+        });
+
+        created.CatalogType.ShouldBe(LakehouseCatalogType.UnityCatalogRest);
+        created.CatalogSinkId.ShouldBe(restCatalog.Id);
+        created.CatalogSinkName.ShouldBe(restCatalog.Name);
+        created.CatalogNamespace.ShouldBe("analytics.swapmid");
+        created.CatalogTableName.ShouldBe("orders");
+
+        var list = await _cdcAppService.GetListAsync(new GetCdcStreamListInput { Filter = created.Name });
+        list.Items.ShouldContain(x => x.Id == created.Id && x.CatalogSinkName == restCatalog.Name);
+    }
 }

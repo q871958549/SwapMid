@@ -103,7 +103,12 @@ internal static partial class CdcStreamMappingHelpers
         IRepository<DataPipeline, Guid> pipelineRepository)
     {
         var sourceIds = items.SelectMany(x =>
-            x.TargetSinkId.HasValue ? new[] { x.SourceId, x.TargetSinkId.Value } : new[] { x.SourceId })
+            {
+                var ids = new List<Guid>(3) { x.SourceId };
+                if (x.TargetSinkId.HasValue) ids.Add(x.TargetSinkId.Value);
+                if (x.CatalogSinkId.HasValue) ids.Add(x.CatalogSinkId.Value);
+                return ids;
+            })
             .Distinct()
             .ToList();
         var sources = sourceIds.Count > 0
@@ -119,8 +124,150 @@ internal static partial class CdcStreamMappingHelpers
         {
             var src = sources.GetValueOrDefault(x.SourceId);
             var sink = x.TargetSinkId.HasValue ? sources.GetValueOrDefault(x.TargetSinkId.Value) : null;
+            var catalogSink = x.CatalogSinkId.HasValue ? sources.GetValueOrDefault(x.CatalogSinkId.Value) : null;
             var pipe = x.TargetPipelineId.HasValue ? pipelines.GetValueOrDefault(x.TargetPipelineId.Value) : null;
-            return MapToDto(x, src?.Name, pipe, sink);
+            return MapToDto(x, src?.Name, pipe, sink, catalogSink);
         }).ToList();
+    }
+
+    internal static CdcStreamDto MapToDto(
+        CdcStreamDefinition stream,
+        string? sourceName,
+        string? targetPipelineName,
+        DataSource? targetSink,
+        DataSource? catalogSink = null) => new()
+    {
+        Id = stream.Id,
+        CreationTime = stream.CreationTime,
+        CreatorId = stream.CreatorId,
+        LastModificationTime = stream.LastModificationTime,
+        LastModifierId = stream.LastModifierId,
+        IsDeleted = stream.IsDeleted,
+        DeleterId = stream.DeleterId,
+        DeletionTime = stream.DeletionTime,
+        Name = stream.Name,
+        Description = stream.Description,
+        SourceId = stream.SourceId,
+        SourceName = sourceName,
+        SourceType = stream.SourceType,
+        PublicationName = stream.PublicationName,
+        SlotName = stream.SlotName,
+        MonitoredTables = stream.MonitoredTables,
+        AutoCreatePublicationAndSlot = stream.AutoCreatePublicationAndSlot,
+        PollIntervalSeconds = stream.PollIntervalSeconds,
+        MaxBatchSize = stream.MaxBatchSize,
+        TargetMode = stream.TargetMode,
+        TargetTopicName = stream.TargetTopicName,
+        TargetPipelineId = stream.TargetPipelineId,
+        TargetPipelineName = targetPipelineName,
+        TargetSinkId = stream.TargetSinkId,
+        TargetSinkName = targetSink?.Name,
+        TargetSinkType = targetSink?.Type,
+        TargetSinkDestination = stream.TargetSinkDestination,
+        TargetSinkKeyColumns = stream.TargetSinkKeyColumns,
+        TargetDeletePolicy = stream.TargetDeletePolicy,
+        TargetFieldMappings = CdcStreamMirrorConfigValidator.ParseFieldMappings(stream.TargetFieldMappingsJson)
+            .Select(m => new CdcFieldMappingDto
+            {
+                SourceColumn = m.SourceColumn,
+                TargetColumn = m.TargetColumn,
+            })
+            .ToList(),
+        SoftDeleteColumn = stream.SoftDeleteColumn,
+        SoftDeleteTimestampColumn = stream.SoftDeleteTimestampColumn,
+        LakehouseCompactMinFiles = stream.LakehouseCompactMinFiles,
+        LakehouseTableFormat = stream.LakehouseTableFormat,
+        CatalogType = stream.CatalogType,
+        CatalogSinkId = stream.CatalogSinkId,
+        CatalogSinkName = catalogSink?.Name,
+        CatalogNamespace = stream.CatalogNamespace,
+        CatalogTableName = stream.CatalogTableName,
+        CatalogLastSyncedVersion = stream.CatalogLastSyncedVersion,
+        CatalogLastSyncedAt = stream.CatalogLastSyncedAt,
+        CatalogLastSyncStatus = stream.CatalogLastSyncStatus,
+        SchemaDriftPolicy = stream.SchemaDriftPolicy,
+        SchemaBaselineHash = stream.SchemaBaselineHash,
+        SchemaDriftDetected = stream.SchemaDriftDetected,
+        SchemaDriftSummary = stream.SchemaDriftSummary,
+        SchemaDriftDetectedAt = stream.SchemaDriftDetectedAt,
+        InitialSnapshotEnabled = stream.InitialSnapshotEnabled,
+        SnapshotStatus = stream.SnapshotStatus,
+        SnapshotCompletedAt = stream.SnapshotCompletedAt,
+        SnapshotRowCount = stream.SnapshotRowCount,
+        Status = stream.Status,
+        CheckpointLsn = stream.CheckpointLsn,
+        LastCapturedAt = stream.LastCapturedAt,
+        LastCapturedCount = stream.LastCapturedCount,
+        TotalCapturedCount = stream.TotalCapturedCount,
+        LastErrorCode = stream.LastErrorCode,
+        LastErrorMessage = stream.LastErrorMessage,
+    };
+
+    internal static async Task<CdcStreamDto> EnrichDtoAsync(
+        CdcStreamDefinition stream,
+        IRepository<DataSource, Guid> sourceRepository,
+        IRepository<DataPipeline, Guid> pipelineRepository)
+    {
+        var source = await sourceRepository.FindAsync(stream.SourceId);
+        var pipeline = stream.TargetPipelineId.HasValue
+            ? await pipelineRepository.FindAsync(stream.TargetPipelineId.Value)
+            : null;
+        var sink = stream.TargetSinkId.HasValue
+            ? await sourceRepository.FindAsync(stream.TargetSinkId.Value)
+            : null;
+        var catalogSink = stream.CatalogSinkId.HasValue
+            ? await sourceRepository.FindAsync(stream.CatalogSinkId.Value)
+            : null;
+        return MapToDto(stream, source?.Name, pipeline?.Name, sink, catalogSink);
+    }
+
+    internal static readonly IReadOnlyDictionary<string, string> StreamSortingWhitelist =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["name"] = "name",
+            ["status"] = "status",
+            ["lastcapturedat"] = "lastcapturedat",
+            ["totalcapturedcount"] = "totalcapturedcount",
+            ["creationtime"] = "creationtime",
+        };
+
+    internal static async Task<CdcAcceptSchemaResultDto> AcceptSchemaBaselineCoreAsync(
+        Guid id,
+        ICdcStreamRepository streamRepository,
+        IRepository<DataSource, Guid> sourceRepository,
+        PgOutputCdcCaptureService captureService,
+        SqlServerCdcCaptureService? sqlServerCaptureService,
+        MySqlBinlogCdcCaptureService? mySqlCaptureService,
+        SwapMid.Notification.INotificationService? notificationService,
+        Microsoft.Extensions.Logging.ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        var stream = await streamRepository.GetAsync(id, cancellationToken: cancellationToken);
+        var source = await sourceRepository.GetAsync(stream.SourceId, cancellationToken: cancellationToken);
+        var eval = await EvaluateSchemaForStreamAsync(
+            captureService, sqlServerCaptureService, mySqlCaptureService, source, stream, cancellationToken);
+        if (eval.CurrentJson == "[]")
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", "未能读取到上游监控表或发布表的列定义，无法建立 Schema 基线。");
+        }
+
+        var hadDrift = stream.SchemaDriftDetected;
+        stream.UpdateSchemaBaseline(eval.CurrentHash, eval.CurrentJson);
+        await streamRepository.UpdateAsync(stream, autoSave: true, cancellationToken: cancellationToken);
+        SwapMid.Monitoring.PlatformMetrics.CdcSchemaDriftEventsTotal.WithLabels("accepted").Inc();
+
+        if (hadDrift)
+        {
+            await NotifySchemaAcceptedAsync(stream, eval.CurrentHash, notificationService, logger, cancellationToken);
+        }
+
+        return new CdcAcceptSchemaResultDto
+        {
+            StreamId = stream.Id,
+            SchemaBaselineHash = eval.CurrentHash,
+            AcceptedAtUtc = DateTime.UtcNow,
+            Message = $"已更新上游 Schema 基线（{eval.CurrentHash[..12]}），可正常激活或继续捕获。",
+        };
     }
 }

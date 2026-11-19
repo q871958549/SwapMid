@@ -29,7 +29,11 @@ public partial class CdcStreamDefinition
         string? softDeleteTimestampColumn,
         CdcSourceType sourceType,
         int? lakehouseCompactMinFiles,
-        LakehouseTableFormat lakehouseTableFormat)
+        LakehouseTableFormat lakehouseTableFormat,
+        LakehouseCatalogType catalogType,
+        Guid? catalogSinkId,
+        string? catalogNamespace,
+        string? catalogTableName)
     {
         var normalizedMonitoredTables = string.IsNullOrWhiteSpace(monitoredTables)
             ? null
@@ -71,6 +75,38 @@ public partial class CdcStreamDefinition
         LakehouseTableFormat = CdcStreamMirrorConfigValidator.NormalizeLakehouseTableFormat(
             targetMode,
             lakehouseTableFormat);
+        var normalizedCatalogType = CdcStreamMirrorConfigValidator.NormalizeCatalogType(
+            targetMode,
+            catalogType);
+        var normalizedCatalogSinkId = normalizedCatalogType == LakehouseCatalogType.None
+            ? null
+            : catalogSinkId;
+        var normalizedCatalogNamespace = normalizedCatalogType == LakehouseCatalogType.None
+            ? null
+            : CdcStreamMirrorConfigValidator.NormalizeCatalogIdentifier(
+                catalogNamespace,
+                CdcStreamConsts.MaxCatalogNamespaceLength,
+                nameof(catalogNamespace));
+        var normalizedCatalogTableName = normalizedCatalogType == LakehouseCatalogType.None
+            ? null
+            : CdcStreamMirrorConfigValidator.NormalizeCatalogIdentifier(
+                catalogTableName,
+                CdcStreamConsts.MaxCatalogTableNameLength,
+                nameof(catalogTableName));
+        if (CatalogType != normalizedCatalogType ||
+            CatalogSinkId != normalizedCatalogSinkId ||
+            !string.Equals(CatalogNamespace, normalizedCatalogNamespace, StringComparison.Ordinal) ||
+            !string.Equals(CatalogTableName, normalizedCatalogTableName, StringComparison.Ordinal))
+        {
+            CatalogLastSyncedVersion = null;
+            CatalogLastSyncedAt = null;
+            CatalogLastSyncStatus = null;
+        }
+
+        CatalogType = normalizedCatalogType;
+        CatalogSinkId = normalizedCatalogSinkId;
+        CatalogNamespace = normalizedCatalogNamespace;
+        CatalogTableName = normalizedCatalogTableName;
         var enableSoftDelete = targetMode == CdcTargetMode.RelationalTable && TargetDeletePolicy == CdcDeletePolicy.SoftDelete;
         SoftDeleteColumn = enableSoftDelete
             ? CdcStreamMirrorConfigValidator.NormalizeIdentifier(

@@ -1,6 +1,6 @@
 'use client'
 
-import { Activity, DatabaseBackup, FileCode2, Loader2, PauseCircle, Play, Power, RotateCcw, ShieldCheck, Unplug } from 'lucide-react'
+import { Activity, DatabaseBackup, FileCode2, History, Loader2, PauseCircle, Play, Power, RefreshCw, RotateCcw, ShieldCheck, Unplug } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
@@ -89,10 +89,21 @@ export function CdcTargetCell({ stream }: { stream: CdcStreamDto }) {
             {`Key: ${stream.targetSinkKeyColumns}`}
           </div>
         )}
-        {(isSoftDelete || mappingCount > 0 || (mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.lakehouseTableFormat ?? 0) === 1)) && (
+        {(isSoftDelete || mappingCount > 0 || (mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.lakehouseTableFormat ?? 0) === 1) || (mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.catalogType ?? 0) > 0)) && (
           <div className="flex flex-wrap gap-1 pt-0.5">
             {mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.lakehouseTableFormat ?? 0) === 1 && (
               <StatusBadge tone="info">Delta Lake</StatusBadge>
+            )}
+            {mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.catalogType ?? 0) > 0 && (
+              <StatusBadge tone="neutral" title={stream.catalogLastSyncStatus ?? undefined}>
+                {Number(stream.catalogType) === 1
+                  ? (stream.catalogLastSyncedVersion !== null && stream.catalogLastSyncedVersion !== undefined
+                    ? `UC · v${stream.catalogLastSyncedVersion}`
+                    : 'Unity Catalog')
+                  : (stream.catalogLastSyncedVersion !== null && stream.catalogLastSyncedVersion !== undefined
+                    ? `Iceberg · v${stream.catalogLastSyncedVersion}`
+                    : 'Iceberg REST')}
+              </StatusBadge>
             )}
             {isSoftDelete && (
               <StatusBadge tone="info">
@@ -124,6 +135,8 @@ export function CdcRowActions({
   canManage,
   canDelete,
   onSinkTemplate,
+  onLakehouseHistory,
+  onSyncCatalog,
   onPreflight,
   onLifecycle,
   onCaptureNow,
@@ -137,6 +150,8 @@ export function CdcRowActions({
   canManage: boolean
   canDelete: boolean
   onSinkTemplate: (row: CdcStreamDto) => void
+  onLakehouseHistory?: (row: CdcStreamDto) => void
+  onSyncCatalog?: (row: CdcStreamDto) => void
   onPreflight: (row: CdcStreamDto) => void
   onLifecycle: (row: CdcStreamDto, action: 'activate' | 'pause') => void
   onCaptureNow: (row: CdcStreamDto) => void
@@ -149,6 +164,8 @@ export function CdcRowActions({
   const busy = !!busyKind
   const isActive = Number(row.status) === CDC_STATUS_ACTIVE
   const isExternalSink = Number(row.targetMode) === CDC_TARGET_EXTERNAL_SINK
+  const isDeltaLake = isExternalSink && Number(row.lakehouseTableFormat ?? 0) === 1 && row.targetSinkType === 5
+  const hasExternalCatalog = isExternalSink && Number(row.catalogType ?? 0) > 0
 
   if (!canManage && !isExternalSink) return null
 
@@ -160,6 +177,22 @@ export function CdcRowActions({
             ? <Loader2 className="mr-2 size-3.5 animate-spin" />
             : <FileCode2 className="mr-2 size-3.5" />}
           {t('sinkTemplateMenuItem')}
+        </DropdownMenuItem>
+      )}
+      {isDeltaLake && onLakehouseHistory && (
+        <DropdownMenuItem disabled={busy} onClick={() => onLakehouseHistory(row)}>
+          {busyKind === 'history'
+            ? <Loader2 className="mr-2 size-3.5 animate-spin" />
+            : <History className="mr-2 size-3.5" />}
+          {t('timeTravelMenuItem')}
+        </DropdownMenuItem>
+      )}
+      {canManage && hasExternalCatalog && onSyncCatalog && (
+        <DropdownMenuItem disabled={busy} onClick={() => onSyncCatalog(row)}>
+          {busyKind === 'sync-catalog'
+            ? <Loader2 className="mr-2 size-3.5 animate-spin" />
+            : <RefreshCw className="mr-2 size-3.5" />}
+          {t('syncCatalogMenuItem')}
         </DropdownMenuItem>
       )}
       {canManage && (

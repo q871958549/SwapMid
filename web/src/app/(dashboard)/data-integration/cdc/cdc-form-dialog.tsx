@@ -19,6 +19,7 @@ import {
   detectCdcSourceTypeFromSource,
   getSinkTypeTag,
   isCdcFormValid,
+  normalizeCatalogType,
   normalizeDeletePolicy,
   normalizeDriftPolicy,
   normalizeLakehouseTableFormat,
@@ -32,6 +33,7 @@ export function CdcFormDialog({
   sources,
   relationalTargets,
   sinks = [],
+  catalogSources = [],
   pipelines,
   topics,
 }: {
@@ -39,6 +41,7 @@ export function CdcFormDialog({
   sources: CdcSourceOption[]
   relationalTargets?: CdcSourceOption[]
   sinks?: CdcSourceOption[]
+  catalogSources?: CdcSourceOption[]
   pipelines: CdcPipelineOption[]
   topics: CdcTopicOption[]
 }) {
@@ -53,6 +56,7 @@ export function CdcFormDialog({
     value: s.id,
     label: `${s.name} (${getSinkTypeTag(s.type)})`,
   }))
+  const catalogOptions: ComboboxOption[] = catalogSources.map(s => ({ value: s.id, label: s.name }))
   const pipelineOptions: ComboboxOption[] = pipelines.map(p => ({ value: p.id, label: p.name }))
   const topicNames = Array.from(new Set([DEFAULT_CDC_TOPIC, ...topics.map(item => item.name).filter(Boolean)]))
   const topicOptions: ComboboxOption[] = topicNames.map(name => ({ value: name, label: name }))
@@ -335,6 +339,62 @@ export function CdcFormDialog({
                 />
                 <p className="text-xs text-muted-foreground">{t('lakehouseCompactMinFilesHint')}</p>
               </div>
+            </div>
+          )}
+          {crud.form.targetMode === '2' && selectedSink?.type === 5 && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>{t('catalogTypeFieldLabel')}</Label>
+                  <Select
+                    value={crud.form.catalogType ?? '0'}
+                    onValueChange={v => crud.set({ catalogType: normalizeCatalogType(Number(v)) })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">{t('catalogTypeNone')}</SelectItem>
+                      <SelectItem value="1">{t('catalogTypeUnity')}</SelectItem>
+                      <SelectItem value="2">{t('catalogTypeIceberg')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">{t('catalogTypeHint')}</p>
+                </div>
+                {crud.form.catalogType !== '0' && (
+                  <div className="space-y-1.5">
+                    <Label>{t('catalogSinkFieldLabel')}</Label>
+                    <Combobox
+                      options={catalogOptions}
+                      value={crud.form.catalogSinkId}
+                      onChange={v => crud.set({ catalogSinkId: v })}
+                      placeholder={t('catalogSinkPlaceholder')}
+                      searchPlaceholder={t('catalogSinkSearchPlaceholder')}
+                      emptyText={t('catalogSinkEmptyText')}
+                    />
+                  </div>
+                )}
+              </div>
+              {crud.form.catalogType !== '0' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>{t('catalogNamespaceFieldLabel')}</Label>
+                    <Input
+                      value={crud.form.catalogNamespace}
+                      onChange={e => crud.set({ catalogNamespace: e.target.value })}
+                      placeholder={crud.form.catalogType === '1' ? 'analytics.swapmid_cdc' : 'swapmid_cdc'}
+                      className="font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t('catalogTableFieldLabel')}</Label>
+                    <Input
+                      value={crud.form.catalogTableName}
+                      onChange={e => crud.set({ catalogTableName: e.target.value })}
+                      placeholder="orders"
+                      className="font-mono"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

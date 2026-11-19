@@ -7,14 +7,17 @@ import { parseOptionalJsonResponse, readApiErrorMessage } from '@/lib/api-error'
 import type {
   CdcAcceptSchemaResultDto,
   CdcCaptureResultDto,
+  CdcCatalogSyncResultDto,
   CdcDropSlotResultDto,
   CdcLakehouseCompactionResultDto,
+  CdcLakehouseHistoryDto,
   CdcPreflightResultDto,
   CdcSinkTemplateDto,
   CdcSnapshotResultDto,
   CdcStreamDto,
 } from '@/lib/api/types'
 import type { CdcPreflightState, CdcSinkTemplateState } from './cdc-dialogs'
+import type { CdcLakehouseHistoryState } from './cdc-lakehouse-history-dialog'
 
 export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
   const t = useTranslations('DataIntegration.cdc')
@@ -30,6 +33,8 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
   const [dropSlotSubmitting, setDropSlotSubmitting] = useState(false)
   const [dropSlotError, setDropSlotError] = useState<string | null>(null)
   const [sinkTemplateState, setSinkTemplateState] = useState<CdcSinkTemplateState | null>(null)
+  const [historyState, setHistoryState] = useState<CdcLakehouseHistoryState | null>(null)
+  const [historyLoadingVersion, setHistoryLoadingVersion] = useState<number | null>(null)
   const [provisionSubmitting, setProvisionSubmitting] = useState(false)
   const [compactSubmitting, setCompactSubmitting] = useState(false)
 
@@ -270,6 +275,48 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
     }
   }, [reloadAndRefresh, sinkTemplateState, t])
 
+  const handleOpenHistory = useCallback(async (row: CdcStreamDto, version?: number) => {
+    const qs = version !== undefined ? `?version=${version}&maxCommits=32` : '?maxCommits=32'
+    if (version !== undefined) {
+      setHistoryLoadingVersion(version)
+      try {
+        const res = await fetch(`/api/proxy/cdc-streams/${row.id}/lakehouse-history${qs}`)
+        if (!res.ok) {
+          toast({
+            variant: 'destructive',
+            title: t('lakehouseHistoryFailedTitle'),
+            description: await readApiErrorMessage(res, t('lakehouseHistoryFailedFallback')),
+          })
+          return
+        }
+        const history = await parseOptionalJsonResponse<CdcLakehouseHistoryDto>(res)
+        setHistoryState({ stream: row, history })
+      } finally {
+        setHistoryLoadingVersion(null)
+      }
+      return
+    }
+
+    await runStreamAction<CdcLakehouseHistoryDto>(
+      row, 'history', `/api/proxy/cdc-streams/${row.id}/lakehouse-history${qs}`, 'GET',
+      t('lakehouseHistoryFailedTitle'), t('lakehouseHistoryFailedFallback'),
+      history => setHistoryState({ stream: row, history }),
+    )
+  }, [runStreamAction, t])
+
+  const handleSyncCatalog = useCallback((row: CdcStreamDto) => runStreamAction<CdcCatalogSyncResultDto>(
+    row, 'sync-catalog', `/api/proxy/cdc-streams/${row.id}/sync-catalog`, 'POST',
+    t('syncCatalogFailedTitle'), t('syncCatalogFailedFallback'),
+    async (result) => {
+      toast({
+        variant: 'success',
+        title: t('syncCatalogSuccessTitle'),
+        description: result.message || row.name,
+      })
+      await reloadAndRefresh()
+    },
+  ), [reloadAndRefresh, runStreamAction, t])
+
   return {
     busyActions,
     preflightState,
@@ -286,6 +333,9 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
     dropSlotError,
     sinkTemplateState,
     setSinkTemplateState,
+    historyState,
+    setHistoryState,
+    historyLoadingVersion,
     provisionSubmitting,
     compactSubmitting,
     handlePreflight,
@@ -296,6 +346,8 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
     openDropSlotDialog,
     submitDropSlot,
     handleSinkTemplate,
+    handleOpenHistory,
+    handleSyncCatalog,
     handleSnapshot,
     handleAcceptSchema,
     handleProvisionSink,

@@ -190,6 +190,30 @@ namespace SwapMid.Migrations
                     b.Property<bool>("AutoCreatePublicationAndSlot")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("CatalogLastSyncStatus")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTime?>("CatalogLastSyncedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<long?>("CatalogLastSyncedVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CatalogNamespace")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid?>("CatalogSinkId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CatalogTableName")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("CatalogType")
+                        .HasColumnType("integer");
+
                     b.Property<string>("CheckpointLsn")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
@@ -367,6 +391,8 @@ namespace SwapMid.Migrations
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CatalogSinkId");
 
                     b.HasIndex("Name")
                         .IsUnique();
@@ -3711,6 +3737,11 @@ namespace SwapMid.Migrations
 
             modelBuilder.Entity("SwapMid.DataIntegration.CdcStreamDefinition", b =>
                 {
+                    b.HasOne("SwapMid.DataIntegration.DataSource", null)
+                        .WithMany()
+                        .HasForeignKey("CatalogSinkId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("SwapMid.DataIntegration.DataSource", null)
                         .WithMany()
                         .HasForeignKey("SourceId")

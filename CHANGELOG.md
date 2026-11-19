@@ -4,6 +4,20 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-11-19
+
+### Added
+- **Delta Lake `_delta_log` Time-Travel Inspector**: Added `DeltaLakeHistoryReader` and `GET /api/v1/cdc-streams/{id}/lakehouse-history` (optional `?version=v`) to parse `_delta_log/{version:D20}.json` commit history, reconstruct point-in-time active Parquet snapshot sets (`VERSION AS OF v`), and generate executable DuckDB `read_parquet([...])` and Spark SQL queries inside the new `/data-integration/cdc` Time-Travel dialog.
+- **External Open Catalog Interop (Unity Catalog REST & Apache Iceberg REST)**: Added `LakehouseCatalogType` (`None`, `UnityCatalogRest`, `IcebergRest`), EF Core migration `AddCdcLakehouseCatalogSync` (`CatalogSinkId`, `CatalogNamespace`, `CatalogTableName`, sync audit metadata), SSRF-guarded `ExternalLakehouseCatalogSyncService`, manual `POST /api/v1/cdc-streams/{id}/sync-catalog`, best-effort post-snapshot/capture/compaction catalog sync, Prometheus metric `swapmid_cdc_catalog_syncs_total{catalog_type,outcome}`, and MCP `diagnose_cdc_streams` catalog fields.
+- **Chaos & Fault-Injection Resilience Suite**: Added `ChaosResilienceContractTests` and [docs/benchmarks/resilience-and-chaos.md](docs/benchmarks/resilience-and-chaos.md) verifying mid-flight `OutcomeUnknown` crash recovery via `Target Receipt v1`, Delta Lake `412` optimistic CAS retry with `swapmidRunId` idempotency, and external catalog `503` outage isolation without blocking CDC `CheckpointLsn` durability.
+- **Turnkey Lakehouse Sandbox Overlay**: Added [docker/docker-compose.lakehouse-demo.yml](docker/docker-compose.lakehouse-demo.yml) (`mysql:8.4` `ROW`+`FULL` binlog + `swapmid_cdc.orders` seed + Chainguard `minio` / `minio-client` bucket bootstrap) and validated it in CI.
+
+### Fixed
+- Prevented EF Core `SaveChangesAsync` from bumping `DataSource.ConcurrencyStamp` during read-only `GetActivationForUpdateAsync` / `ClaimAsync` pipeline coordination (`AsNoTracking`), eliminating spurious `SwapMid:ETL:025` concurrent-modification errors on subsequent `TargetReceiptV1` executions.
+- Switched `docker-compose.lakehouse-demo.yml` object-storage images from deprecated Docker Hub `minio/*` tags to public Chainguard images (`cgr.dev/chainguard/minio:latest` and `cgr.dev/chainguard/minio-client:latest`).
+- Upgraded `moment` (`2.30.1` -> `2.31.0`) in `src/SwapMid.HttpApi.Host` lockfiles and upgraded GitHub Actions workflow actions (`pnpm/action-setup@v6`, `azure/setup-helm@v5`, `docker/login-action@v4`, `docker/metadata-action@v6`, `docker/build-push-action@v7`).
+- Expanded OpenAPI `/api/v1` summary coverage to **100.0% (194/194 endpoints)**.
+
 ## [2.0.1] - 2026-11-18
 
 ### Fixed & Added (Open-Source Release & Kubernetes Readiness)

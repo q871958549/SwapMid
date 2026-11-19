@@ -33,6 +33,14 @@ public class CdcStreamDto : FullAuditedEntityDto<Guid>
     public string? SoftDeleteTimestampColumn { get; set; }
     public int? LakehouseCompactMinFiles { get; set; }
     public LakehouseTableFormat LakehouseTableFormat { get; set; }
+    public LakehouseCatalogType CatalogType { get; set; }
+    public Guid? CatalogSinkId { get; set; }
+    public string? CatalogSinkName { get; set; }
+    public string? CatalogNamespace { get; set; }
+    public string? CatalogTableName { get; set; }
+    public long? CatalogLastSyncedVersion { get; set; }
+    public DateTime? CatalogLastSyncedAt { get; set; }
+    public string? CatalogLastSyncStatus { get; set; }
     public CdcSchemaDriftPolicy SchemaDriftPolicy { get; set; }
     public string? SchemaBaselineHash { get; set; }
     public bool SchemaDriftDetected { get; set; }
@@ -111,6 +119,16 @@ public class CdcStreamCreateUpdateDto
     public int? LakehouseCompactMinFiles { get; set; }
 
     public LakehouseTableFormat LakehouseTableFormat { get; set; } = LakehouseTableFormat.SwapMidManifest;
+
+    public LakehouseCatalogType CatalogType { get; set; } = LakehouseCatalogType.None;
+
+    public Guid? CatalogSinkId { get; set; }
+
+    [StringLength(128)]
+    public string? CatalogNamespace { get; set; }
+
+    [StringLength(128)]
+    public string? CatalogTableName { get; set; }
 
     public CdcSchemaDriftPolicy SchemaDriftPolicy { get; set; } = CdcSchemaDriftPolicy.Ignore;
 
@@ -309,5 +327,67 @@ public class CdcLakehouseCompactionResultDto
     public long OutputByteSize { get; set; }
     public int DeletedSourceCount { get; set; }
     public DateTime CompletedAtUtc { get; set; }
+    public string Message { get; set; } = null!;
+}
+
+public class GetCdcLakehouseHistoryInput
+{
+    [Range(0, long.MaxValue)]
+    public long? Version { get; set; }
+
+    [Range(1, 200)]
+    public int MaxCommits { get; set; } = 32;
+}
+
+public class CdcDeltaCommitSummaryDto
+{
+    public long Version { get; set; }
+    public DateTime TimestampUtc { get; set; }
+    public string Operation { get; set; } = null!;
+    public string? EngineInfo { get; set; }
+    public string? SwapMidRunId { get; set; }
+    public string? SnapshotMode { get; set; }
+    public int AddedFileCount { get; set; }
+    public int RemovedFileCount { get; set; }
+    public long TotalRecordCount { get; set; }
+    public string DeltaCommitKey { get; set; } = null!;
+}
+
+public class CdcDeltaActiveFileDto
+{
+    public string RelativePath { get; set; } = null!;
+    public string ObjectKey { get; set; } = null!;
+    public long SizeBytes { get; set; }
+    public long? RecordCount { get; set; }
+    public long AddedAtVersion { get; set; }
+}
+
+public class CdcLakehouseHistoryDto
+{
+    public Guid StreamId { get; set; }
+    public string Destination { get; set; } = null!;
+    public LakehouseTableFormat TableFormat { get; set; }
+    public string? DeltaLogDirectory { get; set; }
+    public long? CurrentVersion { get; set; }
+    public long? SelectedVersion { get; set; }
+    public int TotalCommitCount { get; set; }
+    public int SelectedActiveFileCount { get; set; }
+    public long SelectedTotalBytes { get; set; }
+    public long SelectedTotalRecordCount { get; set; }
+    public List<CdcDeltaCommitSummaryDto> Commits { get; set; } = new();
+    public List<CdcDeltaActiveFileDto> ActiveFiles { get; set; } = new();
+    public string? TimeTravelQuerySql { get; set; }
+    public string Summary { get; set; } = null!;
+}
+
+public class CdcCatalogSyncResultDto
+{
+    public Guid StreamId { get; set; }
+    public LakehouseCatalogType CatalogType { get; set; }
+    public bool Synced { get; set; }
+    public long? SyncedVersion { get; set; }
+    public string? CatalogTableIdentifier { get; set; }
+    public string? LocationUri { get; set; }
+    public DateTime SyncedAtUtc { get; set; }
     public string Message { get; set; } = null!;
 }

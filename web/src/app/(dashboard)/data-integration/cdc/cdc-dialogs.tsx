@@ -294,6 +294,7 @@ export function CdcSinkTemplateDialog({
   compacting = false,
   onProvision,
   onCompact,
+  onOpenHistory,
   onClose,
 }: {
   state: CdcSinkTemplateState | null
@@ -302,6 +303,7 @@ export function CdcSinkTemplateDialog({
   compacting?: boolean
   onProvision?: () => void
   onCompact?: () => void
+  onOpenHistory?: () => void
   onClose: () => void
 }) {
   const t = useTranslations('DataIntegration.cdc')
@@ -410,6 +412,15 @@ export function CdcSinkTemplateDialog({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium">{t('lakehouseManifestTitle')}</span>
                   <div className="flex items-center gap-2">
+                    {state.template.deltaLogDirectory && onOpenHistory && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={onOpenHistory}
+                      >
+                        {t('timeTravelButtonLabel')}
+                      </Button>
+                    )}
                     {state.template.targetType === 5 && state.template.latestManifestJson && canManage && onCompact && (
                       <Button
                         size="sm"

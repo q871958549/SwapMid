@@ -76,6 +76,27 @@ public partial class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
     /// <summary>ObjectStorage 接收端 Lakehouse 开放表格式提交协议（SwapMidManifest / DeltaLake）。</summary>
     public LakehouseTableFormat LakehouseTableFormat { get; private set; }
 
+    /// <summary>外部开放元数据目录同步协议（None / UnityCatalogRest / IcebergRest）。</summary>
+    public LakehouseCatalogType CatalogType { get; private set; }
+
+    /// <summary>关联外部 Catalog REST 服务凭证的 RestApi DataSource ID。</summary>
+    public Guid? CatalogSinkId { get; private set; }
+
+    /// <summary>外部 Catalog 中的命名空间（Unity Catalog 为 schema 或 catalog.schema；Iceberg 为 namespace）。</summary>
+    public string? CatalogNamespace { get; private set; }
+
+    /// <summary>外部 Catalog 中的注册表名。</summary>
+    public string? CatalogTableName { get; private set; }
+
+    /// <summary>最近一次成功同步到外部 Catalog 的 Delta/Manifest 版本号。</summary>
+    public long? CatalogLastSyncedVersion { get; private set; }
+
+    /// <summary>最近一次成功同步到外部 Catalog 的时间（UTC）。</summary>
+    public DateTime? CatalogLastSyncedAt { get; private set; }
+
+    /// <summary>最近一次外部 Catalog 同步结果摘要或脱敏诊断消息。</summary>
+    public string? CatalogLastSyncStatus { get; private set; }
+
     /// <summary>上游监控表发生 DDL/Schema 漂移时的护栏策略。</summary>
     public CdcSchemaDriftPolicy SchemaDriftPolicy { get; private set; }
 
@@ -154,7 +175,11 @@ public partial class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         string? softDeleteTimestampColumn = null,
         CdcSourceType sourceType = CdcSourceType.PostgreSqlLogicalReplication,
         int? lakehouseCompactMinFiles = null,
-        LakehouseTableFormat lakehouseTableFormat = LakehouseTableFormat.SwapMidManifest)
+        LakehouseTableFormat lakehouseTableFormat = LakehouseTableFormat.SwapMidManifest,
+        LakehouseCatalogType catalogType = LakehouseCatalogType.None,
+        Guid? catalogSinkId = null,
+        string? catalogNamespace = null,
+        string? catalogTableName = null)
         : base(id)
     {
         ApplyConfiguration(
@@ -181,7 +206,11 @@ public partial class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             softDeleteTimestampColumn,
             sourceType,
             lakehouseCompactMinFiles,
-            lakehouseTableFormat);
+            lakehouseTableFormat,
+            catalogType,
+            catalogSinkId,
+            catalogNamespace,
+            catalogTableName);
         Status = CdcStreamStatus.Draft;
         SnapshotStatus = CdcSnapshotStatus.NotStarted;
     }
@@ -210,7 +239,11 @@ public partial class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
         string? softDeleteTimestampColumn = null,
         CdcSourceType sourceType = CdcSourceType.PostgreSqlLogicalReplication,
         int? lakehouseCompactMinFiles = null,
-        LakehouseTableFormat lakehouseTableFormat = LakehouseTableFormat.SwapMidManifest)
+        LakehouseTableFormat lakehouseTableFormat = LakehouseTableFormat.SwapMidManifest,
+        LakehouseCatalogType catalogType = LakehouseCatalogType.None,
+        Guid? catalogSinkId = null,
+        string? catalogNamespace = null,
+        string? catalogTableName = null)
     {
         ApplyConfiguration(
             name,
@@ -236,7 +269,11 @@ public partial class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             softDeleteTimestampColumn,
             sourceType,
             lakehouseCompactMinFiles,
-            lakehouseTableFormat);
+            lakehouseTableFormat,
+            catalogType,
+            catalogSinkId,
+            catalogNamespace,
+            catalogTableName);
     }
 
     public void Activate()
@@ -375,5 +412,22 @@ public partial class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
             LastErrorCode = null;
             LastErrorMessage = null;
         }
+    }
+
+    public void RecordCatalogSyncAttempt(
+        bool succeeded,
+        long? syncedVersion,
+        DateTime attemptAtUtc,
+        string status)
+    {
+        if (succeeded)
+        {
+            CatalogLastSyncedVersion = syncedVersion ?? CatalogLastSyncedVersion;
+            CatalogLastSyncedAt = attemptAtUtc;
+        }
+
+        CatalogLastSyncStatus = Truncate(
+            status?.Trim() ?? string.Empty,
+            CdcStreamConsts.MaxCatalogLastSyncStatusLength);
     }
 }

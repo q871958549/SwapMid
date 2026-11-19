@@ -45,6 +45,8 @@ export type CdcAcceptSchemaResultDto = import('../generated').SwapMidDataIntegra
 export type CdcDropSlotResultDto = import('../generated').SwapMidDataIntegrationCdcDropSlotResultDto
 export type CdcSinkColumnTemplateDto = import('../generated').SwapMidDataIntegrationCdcSinkColumnTemplateDto
 export type CdcSinkTemplateDto = import('../generated').SwapMidDataIntegrationCdcSinkTemplateDto
+export type CdcLakehouseHistoryDto = import('../generated').SwapMidDataIntegrationCdcLakehouseHistoryDto
+export type CdcCatalogSyncResultDto = import('../generated').SwapMidDataIntegrationCdcCatalogSyncResultDto
 export type CdcStreamDto = Omit<
   Require<
     import('../generated').SwapMidDataIntegrationCdcStreamDto,

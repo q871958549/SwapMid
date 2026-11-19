@@ -31,6 +31,7 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
     private readonly ILogger<CdcStreamCaptureCoordinator> _logger;
     private readonly ICdcScheduleSynchronizer _scheduleSynchronizer;
     private readonly INotificationService? _notificationService;
+    private readonly ExternalLakehouseCatalogSyncService? _catalogSyncService;
 
     public CdcStreamCaptureCoordinator(
         ICdcStreamRepository streamRepository,
@@ -44,7 +45,8 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
         INotificationService? notificationService = null,
         SqlServerCdcCaptureService? sqlServerCaptureService = null,
         CdcObjectStorageCompactionService? lakehouseCompactor = null,
-        MySqlBinlogCdcCaptureService? mySqlCaptureService = null)
+        MySqlBinlogCdcCaptureService? mySqlCaptureService = null,
+        ExternalLakehouseCatalogSyncService? catalogSyncService = null)
     {
         _streamRepository = streamRepository;
         _sourceRepository = sourceRepository;
@@ -58,6 +60,7 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
         _logger = logger;
         _scheduleSynchronizer = scheduleSynchronizer ?? NullCdcScheduleSynchronizer.Instance;
         _notificationService = notificationService;
+        _catalogSyncService = catalogSyncService;
     }
 
     public async Task<CdcCaptureResultDto> CaptureAsync(
@@ -117,6 +120,11 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
             if (targetSink != null && _lakehouseCompactor != null)
             {
                 await _lakehouseCompactor.TryAutoCompactAsync(stream, targetSink, cancellationToken);
+            }
+
+            if (targetSink != null && _catalogSyncService != null && (snapshotResult != null || batch.DeliveredCount > 0))
+            {
+                await _catalogSyncService.TryBestEffortSyncAsync(stream, targetSink, versionOverride: null, cancellationToken);
             }
 
             var totalEvents = (snapshotResult?.SnapshotRowCount ?? 0) + batch.CapturedEventCount;
@@ -187,7 +195,11 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
         try
         {
             var snapshotResult = await DispatchSnapshotAsync(source, stream, targetSink, cancellationToken);
-            await PersistSnapshotSuccessAsync(id, snapshotResult, cancellationToken);
+            var persisted = await PersistSnapshotSuccessAsync(id, snapshotResult, cancellationToken);
+            if (targetSink != null && _catalogSyncService != null)
+            {
+                await _catalogSyncService.TryBestEffortSyncAsync(persisted, targetSink, versionOverride: null, cancellationToken);
+            }
             return new CdcSnapshotResultDto
             {
                 StreamId = id,

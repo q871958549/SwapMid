@@ -8,4 +8,5 @@ namespace SwapMid.DataIntegration;
 public interface IDataSourceRepository : IRepository<DataSource, Guid>
 {
     Task<bool> NameExistsAsync(string name, Guid? excludeId = null, CancellationToken cancellationToken = default);
+    Task<DataSource> GetAsNoTrackingAsync(Guid id, CancellationToken cancellationToken = default);
 }

@@ -146,4 +146,20 @@ public class CdcStreamController : SwapMidController, ICdcStreamAppService
         [FromBody] CompactCdcLakehouseInput? input = null,
         CancellationToken cancellationToken = default)
         => _service.CompactLakehouseAsync(id, input ?? new CompactCdcLakehouseInput(), cancellationToken);
+
+    /// <summary>查询 Delta Lake _delta_log 提交时间线及任意历史版本活跃分片文件快照（Time-Travel）</summary>
+    [HttpGet("{id}/lakehouse-history")]
+    public Task<CdcLakehouseHistoryDto> GetLakehouseHistoryAsync(
+        Guid id,
+        [FromQuery] GetCdcLakehouseHistoryInput? input = null,
+        CancellationToken cancellationToken = default)
+        => _service.GetLakehouseHistoryAsync(id, input ?? new GetCdcLakehouseHistoryInput(), cancellationToken);
+
+    /// <summary>手动将当前 Lakehouse 最新表位置与列 Schema 注册或同步到外部 Unity Catalog / Iceberg REST 目录</summary>
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    [HttpPost("{id}/sync-catalog")]
+    public Task<CdcCatalogSyncResultDto> SyncCatalogAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+        => _service.SyncCatalogAsync(id, cancellationToken);
 }

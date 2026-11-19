@@ -96,7 +96,7 @@
     "dependency-cruiser": "18.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
-    "jsdom": "^29.1.1",
+    "jsdom": "^31.0.1",
     "knip": "6.27.0",
     "opencc-js": "^1.4.1",
     "tailwindcss": "^4",

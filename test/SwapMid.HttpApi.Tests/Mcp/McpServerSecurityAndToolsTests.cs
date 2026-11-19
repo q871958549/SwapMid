@@ -575,5 +575,26 @@ public class McpServerSecurityAndToolsTests
             text.ShouldContain("swapmid.io/v1");
             text.ShouldContain("schemaVersion: swapmid.io/v1");
         }
+
+        // Tool 12: plan_lakehouse_maintenance (read-only Dry-Run advisor)
+        var maintRes = await client.PostAsJsonAsync("/api/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = 204,
+            method = "tools/call",
+            @params = new
+            {
+                name = McpToolCatalog.PlanLakehouseMaintenance,
+                arguments = new { streamId = lakehouseStreamId.ToString(), retainLast = 1 },
+            },
+        });
+        maintRes.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using (var doc = JsonDocument.Parse(await maintRes.Content.ReadAsStringAsync()))
+        {
+            var text = doc.RootElement.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString()!;
+            text.ShouldContain("\"dryRun\":true");
+            text.ShouldContain("orders-kafka-iceberg");
+            text.ShouldContain("recommendations");
+        }
     }
 }

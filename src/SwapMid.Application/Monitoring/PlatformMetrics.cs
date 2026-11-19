@@ -180,6 +180,11 @@ public static partial class PlatformMetrics
         "Confluent / Redpanda Schema Registry 拉取次数（标签 outcome: cache_hit|fetched|failed）",
         new CounterConfiguration { LabelNames = ["outcome"] });
 
+    public static readonly Counter CdcIcebergMaintenanceTotal = Metrics.CreateCounter(
+        "swapmid_cdc_iceberg_maintenance_total",
+        "Apache Iceberg v2 表维护操作计数（标签 operation=tag|expire, outcome=succeeded|failed）",
+        new CounterConfiguration { LabelNames = ["operation", "outcome"] });
+
     private static readonly string[] EtlExecutionAdmissionOutcomes =
     [
         "acquired", "busy", "idempotent_replay", "coordination_failure",
@@ -251,6 +256,14 @@ public static partial class PlatformMetrics
 
         CdcIcebergEqualityDeletesTotal.Publish();
         PublishSingleLabelSeries(CdcSchemaRegistryFetchesTotal, ["cache_hit", "fetched", "failed"]);
+        foreach (var op in new[] { "tag", "expire" })
+        {
+            foreach (var outcome in new[] { "succeeded", "failed" })
+            {
+                CdcIcebergMaintenanceTotal.WithLabels(op, outcome).Publish();
+            }
+        }
+
         PublishSingleLabelSeries(CdcWebhookIngestsTotal, ["accepted", "replayed", "rejected_auth", "rejected_inactive", "rejected_payload", "failed"]);
     }
 

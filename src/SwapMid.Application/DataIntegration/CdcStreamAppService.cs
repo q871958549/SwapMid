@@ -33,6 +33,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     private readonly ExternalLakehouseCatalogSyncService? _catalogSyncService;
     private readonly CdcLakehouseDataPreviewService? _lakehousePreviewService;
     private readonly CdcDataContractEvaluator? _contractEvaluator;
+    private readonly IcebergV2MaintenanceService? _icebergMaintenanceService;
 
     public CdcStreamAppService(
         ICdcStreamRepository streamRepository,
@@ -51,7 +52,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         ExternalLakehouseCatalogSyncService? catalogSyncService = null,
         CdcLakehouseDataPreviewService? lakehousePreviewService = null,
         CdcDataContractEvaluator? contractEvaluator = null,
-        KafkaDebeziumCdcCaptureService? kafkaCaptureService = null)
+        KafkaDebeziumCdcCaptureService? kafkaCaptureService = null,
+        IcebergV2MaintenanceService? icebergMaintenanceService = null)
     {
         _streamRepository = streamRepository;
         _sourceRepository = sourceRepository;
@@ -70,6 +72,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         _catalogSyncService = catalogSyncService;
         _lakehousePreviewService = lakehousePreviewService;
         _contractEvaluator = contractEvaluator;
+        _icebergMaintenanceService = icebergMaintenanceService;
     }
 
     public async Task<PagedResultDto<CdcStreamDto>> GetListAsync(GetCdcStreamListInput input)
@@ -370,48 +373,27 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     }
 
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
-    public async Task<CdcSinkTemplateDto> ProvisionExternalSinkAsync(
-        Guid id,
-        CancellationToken cancellationToken = default)
+    public async Task<CdcSinkTemplateDto> ProvisionExternalSinkAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
-            base.CurrentTenant.Id,
-            SwapMidPermissions.DataIntegration.CdcStreams.Manage);
-
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Manage);
         var (stream, sink) = await CdcStreamMappingHelpers.LoadExternalSinkContextAsync(
-            id,
-            "仅外部接收端（ExternalSink）模式的 CDC 流支持自动初始化下游目标表。",
-            _streamRepository,
-            _sourceRepository,
-            cancellationToken);
+            id, "仅外部接收端（ExternalSink）模式的 CDC 流支持自动初始化下游目标表。", _streamRepository, _sourceRepository, cancellationToken);
         return await CdcExternalSinkTemplateBuilder.ProvisionClickHouseAsync(stream, sink, _sinkProbeService, cancellationToken);
     }
 
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
-    public Task<CdcAcceptSchemaResultDto> AcceptSchemaBaselineAsync(
-        Guid id,
-        CancellationToken cancellationToken = default)
+    public Task<CdcAcceptSchemaResultDto> AcceptSchemaBaselineAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
-            base.CurrentTenant.Id,
-            SwapMidPermissions.DataIntegration.CdcStreams.Manage);
-
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Manage);
         return CdcStreamMappingHelpers.AcceptSchemaBaselineCoreAsync(
             id, _streamRepository, _sourceRepository, _captureService, _sqlServerCaptureService, _mySqlCaptureService, _notificationService, Logger, cancellationToken);
     }
 
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
-    public async Task<CdcLakehouseCompactionResultDto> CompactLakehouseAsync(
-        Guid id,
-        CompactCdcLakehouseInput input,
-        CancellationToken cancellationToken = default)
+    public async Task<CdcLakehouseCompactionResultDto> CompactLakehouseAsync(Guid id, CompactCdcLakehouseInput input, CancellationToken cancellationToken = default)
     {
-        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
-            base.CurrentTenant.Id,
-            SwapMidPermissions.DataIntegration.CdcStreams.Manage);
-
-        var compactor = _lakehouseCompactor ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-            .WithData("Reason", "Lakehouse 分片压缩服务未启用。");
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Manage);
+        var compactor = _lakehouseCompactor ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid).WithData("Reason", "Lakehouse 分片压缩服务未启用。");
         var (stream, sink) = await CdcStreamMappingHelpers.LoadExternalSinkContextAsync(
             id, "仅外部接收端（ObjectStorage）模式的 CDC 流支持 Lakehouse 分片合并。", _streamRepository, _sourceRepository, cancellationToken);
         var result = await compactor.CompactAsync(stream, sink, input.MinFiles, input.DeleteCompactedFiles, cancellationToken);
@@ -423,64 +405,58 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         return result;
     }
 
-    public async Task<CdcLakehouseHistoryDto> GetLakehouseHistoryAsync(
-        Guid id,
-        GetCdcLakehouseHistoryInput input,
-        CancellationToken cancellationToken = default)
+    public async Task<CdcLakehouseHistoryDto> GetLakehouseHistoryAsync(Guid id, GetCdcLakehouseHistoryInput input, CancellationToken cancellationToken = default)
     {
-        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
-            base.CurrentTenant.Id,
-            SwapMidPermissions.DataIntegration.CdcStreams.Default);
-
-        var reader = _deltaHistoryReader ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-            .WithData("Reason", "Delta Lake Time-Travel 历史读取服务未启用。");
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Default);
+        var reader = _deltaHistoryReader ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid).WithData("Reason", "Delta Lake Time-Travel 历史读取服务未启用。");
         var (stream, sink) = await CdcStreamMappingHelpers.LoadExternalSinkContextAsync(
             id, "仅外部接收端（ObjectStorage）模式的 CDC 流支持查询 Delta Lake Time-Travel 提交历史。", _streamRepository, _sourceRepository, cancellationToken);
         return await reader.ReadAsync(stream, sink, input.Version, input.MaxCommits, cancellationToken);
     }
 
-    public async Task<CdcLakehousePreviewDto> PreviewLakehouseDataAsync(
-        Guid id,
-        GetCdcLakehousePreviewInput input,
-        CancellationToken cancellationToken = default)
+    public async Task<CdcLakehousePreviewDto> PreviewLakehouseDataAsync(Guid id, GetCdcLakehousePreviewInput input, CancellationToken cancellationToken = default)
     {
-        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
-            base.CurrentTenant.Id,
-            SwapMidPermissions.DataIntegration.CdcStreams.Default);
-
-        var preview = _lakehousePreviewService ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-            .WithData("Reason", "Lakehouse 实时数据预览服务未启用。");
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Default);
+        var preview = _lakehousePreviewService ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid).WithData("Reason", "Lakehouse 实时数据预览服务未启用。");
         var (stream, sink) = await CdcStreamMappingHelpers.LoadExternalSinkContextAsync(
             id, "仅外部接收端（ObjectStorage）模式的 CDC 流支持 Lakehouse 实时数据预览。", _streamRepository, _sourceRepository, cancellationToken);
         return await preview.PreviewAsync(stream, sink, input.Version, input.MaxRows, cancellationToken);
     }
 
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
-    public Task<CdcCatalogSyncResultDto> SyncCatalogAsync(
-        Guid id,
-        CancellationToken cancellationToken = default)
+    public Task<CdcCatalogSyncResultDto> SyncCatalogAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
-            base.CurrentTenant.Id,
-            SwapMidPermissions.DataIntegration.CdcStreams.Manage);
-
-        var syncService = _catalogSyncService ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-            .WithData("Reason", "外部开放目录元数据同步服务未启用。");
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Manage);
+        var syncService = _catalogSyncService ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid).WithData("Reason", "外部开放目录元数据同步服务未启用。");
         return syncService.SyncAsync(id, cancellationToken);
     }
 
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
-    public Task<CdcContractEvaluationDto> EvaluateContractAsync(
-        Guid id,
-        CancellationToken cancellationToken = default)
+    public Task<CdcContractEvaluationDto> EvaluateContractAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
-            base.CurrentTenant.Id,
-            SwapMidPermissions.DataIntegration.CdcStreams.Manage);
-
-        var evaluator = _contractEvaluator ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-            .WithData("Reason", "CDC 数据契约 SLA 评估服务未启用。");
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Manage);
+        var evaluator = _contractEvaluator ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid).WithData("Reason", "CDC 数据契约 SLA 评估服务未启用。");
         return evaluator.EvaluateAndPersistAsync(id, probeLiveUpstream: true, cancellationToken);
+    }
+
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    public async Task<CdcLakehouseTagResultDto> CreateLakehouseTagAsync(Guid id, CreateCdcLakehouseTagInput input, CancellationToken cancellationToken = default)
+    {
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Manage);
+        var maintenance = _icebergMaintenanceService ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid).WithData("Reason", "Apache Iceberg v2 表维护服务未启用。");
+        var (stream, sink) = await CdcStreamMappingHelpers.LoadExternalSinkContextAsync(
+            id, "仅外部接收端（ObjectStorage）模式的 Apache Iceberg v2 CDC 流支持创建命名标签。", _streamRepository, _sourceRepository, cancellationToken);
+        return await maintenance.CreateTagAsync(stream, sink, input, cancellationToken);
+    }
+
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    public async Task<CdcLakehouseExpireResultDto> ExpireLakehouseSnapshotsAsync(Guid id, ExpireCdcLakehouseSnapshotsInput input, CancellationToken cancellationToken = default)
+    {
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Manage);
+        var maintenance = _icebergMaintenanceService ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid).WithData("Reason", "Apache Iceberg v2 表维护服务未启用。");
+        var (stream, sink) = await CdcStreamMappingHelpers.LoadExternalSinkContextAsync(
+            id, "仅外部接收端（ObjectStorage）模式的 Apache Iceberg v2 CDC 流支持快照过期清理。", _streamRepository, _sourceRepository, cancellationToken);
+        return await maintenance.ExpireSnapshotsAsync(stream, sink, input, cancellationToken);
     }
 
     private Task<CdcStreamDto> EnrichDtoAsync(CdcStreamDefinition stream)

@@ -1131,7 +1131,7 @@
       "saslPasswordFieldLabel": "SASL password",
       "testingConnectionMenuItem": "Testing...",
       "schemaRegistryUrlFieldLabel": "Schema Registry URL (Optional)",
-      "schemaRegistryUrlHint": "Connect to Confluent / Redpanda Schema Registry to decode binary Avro Debezium events",
+      "schemaRegistryUrlHint": "Connect to Confluent / Redpanda Schema Registry to decode binary Avro / Protobuf Debezium events",
       "schemaRegistryUsernameFieldLabel": "Schema Registry Username",
       "schemaRegistryPasswordFieldLabel": "Schema Registry Password"
     },
@@ -1630,7 +1630,18 @@
       "gitOpsExportFailed": "Export Failed",
       "gitOpsDiffFailed": "Diff Failed",
       "gitOpsApplyFailed": "Apply Failed",
-      "gitOpsApplyDoneTitle": "GitOps Bundle Applied"
+      "gitOpsApplyDoneTitle": "GitOps Bundle Applied",
+      "icebergRefsSectionTitle": "Named Branches & Audit Tags (Refs)",
+      "icebergPinTagButton": "Pin Tag",
+      "icebergPinTagTargetHint": "Pins to selected snapshot v{version} (protected from expireSnapshots)",
+      "icebergTagSuccessTitle": "Iceberg Tag Pinned",
+      "icebergTagFailedTitle": "Failed to Pin Tag",
+      "icebergRetainLastLabel": "Retain Last",
+      "icebergDeleteOrphansLabel": "Delete Orphan Files",
+      "icebergExpireDryRunButton": "Dry-Run",
+      "icebergExpireExecuteButton": "Expire",
+      "icebergExpireSuccessTitle": "Iceberg Snapshots Expired",
+      "icebergExpireFailedTitle": "Failed to Expire Snapshots"
     }
   },
   "System": {

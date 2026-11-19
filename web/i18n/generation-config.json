@@ -457,7 +457,7 @@
     "DataIntegration.cdc.lakehouseQuerySqlTitle": "Cross-Engine Analytics SQL (DuckDB / ClickHouse / Spark)",
     "DataIntegration.cdc.copyQuerySqlButton": "Copy SQL",
     "DataIntegration.source.schemaRegistryUrlFieldLabel": "Schema Registry URL (Optional)",
-    "DataIntegration.source.schemaRegistryUrlHint": "Connect to Confluent / Redpanda Schema Registry to decode binary Avro Debezium events",
+    "DataIntegration.source.schemaRegistryUrlHint": "Connect to Confluent / Redpanda Schema Registry to decode binary Avro / Protobuf Debezium events",
     "DataIntegration.source.schemaRegistryUsernameFieldLabel": "Schema Registry Username",
     "DataIntegration.source.schemaRegistryPasswordFieldLabel": "Schema Registry Password",
     "DataIntegration.cdc.lakehouseWriteModeFieldLabel": "Iceberg v2 Write Mode",
@@ -483,7 +483,18 @@
     "DataIntegration.cdc.gitOpsExportFailed": "Export Failed",
     "DataIntegration.cdc.gitOpsDiffFailed": "Diff Failed",
     "DataIntegration.cdc.gitOpsApplyFailed": "Apply Failed",
-    "DataIntegration.cdc.gitOpsApplyDoneTitle": "GitOps Bundle Applied"
+    "DataIntegration.cdc.gitOpsApplyDoneTitle": "GitOps Bundle Applied",
+    "DataIntegration.cdc.icebergRefsSectionTitle": "Named Branches & Audit Tags (Refs)",
+    "DataIntegration.cdc.icebergPinTagButton": "Pin Tag",
+    "DataIntegration.cdc.icebergPinTagTargetHint": "Pins to selected snapshot v{version} (protected from expireSnapshots)",
+    "DataIntegration.cdc.icebergTagSuccessTitle": "Iceberg Tag Pinned",
+    "DataIntegration.cdc.icebergTagFailedTitle": "Failed to Pin Tag",
+    "DataIntegration.cdc.icebergRetainLastLabel": "Retain Last",
+    "DataIntegration.cdc.icebergDeleteOrphansLabel": "Delete Orphan Files",
+    "DataIntegration.cdc.icebergExpireDryRunButton": "Dry-Run",
+    "DataIntegration.cdc.icebergExpireExecuteButton": "Expire",
+    "DataIntegration.cdc.icebergExpireSuccessTitle": "Iceberg Snapshots Expired",
+    "DataIntegration.cdc.icebergExpireFailedTitle": "Failed to Expire Snapshots"
   },
   "traditionalOverrides": {
     "Account.user.batchRemoveDoneTitle": "批次移除角色完成",

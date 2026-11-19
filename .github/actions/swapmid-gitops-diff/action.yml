@@ -1,0 +1,71 @@
+name: "SwapMid GitOps Drift Diff Gate"
+description: "Run a read-only swapmid.io/v1 GitOps drift diff against a SwapMid Control Plane and emit a PR-ready Markdown summary."
+inputs:
+  bundle-file:
+    description: "Path to the declarative swapmid.io/v1 YAML or JSON bundle file."
+    required: true
+  api-url:
+    description: "SwapMid Control Plane base URL (e.g. https://swapmid.example.com)."
+    required: true
+  token:
+    description: "Optional Bearer JWT token (preferred for CI/CD). Falls back to username/password when omitted."
+    required: false
+    default: ""
+  username:
+    description: "SwapMid username when token is not supplied."
+    required: false
+    default: ""
+  password:
+    description: "SwapMid password when token is not supplied."
+    required: false
+    default: ""
+  fail-on-drift:
+    description: "When true, fail the step with exit code 2 if Create/Update/NeedsSecret drift is detected."
+    required: false
+    default: "false"
+  write-step-summary:
+    description: "When true, append the Markdown drift table to GITHUB_STEP_SUMMARY."
+    required: false
+    default: "true"
+
+outputs:
+  has-drift:
+    description: "'true' when Create, Update, or NeedsSecret items exist; otherwise 'false'."
+    value: ${{ steps.diff.outputs.has_drift }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run SwapMid GitOps Diff
+      id: diff
+      shell: bash
+      env:
+        SWAPMID_API_URL: ${{ inputs.api-url }}
+        SWAPMID_TOKEN: ${{ inputs.token }}
+        SWAPMID_USER: ${{ inputs.username }}
+        SWAPMID_PASSWORD: ${{ inputs.password }}
+        BUNDLE_FILE: ${{ inputs.bundle-file }}
+        FAIL_ON_DRIFT: ${{ inputs.fail-on-drift }}
+        WRITE_SUMMARY: ${{ inputs.write-step-summary }}
+      run: |
+        set +e
+        OUT_FILE="$(mktemp)"
+        node "${{ github.action_path }}/../../../scripts/swapmidctl.mjs" diff -f "$BUNDLE_FILE" --markdown --exit-code > "$OUT_FILE"
+        RC=$?
+        cat "$OUT_FILE"
+        if [ "$WRITE_SUMMARY" = "true" ] && [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+          cat "$OUT_FILE" >> "$GITHUB_STEP_SUMMARY"
+        fi
+        rm -f "$OUT_FILE"
+        if [ "$RC" -eq 2 ]; then
+          echo "has_drift=true" >> "$GITHUB_OUTPUT"
+          if [ "$FAIL_ON_DRIFT" = "true" ]; then
+            echo "::error::SwapMid GitOps drift detected in $BUNDLE_FILE"
+            exit 2
+          fi
+          exit 0
+        fi
+        if [ "$RC" -ne 0 ]; then
+          exit "$RC"
+        fi
+        echo "has_drift=false" >> "$GITHUB_OUTPUT"

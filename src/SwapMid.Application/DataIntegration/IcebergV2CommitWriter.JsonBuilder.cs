@@ -60,6 +60,7 @@ internal static partial class IcebergV2CommitWriter
         var snapshots = new JsonArray();
         var snapshotLog = new JsonArray();
         var metadataLog = new JsonArray();
+        var refs = new JsonObject();
         long? parentSnapshotId = null;
 
         if (!string.IsNullOrWhiteSpace(previousMetadataJson))
@@ -72,6 +73,17 @@ internal static partial class IcebergV2CommitWriter
                     if (prevNode["current-snapshot-id"] is JsonValue csVal && csVal.TryGetValue<long>(out var pSnap))
                     {
                         parentSnapshotId = pSnap;
+                    }
+
+                    if (prevNode["refs"] is JsonObject prevRefs)
+                    {
+                        foreach (var kv in prevRefs)
+                        {
+                            if (!string.Equals(kv.Key, "main", StringComparison.Ordinal) && kv.Value != null)
+                            {
+                                refs[kv.Key] = kv.Value.DeepClone();
+                            }
+                        }
                     }
 
                     if (prevNode["snapshots"] is JsonArray prevSnaps)
@@ -220,20 +232,34 @@ internal static partial class IcebergV2CommitWriter
                 ["swapmid.write_mode"] = stream.LakehouseWriteMode == LakehouseWriteMode.MergeOnReadUpsert ? "merge-on-read-upsert" : "append-changelog",
             },
             ["current-snapshot-id"] = snapshotId,
-            ["refs"] = new JsonObject
-            {
-                ["main"] = new JsonObject
-                {
-                    ["snapshot-id"] = snapshotId,
-                    ["type"] = "branch",
-                },
-            },
+            ["refs"] = BuildRefsWithMain(refs, snapshotId),
             ["snapshots"] = snapshots,
             ["snapshot-log"] = snapshotLog,
             ["metadata-log"] = metadataLog,
         };
 
         return root.ToJsonString(JsonOptions);
+    }
+
+    private static JsonObject BuildRefsWithMain(JsonObject preserved, long mainSnapshotId)
+    {
+        var result = new JsonObject
+        {
+            ["main"] = new JsonObject
+            {
+                ["snapshot-id"] = mainSnapshotId,
+                ["type"] = "branch",
+            },
+        };
+        foreach (var kv in preserved)
+        {
+            if (!string.Equals(kv.Key, "main", StringComparison.Ordinal) && kv.Value != null)
+            {
+                result[kv.Key] = kv.Value.DeepClone();
+            }
+        }
+
+        return result;
     }
 
     private static JsonObject BuildCdcIcebergSchemaNode()

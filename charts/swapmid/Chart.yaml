@@ -2,8 +2,8 @@ apiVersion: v2
 name: swapmid
 description: Open-source enterprise data exchange and integration platform (.NET 10 + ABP + Next.js BFF)
 type: application
-version: 2.6.1
-appVersion: "2.6.1"
+version: 2.7.0
+appVersion: "2.7.0"
 home: https://github.com/q871958549/SwapMid
 sources:
   - https://github.com/q871958549/SwapMid

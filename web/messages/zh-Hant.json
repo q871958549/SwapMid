@@ -1131,7 +1131,7 @@
       "saslPasswordFieldLabel": "SASL 密碼",
       "testingConnectionMenuItem": "測試中...",
       "schemaRegistryUrlFieldLabel": "Schema Registry 地址（可選）",
-      "schemaRegistryUrlHint": "連接 Confluent / Redpanda Schema Registry 以實時解碼二進制 Avro Debezium 事件",
+      "schemaRegistryUrlHint": "連接 Confluent / Redpanda Schema Registry 以實時解碼二進制 Avro / Protobuf Debezium 事件",
       "schemaRegistryUsernameFieldLabel": "Schema Registry 用戶名",
       "schemaRegistryPasswordFieldLabel": "Schema Registry 密碼"
     },
@@ -1630,7 +1630,18 @@
       "gitOpsExportFailed": "匯出清單失敗",
       "gitOpsDiffFailed": "對比清單失敗",
       "gitOpsApplyFailed": "應用清單失敗",
-      "gitOpsApplyDoneTitle": "GitOps 清單應用完成"
+      "gitOpsApplyDoneTitle": "GitOps 清單應用完成",
+      "icebergRefsSectionTitle": "命名分支與審計標籤 (Refs)",
+      "icebergPinTagButton": "打標籤",
+      "icebergPinTagTargetHint": "將綁定到當前選中快照 v{version}（受 expireSnapshots 永久保護）",
+      "icebergTagSuccessTitle": "Iceberg 命名標籤已創建",
+      "icebergTagFailedTitle": "創建命名標籤失敗",
+      "icebergRetainLastLabel": "至少保留快照",
+      "icebergDeleteOrphansLabel": "同步清理孤兒文件",
+      "icebergExpireDryRunButton": "清理預演",
+      "icebergExpireExecuteButton": "執行清理",
+      "icebergExpireSuccessTitle": "Iceberg 快照過期清理完成",
+      "icebergExpireFailedTitle": "Iceberg 快照過期清理失敗"
     }
   },
   "System": {

@@ -49,7 +49,7 @@ public class DataIntegrationCrudAuthorizationContractTests
         }
 
         contracts.Length.ShouldBe(5);
-        inspectedEntryCount.ShouldBe(48);
+        inspectedEntryCount.ShouldBe(50);
     }
 
     [Fact]
@@ -442,6 +442,8 @@ public class DataIntegrationCrudAuthorizationContractTests
                     new("PreviewLakehouseDataAsync(Guid,GetCdcLakehousePreviewInput,CancellationToken)", CdcStreams + ".Default"),
                     Secured("SyncCatalogAsync(Guid,CancellationToken)", CdcStreams + ".Manage"),
                     Secured("EvaluateContractAsync(Guid,CancellationToken)", CdcStreams + ".Manage"),
+                    Secured("CreateLakehouseTagAsync(Guid,CreateCdcLakehouseTagInput,CancellationToken)", CdcStreams + ".Manage"),
+                    Secured("ExpireLakehouseSnapshotsAsync(Guid,ExpireCdcLakehouseSnapshotsInput,CancellationToken)", CdcStreams + ".Manage"),
                 ],
                 []),
         ];

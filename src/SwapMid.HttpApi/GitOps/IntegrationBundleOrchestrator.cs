@@ -161,7 +161,7 @@ public sealed partial class IntegrationBundleOrchestrator : ITransientDependency
     private async Task<LiveSnapshot> LoadLiveSnapshotAsync(ClaimsPrincipal user, List<string> warnings)
     {
         var snap = new LiveSnapshot();
-        var version = typeof(IntegrationBundleOrchestrator).Assembly.GetName().Version?.ToString(3) ?? "2.6.1";
+        var version = typeof(IntegrationBundleOrchestrator).Assembly.GetName().Version?.ToString(3) ?? "2.7.0";
         snap.Bundle.PlatformVersion = version;
         snap.Bundle.ExportedAtUtc = DateTime.UtcNow.ToString("O");
 

@@ -1,0 +1,82 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+
+namespace SwapMid.DataIntegration;
+
+/// <summary>Apache Iceberg v2 命名引用（Branch / Tag）信息</summary>
+public class CdcLakehouseRefDto
+{
+    public string Name { get; set; } = null!;
+    public string Type { get; set; } = "tag";
+    public long SnapshotId { get; set; }
+    public long? Version { get; set; }
+    public long? MaxRefAgeMs { get; set; }
+}
+
+/// <summary>为 Apache Iceberg v2 快照创建或更新命名标签（WAP / 审计锚点）入参</summary>
+public class CreateCdcLakehouseTagInput
+{
+    /// <summary>标签名称（仅允许字母、数字、点、下划线与连字符，不可为 main）</summary>
+    [Required]
+    [StringLength(64, MinimumLength = 1)]
+    public string TagName { get; set; } = null!;
+
+    /// <summary>目标快照版本号（留空则绑定当前最新快照）</summary>
+    [Range(1, long.MaxValue)]
+    public long? SnapshotVersion { get; set; }
+
+    /// <summary>可选最大保留时长（毫秒，至少 60000 ms）</summary>
+    [Range(60_000, long.MaxValue)]
+    public long? MaxRefAgeMs { get; set; }
+}
+
+/// <summary>Apache Iceberg v2 命名标签创建结果</summary>
+public class CdcLakehouseTagResultDto
+{
+    public Guid StreamId { get; set; }
+    public string TagName { get; set; } = null!;
+    public long SnapshotId { get; set; }
+    public long SnapshotVersion { get; set; }
+    public long MetadataVersion { get; set; }
+    public string MetadataKey { get; set; } = null!;
+    public long? MaxRefAgeMs { get; set; }
+    public DateTime UpdatedAtUtc { get; set; }
+    public string Message { get; set; } = null!;
+}
+
+/// <summary>Apache Iceberg v2 快照过期与孤儿文件安全清理（expireSnapshots）入参</summary>
+public class ExpireCdcLakehouseSnapshotsInput
+{
+    /// <summary>至少保留最近 N 个快照（默认 2，含当前最新快照）</summary>
+    [Range(1, 100)]
+    public int RetainLast { get; set; } = 2;
+
+    /// <summary>仅过期早于当前时间 N 分钟的快照（0 表示按 RetainLast 立即评估历史快照）</summary>
+    [Range(0, 525_600)]
+    public int OlderThanMinutes { get; set; } = 0;
+
+    /// <summary>是否在非预演模式下同步物理删除已无任何保留快照引用的 Parquet/Avro 孤儿对象</summary>
+    public bool DeleteOrphanedFiles { get; set; } = false;
+
+    /// <summary>默认 true（仅输出只读清理计划，绝不修改元数据或删除对象）</summary>
+    public bool DryRun { get; set; } = true;
+}
+
+/// <summary>Apache Iceberg v2 快照过期与孤儿清理计划 / 执行结果</summary>
+public class CdcLakehouseExpireResultDto
+{
+    public Guid StreamId { get; set; }
+    public bool DryRun { get; set; }
+    public long CurrentMetadataVersion { get; set; }
+    public long? NewMetadataVersion { get; set; }
+    public int RetainedSnapshotCount { get; set; }
+    public int ExpiredSnapshotCount { get; set; }
+    public int PinnedByRefCount { get; set; }
+    public List<long> ExpiredVersions { get; set; } = new();
+    public int CandidateOrphanFileCount { get; set; }
+    public int DeletedOrphanFileCount { get; set; }
+    public long ReclaimableBytes { get; set; }
+    public DateTime CompletedAtUtc { get; set; }
+    public string Summary { get; set; } = null!;
+}

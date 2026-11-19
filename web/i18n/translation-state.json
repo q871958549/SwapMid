@@ -6208,10 +6208,10 @@
       "traditionalHash": "7801163ab08366947b874f44"
     },
     "DataIntegration.source.schemaRegistryUrlHint": {
-      "sourceHash": "194db44c42259d26faf51b1e",
-      "englishHash": "6ca03306cc7886e50126eed1",
-      "traditionalSourceHash": "9098fc84f7b46af132d4324e",
-      "traditionalHash": "d119dec8dbb11c84c6e9e3fe"
+      "sourceHash": "ced490ef9ebf120c57e1f60e",
+      "englishHash": "62043d63f34ec56119fdda78",
+      "traditionalSourceHash": "1f7e2acf802948a630427b52",
+      "traditionalHash": "dc9a31d53d20ba0059f2ada4"
     },
     "DataIntegration.source.schemaRegistryUsernameFieldLabel": {
       "sourceHash": "8b1f2bc0a16d2a7372ce2b6c",
@@ -9170,6 +9170,72 @@
       "englishHash": "f569eb49f9b602304519b5e4",
       "traditionalSourceHash": "a03b6105a55685d741d20594",
       "traditionalHash": "0335bbec1436a87e2848dc9b"
+    },
+    "DataIntegration.cdc.icebergRefsSectionTitle": {
+      "sourceHash": "4706bed65c1fa28b13567a4a",
+      "englishHash": "00a4d2a801b7c7e45257672c",
+      "traditionalSourceHash": "cf656c722f4ea246ab8113c0",
+      "traditionalHash": "d048d86dbc75703f4656ec13"
+    },
+    "DataIntegration.cdc.icebergPinTagButton": {
+      "sourceHash": "386f31f4c77cc20d28b32d0f",
+      "englishHash": "7b9ab9a576df4f6afb68084e",
+      "traditionalSourceHash": "93e204de154463c82a465c6f",
+      "traditionalHash": "dd52fe093abaef6132947980"
+    },
+    "DataIntegration.cdc.icebergPinTagTargetHint": {
+      "sourceHash": "0ba110e0c0be43de9b51fd2b",
+      "englishHash": "5eb4362d541a67937eb1a173",
+      "traditionalSourceHash": "1eee9960ccc669c997bae83c",
+      "traditionalHash": "b4378ca9dbaab1f18943ed5c"
+    },
+    "DataIntegration.cdc.icebergTagSuccessTitle": {
+      "sourceHash": "068c3c933e71069fb14bae7e",
+      "englishHash": "e7d46320a30f1df43ae2f5f6",
+      "traditionalSourceHash": "add173466228dde6faa562a1",
+      "traditionalHash": "6b9e5956dda78864abb76aab"
+    },
+    "DataIntegration.cdc.icebergTagFailedTitle": {
+      "sourceHash": "f5351c1d6212f907dc5cd11e",
+      "englishHash": "242ca8d99dba268d8725256a",
+      "traditionalSourceHash": "b9160aab8f5926623f22893c",
+      "traditionalHash": "d23b2a130300b9b260aacda2"
+    },
+    "DataIntegration.cdc.icebergRetainLastLabel": {
+      "sourceHash": "1f4c2b52e0947503836a648d",
+      "englishHash": "e738f81b316ef17fd9e52599",
+      "traditionalSourceHash": "0c362fc8622c54f638b420ad",
+      "traditionalHash": "521f57ddd500761a690ffcf7"
+    },
+    "DataIntegration.cdc.icebergDeleteOrphansLabel": {
+      "sourceHash": "e4342d05a692fd6455b5b4a5",
+      "englishHash": "39a1f36582dd3e627ff5ea22",
+      "traditionalSourceHash": "b309adaf8327db2a71190578",
+      "traditionalHash": "45919d085473f3c890366a31"
+    },
+    "DataIntegration.cdc.icebergExpireDryRunButton": {
+      "sourceHash": "7da09f1fe7ac0db9eac9f3b3",
+      "englishHash": "84738f88a5d6a8eeab8eb7ff",
+      "traditionalSourceHash": "14289a70dac1a4ab08755be2",
+      "traditionalHash": "45fbe33371bec8e67974f160"
+    },
+    "DataIntegration.cdc.icebergExpireExecuteButton": {
+      "sourceHash": "297c95727e1a66514531dfd9",
+      "englishHash": "1c29efccf85b0d5c47a582db",
+      "traditionalSourceHash": "b8ff09bdcfa6e682bae4e7d8",
+      "traditionalHash": "5f689c009211724f5edc88aa"
+    },
+    "DataIntegration.cdc.icebergExpireSuccessTitle": {
+      "sourceHash": "5e6def570bba524769bccc9f",
+      "englishHash": "cf2dd8272c56006383cc0b1e",
+      "traditionalSourceHash": "6a17ba38574376b80b6e0aa5",
+      "traditionalHash": "516b147fd96fc9eefec80b5f"
+    },
+    "DataIntegration.cdc.icebergExpireFailedTitle": {
+      "sourceHash": "3678278a1f6679f2e48bb899",
+      "englishHash": "b844bbe995c28902b426d262",
+      "traditionalSourceHash": "a861bf82597d3694a71fd7e9",
+      "traditionalHash": "4c5b9dbfe11a93540eb46422"
     },
     "System.common.refresh": {
       "sourceHash": "ed94cd3ab755a61dfa2e13b4",

@@ -336,8 +336,10 @@ export function CdcStreamsClient({
         loadingVersion={actions.historyLoadingVersion}
         preview={actions.previewState}
         previewLoading={actions.previewLoading}
+        canManage={canManage}
         onSelectVersion={(stream, version) => void actions.handleOpenHistory(stream, version)}
         onLoadPreview={(stream, version) => void actions.handleLoadPreview(stream, version)}
+        onRefresh={stream => void actions.handleOpenHistory(stream)}
         onClose={actions.closeHistory}
       />
       <CdcWebhookDeliveriesDialog

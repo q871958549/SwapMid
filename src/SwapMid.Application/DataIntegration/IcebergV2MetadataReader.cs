@@ -72,6 +72,7 @@ internal static class IcebergV2MetadataReader
         }
 
         var snapshots = ParseSnapshots(metadataJson, config, destination);
+        var refs = ParseRefs(metadataJson, snapshots);
         if (snapshots.Count == 0)
         {
             return new CdcLakehouseHistoryDto
@@ -139,6 +140,8 @@ internal static class IcebergV2MetadataReader
             config,
             tableDir,
             selectedSeq,
+            latestSeq ?? selectedSeq,
+            selectedSeq == currentSeq,
             selectedSnap.SnapshotId,
             stream.LakehousePartitionStrategy,
             stream.LakehouseWriteMode,
@@ -170,6 +173,7 @@ internal static class IcebergV2MetadataReader
             SelectedTotalRecordCount = totalRecords,
             Commits = recentCommits,
             ActiveFiles = activeFiles,
+            Refs = refs,
             TimeTravelQuerySql = timeTravelSql,
             Summary = $"Apache Iceberg v2 · v{selectedSeq}（当前最新 v{currentSeq}，Snapshot {selectedSnap.SnapshotId}{partitionTag}{morTag}，活跃 Parquet 分片 {activeFiles.Count} 个，记录 {totalRecords} 条）。",
         };
@@ -295,10 +299,69 @@ internal static class IcebergV2MetadataReader
         return (selectedSeq, entries);
     }
 
+    private static List<CdcLakehouseRefDto> ParseRefs(
+        string metadataJson,
+        IReadOnlyList<ParsedIcebergSnapshot> snapshots)
+    {
+        var list = new List<CdcLakehouseRefDto>();
+        try
+        {
+            using var doc = JsonDocument.Parse(metadataJson);
+            if (!doc.RootElement.TryGetProperty("refs", out var refsEl) || refsEl.ValueKind != JsonValueKind.Object)
+            {
+                return list;
+            }
+
+            var snapVersionById = snapshots.ToDictionary(s => s.SnapshotId, s => s.Summary.Version);
+            foreach (var prop in refsEl.EnumerateObject())
+            {
+                if (prop.Value.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                var sid = prop.Value.TryGetProperty("snapshot-id", out var sidEl) && sidEl.TryGetInt64(out var sVal)
+                    ? sVal
+                    : 0L;
+                if (sid <= 0)
+                {
+                    continue;
+                }
+
+                var type = prop.Value.TryGetProperty("type", out var typeEl) && typeEl.ValueKind == JsonValueKind.String
+                    ? (typeEl.GetString() ?? "tag")
+                    : "tag";
+                long? maxRefAgeMs = prop.Value.TryGetProperty("max-ref-age-ms", out var ageEl) && ageEl.TryGetInt64(out var ageVal)
+                    ? ageVal
+                    : null;
+
+                list.Add(new CdcLakehouseRefDto
+                {
+                    Name = prop.Name,
+                    Type = type,
+                    SnapshotId = sid,
+                    Version = snapVersionById.TryGetValue(sid, out var ver) ? ver : null,
+                    MaxRefAgeMs = maxRefAgeMs,
+                });
+            }
+        }
+        catch (JsonException)
+        {
+            return list;
+        }
+
+        return list
+            .OrderByDescending(r => string.Equals(r.Name, "main", StringComparison.Ordinal))
+            .ThenBy(r => r.Name, StringComparer.Ordinal)
+            .ToList();
+    }
+
     private static string BuildIcebergTimeTravelSql(
         ObjectStorageSinkConfig config,
         string tableDir,
         long selectedSeq,
+        long latestMetadataSeq,
+        bool isCurrentSnapshot,
         long snapshotId,
         LakehousePartitionStrategy partitionStrategy,
         LakehouseWriteMode writeMode,
@@ -308,7 +371,8 @@ internal static class IcebergV2MetadataReader
         var s3Base = string.IsNullOrEmpty(tableDir)
             ? $"s3://{config.Bucket}"
             : $"s3://{config.Bucket}/{tableDir}";
-        var metadataUri = $"{s3Base}/metadata/v{selectedSeq}.metadata.json";
+        var metadataVersionForScan = isCurrentSnapshot ? latestMetadataSeq : selectedSeq;
+        var metadataUri = $"{s3Base}/metadata/v{metadataVersionForScan}.metadata.json";
 
         var duckdbFiles = activeFiles.Count > 0
             ? string.Join(",\n  ", activeFiles.Take(8).Select(f => $"'s3://{config.Bucket}/{f.ObjectKey}'"))

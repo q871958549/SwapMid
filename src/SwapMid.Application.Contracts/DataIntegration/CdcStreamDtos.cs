@@ -403,6 +403,7 @@ public class CdcLakehouseHistoryDto
     public long SelectedTotalRecordCount { get; set; }
     public List<CdcDeltaCommitSummaryDto> Commits { get; set; } = new();
     public List<CdcDeltaActiveFileDto> ActiveFiles { get; set; } = new();
+    public List<CdcLakehouseRefDto> Refs { get; set; } = new();
     public string? TimeTravelQuerySql { get; set; }
     public string Summary { get; set; } = null!;
 }

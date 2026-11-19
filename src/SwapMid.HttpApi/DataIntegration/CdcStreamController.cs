@@ -178,4 +178,22 @@ public class CdcStreamController : SwapMidController, ICdcStreamAppService
         Guid id,
         CancellationToken cancellationToken = default)
         => _service.EvaluateContractAsync(id, cancellationToken);
+
+    /// <summary>为 Apache Iceberg v2 快照创建或更新命名标签（WAP / 审计锚点，受 expireSnapshots 永久保护）</summary>
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    [HttpPost("{id}/lakehouse-tags")]
+    public Task<CdcLakehouseTagResultDto> CreateLakehouseTagAsync(
+        Guid id,
+        [FromBody] CreateCdcLakehouseTagInput input,
+        CancellationToken cancellationToken = default)
+        => _service.CreateLakehouseTagAsync(id, input, cancellationToken);
+
+    /// <summary>安全评估或执行 Apache Iceberg v2 快照过期（expireSnapshots）与孤儿对象清理（默认 DryRun=true）</summary>
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    [HttpPost("{id}/expire-lakehouse-snapshots")]
+    public Task<CdcLakehouseExpireResultDto> ExpireLakehouseSnapshotsAsync(
+        Guid id,
+        [FromBody] ExpireCdcLakehouseSnapshotsInput? input = null,
+        CancellationToken cancellationToken = default)
+        => _service.ExpireLakehouseSnapshotsAsync(id, input ?? new ExpireCdcLakehouseSnapshotsInput(), cancellationToken);
 }

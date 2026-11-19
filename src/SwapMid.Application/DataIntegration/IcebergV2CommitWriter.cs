@@ -33,7 +33,7 @@ internal readonly record struct IcebergCommitReceipt(
 internal static partial class IcebergV2CommitWriter
 {
     private const int MaxOptimisticRetries = 64;
-    private const string EngineName = "SwapMid-2.6.1";
+    private const string EngineName = "SwapMid-2.7.0";
 
     internal static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -273,7 +273,7 @@ internal static partial class IcebergV2CommitWriter
             .WithData("Reason", "Apache Iceberg v2 元数据并发提交版本号竞争超出最大重试次数，请重试提交。");
     }
 
-    private static async Task<(long LatestSeq, string? LatestJson)> ProbeLatestMetadataAsync(
+    internal static async Task<(long LatestSeq, string? LatestJson)> ProbeLatestMetadataAsync(
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
         ObjectStorageSinkConfig config,
@@ -427,7 +427,7 @@ internal static partial class IcebergV2CommitWriter
         return raw == 0 ? sequenceNumber : raw;
     }
 
-    private static async Task<bool> PutMetadataIfAbsentAsync(
+    internal static async Task<bool> PutMetadataIfAbsentAsync(
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
         ObjectStorageSinkConfig config,
@@ -465,7 +465,7 @@ internal static partial class IcebergV2CommitWriter
             .WithData("Reason", SinkConfigContractHelpers.RedactDiagnosticText($"Apache Iceberg v2 元数据 PUT 失败 ({(int)response.StatusCode}): {err}"));
     }
 
-    private static async Task PutVersionHintAsync(
+    internal static async Task PutVersionHintAsync(
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
         ObjectStorageSinkConfig config,

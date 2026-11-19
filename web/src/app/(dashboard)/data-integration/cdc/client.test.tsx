@@ -1420,4 +1420,111 @@ describe('CdcStreamsClient', () => {
     fireEvent.click(screen.getByRole('button', { name: '预演' }))
     expect(await screen.findByText('DryRun: Create 1')).toBeTruthy()
   })
+
+  it('pins Iceberg v2 named tag and runs expireSnapshots Dry-Run inside Time-Travel dialog', async () => {
+    mocks.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          destination: 'orders/wap',
+          tableFormat: 2,
+          writeMode: 1,
+          deltaLogDirectory: 'warehouse/orders/wap/metadata',
+          currentVersion: 3,
+          selectedVersion: 3,
+          totalCommitCount: 3,
+          selectedActiveFileCount: 1,
+          selectedEqualityDeleteFileCount: 0,
+          selectedEqualityDeleteRecordCount: 0,
+          selectedTotalBytes: 2048,
+          selectedTotalRecordCount: 2,
+          refs: [
+            { name: 'main', type: 'branch', snapshotId: 300, version: 3 },
+            { name: 'audit-v1', type: 'tag', snapshotId: 100, version: 1 },
+          ],
+          commits: [
+            { version: 3, timestampUtc: '2026-11-19T12:00:00Z', operation: 'REPLACE', addedFileCount: 1, removedFileCount: 2, totalRecordCount: 2, deltaCommitKey: 'v3' },
+          ],
+          activeFiles: [],
+          summary: 'Apache Iceberg v2 · v3',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          tagName: 'release-v3',
+          snapshotId: 300,
+          snapshotVersion: 3,
+          metadataVersion: 4,
+          metadataKey: 'warehouse/orders/wap/metadata/v4.metadata.json',
+          updatedAtUtc: '2026-11-19T12:05:00Z',
+          message: 'Pinned release-v3',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          destination: 'orders/wap',
+          tableFormat: 2,
+          writeMode: 1,
+          deltaLogDirectory: 'warehouse/orders/wap/metadata',
+          currentVersion: 3,
+          selectedVersion: 3,
+          totalCommitCount: 3,
+          selectedActiveFileCount: 1,
+          refs: [
+            { name: 'main', type: 'branch', snapshotId: 300, version: 3 },
+            { name: 'audit-v1', type: 'tag', snapshotId: 100, version: 1 },
+            { name: 'release-v3', type: 'tag', snapshotId: 300, version: 3 },
+          ],
+          commits: [],
+          activeFiles: [],
+          summary: 'Apache Iceberg v2 · v3',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          dryRun: true,
+          currentMetadataVersion: 4,
+          retainedSnapshotCount: 2,
+          expiredSnapshotCount: 1,
+          pinnedByRefCount: 1,
+          expiredVersions: [2],
+          candidateOrphanFileCount: 3,
+          deletedOrphanFileCount: 0,
+          reclaimableBytes: 4096,
+          completedAtUtc: '2026-11-19T12:06:00Z',
+          summary: 'Dry-Run 维护计划（零修改）：可过期快照 1 个',
+        }),
+      })
+
+    renderClient(makeStream({
+      sourceType: 4,
+      status: 1,
+      targetMode: 2,
+      targetSinkId: SOURCE_ID,
+      targetSinkType: 5,
+      targetSinkName: 'minio-iceberg',
+      targetSinkDestination: 'orders/wap',
+      targetSinkKeyColumns: 'order_id',
+      lakehouseTableFormat: 2,
+      lakehouseWriteMode: 1,
+    }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Time-Travel' }))
+    expect(await screen.findByText('tag:audit-v1 · v1')).toBeTruthy()
+
+    const tagInput = screen.getByPlaceholderText('audit-2026-11')
+    fireEvent.change(tagInput, { target: { value: 'release-v3' } })
+    fireEvent.click(screen.getByRole('button', { name: '打标签' }))
+    expect(await screen.findByText('tag:release-v3 · v3')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '清理预演' }))
+    expect(await screen.findByText(/可过期快照 1 个/)).toBeTruthy()
+  })
 })

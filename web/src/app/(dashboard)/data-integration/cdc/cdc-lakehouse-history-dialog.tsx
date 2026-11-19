@@ -8,6 +8,7 @@ import { Dialog } from '@/components/ui/dialog'
 import { ScrollableDialogContent } from '@/components/ui/scrollable-dialog'
 import { StatusBadge } from '@/components/ui/status-badge'
 import type { CdcLakehouseHistoryDto, CdcLakehousePreviewDto, CdcStreamDto } from '@/lib/api/types'
+import { CdcIcebergMaintenanceSection } from './cdc-iceberg-maintenance-section'
 
 export interface CdcLakehouseHistoryState {
   stream: CdcStreamDto
@@ -27,16 +28,20 @@ export function CdcLakehouseHistoryDialog({
   loadingVersion,
   preview,
   previewLoading,
+  canManage = false,
   onSelectVersion,
   onLoadPreview,
+  onRefresh,
   onClose,
 }: {
   state: CdcLakehouseHistoryState | null
   loadingVersion: number | null
   preview?: CdcLakehousePreviewDto | null
   previewLoading?: boolean
+  canManage?: boolean
   onSelectVersion: (stream: CdcStreamDto, version: number) => void
   onLoadPreview?: (stream: CdcStreamDto, version: number) => void
+  onRefresh?: (stream: CdcStreamDto) => void
   onClose: () => void
 }) {
   const t = useTranslations('DataIntegration.cdc')
@@ -107,6 +112,16 @@ export function CdcLakehouseHistoryDialog({
                     </StatusBadge>
                   )}
                 </div>
+              )}
+
+              {isIceberg && (
+                <CdcIcebergMaintenanceSection
+                  stream={state.stream}
+                  selectedVersion={state.history.selectedVersion}
+                  refs={state.history.refs ?? []}
+                  canManage={canManage}
+                  onMutated={() => (onRefresh ? onRefresh(state.stream) : undefined)}
+                />
               )}
 
               <div className="space-y-1.5">

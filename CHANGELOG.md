@@ -4,6 +4,22 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2026-11-19
+
+### Added
+- **Apache Iceberg v2 WAP Named Tags (`refs`) & Safe `expireSnapshots` Orphan Garbage Collection**:
+  - Added pure-.NET `IcebergV2MaintenanceService`, DTOs (`CdcLakehouseMaintenanceDtos.cs`), and endpoints `POST /api/v1/cdc-streams/{id}/lakehouse-tags` and `POST /api/v1/cdc-streams/{id}/expire-lakehouse-snapshots` (`DryRun = true` default, `[Authorize(CdcStreams.Manage)]`).
+  - Upgraded `IcebergV2CommitWriter.JsonBuilder.cs` to preserve all non-`main` named `refs` across subsequent CDC writes/compactions, and upgraded `IcebergV2MetadataReader.cs` to expose `Refs` and resolve latest metadata paths (`v{metaSeq}.metadata.json`) for DuckDB/Trino/Spark Time-Travel SQL.
+  - Enforced strict reference-counted orphan reclamation: `expireSnapshots` permanently protects `current-snapshot-id`, the last `RetainLast` snapshots, and every snapshot referenced by a named branch/tag (`refs`), physically deleting only unreferenced Parquet/Equality Delete/Avro manifest objects when `DeleteOrphanedFiles = true` — verified live with official **`duckdb/duckdb:latest` (`v2.0.0`) `iceberg_scan()`** across both post-expiration `v6` (`3` live rows) and tag-protected `audit-v1` `v1` (`2` historical rows) after deleting `8/8` orphan objects.
+  - Added Prometheus metric `swapmid_cdc_iceberg_maintenance_total{operation,outcome}` and Grafana Panel 10 maintenance series, plus the new `/data-integration/cdc` Time-Travel **`命名分支与审计标签 (Refs)`** / **`打标签`** / **`清理预演`** / **`执行清理`** panel (`CdcIcebergMaintenanceSection`).
+- **Confluent / Redpanda Schema Registry Wire-Format Protobuf & JSON Schema Decoding**:
+  - Added zero-dependency pure-.NET `ProtobufSchemaParser` and `ProtobufWireDatumReader` supporting `proto2`/`proto3` `message`, nested messages, `enum`, `oneof`, packed/unpacked `repeated`, `map<K,V>`, and Confluent ZigZag Varint message-index arrays (`0x00` shortcut & multi-index nested paths).
+  - Upgraded `ConfluentSchemaRegistryClient` to transparently dispatch `AVRO`, `PROTOBUF`, and `JSON` Schema Registry wire payloads (`0x00` + 4-byte BE `schemaId`) — verified live against real **Redpanda v24.3.6** built-in Schema Registry (`schemaType: "PROTOBUF"`).
+- **GitOps PR Drift Gate Action, Environment Secret Placeholder Resolution & MCP Tool 12**:
+  - Upgraded [scripts/swapmidctl.mjs](scripts/swapmidctl.mjs) with fail-closed `${ENV_SECRET:NAME}` placeholder resolution (`--resolve-env-secrets`, never echoing secrets), PR-ready Markdown output (`--markdown`), and CI exit-code signaling (`--exit-code`: `0` clean / `2` drift), covered by [scripts/swapmidctl.test.mjs](scripts/swapmidctl.test.mjs).
+  - Added turnkey composite GitHub Action [.github/actions/swapmid-gitops-diff/action.yml](.github/actions/swapmid-gitops-diff/action.yml) outputting PR drift summaries to `GITHUB_STEP_SUMMARY`.
+  - Added RBAC-gated read-only MCP Tool 12 `plan_lakehouse_maintenance` (`McpLakehouseMaintenanceHandler`), expanded `scripts/e2e-smoke.mjs` to assert 12 MCP tools, and maintained **100.0% (`204/204`)** `/api/v1` OpenAPI summary coverage and `2,162` trilingual i18n keys.
+
 ## [2.6.1] - 2026-11-19
 
 ### Fixed

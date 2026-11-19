@@ -4,8 +4,8 @@
  *
  * Commands:
  *   export [--format yaml|json] [-o bundle.yaml]
- *   diff   -f <bundle.yaml|json>
- *   apply  -f <bundle.yaml|json> [--dry-run=true|false] [--update-existing]
+ *   diff   -f <bundle.yaml|json> [--markdown] [--exit-code]
+ *   apply  -f <bundle.yaml|json> [--dry-run=true|false | --execute] [--update-existing] [--resolve-env-secrets]
  *   health
  *
  * Environment variables:
@@ -17,10 +17,56 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 
 const API_BASE = (process.env.SWAPMID_API_URL ?? process.env.API_BASE_URL ?? 'http://127.0.0.1:18080').replace(/\/+$/, '')
+const ENV_SECRET_PATTERN = /\$\{ENV_SECRET:([A-Z][A-Z0-9_]{0,63})\}/g
+
+export function resolveEnvSecretPlaceholders(rawText, env = process.env) {
+  const missing = new Set()
+  let resolvedCount = 0
+  const resolved = rawText.replace(ENV_SECRET_PATTERN, (_match, name) => {
+    const val = env[name]
+    if (val === undefined || val === '') {
+      missing.add(name)
+      return _match
+    }
+    resolvedCount += 1
+    // Escape characters that could break JSON/YAML double-quoted scalars when injected into config strings.
+    return val.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r/g, '\\r').replace(/\n/g, '\\n')
+  })
+  if (missing.size > 0) {
+    throw new Error(`Missing required environment secret(s) for \${ENV_SECRET:...} placeholders: ${Array.from(missing).sort().join(', ')}`)
+  }
+  return { content: resolved, resolvedCount }
+}
+
+export function formatDiffMarkdown(diff) {
+  const lines = [
+    '### SwapMid GitOps Drift Plan (`swapmid.io/v1`)',
+    '',
+    `> ${diff.summary}`,
+    '',
+    '| Action | Kind | Name | Changed Fields | Note |',
+    '| :--- | :--- | :--- | :--- | :--- |',
+  ]
+  for (const item of diff.items ?? []) {
+    const fields = item.changedFields?.length ? `\`${item.changedFields.join(', ')}\`` : '-'
+    const note = item.note ? String(item.note).replace(/\|/g, '\\|') : '-'
+    lines.push(`| \`${item.action}\` | \`${item.kind}\` | \`${item.name}\` | ${fields} | ${note} |`)
+  }
+  return `${lines.join('\n')}\n`
+}
 
 function parseArgs(argv) {
   const [cmd, ...rest] = argv
-  const opts = { format: 'yaml', output: null, file: null, dryRun: true, updateExisting: false }
+  const opts = {
+    format: 'yaml',
+    output: null,
+    file: null,
+    dryRun: true,
+    updateExisting: false,
+    resolveEnvSecrets: false,
+    exitCode: false,
+    markdown: false,
+  }
   for (let i = 0; i < rest.length; i += 1) {
     const arg = rest[i]
     if ((arg === '--format' || arg === '-t') && rest[i + 1]) {
@@ -35,6 +81,12 @@ function parseArgs(argv) {
       opts.dryRun = true
     } else if (arg === '--update-existing') {
       opts.updateExisting = true
+    } else if (arg === '--resolve-env-secrets') {
+      opts.resolveEnvSecrets = true
+    } else if (arg === '--exit-code') {
+      opts.exitCode = true
+    } else if (arg === '--markdown') {
+      opts.markdown = true
     }
   }
   return { cmd, opts }
@@ -47,7 +99,7 @@ async function resolveToken() {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       grant_type: 'password',
-      username: process.env.SWAPMID_USER ?? 'admin',
+      username: process.env.SWAPMID_USER ?? process.env.SWAPMID_USERNAME ?? 'admin',
       password: process.env.SWAPMID_PASSWORD ?? '1q2w3E*',
       client_id: 'SwapMid_App',
       scope: 'openid profile email roles SwapMid',
@@ -82,8 +134,8 @@ function printHelp() {
 Usage:
   node scripts/swapmidctl.mjs health
   node scripts/swapmidctl.mjs export [--format yaml|json] [-o bundle.yaml]
-  node scripts/swapmidctl.mjs diff -f <bundle.yaml|json>
-  node scripts/swapmidctl.mjs apply -f <bundle.yaml|json> [--dry-run | --execute] [--update-existing]
+  node scripts/swapmidctl.mjs diff -f <bundle.yaml|json> [--markdown] [--exit-code]
+  node scripts/swapmidctl.mjs apply -f <bundle.yaml|json> [--dry-run | --execute] [--update-existing] [--resolve-env-secrets]
 `)
 }
 
@@ -118,18 +170,36 @@ async function main() {
     if (!opts.file) {
       throw new Error(`Missing required -f <bundle.yaml|json> argument for '${cmd}'.`)
     }
-    const content = readFileSync(opts.file, 'utf8')
+    let content = readFileSync(opts.file, 'utf8')
+    if (opts.resolveEnvSecrets) {
+      const resolved = resolveEnvSecretPlaceholders(content, process.env)
+      content = resolved.content
+      console.error(`[swapmidctl] Resolved ${resolved.resolvedCount} \${ENV_SECRET:...} placeholder(s) in memory (never echoed).`)
+    } else if (cmd === 'apply' && !opts.dryRun && ENV_SECRET_PATTERN.test(content)) {
+      ENV_SECRET_PATTERN.lastIndex = 0
+      throw new Error('Bundle contains unresolved ${ENV_SECRET:...} placeholder(s). Re-run with --resolve-env-secrets and export required env vars.')
+    }
+    ENV_SECRET_PATTERN.lastIndex = 0
+
     if (cmd === 'diff') {
       const diff = await apiJson('/api/v1/integration-bundles/diff', {
         method: 'POST',
         token,
         body: { content },
       })
-      console.log(diff.summary)
-      for (const item of diff.items) {
-        const fields = item.changedFields?.length ? ` (${item.changedFields.join(', ')})` : ''
-        const note = item.note ? ` — ${item.note}` : ''
-        console.log(`  [${item.action}] ${item.kind}/${item.name}${fields}${note}`)
+      if (opts.markdown) {
+        process.stdout.write(formatDiffMarkdown(diff))
+      } else {
+        console.log(diff.summary)
+        for (const item of diff.items) {
+          const fields = item.changedFields?.length ? ` (${item.changedFields.join(', ')})` : ''
+          const note = item.note ? ` — ${item.note}` : ''
+          console.log(`  [${item.action}] ${item.kind}/${item.name}${fields}${note}`)
+        }
+      }
+      const hasDrift = (diff.createCount ?? 0) > 0 || (diff.updateCount ?? 0) > 0 || (diff.needsSecretCount ?? 0) > 0
+      if (opts.exitCode && hasDrift) {
+        process.exitCode = 2
       }
       return
     }
@@ -152,7 +222,10 @@ async function main() {
   process.exitCode = 1
 }
 
-main().catch((err) => {
-  console.error(`[swapmidctl] ERROR: ${err.message}`)
-  process.exit(1)
-})
+const isEntrypoint = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'))
+if (isEntrypoint) {
+  main().catch((err) => {
+    console.error(`[swapmidctl] ERROR: ${err.message}`)
+    process.exit(1)
+  })
+}

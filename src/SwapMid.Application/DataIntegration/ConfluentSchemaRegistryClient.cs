@@ -23,7 +23,9 @@ namespace SwapMid.DataIntegration;
 internal static class ConfluentSchemaRegistryClient
 {
     private const int MaxCachedSchemas = 256;
-    private static readonly ConcurrentDictionary<string, string> SchemaCache = new(StringComparer.Ordinal);
+    private static readonly ConcurrentDictionary<string, CachedRegistrySchema> SchemaCache = new(StringComparer.Ordinal);
+
+    internal readonly record struct CachedRegistrySchema(string SchemaType, string SchemaText);
 
     internal static bool IsConfluentWirePayload(byte[]? raw)
         => raw is { Length: >= 5 } && raw[0] == 0x00;
@@ -74,6 +76,14 @@ internal static class ConfluentSchemaRegistryClient
         KafkaSinkConfig kafkaConfig,
         int schemaId,
         CancellationToken cancellationToken)
+        => (await FetchSchemaAsync(httpClientFactory, configuration, kafkaConfig, schemaId, cancellationToken)).SchemaText;
+
+    internal static async Task<CachedRegistrySchema> FetchSchemaAsync(
+        IHttpClientFactory httpClientFactory,
+        IConfiguration configuration,
+        KafkaSinkConfig kafkaConfig,
+        int schemaId,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(kafkaConfig.SchemaRegistryUrl))
         {
@@ -104,13 +114,17 @@ internal static class ConfluentSchemaRegistryClient
 
         var json = await resp.Content.ReadAsStringAsync(cancellationToken);
         using var doc = JsonDocument.Parse(json);
-        if (doc.RootElement.TryGetProperty("schemaType", out var stProp) &&
-            stProp.ValueKind == JsonValueKind.String &&
-            !string.Equals(stProp.GetString(), "AVRO", StringComparison.OrdinalIgnoreCase))
+        var schemaType = doc.RootElement.TryGetProperty("schemaType", out var stProp) &&
+                         stProp.ValueKind == JsonValueKind.String &&
+                         !string.IsNullOrWhiteSpace(stProp.GetString())
+            ? stProp.GetString()!.Trim().ToUpperInvariant()
+            : "AVRO";
+
+        if (schemaType is not ("AVRO" or "PROTOBUF" or "JSON"))
         {
             PlatformMetrics.CdcSchemaRegistryFetchesTotal.WithLabels("failed").Inc();
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-                .WithData("Reason", $"Schema ID {schemaId} 类型为 {stProp.GetString()}，当前二进制解码仅支持 AVRO。");
+                .WithData("Reason", $"Schema ID {schemaId} 类型为 {schemaType}，当前支持 AVRO、PROTOBUF 与 JSON。");
         }
 
         if (!doc.RootElement.TryGetProperty("schema", out var schemaProp) ||
@@ -122,15 +136,15 @@ internal static class ConfluentSchemaRegistryClient
                 .WithData("Reason", $"Schema Registry 返回的 Schema ID {schemaId} 缺少有效 schema 定义。");
         }
 
-        var avroSchemaJson = schemaProp.GetString()!;
+        var entry = new CachedRegistrySchema(schemaType, schemaProp.GetString()!);
         if (SchemaCache.Count >= MaxCachedSchemas)
         {
             SchemaCache.Clear();
         }
 
-        SchemaCache[cacheKey] = avroSchemaJson;
+        SchemaCache[cacheKey] = entry;
         PlatformMetrics.CdcSchemaRegistryFetchesTotal.WithLabels("fetched").Inc();
-        return avroSchemaJson;
+        return entry;
     }
 
     internal static async Task<PgOutputCapturedChange?> TryDecodeConfluentAvroMessageAsync(
@@ -155,15 +169,26 @@ internal static class ConfluentSchemaRegistryClient
             return null;
         }
 
-        var avroSchemaJson = await FetchAvroSchemaAsync(
+        var schema = await FetchSchemaAsync(
             httpClientFactory, configuration, kafkaConfig, schemaId, cancellationToken);
-        var decoded = AvroBinaryDatumReader.Decode(avroSchemaJson, rawPayload.AsSpan(5));
-        if (decoded == null)
+        string normalizedJson;
+        if (string.Equals(schema.SchemaType, "PROTOBUF", StringComparison.Ordinal))
         {
-            return null;
+            var decodedProto = ProtobufWireDatumReader.DecodeConfluentPayload(schema.SchemaText, rawPayload.AsSpan(5));
+            if (decodedProto == null) return null;
+            normalizedJson = decodedProto.ToJsonString();
+        }
+        else if (string.Equals(schema.SchemaType, "JSON", StringComparison.Ordinal))
+        {
+            normalizedJson = Encoding.UTF8.GetString(rawPayload.AsSpan(5));
+        }
+        else
+        {
+            var decoded = AvroBinaryDatumReader.Decode(schema.SchemaText, rawPayload.AsSpan(5));
+            if (decoded == null) return null;
+            normalizedJson = JsonSerializer.Serialize(decoded);
         }
 
-        var normalizedJson = JsonSerializer.Serialize(decoded);
         return KafkaDebeziumEnvelopeParser.TryParseMessage(
             normalizedJson, topic, partition, offset, fallbackTimestampUtc, out var change)
             ? change

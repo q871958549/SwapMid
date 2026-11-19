@@ -6604,6 +6604,144 @@ export const API_MODULES: ApiModule[] = [
             ]
           },
           {
+            "method": "POST",
+            "path": "/api/v1/cdc-streams/{id}/expire-lakehouse-snapshots",
+            "summary": "安全评估或执行 Apache Iceberg v2 快照过期（expireSnapshots）与孤儿对象清理（默认 DryRun=true）",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "requestBody": [
+              {
+                "name": "retainLast",
+                "cnName": "",
+                "type": "integer",
+                "description": "至少保留最近 N 个快照（默认 2，含当前最新快照）",
+                "required": false
+              },
+              {
+                "name": "olderThanMinutes",
+                "cnName": "",
+                "type": "integer",
+                "description": "仅过期早于当前时间 N 分钟的快照（0 表示按 RetainLast 立即评估历史快照）",
+                "required": false
+              },
+              {
+                "name": "deleteOrphanedFiles",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否在非预演模式下同步物理删除已无任何保留快照引用的 Parquet/Avro 孤儿对象",
+                "required": false
+              },
+              {
+                "name": "dryRun",
+                "cnName": "",
+                "type": "boolean",
+                "description": "默认 true（仅输出只读清理计划，绝不修改元数据或删除对象）",
+                "required": false
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "dryRun",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "currentMetadataVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "newMetadataVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "retainedSnapshotCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "expiredSnapshotCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "pinnedByRefCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "expiredVersions",
+                "cnName": "",
+                "type": "integer[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "candidateOrphanFileCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "deletedOrphanFileCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "reclaimableBytes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "completedAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "summary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
             "method": "GET",
             "path": "/api/v1/cdc-streams/{id}/lakehouse-history",
             "summary": "查询 Delta Lake _delta_log 提交时间线及任意历史版本活跃分片文件快照（Time-Travel）",
@@ -6850,6 +6988,48 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": false
               },
               {
+                "name": "refs",
+                "cnName": "",
+                "type": "CdcLakehouseRefDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "refs[].name",
+                "cnName": "",
+                "type": "string",
+                "description": "名称",
+                "nullable": true
+              },
+              {
+                "name": "refs[].type",
+                "cnName": "",
+                "type": "string",
+                "description": "类型",
+                "nullable": true
+              },
+              {
+                "name": "refs[].snapshotId",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "refs[].version",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "refs[].maxRefAgeMs",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "timeTravelQuerySql",
                 "cnName": "",
                 "type": "string",
@@ -6987,6 +7167,109 @@ export const API_MODULES: ApiModule[] = [
               },
               {
                 "name": "summary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/cdc-streams/{id}/lakehouse-tags",
+            "summary": "为 Apache Iceberg v2 快照创建或更新命名标签（WAP / 审计锚点，受 expireSnapshots 永久保护）",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "requestBody": [
+              {
+                "name": "tagName",
+                "cnName": "",
+                "type": "string",
+                "description": "标签名称（仅允许字母、数字、点、下划线与连字符，不可为 main）",
+                "required": true
+              },
+              {
+                "name": "snapshotVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "目标快照版本号（留空则绑定当前最新快照）",
+                "required": false
+              },
+              {
+                "name": "maxRefAgeMs",
+                "cnName": "",
+                "type": "integer",
+                "description": "可选最大保留时长（毫秒，至少 60000 ms）",
+                "required": false
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "tagName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "snapshotId",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "snapshotVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "metadataVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "metadataKey",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "maxRefAgeMs",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "updatedAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "message",
                 "cnName": "",
                 "type": "string",
                 "description": "",

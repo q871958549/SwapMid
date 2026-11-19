@@ -358,7 +358,7 @@ internal static partial class IcebergV2CommitWriter
         }
     }
 
-    private static async Task<byte[]?> TryGetObjectBytesAsync(
+    internal static async Task<byte[]?> TryGetObjectBytesAsync(
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
         ObjectStorageSinkConfig config,

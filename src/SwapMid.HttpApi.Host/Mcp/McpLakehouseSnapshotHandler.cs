@@ -98,6 +98,14 @@ internal static class McpLakehouseSnapshotHandler
         selectedEqualityDeleteRecordCount = history.SelectedEqualityDeleteRecordCount,
         selectedTotalBytes = history.SelectedTotalBytes,
         selectedTotalRecordCount = history.SelectedTotalRecordCount,
+        refs = history.Refs.Select(r => new
+        {
+            r.Name,
+            r.Type,
+            r.SnapshotId,
+            r.Version,
+            r.MaxRefAgeMs,
+        }),
         summary = history.Summary,
         timeTravelQuerySql = history.TimeTravelQuerySql,
         commits = history.Commits.Select(c => new

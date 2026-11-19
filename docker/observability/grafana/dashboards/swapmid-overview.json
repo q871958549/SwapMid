@@ -203,6 +203,11 @@
           "expr": "sum by (outcome) (increase(swapmid_cdc_schema_registry_fetches_total[15m]))",
           "legendFormat": "schema_registry:{{outcome}}",
           "refId": "E"
+        },
+        {
+          "expr": "sum by (operation, outcome) (increase(swapmid_cdc_iceberg_maintenance_total[15m]))",
+          "legendFormat": "iceberg_maint:{{operation}}/{{outcome}}",
+          "refId": "F"
         }
       ]
     },

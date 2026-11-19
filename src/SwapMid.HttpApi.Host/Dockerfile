@@ -27,14 +27,7 @@ RUN if [ "$OPENIDDICT_PFX_MOUNT_AT_RUNTIME" = "true" ]; then \
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS run
 ARG RELEASE_SHA=unknown
-ARG APT_MIRROR=""
 WORKDIR /app
-RUN if [ -n "$APT_MIRROR" ] && [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then \
-      sed -i "s|http://archive.ubuntu.com/ubuntu/|${APT_MIRROR}|g; s|http://security.ubuntu.com/ubuntu/|${APT_MIRROR}|g" /etc/apt/sources.list.d/ubuntu.sources; \
-    fi \
-    && apt-get -o Acquire::Retries=5 update \
-    && apt-get -o Acquire::Retries=5 install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/publish ./
 
 LABEL org.opencontainers.image.title="SwapMid API" \

@@ -33,7 +33,7 @@ internal readonly record struct IcebergCommitReceipt(
 internal static partial class IcebergV2CommitWriter
 {
     private const int MaxOptimisticRetries = 64;
-    private const string EngineName = "SwapMid-2.6.0";
+    private const string EngineName = "SwapMid-2.6.1";
 
     internal static readonly JsonSerializerOptions JsonOptions = new()
     {

@@ -4,6 +4,11 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.1] - 2026-11-19
+
+### Fixed
+- **Zero-`apt-get` Production API Container Image & Dependency-Free Healthcheck**: Removed the runtime `apt-get install curl` layer from `src/SwapMid.HttpApi.Host/Dockerfile` and switched the `api` healthcheck in `docker/docker-compose.yml` to a zero-dependency `bash` `/dev/tcp/127.0.0.1/8080` HTTP `200` probe, eliminating upstream `archive.ubuntu.com` build outages across multi-arch (`amd64`/`arm64`) builds while reducing runtime container attack surface.
+
 ## [2.6.0] - 2026-11-19
 
 ### Added

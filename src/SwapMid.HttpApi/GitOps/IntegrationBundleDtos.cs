@@ -14,7 +14,7 @@ public class IntegrationBundleDocument
     public string SchemaVersion { get; set; } = "swapmid.io/v1";
 
     /// <summary>导出时的 SwapMid 平台版本</summary>
-    public string PlatformVersion { get; set; } = "2.6.0";
+    public string PlatformVersion { get; set; } = "2.6.1";
 
     /// <summary>导出时间（UTC ISO-8601 字符串）</summary>
     public string ExportedAtUtc { get; set; } = DateTime.UtcNow.ToString("O");

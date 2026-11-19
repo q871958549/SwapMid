@@ -35,6 +35,13 @@ public class CdcStreamDto : FullAuditedEntityDto<Guid>
     public LakehouseTableFormat LakehouseTableFormat { get; set; }
     public LakehousePartitionStrategy LakehousePartitionStrategy { get; set; }
     public LakehouseWriteMode LakehouseWriteMode { get; set; }
+    public string? LakehouseWriteBranch { get; set; }
+    public string? LakehouseMaintenanceCron { get; set; }
+    public int? LakehouseExpireRetainLast { get; set; }
+    public int? LakehouseExpireOlderThanMinutes { get; set; }
+    public bool LakehouseDeleteOrphanedFiles { get; set; }
+    public DateTime? LakehouseLastMaintenanceAt { get; set; }
+    public string? LakehouseLastMaintenanceSummary { get; set; }
     public LakehouseCatalogType CatalogType { get; set; }
     public Guid? CatalogSinkId { get; set; }
     public string? CatalogSinkName { get; set; }
@@ -133,7 +140,11 @@ public class CdcStreamCreateUpdateDto
     public LakehousePartitionStrategy LakehousePartitionStrategy { get; set; } = LakehousePartitionStrategy.None;
 
     public LakehouseWriteMode LakehouseWriteMode { get; set; } = LakehouseWriteMode.AppendChangelog;
-
+    [StringLength(64)] public string? LakehouseWriteBranch { get; set; }
+    [StringLength(64)] public string? LakehouseMaintenanceCron { get; set; }
+    [Range(1, 100)] public int? LakehouseExpireRetainLast { get; set; }
+    [Range(0, 525_600)] public int? LakehouseExpireOlderThanMinutes { get; set; }
+    public bool LakehouseDeleteOrphanedFiles { get; set; }
     public LakehouseCatalogType CatalogType { get; set; } = LakehouseCatalogType.None;
 
     public Guid? CatalogSinkId { get; set; }

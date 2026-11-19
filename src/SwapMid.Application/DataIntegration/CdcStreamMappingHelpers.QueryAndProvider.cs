@@ -216,6 +216,13 @@ internal static partial class CdcStreamMappingHelpers
             LakehouseTableFormat = stream.LakehouseTableFormat,
             LakehousePartitionStrategy = stream.LakehousePartitionStrategy,
             LakehouseWriteMode = stream.LakehouseWriteMode,
+            LakehouseWriteBranch = stream.LakehouseWriteBranch,
+            LakehouseMaintenanceCron = stream.LakehouseMaintenanceCron,
+            LakehouseExpireRetainLast = stream.LakehouseExpireRetainLast,
+            LakehouseExpireOlderThanMinutes = stream.LakehouseExpireOlderThanMinutes,
+            LakehouseDeleteOrphanedFiles = stream.LakehouseDeleteOrphanedFiles,
+            LakehouseLastMaintenanceAt = stream.LakehouseLastMaintenanceAt,
+            LakehouseLastMaintenanceSummary = stream.LakehouseLastMaintenanceSummary,
             CatalogType = stream.CatalogType,
             CatalogSinkId = stream.CatalogSinkId,
             CatalogSinkName = catalogSink?.Name,
@@ -291,6 +298,34 @@ internal static partial class CdcStreamMappingHelpers
         CancellationToken cancellationToken)
     {
         var stream = await streamRepository.GetAsync(id, cancellationToken: cancellationToken);
+        var hadDrift = stream.SchemaDriftDetected;
+        var nowUtc = DateTime.UtcNow;
+
+        if (stream.SourceType is CdcSourceType.PushWebhook or CdcSourceType.KafkaDebezium)
+        {
+            stream.AcceptInferredSchemaDrift();
+            if (stream.HasDataContractConfigured)
+            {
+                var snap = CdcDataContractEvaluator.EvaluateSnapshot(stream, nowUtc);
+                stream.RecordContractEvaluation(snap.Violated, snap.Violated ? snap.Summary : null, nowUtc);
+            }
+
+            await streamRepository.UpdateAsync(stream, autoSave: true, cancellationToken: cancellationToken);
+            SwapMid.Monitoring.PlatformMetrics.CdcSchemaDriftEventsTotal.WithLabels("accepted").Inc();
+            if (hadDrift)
+            {
+                await NotifySchemaAcceptedAsync(stream, "rebaseline-on-next-batch", notificationService, logger, cancellationToken);
+            }
+
+            return new CdcAcceptSchemaResultDto
+            {
+                StreamId = stream.Id,
+                SchemaBaselineHash = "pending-next-batch",
+                AcceptedAtUtc = nowUtc,
+                Message = "已确认载荷 Schema 漂移并清除告警，下一批入站事件将自动锁定新的 Schema 基线。",
+            };
+        }
+
         var source = await sourceRepository.GetAsync(stream.SourceId, cancellationToken: cancellationToken);
         var eval = await EvaluateSchemaForStreamAsync(
             captureService, sqlServerCaptureService, mySqlCaptureService, source, stream, cancellationToken);
@@ -300,8 +335,13 @@ internal static partial class CdcStreamMappingHelpers
                 .WithData("Reason", "未能读取到上游监控表或发布表的列定义，无法建立 Schema 基线。");
         }
 
-        var hadDrift = stream.SchemaDriftDetected;
         stream.UpdateSchemaBaseline(eval.CurrentHash, eval.CurrentJson);
+        if (stream.HasDataContractConfigured)
+        {
+            var snap = CdcDataContractEvaluator.EvaluateSnapshot(stream, nowUtc);
+            stream.RecordContractEvaluation(snap.Violated, snap.Violated ? snap.Summary : null, nowUtc);
+        }
+
         await streamRepository.UpdateAsync(stream, autoSave: true, cancellationToken: cancellationToken);
         SwapMid.Monitoring.PlatformMetrics.CdcSchemaDriftEventsTotal.WithLabels("accepted").Inc();
 

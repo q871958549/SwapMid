@@ -17,6 +17,7 @@ namespace SwapMid.HttpApiHost.DataIntegration;
 public sealed class HangfireCdcScheduleSynchronizer : ICdcScheduleSynchronizer
 {
     public const string JobIdPrefix = "cdc-stream:";
+    public const string MaintenanceJobIdPrefix = "cdc-lakehouse-maint:";
 
     private readonly IRecurringJobManager _recurringJobManager;
     private readonly ILogger<HangfireCdcScheduleSynchronizer> _logger;
@@ -31,6 +32,9 @@ public sealed class HangfireCdcScheduleSynchronizer : ICdcScheduleSynchronizer
 
     public static string BuildRecurringJobId(Guid streamId)
         => $"{JobIdPrefix}{streamId:D}";
+
+    public static string BuildMaintenanceRecurringJobId(Guid streamId)
+        => $"{MaintenanceJobIdPrefix}{streamId:D}";
 
     public static string BuildCronExpression(int pollIntervalSeconds)
     {
@@ -83,6 +87,37 @@ public sealed class HangfireCdcScheduleSynchronizer : ICdcScheduleSynchronizer
         CancellationToken cancellationToken = default)
     {
         _recurringJobManager.RemoveIfExists(BuildRecurringJobId(streamId));
+        _recurringJobManager.RemoveIfExists(BuildMaintenanceRecurringJobId(streamId));
+        return Task.CompletedTask;
+    }
+
+    public Task SyncMaintenanceAsync(
+        Guid streamId,
+        CdcStreamStatus status,
+        string? maintenanceCron,
+        CancellationToken cancellationToken = default)
+    {
+        var jobId = BuildMaintenanceRecurringJobId(streamId);
+        if (status != CdcStreamStatus.Active || string.IsNullOrWhiteSpace(maintenanceCron))
+        {
+            _recurringJobManager.RemoveIfExists(jobId);
+            return Task.CompletedTask;
+        }
+
+        var normalizedCron = DataPipelineCronValidator.ValidateAndNormalize(false, maintenanceCron)!;
+        _recurringJobManager.AddOrUpdate<RunScheduledLakehouseMaintenanceHangfireJob>(
+            jobId,
+            job => job.ExecuteAsync(streamId, CancellationToken.None),
+            normalizedCron,
+            new RecurringJobOptions
+            {
+                TimeZone = TimeZoneInfo.Local,
+            });
+
+        _logger.LogInformation(
+            "Apache Iceberg v2 定时维护作业已同步 streamId={StreamId} cron={Cron}",
+            streamId,
+            normalizedCron);
         return Task.CompletedTask;
     }
 }

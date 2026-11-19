@@ -49,6 +49,7 @@ export type CdcLakehouseHistoryDto = import('../generated').SwapMidDataIntegrati
 export type CdcLakehouseRefDto = import('../generated').SwapMidDataIntegrationCdcLakehouseRefDto
 export type CdcLakehouseTagResultDto = import('../generated').SwapMidDataIntegrationCdcLakehouseTagResultDto
 export type CdcLakehouseExpireResultDto = import('../generated').SwapMidDataIntegrationCdcLakehouseExpireResultDto
+export type CdcLakehouseBranchPromoteResultDto = import('../generated').SwapMidDataIntegrationCdcLakehouseBranchPromoteResultDto
 export type CdcLakehousePreviewDto = import('../generated').SwapMidDataIntegrationCdcLakehousePreviewDto
 export type CdcCatalogSyncResultDto = import('../generated').SwapMidDataIntegrationCdcCatalogSyncResultDto
 export type CdcContractStatus = import('../generated').SwapMidDataIntegrationCdcContractStatus
@@ -63,6 +64,11 @@ export type IntegrationBundleDiffItemDto = import('../generated').SwapMidControl
 export type IntegrationBundleDiffResultDto = import('../generated').SwapMidControllersGitOpsIntegrationBundleDiffResultDto
 export type IntegrationBundleApplyInput = import('../generated').SwapMidControllersGitOpsIntegrationBundleApplyInput
 export type IntegrationBundleApplyResultDto = import('../generated').SwapMidControllersGitOpsIntegrationBundleApplyResultDto
+export type IntegrationLineageNodeDto = import('../generated').SwapMidControllersLineageIntegrationLineageNodeDto
+export type IntegrationLineageEdgeDto = import('../generated').SwapMidControllersLineageIntegrationLineageEdgeDto
+export type IntegrationLineageGraphDto = import('../generated').SwapMidControllersLineageIntegrationLineageGraphDto
+export type IntegrationLineageImpactItemDto = import('../generated').SwapMidControllersLineageIntegrationLineageImpactItemDto
+export type IntegrationLineageImpactDto = import('../generated').SwapMidControllersLineageIntegrationLineageImpactDto
 export type CdcStreamDto = Omit<
   Require<
     import('../generated').SwapMidDataIntegrationCdcStreamDto,

@@ -1,10 +1,36 @@
 using System;
+using System.Text.RegularExpressions;
 using Volo.Abp;
 
 namespace SwapMid.DataIntegration;
 
 public partial class CdcStreamDefinition
 {
+    private static readonly Regex IcebergRefNamePattern = new(
+        "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant,
+        TimeSpan.FromSeconds(1));
+
+    /// <summary>可选：Apache Iceberg v2 WAP 隔离写入目标分支（留空或 main 表示直接提交 main；如 staging 表示先写分支待审核后快进发布）。</summary>
+    public string? LakehouseWriteBranch { get; private set; }
+
+    /// <summary>可选：Apache Iceberg v2 定时维护（压缩 + 快照过期清理）5 段式 Cron 表达式。</summary>
+    public string? LakehouseMaintenanceCron { get; private set; }
+
+    /// <summary>定时快照过期策略至少保留的最近快照数（1..100）。</summary>
+    public int? LakehouseExpireRetainLast { get; private set; }
+
+    /// <summary>定时快照过期策略仅清理早于 N 分钟的快照（0..525600）。</summary>
+    public int? LakehouseExpireOlderThanMinutes { get; private set; }
+
+    /// <summary>定时快照过期策略是否同步物理删除已无任何引用（含命名标签/分支）的孤儿对象。</summary>
+    public bool LakehouseDeleteOrphanedFiles { get; private set; }
+
+    /// <summary>最近一次定时维护完成时间（UTC）。</summary>
+    public DateTime? LakehouseLastMaintenanceAt { get; private set; }
+
+    /// <summary>最近一次定时维护结果摘要。</summary>
+    public string? LakehouseLastMaintenanceSummary { get; private set; }
     private void ApplyConfiguration(
         string name,
         Guid sourceId,
@@ -79,6 +105,11 @@ public partial class CdcStreamDefinition
         {
             LakehousePartitionStrategy = LakehousePartitionStrategy.None;
             LakehouseWriteMode = LakehouseWriteMode.AppendChangelog;
+            LakehouseWriteBranch = null;
+            LakehouseMaintenanceCron = null;
+            LakehouseExpireRetainLast = null;
+            LakehouseExpireOlderThanMinutes = null;
+            LakehouseDeleteOrphanedFiles = false;
         }
         var normalizedCatalogType = CdcStreamMirrorConfigValidator.NormalizeCatalogType(
             targetMode,
@@ -236,6 +267,69 @@ public partial class CdcStreamDefinition
             ? null
             : Truncate(summary.Trim(), CdcStreamConsts.MaxContractViolationSummaryLength);
         ContractLastEvaluatedAt = evaluatedAtUtc;
+    }
+
+    public void ConfigureLakehouseWapAndMaintenance(
+        string? writeBranch,
+        string? maintenanceCron,
+        int? expireRetainLast,
+        int? expireOlderThanMinutes,
+        bool deleteOrphanedFiles)
+    {
+        if (TargetMode != CdcTargetMode.ExternalSink ||
+            LakehouseTableFormat != LakehouseTableFormat.ApacheIceberg)
+        {
+            LakehouseWriteBranch = null;
+            LakehouseMaintenanceCron = null;
+            LakehouseExpireRetainLast = null;
+            LakehouseExpireOlderThanMinutes = null;
+            LakehouseDeleteOrphanedFiles = false;
+            return;
+        }
+
+        var trimmedBranch = writeBranch?.Trim();
+        if (string.IsNullOrWhiteSpace(trimmedBranch) ||
+            string.Equals(trimmedBranch, "main", StringComparison.OrdinalIgnoreCase))
+        {
+            LakehouseWriteBranch = null;
+        }
+        else
+        {
+            if (!IcebergRefNamePattern.IsMatch(trimmedBranch))
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", "Apache Iceberg v2 WAP 目标分支名必须由字母/数字开头，仅含字母、数字、点、下划线与连字符（1-64 字符）。");
+            }
+
+            LakehouseWriteBranch = trimmedBranch;
+        }
+
+        var trimmedCron = string.IsNullOrWhiteSpace(maintenanceCron)
+            ? null
+            : Check.Length(maintenanceCron.Trim(), nameof(maintenanceCron), CdcStreamConsts.MaxLakehouseMaintenanceCronLength);
+        LakehouseMaintenanceCron = trimmedCron;
+        LakehouseExpireRetainLast = trimmedCron != null
+            ? Math.Clamp(expireRetainLast ?? CdcStreamConsts.DefaultLakehouseExpireRetainLast, 1, 100)
+            : (expireRetainLast.HasValue ? Math.Clamp(expireRetainLast.Value, 1, 100) : null);
+        LakehouseExpireOlderThanMinutes = trimmedCron != null
+            ? Math.Clamp(expireOlderThanMinutes ?? CdcStreamConsts.DefaultLakehouseExpireOlderThanMinutes, 0, 525_600)
+            : (expireOlderThanMinutes.HasValue ? Math.Clamp(expireOlderThanMinutes.Value, 0, 525_600) : null);
+        LakehouseDeleteOrphanedFiles = trimmedCron != null && deleteOrphanedFiles;
+    }
+
+    public void RecordLakehouseMaintenance(DateTime completedAtUtc, string summary)
+    {
+        LakehouseLastMaintenanceAt = completedAtUtc;
+        LakehouseLastMaintenanceSummary = Truncate(
+            summary?.Trim() ?? string.Empty,
+            CdcStreamConsts.MaxLakehouseLastMaintenanceSummaryLength);
+    }
+
+    public void AcceptInferredSchemaDrift()
+    {
+        SchemaBaselineHash = null;
+        SchemaBaselineJson = null;
+        ClearSchemaDrift();
     }
 
     private static string Truncate(string value, int maxLength)

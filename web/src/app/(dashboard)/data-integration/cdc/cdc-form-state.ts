@@ -37,6 +37,11 @@ export interface CdcFormState {
   lakehouseTableFormat: '0' | '1' | '2'
   lakehousePartitionStrategy: '0' | '1'
   lakehouseWriteMode: '0' | '1'
+  lakehouseWriteBranch: string
+  lakehouseMaintenanceCron: string
+  lakehouseExpireRetainLast: string
+  lakehouseExpireOlderThanMinutes: string
+  lakehouseDeleteOrphanedFiles: boolean
   catalogType: '0' | '1' | '2'
   catalogSinkId: string
   catalogNamespace: string
@@ -75,6 +80,11 @@ export const defaultCdcForm: CdcFormState = {
   lakehouseTableFormat: '0',
   lakehousePartitionStrategy: '0',
   lakehouseWriteMode: '0',
+  lakehouseWriteBranch: '',
+  lakehouseMaintenanceCron: '',
+  lakehouseExpireRetainLast: '',
+  lakehouseExpireOlderThanMinutes: '',
+  lakehouseDeleteOrphanedFiles: false,
   catalogType: '0',
   catalogSinkId: '',
   catalogNamespace: '',
@@ -196,6 +206,13 @@ export function toCdcForm(item: CdcStreamDto): CdcFormState {
     lakehouseTableFormat: normalizeLakehouseTableFormat(item.lakehouseTableFormat),
     lakehousePartitionStrategy: normalizeLakehousePartitionStrategy(item.lakehousePartitionStrategy),
     lakehouseWriteMode: normalizeLakehouseWriteMode(item.lakehouseWriteMode),
+    lakehouseWriteBranch: item.lakehouseWriteBranch ?? '',
+    lakehouseMaintenanceCron: item.lakehouseMaintenanceCron ?? '',
+    lakehouseExpireRetainLast: item.lakehouseExpireRetainLast ? String(item.lakehouseExpireRetainLast) : '',
+    lakehouseExpireOlderThanMinutes: item.lakehouseExpireOlderThanMinutes !== null && item.lakehouseExpireOlderThanMinutes !== undefined
+      ? String(item.lakehouseExpireOlderThanMinutes)
+      : '',
+    lakehouseDeleteOrphanedFiles: item.lakehouseDeleteOrphanedFiles ?? false,
     catalogType: normalizeCatalogType(item.catalogType),
     catalogSinkId: item.catalogSinkId ?? '',
     catalogNamespace: item.catalogNamespace ?? '',
@@ -227,6 +244,19 @@ export function toCdcBody(form: CdcFormState) {
   const writeMode = mode === 2 && tableFormat === 2
     ? Number(normalizeLakehouseWriteMode(Number(form.lakehouseWriteMode)))
     : 0
+  const isIcebergSink = mode === 2 && tableFormat === 2
+  const writeBranch = isIcebergSink && form.lakehouseWriteBranch.trim()
+    ? form.lakehouseWriteBranch.trim()
+    : null
+  const maintCron = isIcebergSink && form.lakehouseMaintenanceCron.trim()
+    ? form.lakehouseMaintenanceCron.trim()
+    : null
+  const expireRetainLast = isIcebergSink && form.lakehouseExpireRetainLast.trim()
+    ? Number.parseInt(form.lakehouseExpireRetainLast.trim(), 10)
+    : null
+  const expireOlderThan = isIcebergSink && form.lakehouseExpireOlderThanMinutes.trim()
+    ? Number.parseInt(form.lakehouseExpireOlderThanMinutes.trim(), 10)
+    : null
   const catalogTypeNum = mode === 2 ? Number(normalizeCatalogType(Number(form.catalogType))) : 0
   const useCatalog = mode === 2 && catalogTypeNum > 0
   const cleanMappings = mode === 3
@@ -266,6 +296,11 @@ export function toCdcBody(form: CdcFormState) {
     lakehouseTableFormat: tableFormat,
     lakehousePartitionStrategy: partitionStrategy,
     lakehouseWriteMode: writeMode,
+    lakehouseWriteBranch: writeBranch,
+    lakehouseMaintenanceCron: maintCron,
+    lakehouseExpireRetainLast: expireRetainLast !== null && Number.isFinite(expireRetainLast) ? expireRetainLast : null,
+    lakehouseExpireOlderThanMinutes: expireOlderThan !== null && Number.isFinite(expireOlderThan) ? expireOlderThan : null,
+    lakehouseDeleteOrphanedFiles: maintCron !== null && form.lakehouseDeleteOrphanedFiles,
     catalogType: catalogTypeNum,
     catalogSinkId: useCatalog ? (form.catalogSinkId.trim() || null) : null,
     catalogNamespace: useCatalog ? (form.catalogNamespace.trim() || null) : null,
@@ -338,6 +373,20 @@ export function isCdcFormValid(form: CdcFormState): boolean {
   }
   if (form.targetMode === '2' && form.lakehouseTableFormat === '2' && form.lakehouseWriteMode === '1') {
     if (!form.targetSinkKeyColumns.trim()) return false
+  }
+  if (form.targetMode === '2' && form.lakehouseTableFormat === '2') {
+    const branch = form.lakehouseWriteBranch.trim()
+    if (branch.length > 0 && !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/.test(branch)) {
+      return false
+    }
+    if (form.lakehouseExpireRetainLast.trim().length > 0) {
+      const r = Number.parseInt(form.lakehouseExpireRetainLast.trim(), 10)
+      if (!Number.isFinite(r) || r < 1 || r > 100) return false
+    }
+    if (form.lakehouseExpireOlderThanMinutes.trim().length > 0) {
+      const m = Number.parseInt(form.lakehouseExpireOlderThanMinutes.trim(), 10)
+      if (!Number.isFinite(m) || m < 0 || m > 525600) return false
+    }
   }
   return form.targetSinkId.trim().length > 0 && form.targetSinkDestination.trim().length > 0
 }

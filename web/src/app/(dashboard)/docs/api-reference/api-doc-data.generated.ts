@@ -7,7 +7,7 @@ export const API_MODULES: ApiModule[] = [
   {
     "id": "data-integration",
     "title": "数据集成",
-    "description": "多源关系型/REST/文件连接管理、流式 ETL 管道、多源与 Push Webhook CDC、声明式 GitOps 清单、Cron 调度、目标回执对账与执行恢复。",
+    "description": "多源关系型/REST/文件连接管理、流式 ETL 管道、多源与 Push Webhook CDC、声明式 GitOps 清单、跨引擎血缘分析、Cron 调度、目标回执对账与执行恢复。",
     "baseUrl": "/api/v1",
     "sections": [
       {
@@ -3487,6 +3487,55 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": false
               },
               {
+                "name": "lakehouseWriteBranch",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseMaintenanceCron",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseExpireRetainLast",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseExpireOlderThanMinutes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseDeleteOrphanedFiles",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "lakehouseLastMaintenanceAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseLastMaintenanceSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "catalogType",
                 "cnName": "",
                 "type": "LakehouseCatalogType",
@@ -3929,6 +3978,41 @@ export const API_MODULES: ApiModule[] = [
                 "required": false
               },
               {
+                "name": "lakehouseWriteBranch",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "lakehouseMaintenanceCron",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "lakehouseExpireRetainLast",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "lakehouseExpireOlderThanMinutes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "lakehouseDeleteOrphanedFiles",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "required": false
+              },
+              {
                 "name": "catalogType",
                 "cnName": "",
                 "type": "LakehouseCatalogType",
@@ -4209,6 +4293,55 @@ export const API_MODULES: ApiModule[] = [
                 "type": "LakehouseWriteMode",
                 "description": "取值：0=AppendChangelog；1=MergeOnReadUpsert",
                 "nullable": false
+              },
+              {
+                "name": "lakehouseWriteBranch",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseMaintenanceCron",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseExpireRetainLast",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseExpireOlderThanMinutes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseDeleteOrphanedFiles",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "lakehouseLastMaintenanceAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseLastMaintenanceSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
               },
               {
                 "name": "catalogType",
@@ -4697,6 +4830,55 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": false
               },
               {
+                "name": "lakehouseWriteBranch",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseMaintenanceCron",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseExpireRetainLast",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseExpireOlderThanMinutes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseDeleteOrphanedFiles",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "lakehouseLastMaintenanceAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseLastMaintenanceSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "catalogType",
                 "cnName": "",
                 "type": "LakehouseCatalogType",
@@ -5148,6 +5330,41 @@ export const API_MODULES: ApiModule[] = [
                 "required": false
               },
               {
+                "name": "lakehouseWriteBranch",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "lakehouseMaintenanceCron",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "lakehouseExpireRetainLast",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "lakehouseExpireOlderThanMinutes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "lakehouseDeleteOrphanedFiles",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "required": false
+              },
+              {
                 "name": "catalogType",
                 "cnName": "",
                 "type": "LakehouseCatalogType",
@@ -5428,6 +5645,55 @@ export const API_MODULES: ApiModule[] = [
                 "type": "LakehouseWriteMode",
                 "description": "取值：0=AppendChangelog；1=MergeOnReadUpsert",
                 "nullable": false
+              },
+              {
+                "name": "lakehouseWriteBranch",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseMaintenanceCron",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseExpireRetainLast",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseExpireOlderThanMinutes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseDeleteOrphanedFiles",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "lakehouseLastMaintenanceAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseLastMaintenanceSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
               },
               {
                 "name": "catalogType",
@@ -6064,6 +6330,55 @@ export const API_MODULES: ApiModule[] = [
                 "type": "LakehouseWriteMode",
                 "description": "取值：0=AppendChangelog；1=MergeOnReadUpsert",
                 "nullable": false
+              },
+              {
+                "name": "lakehouseWriteBranch",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseMaintenanceCron",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseExpireRetainLast",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseExpireOlderThanMinutes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseDeleteOrphanedFiles",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "lakehouseLastMaintenanceAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "lakehouseLastMaintenanceSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
               },
               {
                 "name": "catalogType",
@@ -7500,6 +7815,144 @@ export const API_MODULES: ApiModule[] = [
           },
           {
             "method": "POST",
+            "path": "/api/v1/cdc-streams/{id}/promote-lakehouse-branch",
+            "summary": "校验数据契约门禁与祖先链并将 Apache Iceberg v2 WAP 分支（如 staging）原子快进发布至 main",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "requestBody": [
+              {
+                "name": "branchName",
+                "cnName": "",
+                "type": "string",
+                "description": "待发布的源分支名称（默认 staging，不可为 main）",
+                "required": true
+              },
+              {
+                "name": "requireContractPass",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否要求已配置的数据契约 SLA 处于合规状态（默认 true，违约时阻断发布）",
+                "required": false
+              },
+              {
+                "name": "createAuditTagName",
+                "cnName": "",
+                "type": "string",
+                "description": "可选：发布成功的同时为该快照原子绑定一个审计命名标签（如 release-2026-11）",
+                "required": false
+              },
+              {
+                "name": "dryRun",
+                "cnName": "",
+                "type": "boolean",
+                "description": "为 true 时仅执行快进预检（不修改 main 与表元数据）",
+                "required": false
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "branchName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "dryRun",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "alreadyUpToDate",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "previousMainSnapshotId",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "previousMainVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "promotedSnapshotId",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "promotedSnapshotVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "metadataVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "metadataKey",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "auditTagName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "promotedAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "message",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "POST",
             "path": "/api/v1/cdc-streams/{id}/provision-sink",
             "summary": "针对 ClickHouse 外部接收端自动创建标准 CDC 变更日志表",
             "summaryDocumented": true,
@@ -8883,6 +9336,338 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "BundleApiRouteItem[]",
                 "description": "API 网关路由声明列表（按分组名称引用）",
+                "nullable": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "IntegrationLineage",
+        "title": "跨引擎数据血缘与影响分析 /integration-lineage",
+        "endpoints": [
+          {
+            "method": "GET",
+            "path": "/api/v1/integration-lineage",
+            "summary": "构建当前平台全量跨引擎数据血缘 DAG（数据源、ETL 管道、CDC 实时流、开放湖仓表、消息主题、订阅与 API 网关路由）",
+            "summaryDocumented": true,
+            "responseFields": [
+              {
+                "name": "generatedAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "nodeCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "edgeCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "nodes",
+                "cnName": "",
+                "type": "IntegrationLineageNodeDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "nodes[].id",
+                "cnName": "",
+                "type": "string",
+                "description": "唯一标识",
+                "nullable": true
+              },
+              {
+                "name": "nodes[].kind",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "nodes[].entityId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "nodes[].name",
+                "cnName": "",
+                "type": "string",
+                "description": "名称",
+                "nullable": true
+              },
+              {
+                "name": "nodes[].subType",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "nodes[].status",
+                "cnName": "",
+                "type": "string",
+                "description": "状态",
+                "nullable": true
+              },
+              {
+                "name": "nodes[].metadata",
+                "cnName": "",
+                "type": "object",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "edges",
+                "cnName": "",
+                "type": "IntegrationLineageEdgeDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "edges[].sourceNodeId",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "edges[].targetNodeId",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "edges[].relation",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "edges[].label",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "countsByKind",
+                "cnName": "",
+                "type": "object",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "warnings",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "summary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/integration-lineage/impact",
+            "summary": "分析指定节点或关键字的上下游变更影响范围（Blast Radius）、传播路径与风险分级",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "nodeId",
+                "cnName": "",
+                "type": "string",
+                "required": false,
+                "description": ""
+              },
+              {
+                "name": "query",
+                "cnName": "",
+                "type": "string",
+                "required": false,
+                "description": ""
+              },
+              {
+                "name": "direction",
+                "cnName": "",
+                "type": "string",
+                "required": false,
+                "description": ""
+              },
+              {
+                "name": "maxDepth",
+                "cnName": "",
+                "type": "integer",
+                "required": false,
+                "description": ""
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "rootNodeId",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "rootNodeName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "rootNodeKind",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "direction",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "maxDepth",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "riskLevel",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "upstreamCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "downstreamCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "impactedNodes",
+                "cnName": "",
+                "type": "IntegrationLineageImpactItemDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "impactedNodes[].node",
+                "cnName": "",
+                "type": "IntegrationLineageNodeDto",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "impactedNodes[].depth",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "impactedNodes[].direction",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "impactedNodes[].pathLabels",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "impactedEdges",
+                "cnName": "",
+                "type": "IntegrationLineageEdgeDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "impactedEdges[].sourceNodeId",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "impactedEdges[].targetNodeId",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "impactedEdges[].relation",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "impactedEdges[].label",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "recommendations",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "warnings",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "summary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
                 "nullable": true
               }
             ]

@@ -33,7 +33,7 @@ internal readonly record struct IcebergCommitReceipt(
 internal static partial class IcebergV2CommitWriter
 {
     private const int MaxOptimisticRetries = 64;
-    private const string EngineName = "SwapMid-2.7.0";
+    private const string EngineName = "SwapMid-2.8.0";
 
     internal static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -217,6 +217,7 @@ internal static partial class IcebergV2CommitWriter
             }
 
             var nextSeq = latestSeq + 1;
+            var targetBranch = ResolveTargetBranch(stream);
             var snapshotId = ComputeDeterministicSnapshotId(stream.Id, runId, nextSeq);
             var metadataKey = config.BuildIcebergMetadataKey(destination, nextSeq);
             var manifestListKey = config.BuildIcebergAvroManifestListKey(destination, snapshotId, runId);
@@ -224,12 +225,12 @@ internal static partial class IcebergV2CommitWriter
             var deleteManifestFileKey = config.BuildIcebergAvroDeleteManifestFileKey(destination, nextSeq, runId);
 
             long? parentSnapshotId = !string.IsNullOrWhiteSpace(latestMetadataJson) &&
-                                     TryExtractCurrentSnapshotId(latestMetadataJson, out var pSnap)
+                                     TryExtractBranchSnapshotId(latestMetadataJson, targetBranch, out var pSnap)
                 ? pSnap
                 : null;
 
             var prevActiveFiles = await LoadPreviousActiveFilesAsync(
-                httpClientFactory, configuration, config, destination, latestMetadataJson, cancellationToken);
+                httpClientFactory, configuration, config, destination, latestMetadataJson, parentSnapshotId, cancellationToken);
             var partitionSpecId = stream.LakehousePartitionStrategy == LakehousePartitionStrategy.DailyCommitUtc
                 ? IcebergAvroManifestBuilder.DailyPartitionSpecId
                 : IcebergAvroManifestBuilder.UnpartitionedSpecId;
@@ -245,7 +246,7 @@ internal static partial class IcebergV2CommitWriter
                 stream, tableLocation, config.Bucket,
                 latestMetadataJson,
                 latestSeq > 0 ? config.BuildIcebergMetadataKey(destination, latestSeq) : null,
-                nextSeq, snapshotId, manifestListKey, operation, snapshotMode, runToken, tsMs,
+                nextSeq, snapshotId, parentSnapshotId, targetBranch, manifestListKey, operation, snapshotMode, runToken, tsMs,
                 addedFiles, removedRelativePaths, activeFiles);
 
             if (await PutMetadataIfAbsentAsync(httpClientFactory, configuration, config, metadataKey, metadataJson, cancellationToken))
@@ -317,17 +318,17 @@ internal static partial class IcebergV2CommitWriter
         ObjectStorageSinkConfig config,
         string destination,
         string? latestMetadataJson,
+        long? parentSnapshotId,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(latestMetadataJson) ||
-            !TryExtractCurrentSnapshotId(latestMetadataJson, out var currentSnapId))
+        if (string.IsNullOrWhiteSpace(latestMetadataJson) || parentSnapshotId is not > 0)
         {
             return new List<IcebergManifestEntry>();
         }
 
-        TryExtractSnapshotManifestListUri(latestMetadataJson, currentSnapId, out var manifestListUri);
+        TryExtractSnapshotManifestListUri(latestMetadataJson, parentSnapshotId.Value, out var manifestListUri);
         return await LoadSnapshotActiveFilesAsync(
-            httpClientFactory, configuration, config, destination, currentSnapId, manifestListUri, cancellationToken);
+            httpClientFactory, configuration, config, destination, parentSnapshotId.Value, manifestListUri, cancellationToken);
     }
 
     private static (List<IcebergManifestEntry> ActiveFiles, List<IcebergAvroManifestBuilder.ManifestEntryRecord> AvroEntries)

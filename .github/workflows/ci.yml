@@ -53,7 +53,7 @@ jobs:
             -e POSTGRES_USER=postgres \
             -e POSTGRES_PASSWORD=SwapMidCiOnly_2026! \
             -e POSTGRES_DB=postgres \
-            -p 55432:5432 \
+            -p 15432:5432 \
             postgres:18-alpine \
             -c wal_level=logical -c max_replication_slots=4 -c max_wal_senders=4
           for i in $(seq 1 30); do
@@ -97,7 +97,7 @@ jobs:
         env:
           SWAPMID_POSTGRES_TEST_CONNECTION: Host=127.0.0.1;Port=5432;Database=postgres;Username=postgres;Password=SwapMidCiOnly_2026!
           SWAPMID_RUN_POSTGRES_CONTRACT_TESTS: '1'
-          SWAPMID_POSTGRES_CDC_TEST_CONNECTION: Host=127.0.0.1;Port=55432;Database=postgres;Username=postgres;Password=SwapMidCiOnly_2026!
+          SWAPMID_POSTGRES_CDC_TEST_CONNECTION: Host=127.0.0.1;Port=15432;Database=postgres;Username=postgres;Password=SwapMidCiOnly_2026!
           SWAPMID_RUN_POSTGRES_CDC_CONTRACT_TESTS: '1'
           SWAPMID_SQLSERVER_TEST_CONNECTION: Server=127.0.0.1,1433;User Id=sa;Password=SwapMidCiOnly_Sql2022!;TrustServerCertificate=True;Encrypt=False
           SWAPMID_MYSQL_TEST_CONNECTION: Server=127.0.0.1;Port=3306;Database=swapmid_cdc;User ID=root;Password=SwapMidCiOnly_MySql84!;SslMode=Preferred;AllowPublicKeyRetrieval=True
@@ -180,6 +180,7 @@ jobs:
           docker compose -f docker/docker-compose.yml --env-file docker/.env.example config --quiet
           GRAFANA_ADMIN_PASSWORD=ci-placeholder docker compose -f docker/docker-compose.yml -f docker/docker-compose.observability.yml --env-file docker/.env.example config --quiet
           docker compose -f docker/docker-compose.yml -f docker/docker-compose.lakehouse-demo.yml --env-file docker/.env.example config --quiet
+          docker compose -f docker/docker-compose.yml -f docker/docker-compose.streaming-lakehouse.yml --env-file docker/.env.example config --quiet
           helm lint charts/swapmid --set secret.existingSecret=ci-placeholder
           helm template swapmid charts/swapmid --set secret.existingSecret=ci-placeholder >/dev/null
 

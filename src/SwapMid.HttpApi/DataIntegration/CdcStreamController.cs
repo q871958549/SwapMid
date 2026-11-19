@@ -196,4 +196,13 @@ public class CdcStreamController : SwapMidController, ICdcStreamAppService
         [FromBody] ExpireCdcLakehouseSnapshotsInput? input = null,
         CancellationToken cancellationToken = default)
         => _service.ExpireLakehouseSnapshotsAsync(id, input ?? new ExpireCdcLakehouseSnapshotsInput(), cancellationToken);
+
+    /// <summary>校验数据契约门禁与祖先链并将 Apache Iceberg v2 WAP 分支（如 staging）原子快进发布至 main</summary>
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    [HttpPost("{id}/promote-lakehouse-branch")]
+    public Task<CdcLakehouseBranchPromoteResultDto> PromoteLakehouseBranchAsync(
+        Guid id,
+        [FromBody] PromoteCdcLakehouseBranchInput? input = null,
+        CancellationToken cancellationToken = default)
+        => _service.PromoteLakehouseBranchAsync(id, input ?? new PromoteCdcLakehouseBranchInput(), cancellationToken);
 }

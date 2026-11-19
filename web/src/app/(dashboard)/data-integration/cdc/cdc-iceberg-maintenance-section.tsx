@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, Tag, Trash2 } from 'lucide-react'
+import { GitMerge, Loader2, Tag, Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch'
 import { toast } from '@/components/ui/use-toast'
 import { readApiErrorMessage } from '@/lib/api-error'
 import type {
+  CdcLakehouseBranchPromoteResultDto,
   CdcLakehouseExpireResultDto,
   CdcLakehouseRefDto,
   CdcLakehouseTagResultDto,
@@ -31,10 +32,43 @@ export function CdcIcebergMaintenanceSection({
 }) {
   const t = useTranslations('DataIntegration.cdc')
   const [tagName, setTagName] = useState('')
+  const [promoteAuditTag, setPromoteAuditTag] = useState('')
   const [retainLast, setRetainLast] = useState('2')
   const [deleteOrphans, setDeleteOrphans] = useState(false)
-  const [busy, setBusy] = useState<'tag' | 'dryRun' | 'expire' | null>(null)
+  const [busy, setBusy] = useState<'tag' | 'dryRun' | 'expire' | 'promote' | null>(null)
   const [expireResult, setExpireResult] = useState<CdcLakehouseExpireResultDto | null>(null)
+
+  const mainRef = refs.find(r => r.name === 'main')
+  const pendingBranches = refs.filter(
+    r => r.type === 'branch' && r.name && r.name !== 'main' && r.snapshotId !== mainRef?.snapshotId,
+  )
+
+  const handlePromoteBranch = async (branchName: string) => {
+    setBusy('promote')
+    try {
+      const res = await fetch(`/api/proxy/cdc-streams/${stream.id}/promote-lakehouse-branch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          branchName,
+          requireContractPass: true,
+          createAuditTagName: promoteAuditTag.trim() || null,
+          dryRun: false,
+        }),
+      })
+      if (!res.ok) {
+        const msg = await readApiErrorMessage(res, t('icebergPromoteFailedTitle'))
+        toast({ variant: 'destructive', title: t('icebergPromoteFailedTitle'), description: msg })
+        return
+      }
+      const data = await res.json() as CdcLakehouseBranchPromoteResultDto
+      toast({ variant: 'success', title: t('icebergPromoteSuccessTitle'), description: data.message ?? undefined })
+      setPromoteAuditTag('')
+      onMutated()
+    } finally {
+      setBusy(null)
+    }
+  }
 
   const handleCreateTag = async () => {
     const trimmed = tagName.trim()
@@ -108,6 +142,48 @@ export function CdcIcebergMaintenanceSection({
           )}
         </div>
       </div>
+
+      {stream.lakehouseMaintenanceCron && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded border bg-background px-2.5 py-1.5 text-xs">
+          <span className="font-mono text-muted-foreground">
+            {`${t('lakehouseMaintenanceCronFieldLabel')}: ${stream.lakehouseMaintenanceCron}`}
+          </span>
+          {stream.lakehouseLastMaintenanceSummary && (
+            <span className="text-muted-foreground">{stream.lakehouseLastMaintenanceSummary}</span>
+          )}
+        </div>
+      )}
+
+      {canManage && pendingBranches.length > 0 && (
+        <div className="space-y-2 border-t pt-2.5">
+          {pendingBranches.map(branch => (
+            <div key={branch.name} className="flex flex-wrap items-center justify-between gap-2 rounded border bg-background px-2.5 py-2">
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                <StatusBadge tone="warning">
+                  {`branch:${branch.name}${branch.version ? ` · v${branch.version}` : ''} → main`}
+                </StatusBadge>
+                <Input
+                  value={promoteAuditTag}
+                  onChange={e => setPromoteAuditTag(e.target.value)}
+                  placeholder={t('icebergPromoteTagPlaceholder')}
+                  className="h-7 max-w-[165px] font-mono text-xs"
+                />
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy !== null}
+                onClick={() => void handlePromoteBranch(branch.name!)}
+              >
+                {busy === 'promote'
+                  ? <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                  : <GitMerge className="mr-1.5 size-3.5" />}
+                {t('icebergPromoteBranchButton')}
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {canManage && (
         <div className="space-y-2.5 border-t pt-2.5">

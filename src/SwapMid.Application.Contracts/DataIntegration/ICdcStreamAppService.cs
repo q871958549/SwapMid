@@ -31,4 +31,5 @@ public interface ICdcStreamAppService : IApplicationService
     Task<CdcContractEvaluationDto> EvaluateContractAsync(Guid id, CancellationToken cancellationToken = default);
     Task<CdcLakehouseTagResultDto> CreateLakehouseTagAsync(Guid id, CreateCdcLakehouseTagInput input, CancellationToken cancellationToken = default);
     Task<CdcLakehouseExpireResultDto> ExpireLakehouseSnapshotsAsync(Guid id, ExpireCdcLakehouseSnapshotsInput input, CancellationToken cancellationToken = default);
+    Task<CdcLakehouseBranchPromoteResultDto> PromoteLakehouseBranchAsync(Guid id, PromoteCdcLakehouseBranchInput input, CancellationToken cancellationToken = default);
 }

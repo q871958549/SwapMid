@@ -80,3 +80,40 @@ public class CdcLakehouseExpireResultDto
     public DateTime CompletedAtUtc { get; set; }
     public string Summary { get; set; } = null!;
 }
+
+/// <summary>Apache Iceberg v2 WAP 隔离分支快进发布到 main 分支入参</summary>
+public class PromoteCdcLakehouseBranchInput
+{
+    /// <summary>待发布的源分支名称（默认 staging，不可为 main）</summary>
+    [Required]
+    [StringLength(64, MinimumLength = 1)]
+    public string BranchName { get; set; } = "staging";
+
+    /// <summary>是否要求已配置的数据契约 SLA 处于合规状态（默认 true，违约时阻断发布）</summary>
+    public bool RequireContractPass { get; set; } = true;
+
+    /// <summary>可选：发布成功的同时为该快照原子绑定一个审计命名标签（如 release-2026-11）</summary>
+    [StringLength(64)]
+    public string? CreateAuditTagName { get; set; }
+
+    /// <summary>为 true 时仅执行快进预检（不修改 main 与表元数据）</summary>
+    public bool DryRun { get; set; } = false;
+}
+
+/// <summary>Apache Iceberg v2 WAP 分支快进发布结果</summary>
+public class CdcLakehouseBranchPromoteResultDto
+{
+    public Guid StreamId { get; set; }
+    public string BranchName { get; set; } = null!;
+    public bool DryRun { get; set; }
+    public bool AlreadyUpToDate { get; set; }
+    public long? PreviousMainSnapshotId { get; set; }
+    public long? PreviousMainVersion { get; set; }
+    public long PromotedSnapshotId { get; set; }
+    public long PromotedSnapshotVersion { get; set; }
+    public long MetadataVersion { get; set; }
+    public string MetadataKey { get; set; } = null!;
+    public string? AuditTagName { get; set; }
+    public DateTime PromotedAtUtc { get; set; }
+    public string Message { get; set; } = null!;
+}

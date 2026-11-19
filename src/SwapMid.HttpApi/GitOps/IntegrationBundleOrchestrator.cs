@@ -161,7 +161,7 @@ public sealed partial class IntegrationBundleOrchestrator : ITransientDependency
     private async Task<LiveSnapshot> LoadLiveSnapshotAsync(ClaimsPrincipal user, List<string> warnings)
     {
         var snap = new LiveSnapshot();
-        var version = typeof(IntegrationBundleOrchestrator).Assembly.GetName().Version?.ToString(3) ?? "2.7.0";
+        var version = typeof(IntegrationBundleOrchestrator).Assembly.GetName().Version?.ToString(3) ?? "2.8.0";
         snap.Bundle.PlatformVersion = version;
         snap.Bundle.ExportedAtUtc = DateTime.UtcNow.ToString("O");
 
@@ -213,6 +213,9 @@ public sealed partial class IntegrationBundleOrchestrator : ITransientDependency
                     TargetSinkDestination = c.TargetSinkDestination, TargetSinkKeyColumns = c.TargetSinkKeyColumns,
                     TargetDeletePolicy = c.TargetDeletePolicy, LakehouseTableFormat = c.LakehouseTableFormat,
                     LakehousePartitionStrategy = c.LakehousePartitionStrategy, LakehouseWriteMode = c.LakehouseWriteMode,
+                    LakehouseWriteBranch = c.LakehouseWriteBranch, LakehouseMaintenanceCron = c.LakehouseMaintenanceCron,
+                    LakehouseExpireRetainLast = c.LakehouseExpireRetainLast, LakehouseExpireOlderThanMinutes = c.LakehouseExpireOlderThanMinutes,
+                    LakehouseDeleteOrphanedFiles = c.LakehouseDeleteOrphanedFiles,
                     LakehouseCompactMinFiles = c.LakehouseCompactMinFiles, CatalogType = c.CatalogType,
                     CatalogSinkName = c.CatalogSinkName, CatalogNamespace = c.CatalogNamespace,
                     CatalogTableName = c.CatalogTableName, SchemaDriftPolicy = c.SchemaDriftPolicy,

@@ -309,6 +309,9 @@ async function main() {
   })
   assert.equal(bundleDiff.createCount, 0, 'Exported live bundle diff should have 0 pending creates')
 
+  const lineageGraph = await apiJson('/api/v1/integration-lineage', { token })
+  assert.ok(lineageGraph.nodeCount >= 3 && Array.isArray(lineageGraph.nodes), `Expected >=3 lineage nodes, got ${lineageGraph.nodeCount}`)
+
   const mcpRes = await fetch(`${API_BASE}/api/mcp`, {
     method: 'POST',
     headers: {
@@ -321,10 +324,10 @@ async function main() {
   if (mcpRes.status !== 404) {
     assert.equal(mcpRes.status, 200, `Expected /api/mcp 200 when enabled, got ${mcpRes.status}`)
     const mcpJson = await mcpRes.json()
-    assert.ok(Array.isArray(mcpJson.result?.tools) && mcpJson.result.tools.length === 12, `Expected 12 RBAC-authorized MCP tools for admin, got ${mcpJson.result?.tools?.length}`)
-    console.log(`  ✓ Verified ${jobs.length} scheduled jobs, ${tables.length} DB tables, GitOps bundle (${exportedBundle.resourceCount} resources), /api/v1/auth-providers, and 12 MCP tools`)
+    assert.ok(Array.isArray(mcpJson.result?.tools) && mcpJson.result.tools.length === 13, `Expected 13 RBAC-authorized MCP tools for admin, got ${mcpJson.result?.tools?.length}`)
+    console.log(`  ✓ Verified ${jobs.length} scheduled jobs, ${tables.length} DB tables, GitOps bundle (${exportedBundle.resourceCount} resources), lineage (${lineageGraph.nodeCount} nodes), /api/v1/auth-providers, and 13 MCP tools`)
   } else {
-    console.log(`  ✓ Verified ${jobs.length} scheduled jobs, ${tables.length} DB tables, GitOps bundle (${exportedBundle.resourceCount} resources), /api/v1/auth-providers, and fail-closed /api/mcp (404)`)
+    console.log(`  ✓ Verified ${jobs.length} scheduled jobs, ${tables.length} DB tables, GitOps bundle (${exportedBundle.resourceCount} resources), lineage (${lineageGraph.nodeCount} nodes), /api/v1/auth-providers, and fail-closed /api/mcp (404)`)
   }
 
   step('7/7 Next.js 16 BFF Security Boundary: Verifying build-meta, login SSR, route guard & /api/proxy 401')

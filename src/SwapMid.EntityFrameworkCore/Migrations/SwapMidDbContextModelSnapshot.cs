@@ -272,11 +272,35 @@ namespace SwapMid.Migrations
                     b.Property<int?>("LakehouseCompactMinFiles")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("LakehouseDeleteOrphanedFiles")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("LakehouseExpireOlderThanMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("LakehouseExpireRetainLast")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("LakehouseLastMaintenanceAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("LakehouseLastMaintenanceSummary")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("LakehouseMaintenanceCron")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<int>("LakehousePartitionStrategy")
                         .HasColumnType("integer");
 
                     b.Property<int>("LakehouseTableFormat")
                         .HasColumnType("integer");
+
+                    b.Property<string>("LakehouseWriteBranch")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<int>("LakehouseWriteMode")
                         .HasColumnType("integer");

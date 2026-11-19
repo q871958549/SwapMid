@@ -118,7 +118,7 @@ public class McpServerSecurityAndToolsTests
                 .EnumerateArray()
                 .Select(e => e.GetProperty("name").GetString())
                 .ToArray();
-            toolNames.ShouldBe([McpToolCatalog.ListDatasources]);
+            toolNames.ShouldBe([McpToolCatalog.ListDatasources, McpToolCatalog.AnalyzeLineageImpact]);
         }
 
         // Calling list_datasources MUST NOT leak Config/password
@@ -595,6 +595,26 @@ public class McpServerSecurityAndToolsTests
             text.ShouldContain("\"dryRun\":true");
             text.ShouldContain("orders-kafka-iceberg");
             text.ShouldContain("recommendations");
+        }
+
+        // Tool 13: analyze_lineage_impact (cross-engine topology & blast-radius)
+        var lineageRes = await gitOpsClient.PostAsJsonAsync("/api/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = 205,
+            method = "tools/call",
+            @params = new
+            {
+                name = McpToolCatalog.AnalyzeLineageImpact,
+                arguments = new { direction = "both", maxDepth = 4 },
+            },
+        });
+        lineageRes.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using (var doc = JsonDocument.Parse(await lineageRes.Content.ReadAsStringAsync()))
+        {
+            var text = doc.RootElement.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString()!;
+            text.ShouldContain("\"mode\":\"topology\"");
+            text.ShouldContain("nodeCount");
         }
     }
 }

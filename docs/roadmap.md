@@ -1,4 +1,4 @@
-# SwapMid Roadmap (`v0.2` → `v2.8+`)
+# SwapMid Roadmap (`v0.2` → `v2.9+`)
 
 SwapMid focuses on being a **correctness-first, single-stack, agent-ready enterprise data exchange and integration control plane** built on **.NET 10 (ABP v10.1)** and **Next.js 16**.
 
@@ -39,7 +39,8 @@ Every milestone adheres to five non-negotiable engineering invariants:
 | **`v2.4.0`** *(Released)* | **Binary Avro OCF Apache Iceberg v2, Push Webhook Auto-Schema & Dead-Letter Replay Ledger** | Zero-dependency pure-.NET Apache Avro 1.11 OCF binary `manifest-list` (`snap-*.avro`) & `manifest-file` (`*-m0.avro`) + Parquet `FieldId 1..11` / `TIMESTAMP_MICROS` (verified live via official **`duckdb/duckdb:latest` `iceberg_scan()`** across `v1`–`v4`), `AppCdcWebhookDeliveries` dead-letter ledger (`<= 64 KiB` only on authenticated `409`/`500`, zero payload on `401`) + Auto-Schema Inference for `RequiredColumns` SLA & `SchemaDriftPolicy` + `/data-integration/cdc` `推送日志` 1-click `重放` UI, Grafana Panels 10–11 & 3 Iceberg/Webhook Prometheus alert rules, and **`199/199` (100.0%)** OpenAPI summary coverage |
 | **`v2.5.0`** *(Released)* | **Kafka / Redpanda Debezium CDC, Iceberg v2 Daily Hidden Partitioning, 10-Tool MCP Copilot & Terminology Governance** | Native `CdcSourceType.KafkaDebezium = 4` inbound source (`Confluent.Kafka` consumer with monotonic multi-partition checkpoints `kafka:0=N,1=M`, watermark lag preflight & `swapmid_cdc_kafka_lag_messages` / `SwapMidCdcKafkaLagHigh`, wrapped/unwrapped Debezium & CloudEvents envelopes, auto-schema inference & drift policy), Iceberg v2 native **`day(commit_timestamp_utc)` Hidden Partitioning** (`spec-id: 1`, `r102`/`r508` Avro bounds, UTC day-bucketed Parquet files, same-day partition-aware `REPLACE` compaction, and SigV4 Hive-partition path signing fix — verified live with real **Redpanda** + official **DuckDB `iceberg_scan()`** partition pruning), MCP Tools 9–10 (`diagnose_webhook_deliveries`, `inspect_lakehouse_snapshots`), and automated bilingual terminology & anti-mistranslation CI gate (`check-terminology.mjs`) |
 | **`v2.6.0` / `v2.6.1`** *(Released)* | **Iceberg v2 Merge-on-Read Equality Deletes, Schema Registry Avro, Declarative GitOps & Zero-`apt-get` API Image** | Pure-.NET Iceberg v2 **`LakehouseWriteMode.MergeOnReadUpsert = 1`** (`business_key` `FieldId=12`, `eqdel_*.parquet` `content=2`, dual binary Avro OCF `*-m0.avro` + `*-d0.avro`, `operation="overwrite"`, Zero-Infra Equality Delete preview & `REPLACE` compaction GC — verified live via official **`duckdb/duckdb:latest` (`v2.0.0`) `iceberg_scan()`**), pure-.NET **Confluent / Redpanda Schema Registry Wire-Format Binary Avro** decoding, secret-free **`swapmid.io/v1` Declarative GitOps Bundles** (`scripts/swapmidctl.mjs`, Web UI & MCP Tool 11), and zero-`apt-get` minimal API container with `bash /dev/tcp` healthcheck |
-| **`v2.7.0`** *(Current)* | **Iceberg v2 WAP Tags & `expireSnapshots` GC, Protobuf Schema Registry, GitOps PR Drift Action & 12-Tool MCP** | Pure-.NET `IcebergV2MaintenanceService` (`POST .../lakehouse-tags` & `POST .../expire-lakehouse-snapshots` with reference-counted orphan GC permanently protecting named `refs` tags, verified live via official **DuckDB v2.0.0 `iceberg_scan()`** across `v6` and tag-protected `v1`), zero-dependency pure-.NET **Confluent / Redpanda Schema Registry Protobuf & JSON** wire decoding (`ProtobufSchemaParser` + `ProtobufWireDatumReader`, verified live against **Redpanda v24.3.6**), `swapmidctl.mjs` fail-closed `${ENV_SECRET:...}` placeholder resolution & `--markdown --exit-code` PR gate + composite GitHub Action `.github/actions/swapmid-gitops-diff/action.yml`, MCP Tool 12 `plan_lakehouse_maintenance`, `/data-integration/cdc` Time-Travel `Refs` & `expireSnapshots` UI, and **`204/204` (100.0%)** OpenAPI summary coverage |
+| **`v2.7.0`** *(Released)* | **Iceberg v2 WAP Tags & `expireSnapshots` GC, Protobuf Schema Registry, GitOps PR Drift Action & 12-Tool MCP** | Pure-.NET `IcebergV2MaintenanceService` (`POST .../lakehouse-tags` & `POST .../expire-lakehouse-snapshots` with reference-counted orphan GC permanently protecting named `refs` tags, verified live via official **DuckDB v2.0.0 `iceberg_scan()`** across `v6` and tag-protected `v1`), zero-dependency pure-.NET **Confluent / Redpanda Schema Registry Protobuf & JSON** wire decoding (`ProtobufSchemaParser` + `ProtobufWireDatumReader`, verified live against **Redpanda v24.3.6**), `swapmidctl.mjs` fail-closed `${ENV_SECRET:...}` placeholder resolution & `--markdown --exit-code` PR gate + composite GitHub Action `.github/actions/swapmid-gitops-diff/action.yml`, MCP Tool 12 `plan_lakehouse_maintenance`, `/data-integration/cdc` Time-Travel `Refs` & `expireSnapshots` UI, and **`204/204` (100.0%)** OpenAPI summary coverage |
+| **`v2.8.0`** *(Current)* | **Iceberg v2 WAP Branch Promotion & Scheduled Maintenance, Cross-Engine Lineage Explorer, 13-Tool MCP & Turnkey Streaming Sandbox** | Pure-.NET Apache Iceberg v2 **WAP `staging` Branch Isolation & Fast-Forward Promotion** (`POST .../promote-lakehouse-branch` with Data Contract SLA pass gate, fast-forward ancestry check & atomic audit tag pinning, verified live via official **DuckDB v2.0.0 `iceberg_scan()`** proving zero unaudited leakage before promote), **Hangfire Scheduled Lakehouse Maintenance Policies** (`cdc-lakehouse-maint:{streamId}` Cron compaction + `expireSnapshots`), **Cross-Engine Data Lineage DAG & Blast-Radius Impact Explorer** (`GET /api/v1/integration-lineage{,/impact}` + interactive 4-stage Console UI + **MCP Tool 13 `analyze_lineage_impact`**), turnkey **`docker-compose.streaming-lakehouse.yml`** (`Redpanda` + `MinIO` + `DuckDB`) + `examples/streaming-lakehouse-iceberg/`, **`207/207` (100.0%)** OpenAPI summary coverage, and CI ephemeral-port collision hardening (`15432`) |
 
 ---
 
@@ -175,11 +176,24 @@ Every milestone adheres to five non-negotiable engineering invariants:
 
 ---
 
-## Next Evolution (`v2.8+` AI-Era Open-Source Competitiveness)
+## `v2.8.0`: Iceberg v2 WAP 分支快进发布与定时维护、跨引擎数据血缘影响分析与流式湖仓沙箱（Completed）
 
-1. **Scheduled Iceberg v2 Maintenance Policies & WAP Staging Branch Promotion**:
-   - Bind automated Hangfire cron schedules to `expireSnapshots` retention policies and support staging branch writes (`branch:staging` -> human/contract audit -> fast-forward promote to `main`).
-2. **Data Lineage Graph & Cross-Engine Impact Explorer (ETL + CDC + MessageBus + API Gateway)**:
-   - Expose a live interactive DAG connecting DataSources -> Pipelines / CDC Streams -> Open Lakehouse Tables / MessageBus Topics -> Downstream API Routes, plus MCP impact-analysis tool before schema changes.
-3. **Turnkey Redpanda + Schema Registry + MinIO + DuckDB Sandbox Overlay (`docker-compose.streaming-lakehouse.yml`)**:
-   - Ship a one-command streaming lakehouse demo overlay so open-source adopters can reproduce Avro/Protobuf CDC -> Iceberg v2 MoR -> DuckDB `iceberg_scan()` locally in under 60 seconds.
+1. **Apache Iceberg v2 WAP 隔离分支写入、快进发布与 Hangfire 定时维护策略**：
+   - 新增迁移 `AddCdcIcebergWapAndMaintenanceSchedule`（`LakehouseWriteBranch`、`LakehouseMaintenanceCron`、`LakehouseExpireRetainLast`、`LakehouseExpireOlderThanMinutes`、`LakehouseDeleteOrphanedFiles` 与最近维护审计列），同步纳入 `swapmid.io/v1` GitOps 清单。
+   - 升级 `IcebergV2CommitWriter` 支持将流式变更隔离写入 `refs[staging]` 而不推进 `main` 与 `current-snapshot-id`，确保下游 DuckDB/Trino/Spark 读取端零脏数据泄漏；交付 `POST /api/v1/cdc-streams/{id}/promote-lakehouse-branch`（强制校验数据契约 SLA 合规与祖先链快进关系，支持原子绑定审计标签）及 `RunScheduledLakehouseMaintenanceHangfireJob` 定时压缩/快照过期回收。
+2. **跨引擎数据血缘图谱、变更影响面分析（Blast Radius）与 13 工具 MCP**：
+   - 在宿主层 `SwapMid.HttpApi/Lineage/` 交付 `GET /api/v1/integration-lineage` 与 `GET /api/v1/integration-lineage/impact`，串联 `DataSource -> DataPipeline / CdcStream -> LakehouseTable / MessageTopic -> MessageSubscription & ApiGroup / ApiRoute`，提供上下游 BFS 传播路径、风险分级与变更前核查建议。
+   - 新增只读 MCP Tool 13 `analyze_lineage_impact` 与 `/data-integration/cdc` 交互式 4 列**`血缘图谱`**与影响面分析弹窗，保持 **`207/207`（100.0%）** OpenAPI 摘要覆盖与 `2,190` 条三语键零漂移。
+3. **Turnkey 流式湖仓沙箱（`docker-compose.streaming-lakehouse.yml`）与 CI 端口加固**：
+   - 新增 [docker/docker-compose.streaming-lakehouse.yml](../docker/docker-compose.streaming-lakehouse.yml)（Redpanda v24.3.6 + Schema Registry + MinIO + DuckDB query profile）与 [examples/streaming-lakehouse-iceberg/](../examples/streaming-lakehouse-iceberg/) 60 秒可复现蓝图；将 `.github/workflows/ci.yml` `postgres-cdc` 端口切换至 `15432` 根治临时端口冲突。
+
+---
+
+## Next Evolution (`v2.9+` AI-Era Open-Source Competitiveness)
+
+1. **OpenLineage Standard Event Emission & Column-Level Lineage Traceability**:
+   - Emit CNCF OpenLineage (`START`/`COMPLETE`/`FAIL`) run events for ETL pipelines, CDC snapshots, and Iceberg v2 WAP promotions to external lineage hubs (Marquez / DataHub / OpenMetadata), and extend SwapMid's Lineage Explorer with column-level mapping projections (`columnMappings` & `targetFieldMappings`).
+2. **Iceberg v2 Branch Cherry-Pick / Rollback-to-Snapshot & Multi-Tenant Cost Metering**:
+   - Support one-click atomic `rollback-to-snapshot` / `rollback-to-tag` on Apache Iceberg v2 tables plus per-stream object-storage byte & snapshot growth telemetry for FinOps governance.
+3. **Zero-Trust Webhook / Gateway Mutual TLS & OpenTelemetry Distributed Tracing (`OTLP`)**:
+   - Export end-to-end W3C TraceContext spans across BFF -> Control Plane -> ETL/CDC -> Outbox -> Webhook/API Gateway for Jaeger / Grafana Tempo correlation.

@@ -19,10 +19,10 @@ Rather than acting as a low-level broker or single-purpose connector, SwapMid op
 
 | Pillar | What You Get Out of the Box |
 | --- | --- |
-| **Heterogeneous CDC & Zero-JVM Open Lakehouse** | Native capture across **5 CDC sources** — PostgreSQL Logical Replication (`pgoutput`), SQL Server Change Tracking (`CHANGETABLE`), MySQL / MariaDB Row-Based Binlog (`ROW` + `FULL`), Serverless HMAC-SHA256 **Push Webhook CDC** (with Auto-Schema Inference & Dead-Letter Replay Ledger), and **Kafka / Redpanda Debezium** streams (JSON + **Confluent / Redpanda Schema Registry Wire-Format Binary Avro & Protobuf**). Writes directly into **Apache Delta Lake** (`_delta_log`) and pure-.NET **Apache Iceberg v2** (binary Apache Avro 1.11 OCF `snap-*.avro` / `*-m0.avro` / `*-d0.avro`, Parquet `FieldId 1..12` & `TIMESTAMP_MICROS`, native **`day(commit_timestamp_utc)` Hidden Partitioning**, **Merge-on-Read Equality Deletes** `content=2`, partition-aware `REPLACE` compaction, **WAP Named Tags (`refs`)**, and reference-counted **`expireSnapshots` orphan GC**) — verified live with official **DuckDB v2.0.0 `iceberg_scan()`**. |
+| **Heterogeneous CDC & Zero-JVM Open Lakehouse** | Native capture across **5 CDC sources** — PostgreSQL Logical Replication (`pgoutput`), SQL Server Change Tracking (`CHANGETABLE`), MySQL / MariaDB Row-Based Binlog (`ROW` + `FULL`), Serverless HMAC-SHA256 **Push Webhook CDC** (with Auto-Schema Inference & Dead-Letter Replay Ledger), and **Kafka / Redpanda Debezium** streams (JSON + **Confluent / Redpanda Schema Registry Wire-Format Binary Avro & Protobuf**). Writes directly into **Apache Delta Lake** (`_delta_log`) and pure-.NET **Apache Iceberg v2** (binary Apache Avro 1.11 OCF `snap-*.avro` / `*-m0.avro` / `*-d0.avro`, Parquet `FieldId 1..12` & `TIMESTAMP_MICROS`, native **`day(commit_timestamp_utc)` Hidden Partitioning**, **Merge-on-Read Equality Deletes** `content=2`, partition-aware `REPLACE` compaction, **WAP Named Tags & `staging` Branch Isolation with Fast-Forward Promotion**, reference-counted **`expireSnapshots` orphan GC**, and **Scheduled Hangfire Maintenance Policies**) — verified live with official **DuckDB v2.0.0 `iceberg_scan()`**. |
 | **Chaos-Tested Idempotent Streaming ETL** | Bounded-memory streaming pipelines across PostgreSQL, SQL Server, MySQL, REST APIs, and CSV/Excel into relational targets, Kafka, ClickHouse, or S3/MinIO Parquet. Includes an interactive visual field mapper, zero-row schema pre-flight diagnostics, dialect-native atomic `upsert`, and transactional **Target Receipt v1** (`__swapmid_etl_receipt_v1`) guaranteeing **`RPO = 0`** across crashes and retries. |
 | **Durable Event Bus & CloudEvents 1.0** | Cross-engine transactional Outbox (`DataIntegration` -> `MessageBus`), structured subscription routing (`subject:<glob>`, `$.jsonPath=value`), exponential retry & set-based batch dead-letter replay, plus CNCF **CloudEvents v1.0** HTTP Webhooks (`HMAC-SHA256` + SSRF guard), RabbitMQ, and Bot Webhooks (Slack / Feishu / DingTalk / WeCom). |
-| **API Gateway, Declarative GitOps, MCP & BFF** | Fail-closed dynamic API Gateway (`/api/gateway/{**path}` with DNS-rebinding-safe SSRF guard, per-client ACLs, and sliding-window rate limits), secret-free **`swapmid.io/v1` Declarative GitOps Bundles** (`Export` / `Diff` / `Dry-Run Apply` API, Web Console, `scripts/swapmidctl.mjs` with `${ENV_SECRET:...}` resolution, and reusable GitHub Action PR drift gate), RBAC-gated **MCP Server** (`POST /api/mcp`, **12 read-only diagnostic & `Draft`-only copilot tools**, **100.0% `204/204` `/api/v1` OpenAPI summary coverage**), and a Next.js 16 BFF storing OAuth2 tokens strictly in Redis with optional S256 PKCE **External OIDC SSO**. |
+| **API Gateway, Cross-Engine Lineage, GitOps & MCP** | Fail-closed dynamic API Gateway (`/api/gateway/{**path}` with DNS-rebinding-safe SSRF guard, per-client ACLs, and sliding-window rate limits), interactive **Cross-Engine Data Lineage & Blast-Radius Impact Explorer** (`GET /api/v1/integration-lineage{,/impact}` spanning DataSources -> Pipelines/CDC -> Lakehouse/MessageBus -> Subscriptions & Gateway), secret-free **`swapmid.io/v1` Declarative GitOps Bundles** (`Export` / `Diff` / `Dry-Run Apply` API, Web Console, `scripts/swapmidctl.mjs` with `${ENV_SECRET:...}` resolution, and reusable GitHub Action PR drift gate), RBAC-gated **MCP Server** (`POST /api/mcp`, **13 read-only diagnostic & `Draft`-only copilot tools**, **100.0% `207/207` `/api/v1` OpenAPI summary coverage**), and a Next.js 16 BFF storing OAuth2 tokens strictly in Redis with optional S256 PKCE **External OIDC SSO**. |
 
 ---
 
@@ -33,7 +33,7 @@ flowchart LR
   Browser["Web Console\n(React 19 / Next.js 16)"] <-->|"HttpOnly Cookie\n+ Identity Generation Fence"| BFF["Next.js 16 BFF\n(:5175 / :13000)"]
   BFF <--> Redis[("Redis 8\nSessions & Leases")]
   BFF <-->|"Bounded Fetch\n+ Bearer JWT"| Core["SwapMid Control Plane\n(.NET 10 / ABP v10.1 · :18080)"]
-  AI["AI Agents / IDEs"] -.->|"JSON-RPC 2.0 + RBAC\nPOST /api/mcp (12 Tools)"| Core
+  AI["AI Agents / IDEs"] -.->|"JSON-RPC 2.0 + RBAC\nPOST /api/mcp (13 Tools)"| Core
   Core <--> PG[("PostgreSQL 16\nMetadata & Outbox")]
   Sources["PG / SQL Server / MySQL\nKafka-Avro-Proto / Webhooks"] -->|"CDC & Streaming ETL"| Core
   Core --> Lake["S3 / MinIO Open Lakehouse\n(Iceberg v2 MoR+WAP · Delta)"]
@@ -57,9 +57,11 @@ flowchart LR
    ```bash
    docker compose up -d --build
    ```
-   > Want an instant **MySQL 8.4 (`ROW` Binlog) + MinIO Open Lakehouse** sandbox? Overlay the lakehouse demo file:
+   > Want an instant **MySQL 8.4 (`ROW` Binlog) + MinIO** or **Redpanda (Kafka + Schema Registry) + MinIO + DuckDB** Lakehouse sandbox? Overlay either turnkey demo file:
    > ```bash
    > docker compose -f docker-compose.yml -f docker-compose.lakehouse-demo.yml up -d --build
+   > # or: Redpanda + Schema Registry + Iceberg v2 WAP + DuckDB
+   > docker compose -f docker-compose.yml -f docker-compose.streaming-lakehouse.yml up -d --build
    > ```
 3. Access the platform:
    - **Web Console**: `http://localhost:13000`
@@ -108,13 +110,13 @@ cd web && cp .env.example .env.local && pnpm install --frozen-lockfile && pnpm d
 
 | Domain | Key Capabilities | Primary Paths |
 | --- | --- | --- |
-| **Data Integration** | Multi-source connectors & sinks (`Kafka` + Schema Registry Avro/Protobuf, `ClickHouse`, `S3/MinIO Parquet`), visual field mapper, streaming ETL + Target Receipt v1, 5-source CDC (`pgoutput`, `SQL Server CT`, `MySQL Binlog`, `Push Webhook` + dead-letter replay, `Kafka/Redpanda Debezium Avro/Protobuf/JSON`), Apache Iceberg v2 (binary Avro OCF + `day(ts)` hidden partitioning + **Merge-on-Read Equality Deletes** + **WAP Tags & `expireSnapshots` GC**) & Delta Lake Time-Travel, Zero-Infra live Parquet preview, Data Contract SLA, Unity Catalog / Iceberg REST sync, and **`swapmid.io/v1` GitOps Bundles + `swapmidctl` + PR Action** | `src/SwapMid.*/DataIntegration` · `src/SwapMid.HttpApi/GitOps` · `scripts/swapmidctl.mjs` |
+| **Data Integration** | Multi-source connectors & sinks (`Kafka` + Schema Registry Avro/Protobuf, `ClickHouse`, `S3/MinIO Parquet`), visual field mapper, streaming ETL + Target Receipt v1, 5-source CDC (`pgoutput`, `SQL Server CT`, `MySQL Binlog`, `Push Webhook` + dead-letter replay, `Kafka/Redpanda Debezium Avro/Protobuf/JSON`), Apache Iceberg v2 (binary Avro OCF + `day(ts)` hidden partitioning + **Merge-on-Read Equality Deletes** + **WAP Staging Branch / Promote, Named Tags & Cron `expireSnapshots` GC**) & Delta Lake Time-Travel, Zero-Infra live Parquet preview, Data Contract SLA, Unity Catalog / Iceberg REST sync, **Cross-Engine Data Lineage & Impact Explorer**, and **`swapmid.io/v1` GitOps Bundles + `swapmidctl` + PR Action** | `src/SwapMid.*/DataIntegration` · `src/SwapMid.HttpApi/{GitOps,Lineage}` · `scripts/swapmidctl.mjs` |
 | **Message Bus** | Topics, structured subscription filters, transactional outbox, delivery attempts, batch dead-letter replay, CloudEvents v1.0 HMAC webhooks, RabbitMQ, Bot webhooks | `src/SwapMid.*/MessageBus` · `web/src/app/(dashboard)/message-bus` |
-| **API Management** | API groups, fail-closed dynamic gateway (`/api/gateway/*`), rate limiting & ACLs, interactive test console, OpenIddict `client_credentials` apps, 12-tool MCP Server (`/api/mcp`) | `src/SwapMid.*/ApiManagement` · `src/SwapMid.HttpApi.Host/Mcp` · `web/src/app/(dashboard)/api-management` |
+| **API Management** | API groups, fail-closed dynamic gateway (`/api/gateway/*`), rate limiting & ACLs, interactive test console, OpenIddict `client_credentials` apps, 13-tool MCP Server (`/api/mcp`) | `src/SwapMid.*/ApiManagement` · `src/SwapMid.HttpApi.Host/Mcp` · `web/src/app/(dashboard)/api-management` |
 | **Scheduling** | Unified Hangfire/Cron job definitions, distributed concurrency locks, manual/dry-run triggers & execution logs | `src/SwapMid.*/Scheduling` · `web/src/app/(dashboard)/system/scheduled-jobs` |
 | **Notification** | Multi-channel templates (`Webhook`, `SMTP Email`), incoming Prometheus Alertmanager webhook (`X-SwapMid-Alert-Token`) | `src/SwapMid.*/Notification` · `web/src/app/(dashboard)/system/notification` |
 | **Identity & Governance** | Users, roles, permission tree & diff/export, 5-invariant impersonation guard, organization directory, two-tier dictionaries, code rules, audit logs, native Prometheus system health | `src/SwapMid.*/{AccountManagement,EnterpriseManagement,SystemManagement}` |
-| **Developer Docs** | Generated OpenAPI reference (`204/204` 100.0% summary coverage) + live EF Core & external database schema dictionary | `src/SwapMid.*/DeveloperDocs` · `web/src/app/(dashboard)/docs` |
+| **Developer Docs** | Generated OpenAPI reference (`207/207` 100.0% summary coverage) + live EF Core & external database schema dictionary | `src/SwapMid.*/DeveloperDocs` · `web/src/app/(dashboard)/docs` |
 
 ---
 
@@ -143,7 +145,7 @@ pnpm build
 
 ## Documentation, Cloud-Native Delivery & Community
 
-- **Roadmap & Changelog**: **[docs/roadmap.md](docs/roadmap.md)** (`v0.1.0` -> `v2.7.0` & beyond) · **[CHANGELOG.md](CHANGELOG.md)**
+- **Roadmap & Changelog**: **[docs/roadmap.md](docs/roadmap.md)** (`v0.1.0` -> `v2.8.0` & beyond) · **[CHANGELOG.md](CHANGELOG.md)**
 - **Chaos & SLA Benchmarks**: **[docs/benchmarks/resilience-and-chaos.md](docs/benchmarks/resilience-and-chaos.md)**
 - **Cloud-Native & Operations**: Kubernetes Helm v3 chart ([`charts/swapmid/`](charts/swapmid/)) · Turnkey Prometheus/Grafana/Alertmanager overlay ([`docker/docker-compose.observability.yml`](docker/docker-compose.observability.yml)) · **[Operations & Upgrade Runbook](docs/operations-and-upgrade.md)** · Runnable integration recipes ([`examples/`](examples/))
 - **Contributing & Security**: **[CONTRIBUTING.md](CONTRIBUTING.md)** · **[SECURITY.md](SECURITY.md)**

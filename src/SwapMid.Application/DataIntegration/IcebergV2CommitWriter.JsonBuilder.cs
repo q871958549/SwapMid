@@ -40,6 +40,55 @@ internal static partial class IcebergV2CommitWriter
 
         return false;
     }
+    internal static string ResolveTargetBranch(CdcStreamDefinition stream)
+        => string.IsNullOrWhiteSpace(stream.LakehouseWriteBranch) ? "main" : stream.LakehouseWriteBranch.Trim();
+
+    internal static bool TryExtractBranchSnapshotId(string metadataJson, string branchName, out long snapshotId)
+    {
+        snapshotId = 0;
+        try
+        {
+            using var doc = JsonDocument.Parse(metadataJson);
+            if (doc.RootElement.TryGetProperty("refs", out var refsEl) && refsEl.ValueKind == JsonValueKind.Object)
+            {
+                if (refsEl.TryGetProperty(branchName, out var branchEl) &&
+                    branchEl.ValueKind == JsonValueKind.Object &&
+                    branchEl.TryGetProperty("snapshot-id", out var bSid) &&
+                    bSid.TryGetInt64(out var parsedBranch) &&
+                    parsedBranch > 0)
+                {
+                    snapshotId = parsedBranch;
+                    return true;
+                }
+
+                if (!string.Equals(branchName, "main", StringComparison.Ordinal) &&
+                    refsEl.TryGetProperty("main", out var mainEl) &&
+                    mainEl.ValueKind == JsonValueKind.Object &&
+                    mainEl.TryGetProperty("snapshot-id", out var mSid) &&
+                    mSid.TryGetInt64(out var parsedMain) &&
+                    parsedMain > 0)
+                {
+                    snapshotId = parsedMain;
+                    return true;
+                }
+            }
+
+            if (doc.RootElement.TryGetProperty("current-snapshot-id", out var prop) &&
+                prop.TryGetInt64(out var current) &&
+                current > 0)
+            {
+                snapshotId = current;
+                return true;
+            }
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+
+        return false;
+    }
+
     internal static string BuildTableMetadataJson(
         CdcStreamDefinition stream,
         string tableLocation,
@@ -48,6 +97,8 @@ internal static partial class IcebergV2CommitWriter
         string? previousMetadataKey,
         long nextSeq,
         long snapshotId,
+        long? explicitParentSnapshotId,
+        string targetBranch,
         string manifestKey,
         string operation,
         string snapshotMode,
@@ -61,7 +112,8 @@ internal static partial class IcebergV2CommitWriter
         var snapshotLog = new JsonArray();
         var metadataLog = new JsonArray();
         var refs = new JsonObject();
-        long? parentSnapshotId = null;
+        long? prevMainSnapshotId = null;
+        var isMainBranch = string.Equals(targetBranch, "main", StringComparison.Ordinal);
 
         if (!string.IsNullOrWhiteSpace(previousMetadataJson))
         {
@@ -70,19 +122,29 @@ internal static partial class IcebergV2CommitWriter
                 var prevNode = JsonNode.Parse(previousMetadataJson)?.AsObject();
                 if (prevNode != null)
                 {
-                    if (prevNode["current-snapshot-id"] is JsonValue csVal && csVal.TryGetValue<long>(out var pSnap))
+                    if (prevNode["current-snapshot-id"] is JsonValue csVal &&
+                        csVal.TryGetValue<long>(out var pSnap) &&
+                        pSnap > 0)
                     {
-                        parentSnapshotId = pSnap;
+                        prevMainSnapshotId = pSnap;
                     }
 
                     if (prevNode["refs"] is JsonObject prevRefs)
                     {
                         foreach (var kv in prevRefs)
                         {
-                            if (!string.Equals(kv.Key, "main", StringComparison.Ordinal) && kv.Value != null)
+                            if (kv.Value != null)
                             {
                                 refs[kv.Key] = kv.Value.DeepClone();
                             }
+                        }
+
+                        if (prevMainSnapshotId == null &&
+                            prevRefs["main"]?["snapshot-id"] is JsonValue mVal &&
+                            mVal.TryGetValue<long>(out var refMain) &&
+                            refMain > 0)
+                        {
+                            prevMainSnapshotId = refMain;
                         }
                     }
 
@@ -127,6 +189,8 @@ internal static partial class IcebergV2CommitWriter
             }
         }
 
+        var parentSnapshotId = explicitParentSnapshotId ?? prevMainSnapshotId;
+
         var addedDataFiles = addedFiles.Where(f => f.Content == IcebergAvroManifestBuilder.ContentData).ToList();
         var addedDeleteFiles = addedFiles.Where(f => f.Content == IcebergAvroManifestBuilder.ContentEqualityDeletes).ToList();
         var activeDataFiles = activeFiles.Where(f => f.Content == IcebergAvroManifestBuilder.ContentData).ToList();
@@ -156,6 +220,7 @@ internal static partial class IcebergV2CommitWriter
             ["total-equality-deletes"] = totalEqDeletes.ToString(CultureInfo.InvariantCulture),
             ["swapmid-run-id"] = runToken,
             ["swapmid-snapshot-mode"] = snapshotMode,
+            ["swapmid-target-branch"] = targetBranch,
             ["engine-name"] = EngineName,
         };
 
@@ -174,11 +239,14 @@ internal static partial class IcebergV2CommitWriter
         }
 
         snapshots.Add(snapObj);
-        snapshotLog.Add(new JsonObject
+        if (isMainBranch)
         {
-            ["timestamp-ms"] = timestampMs,
-            ["snapshot-id"] = snapshotId,
-        });
+            snapshotLog.Add(new JsonObject
+            {
+                ["timestamp-ms"] = timestampMs,
+                ["snapshot-id"] = snapshotId,
+            });
+        }
 
         var isDailyPartitioned = stream.LakehousePartitionStrategy == LakehousePartitionStrategy.DailyCommitUtc;
         var partitionSpecs = new JsonArray
@@ -230,9 +298,10 @@ internal static partial class IcebergV2CommitWriter
                 ["swapmid.engine"] = EngineName,
                 ["swapmid.partition_strategy"] = isDailyPartitioned ? "day(commit_timestamp_utc)" : "none",
                 ["swapmid.write_mode"] = stream.LakehouseWriteMode == LakehouseWriteMode.MergeOnReadUpsert ? "merge-on-read-upsert" : "append-changelog",
+                ["swapmid.write_branch"] = targetBranch,
             },
-            ["current-snapshot-id"] = snapshotId,
-            ["refs"] = BuildRefsWithMain(refs, snapshotId),
+            ["current-snapshot-id"] = isMainBranch ? snapshotId : (prevMainSnapshotId ?? -1L),
+            ["refs"] = BuildRefsForBranch(refs, targetBranch, snapshotId, isMainBranch, prevMainSnapshotId),
             ["snapshots"] = snapshots,
             ["snapshot-log"] = snapshotLog,
             ["metadata-log"] = metadataLog,
@@ -241,22 +310,50 @@ internal static partial class IcebergV2CommitWriter
         return root.ToJsonString(JsonOptions);
     }
 
-    private static JsonObject BuildRefsWithMain(JsonObject preserved, long mainSnapshotId)
+    private static JsonObject BuildRefsForBranch(
+        JsonObject preserved,
+        string targetBranch,
+        long newSnapshotId,
+        bool isMainBranch,
+        long? prevMainSnapshotId)
     {
-        var result = new JsonObject
+        var result = new JsonObject();
+        if (isMainBranch)
         {
-            ["main"] = new JsonObject
+            result["main"] = new JsonObject
             {
-                ["snapshot-id"] = mainSnapshotId,
+                ["snapshot-id"] = newSnapshotId,
                 ["type"] = "branch",
-            },
-        };
+            };
+        }
+        else if (prevMainSnapshotId is > 0)
+        {
+            result["main"] = new JsonObject
+            {
+                ["snapshot-id"] = prevMainSnapshotId.Value,
+                ["type"] = "branch",
+            };
+        }
+
         foreach (var kv in preserved)
         {
-            if (!string.Equals(kv.Key, "main", StringComparison.Ordinal) && kv.Value != null)
+            if (string.Equals(kv.Key, "main", StringComparison.Ordinal) ||
+                string.Equals(kv.Key, targetBranch, StringComparison.Ordinal) ||
+                kv.Value == null)
             {
-                result[kv.Key] = kv.Value.DeepClone();
+                continue;
             }
+
+            result[kv.Key] = kv.Value.DeepClone();
+        }
+
+        if (!isMainBranch)
+        {
+            result[targetBranch] = new JsonObject
+            {
+                ["snapshot-id"] = newSnapshotId,
+                ["type"] = "branch",
+            };
         }
 
         return result;
@@ -297,22 +394,6 @@ internal static partial class IcebergV2CommitWriter
             ["schema-id"] = 0,
             ["fields"] = fields,
         };
-    }
-
-    private static bool TryExtractCurrentSnapshotId(string metadataJson, out long snapshotId)
-    {
-        snapshotId = 0;
-        try
-        {
-            using var doc = JsonDocument.Parse(metadataJson);
-            return doc.RootElement.TryGetProperty("current-snapshot-id", out var prop) &&
-                   prop.TryGetInt64(out snapshotId) &&
-                   snapshotId > 0;
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
     }
 
     private static bool TryFindExistingReceiptForRunId(

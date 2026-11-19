@@ -163,6 +163,137 @@ public class IcebergV2MaintenanceTests
         v5Preview.RowCount.ShouldBe(2); // 27001 (150) + 27003 (300)
     }
 
+    [Fact]
+    public async Task WapStagingBranch_Should_Isolate_Main_EnforceContractGate_And_FastForwardPromote_WithAuditTag()
+    {
+        var store = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        var handler = new MemoryS3Handler(store);
+        var factory = Substitute.For<IHttpClientFactory>();
+        factory.CreateClient(ExternalHttpClientNames.DataIntegrationSink)
+            .Returns(_ => new HttpClient(handler, disposeHandler: false));
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DataIntegration:Sinks:AllowedHosts"] = "198.51.100.33",
+            })
+            .Build();
+
+        var sink = new DataSource(
+            Guid.NewGuid(),
+            "minio-wap",
+            DataSourceType.ObjectStorage,
+            """{"provider":"minio","endpoint":"http://198.51.100.33:9000","region":"us-east-1","bucket":"lake","prefix":"wap","format":"parquet","pathStyle":true,"accessKey":"ak","secretKey":"sk"}""");
+
+        var stream = new CdcStreamDefinition(
+            Guid.NewGuid(),
+            "orders-iceberg-wap",
+            Guid.NewGuid(),
+            "push_webhook",
+            "webhook_orders_wap",
+            CdcTargetMode.ExternalSink,
+            targetSinkId: sink.Id,
+            targetSinkDestination: "orders/branch",
+            targetSinkKeyColumns: "order_id",
+            sourceType: CdcSourceType.PushWebhook,
+            lakehouseTableFormat: LakehouseTableFormat.ApacheIceberg);
+        stream.ConfigureLakehouseWriteMode(LakehouseWriteMode.MergeOnReadUpsert);
+
+        var sinkWriter = new ObjectStorageEtlSinkWriter(factory, config);
+        var sinkWriters = new Dictionary<DataSourceType, IEtlSinkWriter> { [DataSourceType.ObjectStorage] = sinkWriter };
+        var t1 = new DateTime(2026, 11, 19, 10, 0, 0, DateTimeKind.Utc);
+        var t2 = new DateTime(2026, 11, 19, 11, 0, 0, DateTimeKind.Utc);
+
+        // v1: initial committed baseline on main
+        await CdcExternalSinkDeliveryAdapter.DeliverAsync(
+            stream, sink,
+            [
+                new PgOutputCapturedChange("shop", "orders", "insert", "w:1", t1,
+                    new Dictionary<string, object?> { ["order_id"] = 28001, ["amount"] = 100m }, null),
+            ],
+            null, sinkWriters, CancellationToken.None, 0, "wap:b1");
+
+        // Switch stream to WAP branch "staging" + scheduled maintenance cron
+        stream.ConfigureLakehouseWapAndMaintenance("staging", "0 2 * * *", 5, 1440, true);
+        stream.LakehouseWriteBranch.ShouldBe("staging");
+        stream.LakehouseMaintenanceCron.ShouldBe("0 2 * * *");
+        stream.LakehouseExpireRetainLast.ShouldBe(5);
+        stream.LakehouseDeleteOrphanedFiles.ShouldBeTrue();
+
+        // v2: written strictly to staging branch (main MUST remain pinned to v1!)
+        await CdcExternalSinkDeliveryAdapter.DeliverAsync(
+            stream, sink,
+            [
+                new PgOutputCapturedChange("shop", "orders", "update", "w:2", t2,
+                    new Dictionary<string, object?> { ["order_id"] = 28001, ["amount"] = 250m },
+                    new Dictionary<string, object?> { ["order_id"] = 28001, ["amount"] = 100m }),
+                new PgOutputCapturedChange("shop", "orders", "insert", "w:3", t2,
+                    new Dictionary<string, object?> { ["order_id"] = 28002, ["amount"] = 400m }, null),
+            ],
+            null, sinkWriters, CancellationToken.None, 1, "wap:b2");
+
+        var historyReader = new DeltaLakeHistoryReader(factory, config);
+        var histBeforePromote = await historyReader.ReadAsync(stream, sink, requestedVersion: null);
+        histBeforePromote.Refs.ShouldContain(r => r.Name == "main" && r.Type == "branch" && r.Version == 1);
+        histBeforePromote.Refs.ShouldContain(r => r.Name == "staging" && r.Type == "branch" && r.Version == 2);
+
+        // Contract gate blocks promotion when SLA is violated
+        stream.ConfigureDataContract(maxFreshnessLagSeconds: 60, maxAllowedWalLagBytes: null, requiredColumns: "order_id");
+        stream.RecordContractEvaluation(violated: true, summary: "Freshness SLA breached", evaluatedAtUtc: t2);
+
+        var maint = new IcebergV2MaintenanceService(factory, config);
+        await Should.ThrowAsync<BusinessException>(async () =>
+            await maint.PromoteBranchAsync(stream, sink, new PromoteCdcLakehouseBranchInput
+            {
+                BranchName = "staging",
+                RequireContractPass = true,
+            }));
+
+        // Clear contract violation -> DryRun passes without mutating metadata
+        stream.RecordContractEvaluation(violated: false, summary: null, evaluatedAtUtc: t2);
+        var dryPromote = await maint.PromoteBranchAsync(stream, sink, new PromoteCdcLakehouseBranchInput
+        {
+            BranchName = "staging",
+            RequireContractPass = true,
+            CreateAuditTagName = "release-280",
+            DryRun = true,
+        });
+        dryPromote.DryRun.ShouldBeTrue();
+        dryPromote.AlreadyUpToDate.ShouldBeFalse();
+        dryPromote.PreviousMainVersion.ShouldBe(1);
+        dryPromote.PromotedSnapshotVersion.ShouldBe(2);
+        dryPromote.MetadataVersion.ShouldBe(2);
+
+        // Execute fast-forward promotion with atomic audit tag
+        var promoted = await maint.PromoteBranchAsync(stream, sink, new PromoteCdcLakehouseBranchInput
+        {
+            BranchName = "staging",
+            RequireContractPass = true,
+            CreateAuditTagName = "release-280",
+            DryRun = false,
+        });
+        promoted.DryRun.ShouldBeFalse();
+        promoted.AlreadyUpToDate.ShouldBeFalse();
+        promoted.PreviousMainVersion.ShouldBe(1);
+        promoted.PromotedSnapshotVersion.ShouldBe(2);
+        promoted.MetadataVersion.ShouldBe(3);
+        promoted.AuditTagName.ShouldBe("release-280");
+
+        var histAfterPromote = await historyReader.ReadAsync(stream, sink, requestedVersion: null);
+        histAfterPromote.Refs.ShouldContain(r => r.Name == "main" && r.Type == "branch" && r.Version == 2);
+        histAfterPromote.Refs.ShouldContain(r => r.Name == "staging" && r.Type == "branch" && r.Version == 2);
+        histAfterPromote.Refs.ShouldContain(r => r.Name == "release-280" && r.Type == "tag" && r.Version == 2);
+
+        // Second promote is idempotent no-op
+        var noop = await maint.PromoteBranchAsync(stream, sink, new PromoteCdcLakehouseBranchInput
+        {
+            BranchName = "staging",
+            DryRun = false,
+        });
+        noop.AlreadyUpToDate.ShouldBeTrue();
+        noop.MetadataVersion.ShouldBe(3);
+    }
+
     private sealed class MemoryS3Handler : HttpMessageHandler
     {
         private readonly Dictionary<string, byte[]> _objects;

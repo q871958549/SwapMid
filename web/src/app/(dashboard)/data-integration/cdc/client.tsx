@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { GitBranch } from 'lucide-react'
+import { GitBranch, Network } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { type ColumnDef, type SortingState } from '@tanstack/react-table'
 import {
@@ -18,8 +18,10 @@ import { ListPageShell } from '@/components/data-table/list-page-shell'
 import { PageHeader } from '@/components/data-table/page-header'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { toast } from '@/components/ui/use-toast'
 import type { PagedResult } from '@/lib/api-client'
-import type { CdcStreamDto } from '@/lib/api/types'
+import { readApiErrorMessage } from '@/lib/api-error'
+import type { CdcStreamDto, IntegrationLineageGraphDto } from '@/lib/api/types'
 import { useCrudForm } from '@/lib/crud/use-crud-form'
 import { useCrudResource } from '@/lib/crud/use-crud-resource'
 import {
@@ -31,6 +33,7 @@ import {
 import { CdcFormDialog } from './cdc-form-dialog'
 import { CdcGitOpsBundleDialog } from './cdc-gitops-bundle-dialog'
 import { CdcLakehouseHistoryDialog } from './cdc-lakehouse-history-dialog'
+import { CdcLineageGraphDialog } from './cdc-lineage-graph-dialog'
 import { CdcWebhookDeliveriesDialog } from './cdc-webhook-deliveries-dialog'
 import {
   type CdcFormState,
@@ -89,6 +92,29 @@ export function CdcStreamsClient({
   const locale = useLocale()
   const [statusFilter, setStatusFilter] = useState(initialStatus)
   const [gitOpsOpen, setGitOpsOpen] = useState(false)
+  const [lineageOpen, setLineageOpen] = useState(false)
+  const [lineageLoading, setLineageLoading] = useState(false)
+  const [lineageGraph, setLineageGraph] = useState<IntegrationLineageGraphDto | null>(null)
+
+  const loadLineageGraph = async () => {
+    setLineageLoading(true)
+    try {
+      const res = await fetch('/api/proxy/integration-lineage')
+      if (!res.ok) {
+        const msg = await readApiErrorMessage(res, t('lineageLoadFailedTitle'))
+        toast({ variant: 'destructive', title: t('lineageLoadFailedTitle'), description: msg })
+        return
+      }
+      setLineageGraph(await res.json() as IntegrationLineageGraphDto)
+    } finally {
+      setLineageLoading(false)
+    }
+  }
+
+  const handleOpenLineage = () => {
+    setLineageOpen(true)
+    void loadLineageGraph()
+  }
 
   const list = useCrudResource<CdcStreamDto>({
     endpoint: 'cdc-streams',
@@ -250,6 +276,15 @@ export function CdcStreamsClient({
             description={t('countDescription', { count: list.total })}
             secondaryActions={[
               <Button
+                key="lineage"
+                size="sm"
+                variant="outline"
+                onClick={handleOpenLineage}
+              >
+                <Network className="mr-1.5 size-3.5" />
+                {t('lineageButtonLabel')}
+              </Button>,
+              <Button
                 key="gitops"
                 size="sm"
                 variant="outline"
@@ -356,6 +391,13 @@ export function CdcStreamsClient({
         canManage={canManage}
         onApplied={list.reloadAndRefresh}
         onClose={() => setGitOpsOpen(false)}
+      />
+      <CdcLineageGraphDialog
+        open={lineageOpen}
+        graph={lineageGraph}
+        loading={lineageLoading}
+        onRefresh={() => void loadLineageGraph()}
+        onClose={() => setLineageOpen(false)}
       />
       <DeleteConfirm
         crud={crud}

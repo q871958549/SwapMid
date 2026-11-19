@@ -4,6 +4,25 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2026-11-19
+
+### Added
+- **Apache Iceberg v2 WAP Staging Branch Isolation, Fast-Forward Promotion & Scheduled Maintenance Policies**:
+  - Added EF Core migration `AddCdcIcebergWapAndMaintenanceSchedule` extending `AppCdcStreams` with `LakehouseWriteBranch`, `LakehouseMaintenanceCron`, `LakehouseExpireRetainLast`, `LakehouseExpireOlderThanMinutes`, `LakehouseDeleteOrphanedFiles`, `LakehouseLastMaintenanceAt`, and `LakehouseLastMaintenanceSummary`.
+  - Upgraded `IcebergV2CommitWriter` (`JsonBuilder.cs`) so streams configured with a WAP branch (e.g., `staging`) commit strictly onto `refs[branch]` while keeping `current-snapshot-id` and `refs["main"]` untouched — preventing unaudited writes from leaking to external readers (`DuckDB` / `Trino` / `Spark`).
+  - Added `IcebergV2MaintenanceService.Branches.cs` and `POST /api/v1/cdc-streams/{id}/promote-lakehouse-branch` (`[Authorize(CdcStreams.Manage)]`) enforcing Data Contract SLA pass gating (`RequireContractPass = true`), strict fast-forward ancestry validation, atomic optional audit tag pinning (`CreateAuditTagName`), best-effort Catalog sync, and `swapmid_cdc_iceberg_maintenance_total{operation="promote"}` telemetry.
+  - Added `HangfireCdcScheduleSynchronizer.SyncMaintenanceAsync` and `RunScheduledLakehouseMaintenanceHangfireJob` (`cdc-lakehouse-maint:{streamId}`) for Cron-driven automated small-file compaction and `expireSnapshots` orphan reclamation, plus full export/diff/apply support in `swapmid.io/v1` GitOps bundles.
+- **Cross-Engine Data Lineage Graph, Blast-Radius Impact Explorer & MCP Tool 13**:
+  - Added host-layer `SwapMid.HttpApi/Lineage/` (`IntegrationLineageBuilder`, `IntegrationLineageController`) exposing read-only, secret-free `GET /api/v1/integration-lineage` and `GET /api/v1/integration-lineage/impact` connecting `DataSources` -> `DataPipelines` / `CdcStreams` -> `LakehouseTables` / `MessageTopics` -> `MessageSubscriptions` & `ApiGroups` / `ApiRoutes`, with cycle-safe BFS upstream/downstream impact traversal, risk grading (`low`/`medium`/`high`), and pre-change remediation guidance.
+  - Added RBAC-gated read-only MCP Tool 13 `analyze_lineage_impact` (`McpLineageImpactHandler`), enriched MCP Tool 12 `plan_lakehouse_maintenance` with pending WAP branch recommendations, and expanded `scripts/e2e-smoke.mjs` to assert live lineage + 13 MCP tools.
+  - Delivered interactive `/data-integration/cdc` **`血缘图谱` / `Lineage`** 4-stage topology & blast-radius dialog (`CdcLineageGraphDialog`), WAP branch promotion controls in `CdcIcebergMaintenanceSection`, and WAP/Cron policy controls in `CdcLakehouseSinkSection`, maintaining **100.0% (`207/207`)** `/api/v1` OpenAPI summary coverage across 9 business domains and `2,190` trilingual i18n keys.
+- **Turnkey Streaming Lakehouse Sandbox Overlay & Blueprint**:
+  - Added [docker/docker-compose.streaming-lakehouse.yml](docker/docker-compose.streaming-lakehouse.yml) (`Redpanda v24.3.6` Kafka + built-in Schema Registry + Chainguard `MinIO` + optional `DuckDB` query profile) and [examples/streaming-lakehouse-iceberg/](examples/streaming-lakehouse-iceberg/) (`README.md`, `swapmid-bundle.yaml`, `query-duckdb.sql`).
+
+### Fixed
+- **CI Ephemeral Port Collision Hardening**: Moved the CI `postgres-cdc` logical-replication test container mapping in `.github/workflows/ci.yml` from `55432` (inside Linux ephemeral range `32768–60999`) to `15432` to eliminate transient runner bind collisions.
+- **Event-Driven CDC (`PushWebhook` / `KafkaDebezium`) Schema Drift Acceptance**: Updated `POST /api/v1/cdc-streams/{id}/accept-schema` so payload-inferred CDC sources cleanly clear drift alerts, re-evaluate Data Contract SLA status, and re-lock the schema baseline on the next incoming batch instead of attempting SQL `INFORMATION_SCHEMA` introspection.
+
 ## [2.7.0] - 2026-11-19
 
 ### Added

@@ -1,0 +1,80 @@
+# Turnkey Redpanda (Kafka + Schema Registry) + MinIO + Apache Iceberg v2 + DuckDB Sandbox Overlay for SwapMid
+# Usage:
+#   docker compose -f docker/docker-compose.yml -f docker/docker-compose.streaming-lakehouse.yml --env-file docker/.env up -d
+#   docker compose -f docker/docker-compose.yml -f docker/docker-compose.streaming-lakehouse.yml --env-file docker/.env --profile query run --rm duckdb
+
+services:
+  api:
+    environment:
+      DataIntegration__Sinks__AllowedHosts: "${DATA_INTEGRATION_SINKS_ALLOWED_HOSTS:-redpanda,minio}"
+      DataIntegration__Sinks__AllowedPrivateNetworks: "${DATA_INTEGRATION_SINKS_ALLOWED_PRIVATE_NETWORKS:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}"
+      Mcp__Enabled: "${MCP_ENABLED:-true}"
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.3.6
+    restart: unless-stopped
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp=1
+      - --memory=512M
+      - --reserve-memory=0M
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:${REDPANDA_KAFKA_PORT:-19092}
+      - --schema-registry-addr=internal://0.0.0.0:8081
+      - --pandaproxy-addr=internal://0.0.0.0:8082
+      - --advertise-pandaproxy-addr=internal://redpanda:8082
+    ports:
+      - "${REDPANDA_KAFKA_PORT:-19092}:19092"
+      - "${REDPANDA_SCHEMA_REGISTRY_PORT:-18081}:8081"
+      - "${REDPANDA_ADMIN_PORT:-19644}:9644"
+    volumes:
+      - redpanda_demo_data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -E 'Healthy:.+true' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: cgr.dev/chainguard/minio:latest
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: "${DEMO_MINIO_ROOT_USER:-swapmid_minio}"
+      MINIO_ROOT_PASSWORD: "${DEMO_MINIO_ROOT_PASSWORD:-SwapMid_Demo_Minio!2026}"
+    volumes:
+      - minio_streaming_data:/data
+    ports:
+      - "${MINIO_API_PORT:-19000}:9000"
+      - "${MINIO_CONSOLE_PORT:-19001}:9001"
+
+  minio-init:
+    image: cgr.dev/chainguard/minio-client:latest
+    restart: on-failure
+    depends_on:
+      - minio
+    environment:
+      MC_HOST_local: "http://${DEMO_MINIO_ROOT_USER:-swapmid_minio}:${DEMO_MINIO_ROOT_PASSWORD:-SwapMid_Demo_Minio!2026}@minio:9000"
+    command:
+      - "--config-dir"
+      - "/tmp/mc"
+      - "mb"
+      - "--ignore-existing"
+      - "local/${DEMO_MINIO_BUCKET:-swapmid-lake}"
+
+  duckdb:
+    image: duckdb/duckdb:latest
+    profiles: ["query"]
+    depends_on:
+      - minio
+    volumes:
+      - ../examples/streaming-lakehouse-iceberg/query-duckdb.sql:/work/query-duckdb.sql:ro
+    entrypoint: ["duckdb", "-c", ".read /work/query-duckdb.sql"]
+
+volumes:
+  redpanda_demo_data:
+  minio_streaming_data:

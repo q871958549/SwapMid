@@ -14,7 +14,7 @@ public class IntegrationBundleDocument
     public string SchemaVersion { get; set; } = "swapmid.io/v1";
 
     /// <summary>导出时的 SwapMid 平台版本</summary>
-    public string PlatformVersion { get; set; } = "2.7.0";
+    public string PlatformVersion { get; set; } = "2.8.0";
 
     /// <summary>导出时间（UTC ISO-8601 字符串）</summary>
     public string ExportedAtUtc { get; set; } = DateTime.UtcNow.ToString("O");
@@ -87,6 +87,11 @@ public class BundleCdcStreamItem
     public LakehouseTableFormat LakehouseTableFormat { get; set; }
     public LakehousePartitionStrategy LakehousePartitionStrategy { get; set; }
     public LakehouseWriteMode LakehouseWriteMode { get; set; }
+    public string? LakehouseWriteBranch { get; set; }
+    public string? LakehouseMaintenanceCron { get; set; }
+    public int? LakehouseExpireRetainLast { get; set; }
+    public int? LakehouseExpireOlderThanMinutes { get; set; }
+    public bool LakehouseDeleteOrphanedFiles { get; set; }
     public int? LakehouseCompactMinFiles { get; set; }
     public LakehouseCatalogType CatalogType { get; set; }
     public string? CatalogSinkName { get; set; }

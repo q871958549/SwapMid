@@ -120,6 +120,18 @@ export function CdcTargetCell({ stream }: { stream: CdcStreamDto }) {
               Number(stream.lakehouseWriteMode ?? 0) === 1 && (
               <StatusBadge tone="success">MoR Upsert</StatusBadge>
             )}
+            {mode === CDC_TARGET_EXTERNAL_SINK &&
+              Number(stream.lakehouseTableFormat ?? 0) === 2 &&
+              stream.lakehouseWriteBranch && (
+              <StatusBadge tone="warning">{`WAP:${stream.lakehouseWriteBranch}`}</StatusBadge>
+            )}
+            {mode === CDC_TARGET_EXTERNAL_SINK &&
+              Number(stream.lakehouseTableFormat ?? 0) === 2 &&
+              stream.lakehouseMaintenanceCron && (
+              <StatusBadge tone="neutral" title={stream.lakehouseLastMaintenanceSummary ?? stream.lakehouseMaintenanceCron}>
+                {`Cron:${stream.lakehouseMaintenanceCron}`}
+              </StatusBadge>
+            )}
             {mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.catalogType ?? 0) > 0 && (
               <StatusBadge tone="neutral" title={stream.catalogLastSyncStatus ?? undefined}>
                 {Number(stream.catalogType) === 1

@@ -19,10 +19,10 @@ SwapMid 并非底层队列或单一通信协议组件，而是运行在关系型
 
 | 核心能力域 | 开箱即用的生产级能力 |
 | --- | --- |
-| **异构实时 CDC 与零 JVM 开放湖仓** | 原生覆盖 **5 类 CDC 数据源**：PostgreSQL 逻辑复制（`pgoutput`）、SQL Server Change Tracking（`CHANGETABLE`）、MySQL / MariaDB Row-Based Binlog（`ROW` + `FULL`）、无服务器 HMAC-SHA256 **Push Webhook CDC**（内置自动 Schema 推导与死信重放台账）以及 **Kafka / Redpanda Debezium 流**（原生支持 JSON 与 **Confluent / Redpanda Schema Registry 二进制 Avro 与 Protobuf 线协议解码**）。直写 **Apache Delta Lake**（`_delta_log`）与纯 .NET 零 JVM **Apache Iceberg v2**（二进制 Apache Avro 1.11 OCF `snap-*.avro` / `*-m0.avro` / `*-d0.avro`、Parquet `FieldId 1..12` 与 `TIMESTAMP_MICROS`、原生 **`day(commit_timestamp_utc)` 按日隐藏分区**、**Merge-on-Read 主键 Upsert（`content=2` Equality Deletes）**、同日分区感知 `REPLACE` 压缩、**WAP 命名审计标签（`refs`）**以及严格引用计数 **`expireSnapshots` 孤儿清理**），经官方 **DuckDB v2.0.0 `iceberg_scan()`** 实机验证去重查询、标签保护与时间旅行。 |
+| **异构实时 CDC 与零 JVM 开放湖仓** | 原生覆盖 **5 类 CDC 数据源**：PostgreSQL 逻辑复制（`pgoutput`）、SQL Server Change Tracking（`CHANGETABLE`）、MySQL / MariaDB Row-Based Binlog（`ROW` + `FULL`）、无服务器 HMAC-SHA256 **Push Webhook CDC**（内置自动 Schema 推导与死信重放台账）以及 **Kafka / Redpanda Debezium 流**（原生支持 JSON 与 **Confluent / Redpanda Schema Registry 二进制 Avro 与 Protobuf 线协议解码**）。直写 **Apache Delta Lake**（`_delta_log`）与纯 .NET 零 JVM **Apache Iceberg v2**（二进制 Apache Avro 1.11 OCF `snap-*.avro` / `*-m0.avro` / `*-d0.avro`、Parquet `FieldId 1..12` 与 `TIMESTAMP_MICROS`、原生 **`day(commit_timestamp_utc)` 按日隐藏分区**、**Merge-on-Read 主键 Upsert（`content=2` Equality Deletes）**、同日分区感知 `REPLACE` 压缩、**WAP 隔离分支（`staging`）与快进发布、命名审计标签（`refs`）**、严格引用计数 **`expireSnapshots` 孤儿清理**及 **Hangfire 定时维护策略**），经官方 **DuckDB v2.0.0 `iceberg_scan()`** 实机验证分支隔离、发布去重与时间旅行。 |
 | **混沌验证的幂等流式 ETL** | 面向 PostgreSQL、SQL Server、MySQL、REST API、CSV/Excel 与 Kafka / ClickHouse / S3-MinIO Parquet 的有界内存流式管道；内置可视化字段映射器、零行只读 Schema 预检、多方言原子 `upsert` 与目标库事务级回执表 **Target Receipt v1**（`__swapmid_etl_receipt_v1`），在断连崩溃与并发重跑下实现 **`RPO = 0`**。 |
 | **可靠事件总线与 CloudEvents 1.0** | 跨引擎事务性 Outbox（`DataIntegration` -> `MessageBus`）、主题/订阅结构化过滤（`subject:<通配符>`、`$.jsonPath=value`）、指数退避自动重试与集合化批量死信重放，原生支持 CNCF **CloudEvents v1.0** HTTP Webhook（`HMAC-SHA256` 签名 + 出站 SSRF 防护）、RabbitMQ 及飞书/钉钉/企微/Slack 群机器人通道。 |
-| **API 网关、声明式 GitOps、MCP 与 BFF** | 默认安全关闭的动态 API 网关（`/api/gateway/{**path}`，防 DNS 重绑定 SSRF 守卫、客户端路由组 ACL 与滑动窗口限流）、零明文密钥 **`swapmid.io/v1` 声明式 GitOps 集成清单**（`Export` / `Diff` / `Dry-Run Apply` API、Web 控制台、支持 `${ENV_SECRET:...}` 密钥占位解析的 `scripts/swapmidctl.mjs` CLI 与可复用 GitHub Action PR 漂移门禁）、受平台 RBAC 约束的 **MCP Server**（`POST /api/mcp`，内置 **12 个只读诊断与 `Draft` 草稿生成工具**，`/api/v1` 接口 **100.0% `204/204` OpenAPI 摘要覆盖**）以及零前端令牌暴露的 Next.js 16 BFF 控制台（支持 S256 PKCE **外部企业 OIDC 单点登录**）。 |
+| **API 网关、跨引擎血缘、GitOps 与 MCP** | 默认安全关闭的动态 API 网关（`/api/gateway/{**path}`，防 DNS 重绑定 SSRF 守卫、客户端路由组 ACL 与滑动窗口限流）、交互式**跨引擎数据血缘与影响面分析**（`GET /api/v1/integration-lineage{,/impact}`，串联数据源 -> 管道/CDC -> 湖仓/消息总线 -> 订阅与 API 网关）、零明文密钥 **`swapmid.io/v1` 声明式 GitOps 集成清单**（`Export` / `Diff` / `Dry-Run Apply` API、Web 控制台、支持 `${ENV_SECRET:...}` 密钥占位解析的 `scripts/swapmidctl.mjs` CLI 与可复用 GitHub Action PR 漂移门禁）、受平台 RBAC 约束的 **MCP Server**（`POST /api/mcp`，内置 **13 个只读诊断与 `Draft` 草稿生成工具**，`/api/v1` 接口 **100.0% `207/207` OpenAPI 摘要覆盖**）以及零前端令牌暴露的 Next.js 16 BFF 控制台（支持 S256 PKCE **外部企业 OIDC 单点登录**）。 |
 
 ---
 
@@ -33,7 +33,7 @@ flowchart LR
   Browser["Web 控制台\n(React 19 / Next.js 16)"] <-->|"HttpOnly Cookie\n+ 身份世代围栏"| BFF["Next.js 16 BFF\n(:5175 / :13000)"]
   BFF <--> Redis[("Redis 8\n会话与刷新租约")]
   BFF <-->|"有界回源请求\n+ Bearer JWT"| Core["SwapMid 中台控制面\n(.NET 10 / ABP v10.1 · :18080)"]
-  AI["AI Agent / IDE"] -.->|"JSON-RPC 2.0 + RBAC\nPOST /api/mcp (12 工具)"| Core
+  AI["AI Agent / IDE"] -.->|"JSON-RPC 2.0 + RBAC\nPOST /api/mcp (13 工具)"| Core
   Core <--> PG[("PostgreSQL 16\n元数据与 Outbox")]
   Sources["PG / SQL Server / MySQL\nKafka-Avro-Proto / Webhook"] -->|"实时 CDC & 流式 ETL"| Core
   Core --> Lake["S3 / MinIO 开放湖仓\n(Iceberg v2 MoR+WAP · Delta)"]
@@ -57,9 +57,11 @@ flowchart LR
    ```bash
    docker compose up -d --build
    ```
-   > 如需一键体验 **MySQL 8.4（`ROW` Binlog 预置表）+ MinIO 开放湖仓沙箱**，叠加湖仓编排即可：
+   > 如需一键体验 **MySQL 8.4（`ROW` Binlog）+ MinIO** 或 **Redpanda（Kafka + Schema Registry）+ MinIO + DuckDB** 开放湖仓沙箱，叠加对应编排文件即可：
    > ```bash
    > docker compose -f docker-compose.yml -f docker-compose.lakehouse-demo.yml up -d --build
+   > # 或：Redpanda + Schema Registry + Iceberg v2 WAP + DuckDB
+   > docker compose -f docker-compose.yml -f docker-compose.streaming-lakehouse.yml up -d --build
    > ```
 3. 访问服务入口：
    - **Web 控制台**：`http://localhost:13000`
@@ -108,13 +110,13 @@ cd web && cp .env.example .env.local && pnpm install --frozen-lockfile && pnpm d
 
 | 业务域 | 核心能力 | 主要目录 |
 | --- | --- | --- |
-| **数据集成（DataIntegration）** | 多源连接器与 Sink（`Kafka` + Schema Registry Avro/Protobuf / `ClickHouse` / `S3 & MinIO Parquet`）、可视化字段映射、流式 ETL + Target Receipt v1、5 类异构 CDC（`pgoutput` / `SQL Server CT` / `MySQL Binlog` / `Push Webhook` + 死信重放 / `Kafka-Redpanda Debezium Avro/Protobuf/JSON`）、Apache Iceberg v2（二进制 Avro OCF + `day(ts)` 按日隐藏分区 + **Merge-on-Read Equality Deletes** + **WAP 审计标签与 `expireSnapshots` 清理**）与 Delta Lake Time-Travel、零计算集群 Parquet 实时预览、数据契约 SLA、Unity Catalog / Iceberg REST 同步与 **`swapmid.io/v1` 声明式 GitOps 清单 + `swapmidctl` + PR Action** | `src/SwapMid.*/DataIntegration` · `src/SwapMid.HttpApi/GitOps` · `scripts/swapmidctl.mjs` |
+| **数据集成（DataIntegration）** | 多源连接器与 Sink（`Kafka` + Schema Registry Avro/Protobuf / `ClickHouse` / `S3 & MinIO Parquet`）、可视化字段映射、流式 ETL + Target Receipt v1、5 类异构 CDC（`pgoutput` / `SQL Server CT` / `MySQL Binlog` / `Push Webhook` + 死信重放 / `Kafka-Redpanda Debezium Avro/Protobuf/JSON`）、Apache Iceberg v2（二进制 Avro OCF + `day(ts)` 按日隐藏分区 + **Merge-on-Read Equality Deletes** + **WAP `staging` 分支与快进发布、审计标签与定时 `expireSnapshots` 清理**）与 Delta Lake Time-Travel、零计算集群 Parquet 实时预览、数据契约 SLA、Unity Catalog / Iceberg REST 同步、**跨引擎血缘图谱与影响面分析**以及 **`swapmid.io/v1` 声明式 GitOps 清单 + `swapmidctl` + PR Action** | `src/SwapMid.*/DataIntegration` · `src/SwapMid.HttpApi/{GitOps,Lineage}` · `scripts/swapmidctl.mjs` |
 | **消息总线（MessageBus）** | 主题与结构化订阅过滤、跨引擎事务 Outbox、持久化投递明细与批量死信重放、CloudEvents v1.0 HMAC Webhook、RabbitMQ、群机器人 Webhook | `src/SwapMid.*/MessageBus` · `web/src/app/(dashboard)/message-bus` |
-| **API 网关（ApiManagement）** | API 分组、默认安全关闭的动态网关转发（`/api/gateway/*`）、客户端 ACL 与限流、在线调试台、OpenIddict 第三方凭证、12 工具 MCP Server（`/api/mcp`） | `src/SwapMid.*/ApiManagement` · `src/SwapMid.HttpApi.Host/Mcp` · `web/src/app/(dashboard)/api-management` |
+| **API 网关（ApiManagement）** | API 分组、默认安全关闭的动态网关转发（`/api/gateway/*`）、客户端 ACL 与限流、在线调试台、OpenIddict 第三方凭证、13 工具 MCP Server（`/api/mcp`） | `src/SwapMid.*/ApiManagement` · `src/SwapMid.HttpApi.Host/Mcp` · `web/src/app/(dashboard)/api-management` |
 | **统一调度（Scheduling）** | Hangfire / Cron 任务注册、分布式执行互斥锁、手动/试运行触发与执行历史 | `src/SwapMid.*/Scheduling` · `web/src/app/(dashboard)/system/scheduled-jobs` |
 | **通知与告警（Notification）** | 多通道通知模板（`Webhook`、`SMTP Email`）、Prometheus Alertmanager 告警回调接入（`X-SwapMid-Alert-Token`） | `src/SwapMid.*/Notification` · `web/src/app/(dashboard)/system/notification` |
 | **账号与系统治理** | 用户/角色/权限树与差异导出、5 不变式模拟登录守卫、企业组织架构目录、两级数据字典、编码规则、审计日志、原生 Prometheus 系统健康 | `src/SwapMid.*/{AccountManagement,EnterpriseManagement,SystemManagement}` |
-| **开发者文档（DeveloperDocs）** | 自动生成的 OpenAPI 接口参考（`204/204` 100.0% 摘要覆盖）+ 实时 EF Core 与外部数据源表结构字典 | `src/SwapMid.*/DeveloperDocs` · `web/src/app/(dashboard)/docs` |
+| **开发者文档（DeveloperDocs）** | 自动生成的 OpenAPI 接口参考（`207/207` 100.0% 摘要覆盖）+ 实时 EF Core 与外部数据源表结构字典 | `src/SwapMid.*/DeveloperDocs` · `web/src/app/(dashboard)/docs` |
 
 ---
 
@@ -143,7 +145,7 @@ pnpm build
 
 ## 文档导航、云原生交付与社区
 
-- **演进路线图与版本变更**：**[docs/roadmap.md](docs/roadmap.md)**（`v0.1.0` -> `v2.7.0` 及后续规划）· **[CHANGELOG.md](CHANGELOG.md)**
+- **演进路线图与版本变更**：**[docs/roadmap.md](docs/roadmap.md)**（`v0.1.0` -> `v2.8.0` 及后续规划）· **[CHANGELOG.md](CHANGELOG.md)**
 - **混沌工程与 SLA 基准**：**[docs/benchmarks/resilience-and-chaos.md](docs/benchmarks/resilience-and-chaos.md)**
 - **云原生交付与运维**：官方 Kubernetes Helm Chart（[`charts/swapmid/`](charts/swapmid/)）· Prometheus / Grafana / Alertmanager 闭环可观测编排（[`docker/docker-compose.observability.yml`](docker/docker-compose.observability.yml)）· **[生产运维与升级手册](docs/operations-and-upgrade.md)** · 可运行场景模板库（[`examples/`](examples/)）
 - **贡献与安全披露**：**[CONTRIBUTING.md](CONTRIBUTING.md)** · **[SECURITY.md](SECURITY.md)**

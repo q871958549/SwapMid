@@ -9237,6 +9237,174 @@
       "traditionalSourceHash": "a861bf82597d3694a71fd7e9",
       "traditionalHash": "4c5b9dbfe11a93540eb46422"
     },
+    "DataIntegration.cdc.lakehouseWriteBranchFieldLabel": {
+      "sourceHash": "1518f7ffc624fa9ffadee895",
+      "englishHash": "82a40467bbe36bf50b864244",
+      "traditionalSourceHash": "df476ea1de6188f78c9976e8",
+      "traditionalHash": "9b8fea4cd03c216770b34ce0"
+    },
+    "DataIntegration.cdc.lakehouseWriteBranchHint": {
+      "sourceHash": "c4f58a7e9b609980e77e23df",
+      "englishHash": "4510100f07616b431b161abc",
+      "traditionalSourceHash": "c92426d9b5772ff4c05b7548",
+      "traditionalHash": "1412c46e300f88ef0cc535a6"
+    },
+    "DataIntegration.cdc.lakehouseMaintenanceCronFieldLabel": {
+      "sourceHash": "549298f2a07958a9b1d9e689",
+      "englishHash": "4e7c6f6f70669eb67e568376",
+      "traditionalSourceHash": "983fe3bb929746ead14ede2c",
+      "traditionalHash": "feda7a64294d5a229ce2d867"
+    },
+    "DataIntegration.cdc.lakehouseMaintenanceCronHint": {
+      "sourceHash": "cdba8bea6fcb5028a0d37de2",
+      "englishHash": "d115925a29642981b50da5ff",
+      "traditionalSourceHash": "06bbe3c61d51612a364df97f",
+      "traditionalHash": "a8d8a355ad7dd0db5e65040a"
+    },
+    "DataIntegration.cdc.lakehouseExpireOlderThanFieldLabel": {
+      "sourceHash": "5f7673c1711214a49a18410c",
+      "englishHash": "81f8834387398724b1440b21",
+      "traditionalSourceHash": "95a4d118c3762ece5c7dd605",
+      "traditionalHash": "7f2b537fc73a7183dfa2d9ab"
+    },
+    "DataIntegration.cdc.icebergPromoteTagPlaceholder": {
+      "sourceHash": "2ead77e9c950e2c5064918fb",
+      "englishHash": "2cf0e874f4ff124bdf020e6f",
+      "traditionalSourceHash": "1e90a5ccd4cd9f8c39527e9b",
+      "traditionalHash": "e6f8800f6a6d7b868f5b4505"
+    },
+    "DataIntegration.cdc.icebergPromoteBranchButton": {
+      "sourceHash": "63290c934b2da8aa5c536dec",
+      "englishHash": "5834dab085442471c0d3afce",
+      "traditionalSourceHash": "7e350582b901f23beab30553",
+      "traditionalHash": "752bb467a2855819e63459e6"
+    },
+    "DataIntegration.cdc.icebergPromoteSuccessTitle": {
+      "sourceHash": "f003bcea3f89d441151ea059",
+      "englishHash": "90d6cfea42416ebf49e24de3",
+      "traditionalSourceHash": "f8b8aab271bfa0eed6f3581b",
+      "traditionalHash": "0961c5a0afb890ff6b48bd07"
+    },
+    "DataIntegration.cdc.icebergPromoteFailedTitle": {
+      "sourceHash": "e9cc8903766d57344ddece5c",
+      "englishHash": "6772c9031d9290677250b967",
+      "traditionalSourceHash": "1fbc7b84844ad23fbe447bec",
+      "traditionalHash": "67c4fa02144cda7ee4ae4f09"
+    },
+    "DataIntegration.cdc.lineageButtonLabel": {
+      "sourceHash": "9cefbfd3ae06d8874e3e257b",
+      "englishHash": "044baaecb29f0ce77d582f32",
+      "traditionalSourceHash": "722b6dcbc48108d1963cedfd",
+      "traditionalHash": "eda323400cbf414e687d21a3"
+    },
+    "DataIntegration.cdc.lineageDialogTitle": {
+      "sourceHash": "261bf204b18d41acb967e19a",
+      "englishHash": "47d0d71b7e2c4aedca3340f2",
+      "traditionalSourceHash": "9b95d80c9ea3bc0c62923fca",
+      "traditionalHash": "2dff75450a870897200f77a1"
+    },
+    "DataIntegration.cdc.lineageDialogDesc": {
+      "sourceHash": "473296e9617dc1fb493bac89",
+      "englishHash": "70a9c0136229e96a4c5f6f74",
+      "traditionalSourceHash": "c8ff2059ee929aec84581e92",
+      "traditionalHash": "2c9935a5e7b3d492babdb9ef"
+    },
+    "DataIntegration.cdc.lineageLoadFailedTitle": {
+      "sourceHash": "d1a7131b47218d9367f0e096",
+      "englishHash": "5141d41c72d89f1fa793d246",
+      "traditionalSourceHash": "a94c795d883ca2b791625772",
+      "traditionalHash": "42a684de89a22ea89285d4fa"
+    },
+    "DataIntegration.cdc.lineageImpactFailedTitle": {
+      "sourceHash": "6291aed60a959e316acae49f",
+      "englishHash": "92d29162aa9ba26fb9e4ff84",
+      "traditionalSourceHash": "dba3ae082151853c156d6752",
+      "traditionalHash": "9b551952fe0e509577986fa2"
+    },
+    "DataIntegration.cdc.lineageSearchPlaceholder": {
+      "sourceHash": "dfb7e0185d59b97e23de7a47",
+      "englishHash": "6b5a72001e004aec83d893f5",
+      "traditionalSourceHash": "fd120fcfd8e57410a97e8ec8",
+      "traditionalHash": "4309f756bb7d316b38f3ca81"
+    },
+    "DataIntegration.cdc.lineageNodeCountBadge": {
+      "sourceHash": "dddca26a36ef6d7466785a6d",
+      "englishHash": "3fdb649d5ea3cc22cbde7e0a",
+      "traditionalSourceHash": "a12c622e487c942776d3e6f3",
+      "traditionalHash": "ea34050baf6fe3d8b39c908f"
+    },
+    "DataIntegration.cdc.lineageEdgeCountBadge": {
+      "sourceHash": "26b2a1d55c9a71d699575a81",
+      "englishHash": "170e0886225d85b21500a1ae",
+      "traditionalSourceHash": "bd0ca8eb378f044374f0b53a",
+      "traditionalHash": "7800c0a840fb9f2ab6615908"
+    },
+    "DataIntegration.cdc.lineageEmptyTitle": {
+      "sourceHash": "442c066639f9ce049b86d7d8",
+      "englishHash": "a72bc9c4839e00f9b460d7db",
+      "traditionalSourceHash": "ce2023c2654022d44e560696",
+      "traditionalHash": "2d1a1ac646954307ad8cf0a6"
+    },
+    "DataIntegration.cdc.lineageEmptyDesc": {
+      "sourceHash": "f75c31db7d9be5e65a1e95b3",
+      "englishHash": "375dc3d4606451c9561e2a41",
+      "traditionalSourceHash": "a2c56a1a5bc3558efd98bc38",
+      "traditionalHash": "c29aabc3ea1e6c812af72000"
+    },
+    "DataIntegration.cdc.lineageStageSources": {
+      "sourceHash": "214d7f22a48896f580cdca7a",
+      "englishHash": "fee47c958ac2dade130911d3",
+      "traditionalSourceHash": "c67cdf887a27cf264ceb3723",
+      "traditionalHash": "f4aa7ec53e29d031ccbc43d6"
+    },
+    "DataIntegration.cdc.lineageStageEngines": {
+      "sourceHash": "933412b2cc7dca3b18e2e6aa",
+      "englishHash": "68ab716d5bdea16206f1a282",
+      "traditionalSourceHash": "12ce50632ccb2ddce2bde1bf",
+      "traditionalHash": "c2f1252ccb61f88993aa496d"
+    },
+    "DataIntegration.cdc.lineageStageMesh": {
+      "sourceHash": "63e24e71dc949637f320b380",
+      "englishHash": "ce261f8071a562b8b6ba539a",
+      "traditionalSourceHash": "e5a02fc9c644486bcaa26c51",
+      "traditionalHash": "d28ed96b4be468060d6bb93d"
+    },
+    "DataIntegration.cdc.lineageStageConsumers": {
+      "sourceHash": "1552bd713a78278b297cefad",
+      "englishHash": "dda16065655a5cb29798f4a5",
+      "traditionalSourceHash": "3cedff76273a56bbe3d6b4b6",
+      "traditionalHash": "1004ec9cc971673755704d23"
+    },
+    "DataIntegration.cdc.lineageAnalyzingText": {
+      "sourceHash": "357f6de7b6c6bd525be4541c",
+      "englishHash": "6912092085985196b6a0ef23",
+      "traditionalSourceHash": "51ac56fb2ca2da9aef9ede1f",
+      "traditionalHash": "a2a541be069d20c1393e60f7"
+    },
+    "DataIntegration.cdc.lineageImpactResultTitle": {
+      "sourceHash": "b344cd0e1f0164ac6e7e9d72",
+      "englishHash": "1148f78cd6a8748b9324e022",
+      "traditionalSourceHash": "ce68c1b35dfdb0e1f673aaa6",
+      "traditionalHash": "90c16024bb26602ff8b6c245"
+    },
+    "DataIntegration.cdc.lineageRiskBadge": {
+      "sourceHash": "a9462980f8d9accbb38e30f1",
+      "englishHash": "939aad4f43f60bc768c684d7",
+      "traditionalSourceHash": "8814915d4d8734ba79464d73",
+      "traditionalHash": "fbcc8e66c78280c4829fc514"
+    },
+    "DataIntegration.cdc.lineageUpstreamCount": {
+      "sourceHash": "8c533eb6e596f9a78c04cdcd",
+      "englishHash": "a02efb2e218ee644ae1ee5b1",
+      "traditionalSourceHash": "41274fd7738f3eb1d2d00ac8",
+      "traditionalHash": "a308948fe6f8c06ddb7d3b85"
+    },
+    "DataIntegration.cdc.lineageDownstreamCount": {
+      "sourceHash": "aba688e7d010ad32af0edfff",
+      "englishHash": "9c47cd9cae6ae1a8e13692cb",
+      "traditionalSourceHash": "ebd4ac3c0061cb41ff1177eb",
+      "traditionalHash": "a6208b6a931cbd05f568ac0c"
+    },
     "System.common.refresh": {
       "sourceHash": "ed94cd3ab755a61dfa2e13b4",
       "englishHash": "0e91610117029a62a478b7fa",

@@ -18,6 +18,13 @@ public interface ICdcScheduleSynchronizer
     Task RemoveAsync(
         Guid streamId,
         CancellationToken cancellationToken = default);
+
+    Task SyncMaintenanceAsync(
+        Guid streamId,
+        CdcStreamStatus status,
+        string? maintenanceCron,
+        CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
 }
 
 public sealed class NullCdcScheduleSynchronizer : ICdcScheduleSynchronizer

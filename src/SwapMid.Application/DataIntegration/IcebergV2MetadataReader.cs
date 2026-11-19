@@ -136,12 +136,14 @@ internal static class IcebergV2MetadataReader
             .Select(s => s.Summary)
             .ToList();
 
+        var mainRef = refs.FirstOrDefault(r => string.Equals(r.Name, "main", StringComparison.Ordinal));
+        var isMainSnapshot = mainRef != null && mainRef.SnapshotId == selectedSnap.SnapshotId;
         var timeTravelSql = BuildIcebergTimeTravelSql(
             config,
             tableDir,
             selectedSeq,
             latestSeq ?? selectedSeq,
-            selectedSeq == currentSeq,
+            isMainSnapshot,
             selectedSnap.SnapshotId,
             stream.LakehousePartitionStrategy,
             stream.LakehouseWriteMode,
@@ -153,6 +155,9 @@ internal static class IcebergV2MetadataReader
             : string.Empty;
         var morTag = eqDeleteCount > 0 || stream.LakehouseWriteMode == LakehouseWriteMode.MergeOnReadUpsert
             ? $"，MoR Upsert（Equality Deletes {eqDeleteCount} 分片 / {eqDeleteRows} 键）"
+            : string.Empty;
+        var branchTag = !string.IsNullOrWhiteSpace(stream.LakehouseWriteBranch)
+            ? $"，WAP 分支 {stream.LakehouseWriteBranch}"
             : string.Empty;
 
         return new CdcLakehouseHistoryDto
@@ -175,7 +180,7 @@ internal static class IcebergV2MetadataReader
             ActiveFiles = activeFiles,
             Refs = refs,
             TimeTravelQuerySql = timeTravelSql,
-            Summary = $"Apache Iceberg v2 · v{selectedSeq}（当前最新 v{currentSeq}，Snapshot {selectedSnap.SnapshotId}{partitionTag}{morTag}，活跃 Parquet 分片 {activeFiles.Count} 个，记录 {totalRecords} 条）。",
+            Summary = $"Apache Iceberg v2 · v{selectedSeq}（当前最新 v{currentSeq}，Snapshot {selectedSnap.SnapshotId}{branchTag}{partitionTag}{morTag}，活跃 Parquet 分片 {activeFiles.Count} 个，记录 {totalRecords} 条）。",
         };
     }
 

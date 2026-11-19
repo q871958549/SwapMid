@@ -21,10 +21,13 @@ namespace SwapMid.DataIntegration;
 /// 1. 命名标签管理（WAP / 审计锚点 <c>refs[tag]</c>），受 <c>expireSnapshots</c> 永久保护；
 /// 2. 安全快照过期（<c>expireSnapshots</c>）与严格引用计数孤儿 Parquet / Avro 清单回收（默认 <c>DryRun = true</c>）。
 /// </summary>
-public sealed class IcebergV2MaintenanceService : ITransientDependency
+public sealed partial class IcebergV2MaintenanceService : ITransientDependency
 {
     private const int MaxOptimisticRetries = 16;
-    private static readonly Regex TagNamePattern = new("^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$", RegexOptions.Compiled);
+    private static readonly Regex TagNamePattern = new(
+        "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant,
+        TimeSpan.FromSeconds(1));
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;

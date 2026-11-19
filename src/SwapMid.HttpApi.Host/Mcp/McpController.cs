@@ -229,6 +229,8 @@ public class McpController : AbpController
                     _serviceProvider, User, args, cancellationToken),
                 McpToolCatalog.PlanLakehouseMaintenance => await McpLakehouseMaintenanceHandler.ExecuteAsync(
                     _serviceProvider, _authorizationService, User, args, cancellationToken),
+                McpToolCatalog.AnalyzeLineageImpact => await McpLineageImpactHandler.ExecuteAsync(
+                    _serviceProvider, User, args),
                 _ => throw new InvalidOperationException("Unhandled tool"),
             };
 

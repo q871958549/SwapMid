@@ -129,6 +129,12 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             normalized.CatalogType, normalized.CatalogSinkId, normalized.CatalogNamespace, normalized.CatalogTableName);
         stream.ConfigureLakehousePartitionStrategy(normalized.LakehousePartitionStrategy);
         stream.ConfigureLakehouseWriteMode(input.LakehouseWriteMode);
+        stream.ConfigureLakehouseWapAndMaintenance(
+            input.LakehouseWriteBranch,
+            DataPipelineCronValidator.ValidateAndNormalize(false, input.LakehouseMaintenanceCron),
+            input.LakehouseExpireRetainLast,
+            input.LakehouseExpireOlderThanMinutes,
+            input.LakehouseDeleteOrphanedFiles);
         stream.ConfigureDataContract(input.MaxFreshnessLagSeconds, input.MaxAllowedWalLagBytes, input.RequiredColumns);
 
         await _streamRepository.InsertAsync(stream, autoSave: true);
@@ -157,11 +163,18 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             normalized.CatalogType, normalized.CatalogSinkId, normalized.CatalogNamespace, normalized.CatalogTableName);
         stream.ConfigureLakehousePartitionStrategy(normalized.LakehousePartitionStrategy);
         stream.ConfigureLakehouseWriteMode(input.LakehouseWriteMode);
+        stream.ConfigureLakehouseWapAndMaintenance(
+            input.LakehouseWriteBranch,
+            DataPipelineCronValidator.ValidateAndNormalize(false, input.LakehouseMaintenanceCron),
+            input.LakehouseExpireRetainLast,
+            input.LakehouseExpireOlderThanMinutes,
+            input.LakehouseDeleteOrphanedFiles);
         stream.ConfigureDataContract(input.MaxFreshnessLagSeconds, input.MaxAllowedWalLagBytes, input.RequiredColumns);
 
         await _streamRepository.UpdateAsync(stream, autoSave: true);
         var effectiveScheduleStatus = stream.SourceType == CdcSourceType.PushWebhook ? CdcStreamStatus.Paused : stream.Status;
         await _scheduleSynchronizer.SyncAsync(stream.Id, effectiveScheduleStatus, stream.PollIntervalSeconds);
+        await _scheduleSynchronizer.SyncMaintenanceAsync(stream.Id, stream.Status, stream.LakehouseMaintenanceCron);
         return await EnrichDtoAsync(stream);
     }
 
@@ -260,6 +273,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         await _streamRepository.UpdateAsync(stream, autoSave: true, cancellationToken: cancellationToken);
         var effectiveScheduleStatus = stream.SourceType == CdcSourceType.PushWebhook ? CdcStreamStatus.Paused : stream.Status;
         await _scheduleSynchronizer.SyncAsync(stream.Id, effectiveScheduleStatus, stream.PollIntervalSeconds, cancellationToken);
+        await _scheduleSynchronizer.SyncMaintenanceAsync(stream.Id, stream.Status, stream.LakehouseMaintenanceCron, cancellationToken);
     }
 
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
@@ -273,6 +287,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         stream.Pause();
         await _streamRepository.UpdateAsync(stream, autoSave: true);
         await _scheduleSynchronizer.SyncAsync(stream.Id, stream.Status, stream.PollIntervalSeconds);
+        await _scheduleSynchronizer.SyncMaintenanceAsync(stream.Id, stream.Status, stream.LakehouseMaintenanceCron);
     }
 
     [UnitOfWork(IsDisabled = true)]
@@ -457,6 +472,22 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         var (stream, sink) = await CdcStreamMappingHelpers.LoadExternalSinkContextAsync(
             id, "仅外部接收端（ObjectStorage）模式的 Apache Iceberg v2 CDC 流支持快照过期清理。", _streamRepository, _sourceRepository, cancellationToken);
         return await maintenance.ExpireSnapshotsAsync(stream, sink, input, cancellationToken);
+    }
+
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    public async Task<CdcLakehouseBranchPromoteResultDto> PromoteLakehouseBranchAsync(Guid id, PromoteCdcLakehouseBranchInput input, CancellationToken cancellationToken = default)
+    {
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Manage);
+        var maintenance = _icebergMaintenanceService ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid).WithData("Reason", "Apache Iceberg v2 表维护服务未启用。");
+        var (stream, sink) = await CdcStreamMappingHelpers.LoadExternalSinkContextAsync(
+            id, "仅外部接收端（ObjectStorage）模式的 Apache Iceberg v2 CDC 流支持 WAP 分支快进发布。", _streamRepository, _sourceRepository, cancellationToken);
+        var result = await maintenance.PromoteBranchAsync(stream, sink, input, cancellationToken);
+        if (!result.DryRun && !result.AlreadyUpToDate && _catalogSyncService != null)
+        {
+            await _catalogSyncService.TryBestEffortSyncAsync(stream, sink, versionOverride: result.PromotedSnapshotVersion, cancellationToken);
+        }
+
+        return result;
     }
 
     private Task<CdcStreamDto> EnrichDtoAsync(CdcStreamDefinition stream)

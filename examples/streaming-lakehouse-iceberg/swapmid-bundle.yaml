@@ -1,0 +1,42 @@
+schemaVersion: swapmid.io/v1
+platformVersion: 2.8.0
+dataSources:
+  - name: demo-redpanda-kafka
+    description: Local Redpanda Kafka broker with built-in Confluent Schema Registry
+    type: 3
+    config: '{"bootstrapServers":"redpanda:9092","schemaRegistryUrl":"http://redpanda:8081","securityProtocol":"Plaintext"}'
+    hasSecret: false
+    isEnabled: true
+  - name: demo-minio-lakehouse
+    description: Local MinIO S3-compatible object store for Apache Iceberg v2
+    type: 5
+    config: '{"provider":"minio","endpoint":"http://minio:9000","region":"us-east-1","bucket":"swapmid-lake","prefix":"streaming","format":"parquet","pathStyle":true,"accessKey":"swapmid_minio","secretKey":"${ENV_SECRET:DEMO_MINIO_SECRET}"}'
+    hasSecret: false
+    isEnabled: true
+cdcStreams:
+  - name: orders-redpanda-iceberg-wap
+    description: Redpanda Debezium (Avro/Protobuf/JSON) -> Apache Iceberg v2 MoR + Daily Partitioning + WAP Staging + Scheduled Maintenance
+    sourceName: demo-redpanda-kafka
+    sourceType: 4
+    publicationName: dbserver1.shop.orders
+    slotName: swapmid_orders_wap_cg
+    monitoredTables: shop.orders
+    autoCreatePublicationAndSlot: true
+    pollIntervalSeconds: 10
+    maxBatchSize: 500
+    targetMode: 2
+    targetSinkName: demo-minio-lakehouse
+    targetSinkDestination: orders/iceberg_wap
+    targetSinkKeyColumns: order_id
+    lakehouseTableFormat: 2
+    lakehousePartitionStrategy: 1
+    lakehouseWriteMode: 1
+    lakehouseWriteBranch: staging
+    lakehouseMaintenanceCron: "0 2 * * *"
+    lakehouseExpireRetainLast: 5
+    lakehouseExpireOlderThanMinutes: 1440
+    lakehouseDeleteOrphanedFiles: true
+    lakehouseCompactMinFiles: 5
+    schemaDriftPolicy: 1
+    maxFreshnessLagSeconds: 300
+    requiredColumns: order_id,amount

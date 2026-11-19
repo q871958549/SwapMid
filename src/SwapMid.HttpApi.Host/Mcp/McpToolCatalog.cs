@@ -23,6 +23,7 @@ public static class McpToolCatalog
     public const string InspectLakehouseSnapshots = "inspect_lakehouse_snapshots";
     public const string ExportIntegrationBundle = "export_integration_bundle";
     public const string PlanLakehouseMaintenance = "plan_lakehouse_maintenance";
+    public const string AnalyzeLineageImpact = "analyze_lineage_impact";
 
     public static IReadOnlyList<McpToolDescriptor> All { get; } =
     [
@@ -198,7 +199,7 @@ public static class McpToolCatalog
         new McpToolDescriptor(
             Name: PlanLakehouseMaintenance,
             RequiredPermission: SwapMidPermissions.DataIntegration.CdcStreams.Default,
-            Description: "Generate a read-only Dry-Run Apache Iceberg v2 maintenance plan: inspects named tags (refs), Merge-on-Read Equality Delete buildup, reclaimable snapshots/orphan bytes via expireSnapshots, and actionable compaction guidance.",
+            Description: "Generate a read-only Dry-Run Apache Iceberg v2 maintenance plan: inspects named tags (refs), pending WAP staging branches, Merge-on-Read Equality Delete buildup, reclaimable snapshots/orphan bytes via expireSnapshots, and actionable compaction/promotion guidance.",
             InputSchema: new
             {
                 type = "object",
@@ -207,6 +208,22 @@ public static class McpToolCatalog
                     streamId = new { type = "string", format = "uuid", description = "Optional Apache Iceberg v2 CDC stream GUID (defaults to all Iceberg streams)." },
                     retainLast = new { type = "integer", minimum = 1, maximum = 100, description = "Minimum recent snapshots to retain (default 2)." },
                     olderThanMinutes = new { type = "integer", minimum = 0, maximum = 525600, description = "Only expire snapshots older than N minutes (default 0)." },
+                },
+                additionalProperties = false,
+            }),
+        new McpToolDescriptor(
+            Name: AnalyzeLineageImpact,
+            RequiredPermission: SwapMidPermissions.DataIntegration.DataSources.Default,
+            Description: "Read-only cross-engine data lineage DAG and blast-radius impact analyzer spanning DataSources, ETL Pipelines, CDC Streams, Open Lakehouse Tables, MessageBus Topics/Subscriptions, and API Gateway Routes.",
+            InputSchema: new
+            {
+                type = "object",
+                properties = new
+                {
+                    nodeId = new { type = "string", description = "Optional exact lineage node ID (e.g. source:<guid>, cdc:<guid>, topic:<name>) or entity GUID." },
+                    query = new { type = "string", description = "Optional asset name or destination substring to match root node; omit both nodeId and query to inspect the full topology." },
+                    direction = new { type = "string", @enum = new[] { "downstream", "upstream", "both" }, description = "Traversal direction (default both)." },
+                    maxDepth = new { type = "integer", minimum = 1, maximum = 8, description = "Maximum BFS traversal hops (default 4)." },
                 },
                 additionalProperties = false,
             }),

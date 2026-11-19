@@ -41,7 +41,7 @@ public sealed class CdcObjectStorageCompactionService : ITransientDependency
         _logger = logger;
     }
 
-    internal async Task<CdcLakehouseCompactionResultDto> CompactAsync(
+    public async Task<CdcLakehouseCompactionResultDto> CompactAsync(
         CdcStreamDefinition stream,
         DataSource targetSink,
         int minFiles,

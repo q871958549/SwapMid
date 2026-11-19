@@ -68,6 +68,11 @@ vi.mock('@/lib/crud/use-crud-form', () => ({
       lakehouseTableFormat: '0',
       lakehousePartitionStrategy: '0',
       lakehouseWriteMode: '0',
+      lakehouseWriteBranch: '',
+      lakehouseMaintenanceCron: '',
+      lakehouseExpireRetainLast: '',
+      lakehouseExpireOlderThanMinutes: '',
+      lakehouseDeleteOrphanedFiles: false,
       lakehouseCompactMinFiles: '',
       catalogType: '0',
       catalogSinkId: '',
@@ -1526,5 +1531,144 @@ describe('CdcStreamsClient', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '清理预演' }))
     expect(await screen.findByText(/可过期快照 1 个/)).toBeTruthy()
+  })
+
+  it('promotes WAP staging branch to main and explores cross-engine data lineage blast radius', async () => {
+    mocks.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          destination: 'orders/branch',
+          tableFormat: 2,
+          writeMode: 1,
+          deltaLogDirectory: 'warehouse/orders/branch/metadata',
+          currentVersion: 2,
+          selectedVersion: 2,
+          totalCommitCount: 2,
+          selectedActiveFileCount: 2,
+          refs: [
+            { name: 'main', type: 'branch', snapshotId: 100, version: 1 },
+            { name: 'staging', type: 'branch', snapshotId: 200, version: 2 },
+          ],
+          commits: [],
+          activeFiles: [],
+          summary: 'Apache Iceberg v2 · v2',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          branchName: 'staging',
+          dryRun: false,
+          alreadyUpToDate: false,
+          previousMainSnapshotId: 100,
+          previousMainVersion: 1,
+          promotedSnapshotId: 200,
+          promotedSnapshotVersion: 2,
+          metadataVersion: 3,
+          metadataKey: 'warehouse/orders/branch/metadata/v3.metadata.json',
+          auditTagName: 'rel-v2',
+          promotedAtUtc: '2026-11-19T14:00:00Z',
+          message: 'Promoted staging v2 to main',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          destination: 'orders/branch',
+          tableFormat: 2,
+          writeMode: 1,
+          deltaLogDirectory: 'warehouse/orders/branch/metadata',
+          currentVersion: 2,
+          selectedVersion: 2,
+          totalCommitCount: 2,
+          selectedActiveFileCount: 2,
+          refs: [
+            { name: 'main', type: 'branch', snapshotId: 200, version: 2 },
+            { name: 'staging', type: 'branch', snapshotId: 200, version: 2 },
+            { name: 'rel-v2', type: 'tag', snapshotId: 200, version: 2 },
+          ],
+          commits: [],
+          activeFiles: [],
+          summary: 'Apache Iceberg v2 · v2',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          generatedAtUtc: '2026-11-19T14:01:00Z',
+          nodeCount: 3,
+          edgeCount: 2,
+          nodes: [
+            { id: 'source:1', kind: 'DataSource', name: 'erp-pg', subType: 'RelationalDatabase', status: 'Active', metadata: {} },
+            { id: 'cdc:1', kind: 'CdcStream', name: 'orders-wap-stream', subType: 'PostgreSqlLogicalReplication', status: 'Active', metadata: {} },
+            { id: 'lakehouse:1', kind: 'LakehouseTable', name: 'orders/branch', subType: 'ApacheIceberg MoR [staging]', status: 'Active', metadata: {} },
+          ],
+          edges: [
+            { sourceNodeId: 'source:1', targetNodeId: 'cdc:1', relation: 'CapturesFrom', label: 'public.orders' },
+            { sourceNodeId: 'cdc:1', targetNodeId: 'lakehouse:1', relation: 'MaterializesTo', label: 'ApacheIceberg' },
+          ],
+          countsByKind: { DataSource: 1, CdcStream: 1, LakehouseTable: 1 },
+          warnings: [],
+          summary: '跨引擎血缘图谱已构建：3 个节点，2 条依赖边。',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          rootNodeId: 'source:1',
+          rootNodeName: 'erp-pg',
+          rootNodeKind: 'DataSource',
+          direction: 'both',
+          maxDepth: 5,
+          riskLevel: 'high',
+          upstreamCount: 0,
+          downstreamCount: 2,
+          impactedNodes: [
+            {
+              node: { id: 'lakehouse:1', kind: 'LakehouseTable', name: 'orders/branch', subType: 'ApacheIceberg', status: 'Active', metadata: {} },
+              depth: 2,
+              direction: 'downstream',
+              pathLabels: ['erp-pg', 'orders-wap-stream', 'orders/branch'],
+            },
+          ],
+          impactedEdges: [],
+          recommendations: ['建议先为当前 Iceberg v2 快照创建命名审计标签作为回滚锚点。'],
+          warnings: [],
+          summary: '节点「erp-pg」影响分析完成',
+        }),
+      })
+
+    renderClient(makeStream({
+      sourceType: 4,
+      status: 1,
+      targetMode: 2,
+      targetSinkId: SOURCE_ID,
+      targetSinkType: 5,
+      targetSinkName: 'minio-iceberg',
+      targetSinkDestination: 'orders/branch',
+      targetSinkKeyColumns: 'order_id',
+      lakehouseTableFormat: 2,
+      lakehouseWriteMode: 1,
+      lakehouseWriteBranch: 'staging',
+      lakehouseMaintenanceCron: '0 2 * * *',
+    }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Time-Travel' }))
+    expect(await screen.findByText(/定时维护 Cron（可选）: 0 2 \* \* \*/)).toBeTruthy()
+    expect(await screen.findByText('branch:staging · v2 → main')).toBeTruthy()
+    fireEvent.change(screen.getByPlaceholderText('可选审计标签（release-v1）'), { target: { value: 'rel-v2' } })
+    fireEvent.click(screen.getByRole('button', { name: '发布分支' }))
+    expect(await screen.findByText('tag:rel-v2 · v2')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }))
+
+    fireEvent.click(screen.getByRole('button', { name: '血缘图谱' }))
+    expect(await screen.findByText('erp-pg')).toBeTruthy()
+    fireEvent.click(screen.getByText('erp-pg'))
+    expect(await screen.findByText('风险 HIGH')).toBeTruthy()
+    expect(screen.getByText(/建议先为当前 Iceberg v2 快照创建命名审计标签/)).toBeTruthy()
   })
 })

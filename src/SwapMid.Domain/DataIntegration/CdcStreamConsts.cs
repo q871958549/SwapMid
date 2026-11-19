@@ -54,4 +54,10 @@ public static class CdcStreamConsts
     public const int MaxRequiredColumnsLength = 512;
     public const int MaxRequiredColumnsCount = 64;
     public const int MaxContractViolationSummaryLength = 512;
+
+    public const int MaxLakehouseWriteBranchLength = 64;
+    public const int MaxLakehouseMaintenanceCronLength = 64;
+    public const int MaxLakehouseLastMaintenanceSummaryLength = 512;
+    public const int DefaultLakehouseExpireRetainLast = 5;
+    public const int DefaultLakehouseExpireOlderThanMinutes = 1440;
 }

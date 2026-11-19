@@ -101,6 +101,18 @@ internal static class McpLakehouseMaintenanceHandler
                     $"Found {expirableEstimate} historical snapshot(s) eligible for expireSnapshots (retainLast={retainLast}, pinnedTags={history.Refs.Count(r => !string.Equals(r.Name, "main", StringComparison.Ordinal))}).");
             }
 
+            var mainRef = history.Refs.FirstOrDefault(r => string.Equals(r.Name, "main", StringComparison.Ordinal));
+            var pendingBranches = history.Refs
+                .Where(r => string.Equals(r.Type, "branch", StringComparison.OrdinalIgnoreCase) &&
+                            !string.Equals(r.Name, "main", StringComparison.Ordinal) &&
+                            r.SnapshotId != mainRef?.SnapshotId)
+                .ToList();
+            foreach (var br in pendingBranches)
+            {
+                recommendations.Add(
+                    $"Unpromoted WAP branch '{br.Name}' (v{br.Version}) is ahead of main (v{mainRef?.Version?.ToString() ?? "none"}). Preview rows and call POST /api/v1/cdc-streams/{stream.Id}/promote-lakehouse-branch when audit passes.");
+            }
+
             if (recommendations.Count == 0)
             {
                 recommendations.Add("Iceberg v2 table layout is healthy; no compaction or expiration required.");
@@ -112,6 +124,8 @@ internal static class McpLakehouseMaintenanceHandler
                 streamName = stream.Name,
                 destination = history.Destination,
                 writeMode = history.WriteMode,
+                writeBranch = stream.LakehouseWriteBranch ?? "main",
+                maintenanceCron = stream.LakehouseMaintenanceCron,
                 partitionStrategy = history.PartitionStrategy,
                 currentVersion = history.CurrentVersion,
                 totalSnapshots = history.TotalCommitCount,

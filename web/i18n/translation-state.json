@@ -9291,6 +9291,42 @@
       "traditionalSourceHash": "1fbc7b84844ad23fbe447bec",
       "traditionalHash": "67c4fa02144cda7ee4ae4f09"
     },
+    "DataIntegration.cdc.icebergRollbackBackupTagPlaceholder": {
+      "sourceHash": "57fe2284d5061b55ca4be5b6",
+      "englishHash": "0427955ecb0ca32bc537f920",
+      "traditionalSourceHash": "0d8102743576589d3d0a06d8",
+      "traditionalHash": "20229f166af32c85b4069d0e"
+    },
+    "DataIntegration.cdc.icebergRollbackTargetHint": {
+      "sourceHash": "03980775143b554388f77706",
+      "englishHash": "ccda07555451e05c88f10fc9",
+      "traditionalSourceHash": "376c3cc58b9d68bee87c0579",
+      "traditionalHash": "d0859892fd787ee40af537a8"
+    },
+    "DataIntegration.cdc.icebergRollbackDryRunButton": {
+      "sourceHash": "e8a72a3f30b45dca55da05df",
+      "englishHash": "dcedee80a3339368a5bc71b9",
+      "traditionalSourceHash": "6cc257b6ef18d074ebb5d13f",
+      "traditionalHash": "8cfa167517d5a1efc81f61e5"
+    },
+    "DataIntegration.cdc.icebergRollbackExecuteButton": {
+      "sourceHash": "75ec469431b1602a663ad546",
+      "englishHash": "aec4679e421b965f9bf79f68",
+      "traditionalSourceHash": "70fdc3b5f9b5d8312612a0ce",
+      "traditionalHash": "bf49d9b5a4944df356125d09"
+    },
+    "DataIntegration.cdc.icebergRollbackSuccessTitle": {
+      "sourceHash": "f7f77ac88e3a09e562bed75c",
+      "englishHash": "298922ce58cf32f29b21d188",
+      "traditionalSourceHash": "e30972705109914e666d49a7",
+      "traditionalHash": "a304656ea9fb2cc9c33e69a1"
+    },
+    "DataIntegration.cdc.icebergRollbackFailedTitle": {
+      "sourceHash": "bc892ff6de7574235ca01912",
+      "englishHash": "fdf48d3eac9aa3599de4d819",
+      "traditionalSourceHash": "433473e2c46b907067e52af4",
+      "traditionalHash": "6176903be75225f0699f9341"
+    },
     "DataIntegration.cdc.lineageButtonLabel": {
       "sourceHash": "9cefbfd3ae06d8874e3e257b",
       "englishHash": "044baaecb29f0ce77d582f32",
@@ -9404,6 +9440,30 @@
       "englishHash": "9c47cd9cae6ae1a8e13692cb",
       "traditionalSourceHash": "ebd4ac3c0061cb41ff1177eb",
       "traditionalHash": "a6208b6a931cbd05f568ac0c"
+    },
+    "DataIntegration.cdc.lineageColumnMappingsTitle": {
+      "sourceHash": "430f5e9b0521e1ef126348bd",
+      "englishHash": "ecca3fad82f652093eba37ab",
+      "traditionalSourceHash": "4a1ab809de204fe1eaa6134b",
+      "traditionalHash": "c636883cedf257a0cd5ee85f"
+    },
+    "DataIntegration.cdc.lineageExportOpenLineageButton": {
+      "sourceHash": "95c339b848269616388c441a",
+      "englishHash": "23d4207c184f4b595f4135ea",
+      "traditionalSourceHash": "435f4822ebd86f0a0aa18d20",
+      "traditionalHash": "a337ff2ecd299aae6e0383df"
+    },
+    "DataIntegration.cdc.lineageExportOpenLineageSuccessTitle": {
+      "sourceHash": "ce6de6710b5645d8d4329c5b",
+      "englishHash": "97bf7f82bc5b5b72bcede455",
+      "traditionalSourceHash": "e194f914fff638b7086ec609",
+      "traditionalHash": "ddd30c29132df8ccc1a8ee16"
+    },
+    "DataIntegration.cdc.lineageExportOpenLineageFailedTitle": {
+      "sourceHash": "893aa97b4f620349a1d9f25f",
+      "englishHash": "e98ec5c144dc2e0cacf12857",
+      "traditionalSourceHash": "57d15160348c925dd061bb64",
+      "traditionalHash": "2fc0000eebb9ef472a8982a5"
     },
     "System.common.refresh": {
       "sourceHash": "ed94cd3ab755a61dfa2e13b4",

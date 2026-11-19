@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using SwapMid.Monitoring;
 using Volo.Abp;
 
 namespace SwapMid.DataIntegration;
@@ -89,7 +90,11 @@ internal static class IcebergV2MetadataReader
         }
 
         var currentSeq = snapshots[^1].Summary.Version;
-        var selectedSeq = requestedVersion ?? currentSeq;
+        var mainRef = refs.FirstOrDefault(r => string.Equals(r.Name, "main", StringComparison.Ordinal));
+        var isMainWriteBranch = string.IsNullOrWhiteSpace(stream.LakehouseWriteBranch) ||
+                                string.Equals(stream.LakehouseWriteBranch, "main", StringComparison.OrdinalIgnoreCase);
+        var defaultSeq = isMainWriteBranch && mainRef?.Version is > 0 ? mainRef.Version.Value : currentSeq;
+        var selectedSeq = requestedVersion ?? defaultSeq;
         var selectedSnap = snapshots.FirstOrDefault(s => s.Summary.Version == selectedSeq);
         if (selectedSnap == null)
         {
@@ -136,8 +141,13 @@ internal static class IcebergV2MetadataReader
             .Select(s => s.Summary)
             .ToList();
 
-        var mainRef = refs.FirstOrDefault(r => string.Equals(r.Name, "main", StringComparison.Ordinal));
         var isMainSnapshot = mainRef != null && mainRef.SnapshotId == selectedSnap.SnapshotId;
+        if (!requestedVersion.HasValue)
+        {
+            PlatformMetrics.CdcLakehouseActiveBytes.WithLabels(stream.Name, "apache_iceberg").Set(totalBytes);
+            PlatformMetrics.CdcLakehouseActiveFiles.WithLabels(stream.Name, "apache_iceberg").Set(activeFiles.Count);
+            PlatformMetrics.CdcLakehouseSnapshotsCount.WithLabels(stream.Name, "apache_iceberg").Set(snapshots.Count);
+        }
         var timeTravelSql = BuildIcebergTimeTravelSql(
             config,
             tableDir,

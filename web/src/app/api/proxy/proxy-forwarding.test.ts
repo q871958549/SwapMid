@@ -171,6 +171,32 @@ describe('proxy 请求与响应头隔离', () => {
     expect(selected.get('x-internal-secret')).toBeNull()
   })
 
+  it('严格校验并透传 W3C traceparent，同时放行响应头 x-swapmid-trace-id', () => {
+    const validTraceparent = '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01'
+    const validSelected = selectProxyRequestHeaders(
+      new Headers({ traceparent: validTraceparent }),
+      'GET',
+      'server-token',
+      'zh-Hans',
+      false,
+    )
+    expect(validSelected.get('traceparent')).toBe(validTraceparent)
+
+    const invalidSelected = selectProxyRequestHeaders(
+      new Headers({ traceparent: '00-00000000000000000000000000000000-00f067aa0ba902b7-01' }),
+      'GET',
+      'server-token',
+      'zh-Hans',
+      false,
+    )
+    expect(invalidSelected.get('traceparent')).toBeNull()
+
+    const respHeaders = selectProxyResponseHeaders(new Headers({
+      'x-swapmid-trace-id': '4bf92f3577b34da6a3ce929d0e0e4736',
+    }))
+    expect(respHeaders.get('x-swapmid-trace-id')).toBe('4bf92f3577b34da6a3ce929d0e0e4736')
+  })
+
   it('响应保留文件/Range 元数据，丢弃 Cookie、重定向、长度与共享缓存策略', () => {
     const selected = selectProxyResponseHeaders(new Headers({
       'content-type': 'application/pdf',

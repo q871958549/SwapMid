@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM node:24-alpine AS deps
+FROM --platform=$BUILDPLATFORM node:24-alpine AS deps
 WORKDIR /app
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable && corepack prepare pnpm@11.5.2 --activate

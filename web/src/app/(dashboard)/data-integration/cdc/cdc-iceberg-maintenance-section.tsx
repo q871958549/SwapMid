@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { GitMerge, Loader2, Tag, Trash2 } from 'lucide-react'
+import { GitMerge, History, Loader2, Tag, Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +13,7 @@ import type {
   CdcLakehouseBranchPromoteResultDto,
   CdcLakehouseExpireResultDto,
   CdcLakehouseRefDto,
+  CdcLakehouseRollbackResultDto,
   CdcLakehouseTagResultDto,
   CdcStreamDto,
 } from '@/lib/api/types'
@@ -33,15 +34,48 @@ export function CdcIcebergMaintenanceSection({
   const t = useTranslations('DataIntegration.cdc')
   const [tagName, setTagName] = useState('')
   const [promoteAuditTag, setPromoteAuditTag] = useState('')
+  const [rollbackBackupTag, setRollbackBackupTag] = useState('')
   const [retainLast, setRetainLast] = useState('2')
   const [deleteOrphans, setDeleteOrphans] = useState(false)
-  const [busy, setBusy] = useState<'tag' | 'dryRun' | 'expire' | 'promote' | null>(null)
+  const [busy, setBusy] = useState<'tag' | 'dryRun' | 'expire' | 'promote' | 'rollbackDry' | 'rollbackExec' | null>(null)
   const [expireResult, setExpireResult] = useState<CdcLakehouseExpireResultDto | null>(null)
+  const [rollbackResult, setRollbackResult] = useState<CdcLakehouseRollbackResultDto | null>(null)
 
   const mainRef = refs.find(r => r.name === 'main')
+  const canRollbackSelected = typeof selectedVersion === 'number' && selectedVersion > 0 && mainRef?.version !== selectedVersion
   const pendingBranches = refs.filter(
     r => r.type === 'branch' && r.name && r.name !== 'main' && r.snapshotId !== mainRef?.snapshotId,
   )
+
+  const handleRollback = async (dryRun: boolean) => {
+    if (typeof selectedVersion !== 'number' || selectedVersion <= 0) return
+    setBusy(dryRun ? 'rollbackDry' : 'rollbackExec')
+    try {
+      const res = await fetch(`/api/proxy/cdc-streams/${stream.id}/rollback-lakehouse`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetVersion: selectedVersion,
+          backupCurrentAsTagName: rollbackBackupTag.trim() || null,
+          dryRun,
+        }),
+      })
+      if (!res.ok) {
+        const msg = await readApiErrorMessage(res, t('icebergRollbackFailedTitle'))
+        toast({ variant: 'destructive', title: t('icebergRollbackFailedTitle'), description: msg })
+        return
+      }
+      const data = await res.json() as CdcLakehouseRollbackResultDto
+      setRollbackResult(data)
+      if (!dryRun) {
+        toast({ variant: 'success', title: t('icebergRollbackSuccessTitle'), description: data.message ?? undefined })
+        setRollbackBackupTag('')
+        onMutated()
+      }
+    } finally {
+      setBusy(null)
+    }
+  }
 
   const handlePromoteBranch = async (branchName: string) => {
     setBusy('promote')
@@ -253,6 +287,51 @@ export function CdcIcebergMaintenanceSection({
           {expireResult && (
             <div className="rounded border bg-background px-3 py-2 text-xs text-muted-foreground">
               {expireResult.summary}
+            </div>
+          )}
+
+          {canRollbackSelected && (
+            <div className="space-y-2 border-t pt-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <StatusBadge tone="warning">
+                    {t('icebergRollbackTargetHint', { version: selectedVersion })}
+                  </StatusBadge>
+                  <Input
+                    value={rollbackBackupTag}
+                    onChange={e => setRollbackBackupTag(e.target.value)}
+                    placeholder={t('icebergRollbackBackupTagPlaceholder')}
+                    className="h-8 max-w-[190px] font-mono text-xs"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={busy !== null}
+                    onClick={() => void handleRollback(true)}
+                  >
+                    {busy === 'rollbackDry' && <Loader2 className="mr-1.5 size-3.5 animate-spin" />}
+                    {t('icebergRollbackDryRunButton')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive-outline"
+                    disabled={busy !== null}
+                    onClick={() => void handleRollback(false)}
+                  >
+                    {busy === 'rollbackExec'
+                      ? <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                      : <History className="mr-1.5 size-3.5" />}
+                    {t('icebergRollbackExecuteButton')}
+                  </Button>
+                </div>
+              </div>
+              {rollbackResult && (
+                <div className="rounded border bg-background px-3 py-2 text-xs text-muted-foreground">
+                  {rollbackResult.message}
+                </div>
+              )}
             </div>
           )}
         </div>

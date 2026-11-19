@@ -1635,10 +1635,36 @@ describe('CdcStreamsClient', () => {
               pathLabels: ['erp-pg', 'orders-wap-stream', 'orders/branch'],
             },
           ],
-          impactedEdges: [],
+          impactedEdges: [
+            {
+              sourceNodeId: 'cdc:1',
+              targetNodeId: 'lakehouse:1',
+              relation: 'MaterializesTo',
+              label: 'ApacheIceberg',
+              columnMappings: [
+                { sourceColumn: 'customer_no', targetColumn: 'cust_id', transformType: 'rename' },
+                { sourceColumn: 'order_id', targetColumn: 'order_id', transformType: 'business_key' },
+              ],
+            },
+          ],
           recommendations: ['建议先为当前 Iceberg v2 快照创建命名审计标签作为回滚锚点。'],
           warnings: [],
           summary: '节点「erp-pg」影响分析完成',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          specVersion: '2-0-2',
+          producer: 'https://github.com/q871958549/SwapMid',
+          schemaUrl: 'https://openlineage.io/spec/2-0-2/OpenLineage.json',
+          namespace: 'swapmid',
+          generatedAtUtc: '2026-11-19T14:02:00Z',
+          eventCount: 1,
+          datasetCount: 2,
+          columnLineageEdgeCount: 1,
+          contentJson: '{"specVersion":"2-0-2","events":[]}',
+          summary: '已导出 CNCF OpenLineage 2-0-2 规范血缘',
         }),
       })
 
@@ -1669,6 +1695,117 @@ describe('CdcStreamsClient', () => {
     expect(await screen.findByText('erp-pg')).toBeTruthy()
     fireEvent.click(screen.getByText('erp-pg'))
     expect(await screen.findByText('风险 HIGH')).toBeTruthy()
+    expect(screen.getByText('customer_no → cust_id (rename)')).toBeTruthy()
+    expect(screen.getByText('order_id (business_key)')).toBeTruthy()
     expect(screen.getByText(/建议先为当前 Iceberg v2 快照创建命名审计标签/)).toBeTruthy()
+
+    const origCreateObjectURL = URL.createObjectURL
+    const origRevokeObjectURL = URL.revokeObjectURL
+    URL.createObjectURL = vi.fn(() => 'blob:mock-openlineage')
+    URL.revokeObjectURL = vi.fn()
+    try {
+      fireEvent.click(screen.getByRole('button', { name: '导出 OpenLineage' }))
+      await waitFor(() => {
+        expect(mocks.fetch).toHaveBeenCalledWith('/api/proxy/integration-lineage/openlineage')
+      })
+    } finally {
+      URL.createObjectURL = origCreateObjectURL
+      URL.revokeObjectURL = origRevokeObjectURL
+    }
+  })
+
+  it('supports Iceberg v2 atomic rollback dry-run and execute with backup tag in Time-Travel dialog', async () => {
+    mocks.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          destination: 'orders/rollback',
+          tableFormat: 2,
+          writeMode: 1,
+          deltaLogDirectory: 'warehouse/orders/rollback/metadata',
+          currentVersion: 2,
+          selectedVersion: 1,
+          totalCommitCount: 2,
+          selectedActiveFileCount: 1,
+          refs: [
+            { name: 'main', type: 'branch', snapshotId: 200, version: 2 },
+            { name: 'audit-v1', type: 'tag', snapshotId: 100, version: 1 },
+          ],
+          commits: [],
+          activeFiles: [],
+          summary: 'Apache Iceberg v2 · v1',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          dryRun: true,
+          alreadyAtTarget: false,
+          previousMainVersion: 2,
+          targetSnapshotVersion: 1,
+          backupTagName: 'pre-rb-v2',
+          metadataVersion: 2,
+          metadataKey: 'warehouse/orders/rollback/metadata/v2.metadata.json',
+          message: 'Dry-Run 回滚预演通过：main 将从 v2 原子回滚至 v1',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          dryRun: false,
+          alreadyAtTarget: false,
+          previousMainVersion: 2,
+          targetSnapshotVersion: 1,
+          backupTagName: 'pre-rb-v2',
+          metadataVersion: 3,
+          metadataKey: 'warehouse/orders/rollback/metadata/v3.metadata.json',
+          message: '已将分支 main 从 v2 原子回滚至快照 v1',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          destination: 'orders/rollback',
+          tableFormat: 2,
+          writeMode: 1,
+          deltaLogDirectory: 'warehouse/orders/rollback/metadata',
+          currentVersion: 2,
+          selectedVersion: 1,
+          totalCommitCount: 2,
+          selectedActiveFileCount: 1,
+          refs: [
+            { name: 'main', type: 'branch', snapshotId: 100, version: 1 },
+            { name: 'pre-rb-v2', type: 'tag', snapshotId: 200, version: 2 },
+          ],
+          commits: [],
+          activeFiles: [],
+          summary: 'Apache Iceberg v2 · v1',
+        }),
+      })
+
+    renderClient(makeStream({
+      sourceType: 4,
+      status: 1,
+      targetMode: 2,
+      targetSinkId: SOURCE_ID,
+      targetSinkType: 5,
+      targetSinkName: 'minio-iceberg',
+      targetSinkDestination: 'orders/rollback',
+      targetSinkKeyColumns: 'order_id',
+      lakehouseTableFormat: 2,
+      lakehouseWriteMode: 1,
+    }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Time-Travel' }))
+    expect(await screen.findByText('将 main 分支切回至 v1')).toBeTruthy()
+    fireEvent.change(screen.getByPlaceholderText('可选备份标签（pre-rollback）'), { target: { value: 'pre-rb-v2' } })
+    fireEvent.click(screen.getByRole('button', { name: '回滚预演' }))
+    expect(await screen.findByText(/Dry-Run 回滚预演通过/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '回滚 main' }))
+    expect(await screen.findByText('tag:pre-rb-v2 · v2')).toBeTruthy()
   })
 })

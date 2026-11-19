@@ -43,7 +43,8 @@ public class IntegrationLineageTests
                 new DataPipelineDto
                 {
                     Id = pipeId, Name = "daily-orders-etl", SourceId = pgId, TargetId = minioId,
-                    TransformConfig = """{"mode":"upsert","targetTable":"dw.orders"}""", Status = PipelineStatus.Active,
+                    TransformConfig = """{"mode":"upsert","targetTable":"dw.orders","keyColumns":["order_id"],"watermarkColumn":"updated_at","columnMappings":[{"sourceColumn":"amt_cents","targetColumn":"amount_total"}]}""",
+                    Status = PipelineStatus.Active,
                 },
             ]));
         host.Services.GetRequiredService<ICdcStreamAppService>()
@@ -55,7 +56,10 @@ public class IntegrationLineageTests
                     Id = cdcId, Name = "orders-iceberg-wap", SourceId = pgId, SourceType = CdcSourceType.PostgreSqlLogicalReplication,
                     MonitoredTables = "public.orders", TargetMode = CdcTargetMode.ExternalSink,
                     TargetSinkId = minioId, TargetSinkType = DataSourceType.ObjectStorage,
-                    TargetSinkDestination = "orders/wap", LakehouseTableFormat = LakehouseTableFormat.ApacheIceberg,
+                    TargetSinkDestination = "orders/wap", TargetSinkKeyColumns = "order_id",
+                    TargetFieldMappings = [new CdcFieldMappingDto { SourceColumn = "customer_no", TargetColumn = "cust_id" }],
+                    SoftDeleteColumn = "is_deleted",
+                    LakehouseTableFormat = LakehouseTableFormat.ApacheIceberg,
                     LakehouseWriteMode = LakehouseWriteMode.MergeOnReadUpsert, LakehouseWriteBranch = "staging",
                     Status = CdcStreamStatus.Active,
                 },
@@ -125,5 +129,29 @@ public class IntegrationLineageTests
         impact.ImpactedNodes.ShouldContain(i => i.Node.Kind == "LakehouseTable" && i.Node.Name == "orders/wap");
         impact.ImpactedNodes.ShouldContain(i => i.Node.Kind == "MessageSubscription" && i.Node.Name == "ops-alert-webhook");
         impact.Recommendations.ShouldNotBeEmpty();
+
+        // Column-level lineage & CNCF OpenLineage 2.0 export
+        var etlEdge = graph.Edges.Single(e => e.Relation == "WritesTo" && e.SourceNodeId == $"pipeline:{pipeId:D}");
+        etlEdge.ColumnMappings.ShouldContain(m => m.SourceColumn == "amt_cents" && m.TargetColumn == "amount_total" && m.TransformType == "rename");
+        etlEdge.ColumnMappings.ShouldContain(m => m.SourceColumn == "order_id" && m.TransformType == "business_key");
+        etlEdge.ColumnMappings.ShouldContain(m => m.SourceColumn == "updated_at" && m.TransformType == "watermark");
+
+        var cdcEdge = graph.Edges.Single(e => e.Relation == "MaterializesTo" && e.SourceNodeId == $"cdc:{cdcId:D}");
+        cdcEdge.ColumnMappings.ShouldContain(m => m.SourceColumn == "customer_no" && m.TargetColumn == "cust_id" && m.TransformType == "rename");
+        cdcEdge.ColumnMappings.ShouldContain(m => m.TargetColumn == "is_deleted" && m.TransformType == "soft_delete");
+
+        var olRes = await client.GetAsync("/api/v1/integration-lineage/openlineage?ns=prod-swapmid");
+        olRes.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var olJson = await olRes.Content.ReadAsStringAsync();
+        olJson.ShouldNotContain("token=secret");
+        var olDto = JsonSerializer.Deserialize<OpenLineageExportDto>(olJson, jsonOpts)!;
+        olDto.SpecVersion.ShouldBe("2-0-2");
+        olDto.Namespace.ShouldBe("prod-swapmid");
+        olDto.EventCount.ShouldBe(2);
+        olDto.ColumnLineageEdgeCount.ShouldBe(2);
+        olDto.ContentJson.ShouldContain("https://openlineage.io/spec/2-0-2/OpenLineage.json");
+        olDto.ContentJson.ShouldContain("columnLineage");
+        olDto.ContentJson.ShouldContain("amount_total");
+        olDto.ContentJson.ShouldContain("cust_id");
     }
 }

@@ -8109,6 +8109,144 @@ export const API_MODULES: ApiModule[] = [
             ]
           },
           {
+            "method": "POST",
+            "path": "/api/v1/cdc-streams/{id}/rollback-lakehouse",
+            "summary": "将 Apache Iceberg v2 表 main 分支原子回滚至指定历史快照版本或命名标签（默认 DryRun=true，支持备份原 main 标签）",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "requestBody": [
+              {
+                "name": "targetVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "目标历史快照版本号（与 TargetTagName 二选一）",
+                "required": false
+              },
+              {
+                "name": "targetTagName",
+                "cnName": "",
+                "type": "string",
+                "description": "目标命名标签或分支名（如 audit-v1 / release-280，与 TargetVersion 二选一）",
+                "required": false
+              },
+              {
+                "name": "backupCurrentAsTagName",
+                "cnName": "",
+                "type": "string",
+                "description": "可选：回滚前先将当前 main 快照原子绑定为备份审计标签（保证 100% 可逆）",
+                "required": false
+              },
+              {
+                "name": "dryRun",
+                "cnName": "",
+                "type": "boolean",
+                "description": "默认 true（仅执行回滚预演与校验，绝不修改 main 分支或表元数据）",
+                "required": false
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "dryRun",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "alreadyAtTarget",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "previousMainSnapshotId",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "previousMainVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "targetSnapshotId",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "targetSnapshotVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "targetRefName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "backupTagName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "metadataVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "metadataKey",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "rolledBackAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "message",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
             "method": "GET",
             "path": "/api/v1/cdc-streams/{id}/sink-template",
             "summary": "获取外部接收端（ClickHouse / Kafka / ObjectStorage）标准结构与建表 DDL 模板",
@@ -9465,6 +9603,13 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "edges[].columnMappings",
+                "cnName": "",
+                "type": "IntegrationColumnLineageDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "countsByKind",
                 "cnName": "",
                 "type": "object",
@@ -9650,6 +9795,13 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "impactedEdges[].columnMappings",
+                "cnName": "",
+                "type": "IntegrationColumnLineageDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
                 "name": "recommendations",
                 "cnName": "",
                 "type": "string[]",
@@ -9660,6 +9812,93 @@ export const API_MODULES: ApiModule[] = [
                 "name": "warnings",
                 "cnName": "",
                 "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "summary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/integration-lineage/openlineage",
+            "summary": "导出 CNCF OpenLineage 2.0（v2-0-2）标准血缘 JSON（含字段级 columnLineage 与 schema facets，兼容 Marquez / DataHub / OpenMetadata）",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "ns",
+                "cnName": "",
+                "type": "string",
+                "required": false,
+                "description": ""
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "specVersion",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "producer",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "schemaUrl",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "namespace",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "generatedAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "eventCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "datasetCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "columnLineageEdgeCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "contentJson",
+                "cnName": "",
+                "type": "string",
                 "description": "",
                 "nullable": true
               },

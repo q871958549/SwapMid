@@ -19,10 +19,10 @@ SwapMid 并非底层队列或单一通信协议组件，而是运行在关系型
 
 | 核心能力域 | 开箱即用的生产级能力 |
 | --- | --- |
-| **异构实时 CDC 与零 JVM 开放湖仓** | 原生覆盖 **5 类 CDC 数据源**：PostgreSQL 逻辑复制（`pgoutput`）、SQL Server Change Tracking（`CHANGETABLE`）、MySQL / MariaDB Row-Based Binlog（`ROW` + `FULL`）、无服务器 HMAC-SHA256 **Push Webhook CDC**（内置自动 Schema 推导与死信重放台账）以及 **Kafka / Redpanda Debezium 流**（原生支持 JSON 与 **Confluent / Redpanda Schema Registry 二进制 Avro 与 Protobuf 线协议解码**）。直写 **Apache Delta Lake**（`_delta_log`）与纯 .NET 零 JVM **Apache Iceberg v2**（二进制 Apache Avro 1.11 OCF `snap-*.avro` / `*-m0.avro` / `*-d0.avro`、Parquet `FieldId 1..12` 与 `TIMESTAMP_MICROS`、原生 **`day(commit_timestamp_utc)` 按日隐藏分区**、**Merge-on-Read 主键 Upsert（`content=2` Equality Deletes）**、同日分区感知 `REPLACE` 压缩、**WAP 隔离分支（`staging`）与快进发布、命名审计标签（`refs`）**、严格引用计数 **`expireSnapshots` 孤儿清理**及 **Hangfire 定时维护策略**），经官方 **DuckDB v2.0.0 `iceberg_scan()`** 实机验证分支隔离、发布去重与时间旅行。 |
+| **异构实时 CDC 与零 JVM 开放湖仓** | 原生覆盖 **5 类 CDC 数据源**：PostgreSQL 逻辑复制（`pgoutput`）、SQL Server Change Tracking（`CHANGETABLE`）、MySQL / MariaDB Row-Based Binlog（`ROW` + `FULL`）、无服务器 HMAC-SHA256 **Push Webhook CDC**（内置自动 Schema 推导与死信重放台账）以及 **Kafka / Redpanda Debezium 流**（原生支持 JSON 与 **Confluent / Redpanda Schema Registry 二进制 Avro 与 Protobuf 线协议解码**）。直写 **Apache Delta Lake**（`_delta_log`）与纯 .NET 零 JVM **Apache Iceberg v2**（二进制 Apache Avro 1.11 OCF `snap-*.avro` / `*-m0.avro` / `*-d0.avro`、Parquet `FieldId 1..12` 与 `TIMESTAMP_MICROS`、原生 **`day(commit_timestamp_utc)` 按日隐藏分区**、**Merge-on-Read 主键 Upsert（`content=2` Equality Deletes）**、同日分区感知 `REPLACE` 压缩、**WAP 隔离分支（`staging`）快进发布、命名审计标签（`refs`）与可逆原子时间旅行回滚**、严格引用计数 **`expireSnapshots` 孤儿清理**、**Prometheus FinOps 存储计量**及 **Hangfire 定时维护策略**），经官方 **DuckDB v2.0.0 `iceberg_scan()`** 实机验证分支隔离、发布去重、时间旅行与原子回滚。 |
 | **混沌验证的幂等流式 ETL** | 面向 PostgreSQL、SQL Server、MySQL、REST API、CSV/Excel 与 Kafka / ClickHouse / S3-MinIO Parquet 的有界内存流式管道；内置可视化字段映射器、零行只读 Schema 预检、多方言原子 `upsert` 与目标库事务级回执表 **Target Receipt v1**（`__swapmid_etl_receipt_v1`），在断连崩溃与并发重跑下实现 **`RPO = 0`**。 |
 | **可靠事件总线与 CloudEvents 1.0** | 跨引擎事务性 Outbox（`DataIntegration` -> `MessageBus`）、主题/订阅结构化过滤（`subject:<通配符>`、`$.jsonPath=value`）、指数退避自动重试与集合化批量死信重放，原生支持 CNCF **CloudEvents v1.0** HTTP Webhook（`HMAC-SHA256` 签名 + 出站 SSRF 防护）、RabbitMQ 及飞书/钉钉/企微/Slack 群机器人通道。 |
-| **API 网关、跨引擎血缘、GitOps 与 MCP** | 默认安全关闭的动态 API 网关（`/api/gateway/{**path}`，防 DNS 重绑定 SSRF 守卫、客户端路由组 ACL 与滑动窗口限流）、交互式**跨引擎数据血缘与影响面分析**（`GET /api/v1/integration-lineage{,/impact}`，串联数据源 -> 管道/CDC -> 湖仓/消息总线 -> 订阅与 API 网关）、零明文密钥 **`swapmid.io/v1` 声明式 GitOps 集成清单**（`Export` / `Diff` / `Dry-Run Apply` API、Web 控制台、支持 `${ENV_SECRET:...}` 密钥占位解析的 `scripts/swapmidctl.mjs` CLI 与可复用 GitHub Action PR 漂移门禁）、受平台 RBAC 约束的 **MCP Server**（`POST /api/mcp`，内置 **13 个只读诊断与 `Draft` 草稿生成工具**，`/api/v1` 接口 **100.0% `207/207` OpenAPI 摘要覆盖**）以及零前端令牌暴露的 Next.js 16 BFF 控制台（支持 S256 PKCE **外部企业 OIDC 单点登录**）。 |
+| **API 网关、OpenLineage 2.0、GitOps 与 MCP** | 默认安全关闭的动态 API 网关（`/api/gateway/{**path}`，防 DNS 重绑定 SSRF 守卫、客户端路由组 ACL 与滑动窗口限流）、交互式**跨引擎字段级血缘、影响面分析与 CNCF OpenLineage 2.0（`v2-0-2`）导出及可选 Webhook 推送**（`GET /api/v1/integration-lineage{,/impact,/openlineage}`，对接 Marquez / DataHub / OpenMetadata）、零明文密钥 **`swapmid.io/v1` 声明式 GitOps 集成清单**（`Export` / `Diff` / `Dry-Run Apply` API、Web 控制台、支持 `${ENV_SECRET:...}` 密钥占位解析的 `scripts/swapmidctl.mjs` CLI 与可复用 GitHub Action PR 漂移门禁）、受平台 RBAC 约束的 **MCP Server**（`POST /api/mcp`，内置 **14 个只读诊断与 `Draft` 草稿生成工具**，`/api/v1` 接口 **100.0% `209/209` OpenAPI 摘要覆盖**）、全链路 **W3C TraceContext**（`traceparent` -> `X-SwapMid-Trace-Id`）以及零前端令牌暴露的 Next.js 16 BFF 控制台（支持 S256 PKCE **外部企业 OIDC 单点登录**）。 |
 
 ---
 
@@ -33,7 +33,7 @@ flowchart LR
   Browser["Web 控制台\n(React 19 / Next.js 16)"] <-->|"HttpOnly Cookie\n+ 身份世代围栏"| BFF["Next.js 16 BFF\n(:5175 / :13000)"]
   BFF <--> Redis[("Redis 8\n会话与刷新租约")]
   BFF <-->|"有界回源请求\n+ Bearer JWT"| Core["SwapMid 中台控制面\n(.NET 10 / ABP v10.1 · :18080)"]
-  AI["AI Agent / IDE"] -.->|"JSON-RPC 2.0 + RBAC\nPOST /api/mcp (13 工具)"| Core
+  AI["AI Agent / IDE"] -.->|"JSON-RPC 2.0 + RBAC\nPOST /api/mcp (14 工具)"| Core
   Core <--> PG[("PostgreSQL 16\n元数据与 Outbox")]
   Sources["PG / SQL Server / MySQL\nKafka-Avro-Proto / Webhook"] -->|"实时 CDC & 流式 ETL"| Core
   Core --> Lake["S3 / MinIO 开放湖仓\n(Iceberg v2 MoR+WAP · Delta)"]

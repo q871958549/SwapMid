@@ -24,6 +24,7 @@ public static class McpToolCatalog
     public const string ExportIntegrationBundle = "export_integration_bundle";
     public const string PlanLakehouseMaintenance = "plan_lakehouse_maintenance";
     public const string AnalyzeLineageImpact = "analyze_lineage_impact";
+    public const string ExportOpenLineageSpec = "export_openlineage_spec";
 
     public static IReadOnlyList<McpToolDescriptor> All { get; } =
     [
@@ -224,6 +225,20 @@ public static class McpToolCatalog
                     query = new { type = "string", description = "Optional asset name or destination substring to match root node; omit both nodeId and query to inspect the full topology." },
                     direction = new { type = "string", @enum = new[] { "downstream", "upstream", "both" }, description = "Traversal direction (default both)." },
                     maxDepth = new { type = "integer", minimum = 1, maximum = 8, description = "Maximum BFS traversal hops (default 4)." },
+                },
+                additionalProperties = false,
+            }),
+        new McpToolDescriptor(
+            Name: ExportOpenLineageSpec,
+            RequiredPermission: SwapMidPermissions.DataIntegration.DataSources.Default,
+            Description: "Export secret-free CNCF OpenLineage 2.0 (v2-0-2) JSON lineage events with schema and columnLineage facets ready for Marquez, DataHub, or OpenMetadata.",
+            InputSchema: new
+            {
+                type = "object",
+                properties = new
+                {
+                    @namespace = new { type = "string", description = "Optional OpenLineage namespace (default swapmid)." },
+                    summaryOnly = new { type = "boolean", description = "When true, return counts and metadata without the full OpenLineage JSON payload." },
                 },
                 additionalProperties = false,
             }),

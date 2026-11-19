@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using SwapMid.Monitoring;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 
@@ -177,6 +178,12 @@ public sealed class DeltaLakeHistoryReader : ITransientDependency
             .ToList();
         var totalBytes = activeFiles.Sum(f => f.SizeBytes);
         var totalRecords = activeFiles.Sum(f => f.RecordCount ?? 0);
+        if (!requestedVersion.HasValue)
+        {
+            PlatformMetrics.CdcLakehouseActiveBytes.WithLabels(stream.Name, "delta_lake").Set(totalBytes);
+            PlatformMetrics.CdcLakehouseActiveFiles.WithLabels(stream.Name, "delta_lake").Set(activeFiles.Count);
+            PlatformMetrics.CdcLakehouseSnapshotsCount.WithLabels(stream.Name, "delta_lake").Set(parsedCommits.Count);
+        }
 
         var recentCommits = parsedCommits
             .OrderByDescending(c => c.Summary.Version)

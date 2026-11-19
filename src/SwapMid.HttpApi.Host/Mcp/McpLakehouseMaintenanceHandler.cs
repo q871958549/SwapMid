@@ -130,6 +130,8 @@ internal static class McpLakehouseMaintenanceHandler
                 currentVersion = history.CurrentVersion,
                 totalSnapshots = history.TotalCommitCount,
                 activeDataFiles = history.SelectedActiveFileCount,
+                activeBytes = history.SelectedTotalBytes,
+                activeRecords = history.SelectedTotalRecordCount,
                 equalityDeleteFiles = history.SelectedEqualityDeleteFileCount,
                 equalityDeleteKeys = history.SelectedEqualityDeleteRecordCount,
                 refs = history.Refs.Select(r => new { r.Name, r.Type, r.SnapshotId, r.Version }),

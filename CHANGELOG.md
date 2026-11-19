@@ -4,6 +4,20 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2026-11-20
+
+### Added
+- **Apache Iceberg v2 Reversible Atomic Time-Travel Rollback & Lakehouse FinOps Storage Metering**:
+  - Added `IcebergV2MaintenanceService.RollbackAsync`, DTOs (`RollbackCdcLakehouseInput`, `CdcLakehouseRollbackResultDto`), and `POST /api/v1/cdc-streams/{id}/rollback-lakehouse` (`[Authorize(CdcStreams.Manage)]`, `DryRun = true` default): atomically switches `main` and `current-snapshot-id` back to any retained historical snapshot version or named ref (`tag`/`branch`) via S3 CAS `If-None-Match: *`, with optional atomic `BackupCurrentAsTagName` pinning of the previous `main` head (making rollbacks 100% reversible) and idempotent repeat behavior.
+  - Updated `IcebergV2MetadataReader` so non-WAP streams automatically follow `refs["main"]` after rollback while exposing historical/backup snapshots in `refs` and Time-Travel SQL, and added Lakehouse FinOps storage metering Prometheus gauges (`swapmid_cdc_lakehouse_active_bytes`, `swapmid_cdc_lakehouse_active_files`, `swapmid_cdc_lakehouse_snapshots_count` across both `apache_iceberg` and `delta_lake`, plus `operation="promote"|"rollback"` on `swapmid_cdc_iceberg_maintenance_total`), Grafana Panel 10 series, and FinOps fields in MCP Tool 12 `plan_lakehouse_maintenance`.
+- **CNCF OpenLineage 2.0 (`v2-0-2`) Export, Column-Level Lineage, Optional Webhook Emitter & MCP Tool 14**:
+  - Extended `IntegrationLineageEdgeDto` with `ColumnMappings` (`IntegrationColumnLineageDto`: `sourceColumn`, `targetColumn`, `transformType` covering ETL `columnMappings` / `keyColumns` / `watermarkColumn` and CDC `targetFieldMappings` / `targetSinkKeyColumns` / `softDeleteColumn`).
+  - Added `GET /api/v1/integration-lineage/openlineage` (`IntegrationLineageBuilder.OpenLineage.cs`) exporting secret-free CNCF OpenLineage `v2-0-2` JSON with `schema` and `columnLineage` facets ready for Marquez, DataHub, and OpenMetadata, plus fail-closed optional outbound lifecycle emitter (`OpenLineageEventEmitter`, `OpenLineage:Enabled=false` default, SSRF-guarded via `DataIntegrationSinkEndpointPolicy`, `swapmid_openlineage_events_total`).
+  - Added RBAC-gated read-only MCP Tool 14 `export_openlineage_spec` (`McpOpenLineageHandler`), upgraded `CdcIcebergMaintenanceSection` with Rollback Dry-Run / Execute + backup tag controls, upgraded `CdcLineageGraphDialog` with column-level lineage chips + one-click OpenLineage JSON download, and maintained **100.0% (`209/209`)** `/api/v1` OpenAPI summary coverage across 9 domains and `2,200` trilingual i18n keys.
+- **Native Multi-Arch Container Build Acceleration & End-to-End W3C TraceContext**:
+  - Upgraded `web/Dockerfile`, `src/SwapMid.HttpApi.Host/Dockerfile`, and `src/SwapMid.DbMigrator/Dockerfile` build stages to `FROM --platform=$BUILDPLATFORM ...` while keeping runtime stages target-architecture native (`linux/amd64` & `linux/arm64`), eliminating QEMU emulation bottlenecks during multi-arch release builds.
+  - Added strict W3C `traceparent` validation & forwarding in the Next.js BFF proxy (`proxy-forwarding.ts`), allowlisted `x-swapmid-trace-id` response passthrough, and added `TraceContextResponseMiddleware` emitting `X-SwapMid-Trace-Id` from `Activity.Current?.TraceId` on every API response (verified in `scripts/e2e-smoke.mjs`).
+
 ## [2.8.0] - 2026-11-19
 
 ### Added

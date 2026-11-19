@@ -59,7 +59,12 @@ public sealed partial class IntegrationLineageBuilder : ITransientDependency
         var warnings = new List<string>();
 
         void AddNode(IntegrationLineageNodeDto node) => nodes.TryAdd(node.Id, node);
-        void AddEdge(string sourceId, string targetId, string relation, string? label = null)
+        void AddEdge(
+            string sourceId,
+            string targetId,
+            string relation,
+            string? label = null,
+            List<IntegrationColumnLineageDto>? columnMappings = null)
         {
             if (string.Equals(sourceId, targetId, StringComparison.Ordinal)) return;
             var key = $"{sourceId}->{targetId}:{relation}:{label ?? string.Empty}";
@@ -71,6 +76,7 @@ public sealed partial class IntegrationLineageBuilder : ITransientDependency
                     TargetNodeId = targetId,
                     Relation = relation,
                     Label = string.IsNullOrWhiteSpace(label) ? null : label.Trim(),
+                    ColumnMappings = columnMappings ?? new List<IntegrationColumnLineageDto>(),
                 });
             }
         }
@@ -117,7 +123,7 @@ public sealed partial class IntegrationLineageBuilder : ITransientDependency
             var page = await _dataPipelineAppService.GetListAsync(new GetDataPipelineListInput { MaxResultCount = 500 });
             foreach (var pipe in page.Items.OrderBy(x => x.Name, StringComparer.Ordinal))
             {
-                var (mode, targetTable) = ExtractTransformHints(pipe.TransformConfig);
+                var (mode, targetTable, pipelineCols) = ExtractTransformHints(pipe.TransformConfig);
                 var pipeId = $"pipeline:{pipe.Id:D}";
                 var meta = new Dictionary<string, string>(StringComparer.Ordinal);
                 if (!string.IsNullOrWhiteSpace(mode)) meta["mode"] = mode;
@@ -146,7 +152,7 @@ public sealed partial class IntegrationLineageBuilder : ITransientDependency
                     var tgtKey = $"source:{pipe.TargetId.Value:D}";
                     if (nodes.ContainsKey(tgtKey))
                     {
-                        AddEdge(pipeId, tgtKey, "WritesTo", targetTable);
+                        AddEdge(pipeId, tgtKey, "WritesTo", targetTable, pipelineCols);
                     }
                 }
 
@@ -242,7 +248,7 @@ public sealed partial class IntegrationLineageBuilder : ITransientDependency
                             Status = cdc.ContractViolated ? "Breached" : "Active",
                             Metadata = lhMeta,
                         });
-                        AddEdge(cdcId, lhId, "MaterializesTo", cdc.LakehouseTableFormat.ToString());
+                        AddEdge(cdcId, lhId, "MaterializesTo", cdc.LakehouseTableFormat.ToString(), ExtractCdcColumnLineage(cdc));
                         if (nodes.ContainsKey(sinkKey))
                         {
                             AddEdge(lhId, sinkKey, "StoredIn", "ObjectStorage");
@@ -250,7 +256,7 @@ public sealed partial class IntegrationLineageBuilder : ITransientDependency
                     }
                     else if (nodes.ContainsKey(sinkKey))
                     {
-                        AddEdge(cdcId, sinkKey, "WritesTo", cdc.TargetSinkDestination);
+                        AddEdge(cdcId, sinkKey, "WritesTo", cdc.TargetSinkDestination, ExtractCdcColumnLineage(cdc));
                     }
                 }
                 else if (cdc.TargetMode == CdcTargetMode.RelationalTable && cdc.TargetSinkId.HasValue)
@@ -258,7 +264,7 @@ public sealed partial class IntegrationLineageBuilder : ITransientDependency
                     var sinkKey = $"source:{cdc.TargetSinkId.Value:D}";
                     if (nodes.ContainsKey(sinkKey))
                     {
-                        AddEdge(cdcId, sinkKey, "MaterializesTo", cdc.TargetSinkDestination);
+                        AddEdge(cdcId, sinkKey, "MaterializesTo", cdc.TargetSinkDestination, ExtractCdcColumnLineage(cdc));
                     }
                 }
             }
@@ -369,20 +375,60 @@ public sealed partial class IntegrationLineageBuilder : ITransientDependency
     private async Task<bool> HasPermissionAsync(ClaimsPrincipal user, string policy)
         => (await _authorizationService.AuthorizeAsync(user, null, policy)).Succeeded;
 
-    private static (string? Mode, string? TargetTable) ExtractTransformHints(string? transformConfig)
+    private static (string? Mode, string? TargetTable, List<IntegrationColumnLineageDto> ColumnMappings) ExtractTransformHints(string? transformConfig)
     {
-        if (string.IsNullOrWhiteSpace(transformConfig)) return (null, null);
+        var cols = new List<IntegrationColumnLineageDto>();
+        if (string.IsNullOrWhiteSpace(transformConfig)) return (null, null, cols);
         try
         {
             using var doc = JsonDocument.Parse(transformConfig);
-            if (doc.RootElement.ValueKind != JsonValueKind.Object) return (null, null);
-            var mode = doc.RootElement.TryGetProperty("mode", out var m) && m.ValueKind == JsonValueKind.String ? m.GetString() : null;
-            var target = doc.RootElement.TryGetProperty("targetTable", out var t) && t.ValueKind == JsonValueKind.String ? t.GetString() : null;
-            return (mode, target);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object) return (null, null, cols);
+            var root = doc.RootElement;
+            var mode = root.TryGetProperty("mode", out var m) && m.ValueKind == JsonValueKind.String ? m.GetString() : null;
+            var target = root.TryGetProperty("targetTable", out var t) && t.ValueKind == JsonValueKind.String ? t.GetString() : null;
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            void AddCol(string? s, string? tgt, string type)
+            {
+                if (string.IsNullOrWhiteSpace(s) || string.IsNullOrWhiteSpace(tgt)) return;
+                var srcTrim = s.Trim();
+                var tgtTrim = tgt.Trim();
+                if (seen.Add($"{srcTrim}->{tgtTrim}:{type}"))
+                {
+                    cols.Add(new IntegrationColumnLineageDto { SourceColumn = srcTrim, TargetColumn = tgtTrim, TransformType = type });
+                }
+            }
+
+            if (root.TryGetProperty("columnMappings", out var cm) && cm.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in cm.EnumerateArray())
+                {
+                    if (item.ValueKind != JsonValueKind.Object) continue;
+                    var sc = item.TryGetProperty("sourceColumn", out var scEl) && scEl.ValueKind == JsonValueKind.String ? scEl.GetString() : null;
+                    var tc = item.TryGetProperty("targetColumn", out var tcEl) && tcEl.ValueKind == JsonValueKind.String ? tcEl.GetString() : null;
+                    if (string.IsNullOrWhiteSpace(sc) || string.IsNullOrWhiteSpace(tc)) continue;
+                    AddCol(sc, tc, string.Equals(sc.Trim(), tc.Trim(), StringComparison.OrdinalIgnoreCase) ? "identity" : "rename");
+                }
+            }
+
+            if (root.TryGetProperty("keyColumns", out var kc) && kc.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var k in kc.EnumerateArray())
+                {
+                    if (k.ValueKind == JsonValueKind.String) AddCol(k.GetString(), k.GetString(), "business_key");
+                }
+            }
+
+            if (root.TryGetProperty("watermarkColumn", out var wc) && wc.ValueKind == JsonValueKind.String)
+            {
+                AddCol(wc.GetString(), wc.GetString(), "watermark");
+            }
+
+            return (mode, target, cols);
         }
         catch (JsonException)
         {
-            return (null, null);
+            return (null, null, cols);
         }
     }
 

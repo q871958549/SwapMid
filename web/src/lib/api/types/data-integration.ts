@@ -50,6 +50,7 @@ export type CdcLakehouseRefDto = import('../generated').SwapMidDataIntegrationCd
 export type CdcLakehouseTagResultDto = import('../generated').SwapMidDataIntegrationCdcLakehouseTagResultDto
 export type CdcLakehouseExpireResultDto = import('../generated').SwapMidDataIntegrationCdcLakehouseExpireResultDto
 export type CdcLakehouseBranchPromoteResultDto = import('../generated').SwapMidDataIntegrationCdcLakehouseBranchPromoteResultDto
+export type CdcLakehouseRollbackResultDto = import('../generated').SwapMidDataIntegrationCdcLakehouseRollbackResultDto
 export type CdcLakehousePreviewDto = import('../generated').SwapMidDataIntegrationCdcLakehousePreviewDto
 export type CdcCatalogSyncResultDto = import('../generated').SwapMidDataIntegrationCdcCatalogSyncResultDto
 export type CdcContractStatus = import('../generated').SwapMidDataIntegrationCdcContractStatus
@@ -65,10 +66,12 @@ export type IntegrationBundleDiffResultDto = import('../generated').SwapMidContr
 export type IntegrationBundleApplyInput = import('../generated').SwapMidControllersGitOpsIntegrationBundleApplyInput
 export type IntegrationBundleApplyResultDto = import('../generated').SwapMidControllersGitOpsIntegrationBundleApplyResultDto
 export type IntegrationLineageNodeDto = import('../generated').SwapMidControllersLineageIntegrationLineageNodeDto
+export type IntegrationColumnLineageDto = import('../generated').SwapMidControllersLineageIntegrationColumnLineageDto
 export type IntegrationLineageEdgeDto = import('../generated').SwapMidControllersLineageIntegrationLineageEdgeDto
 export type IntegrationLineageGraphDto = import('../generated').SwapMidControllersLineageIntegrationLineageGraphDto
 export type IntegrationLineageImpactItemDto = import('../generated').SwapMidControllersLineageIntegrationLineageImpactItemDto
 export type IntegrationLineageImpactDto = import('../generated').SwapMidControllersLineageIntegrationLineageImpactDto
+export type OpenLineageExportDto = import('../generated').SwapMidControllersLineageOpenLineageExportDto
 export type CdcStreamDto = Omit<
   Require<
     import('../generated').SwapMidDataIntegrationCdcStreamDto,

@@ -292,6 +292,58 @@ public class IcebergV2MaintenanceTests
         });
         noop.AlreadyUpToDate.ShouldBeTrue();
         noop.MetadataVersion.ShouldBe(3);
+
+        // Rollback DryRun to v1 with backup tag should not mutate metadata
+        var dryRollback = await maint.RollbackAsync(stream, sink, new RollbackCdcLakehouseInput
+        {
+            TargetVersion = 1,
+            BackupCurrentAsTagName = "pre-rollback-v2",
+            DryRun = true,
+        });
+        dryRollback.DryRun.ShouldBeTrue();
+        dryRollback.AlreadyAtTarget.ShouldBeFalse();
+        dryRollback.PreviousMainVersion.ShouldBe(2);
+        dryRollback.TargetSnapshotVersion.ShouldBe(1);
+        dryRollback.BackupTagName.ShouldBe("pre-rollback-v2");
+        dryRollback.MetadataVersion.ShouldBe(3);
+
+        // Execute atomic rollback to v1 with backup tag "pre-rollback-v2" -> metadata v4
+        var rolledBack = await maint.RollbackAsync(stream, sink, new RollbackCdcLakehouseInput
+        {
+            TargetVersion = 1,
+            BackupCurrentAsTagName = "pre-rollback-v2",
+            DryRun = false,
+        });
+        rolledBack.DryRun.ShouldBeFalse();
+        rolledBack.AlreadyAtTarget.ShouldBeFalse();
+        rolledBack.PreviousMainVersion.ShouldBe(2);
+        rolledBack.TargetSnapshotVersion.ShouldBe(1);
+        rolledBack.BackupTagName.ShouldBe("pre-rollback-v2");
+        rolledBack.MetadataVersion.ShouldBe(4);
+
+        var histAfterRollback = await historyReader.ReadAsync(stream, sink, requestedVersion: null);
+        histAfterRollback.Refs.ShouldContain(r => r.Name == "main" && r.Type == "branch" && r.Version == 1);
+        histAfterRollback.Refs.ShouldContain(r => r.Name == "pre-rollback-v2" && r.Type == "tag" && r.Version == 2);
+
+        // Idempotent repeat rollback to v1
+        var rollbackNoop = await maint.RollbackAsync(stream, sink, new RollbackCdcLakehouseInput
+        {
+            TargetVersion = 1,
+            DryRun = false,
+        });
+        rollbackNoop.AlreadyAtTarget.ShouldBeTrue();
+        rollbackNoop.MetadataVersion.ShouldBe(4);
+
+        // Roll forward again using named backup tag "pre-rollback-v2" -> metadata v5!
+        var rollForward = await maint.RollbackAsync(stream, sink, new RollbackCdcLakehouseInput
+        {
+            TargetTagName = "pre-rollback-v2",
+            DryRun = false,
+        });
+        rollForward.AlreadyAtTarget.ShouldBeFalse();
+        rollForward.TargetRefName.ShouldBe("pre-rollback-v2");
+        rollForward.TargetSnapshotVersion.ShouldBe(2);
+        rollForward.MetadataVersion.ShouldBe(5);
     }
 
     private sealed class MemoryS3Handler : HttpMessageHandler

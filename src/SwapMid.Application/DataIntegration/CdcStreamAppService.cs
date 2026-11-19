@@ -77,34 +77,18 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
 
     public async Task<PagedResultDto<CdcStreamDto>> GetListAsync(GetCdcStreamListInput input)
     {
-        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
-            base.CurrentTenant.Id,
-            SwapMidPermissions.DataIntegration.CdcStreams.Default);
-
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Default);
         var sorting = ListQuerySortingExtensions.ResolveWhitelistedSorting(
-            input.Sorting,
-            CdcStreamMappingHelpers.StreamSortingWhitelist,
-            defaultSorting: "creationtime DESC",
-            logger: Logger,
-            idFieldName: null);
+            input.Sorting, CdcStreamMappingHelpers.StreamSortingWhitelist, defaultSorting: "creationtime DESC", logger: Logger, idFieldName: null);
         var totalCount = await _streamRepository.GetCountAsync(input.Filter, input.SourceId, input.Status);
-        var items = await _streamRepository.GetListAsync(
-            input.Filter,
-            input.SourceId,
-            input.Status,
-            sorting,
-            input.MaxResultCount,
-            input.SkipCount);
+        var items = await _streamRepository.GetListAsync(input.Filter, input.SourceId, input.Status, sorting, input.MaxResultCount, input.SkipCount);
         var dtos = await CdcStreamMappingHelpers.MapToDtoListAsync(items, _sourceRepository, _pipelineRepository);
         return new PagedResultDto<CdcStreamDto>(totalCount, dtos);
     }
 
     public async Task<CdcStreamDto> GetAsync(Guid id)
     {
-        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
-            base.CurrentTenant.Id,
-            SwapMidPermissions.DataIntegration.CdcStreams.Default);
-
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Default);
         var stream = await _streamRepository.GetAsync(id);
         return await EnrichDtoAsync(stream);
     }
@@ -112,10 +96,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Create)]
     public async Task<CdcStreamDto> CreateAsync(CdcStreamCreateUpdateDto input)
     {
-        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
-            base.CurrentTenant.Id,
-            SwapMidPermissions.DataIntegration.CdcStreams.Create);
-
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Create);
         var normalized = await CdcStreamMappingHelpers.ValidateAndNormalizeInputAsync(
             input, excludeId: null, _streamRepository, _sourceRepository, _pipelineRepository);
         var stream = new CdcStreamDefinition(
@@ -132,9 +113,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         stream.ConfigureLakehouseWapAndMaintenance(
             input.LakehouseWriteBranch,
             DataPipelineCronValidator.ValidateAndNormalize(false, input.LakehouseMaintenanceCron),
-            input.LakehouseExpireRetainLast,
-            input.LakehouseExpireOlderThanMinutes,
-            input.LakehouseDeleteOrphanedFiles);
+            input.LakehouseExpireRetainLast, input.LakehouseExpireOlderThanMinutes, input.LakehouseDeleteOrphanedFiles);
         stream.ConfigureDataContract(input.MaxFreshnessLagSeconds, input.MaxAllowedWalLagBytes, input.RequiredColumns);
 
         await _streamRepository.InsertAsync(stream, autoSave: true);
@@ -144,10 +123,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Update)]
     public async Task<CdcStreamDto> UpdateAsync(Guid id, CdcStreamCreateUpdateDto input)
     {
-        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
-            base.CurrentTenant.Id,
-            SwapMidPermissions.DataIntegration.CdcStreams.Update);
-
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Update);
         var stream = await _streamRepository.GetAsync(id);
         var normalized = await CdcStreamMappingHelpers.ValidateAndNormalizeInputAsync(
             input, excludeId: id, _streamRepository, _sourceRepository, _pipelineRepository);
@@ -166,9 +142,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         stream.ConfigureLakehouseWapAndMaintenance(
             input.LakehouseWriteBranch,
             DataPipelineCronValidator.ValidateAndNormalize(false, input.LakehouseMaintenanceCron),
-            input.LakehouseExpireRetainLast,
-            input.LakehouseExpireOlderThanMinutes,
-            input.LakehouseDeleteOrphanedFiles);
+            input.LakehouseExpireRetainLast, input.LakehouseExpireOlderThanMinutes, input.LakehouseDeleteOrphanedFiles);
         stream.ConfigureDataContract(input.MaxFreshnessLagSeconds, input.MaxAllowedWalLagBytes, input.RequiredColumns);
 
         await _streamRepository.UpdateAsync(stream, autoSave: true);
@@ -181,23 +155,15 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Delete)]
     public async Task DeleteAsync(Guid id)
     {
-        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
-            base.CurrentTenant.Id,
-            SwapMidPermissions.DataIntegration.CdcStreams.Delete);
-
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Delete);
         await _scheduleSynchronizer.RemoveAsync(id);
         await _streamRepository.DeleteAsync(id);
     }
 
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
-    public async Task<CdcMirrorSchemaInspectionDto> InspectMirrorSchemaAsync(
-        InspectCdcMirrorSchemaInput input,
-        CancellationToken cancellationToken = default)
+    public async Task<CdcMirrorSchemaInspectionDto> InspectMirrorSchemaAsync(InspectCdcMirrorSchemaInput input, CancellationToken cancellationToken = default)
     {
-        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
-            base.CurrentTenant.Id,
-            SwapMidPermissions.DataIntegration.CdcStreams.Manage);
-
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Manage);
         var preflight = _mirrorPreflightService
             ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
                 .WithData("Reason", "关系表镜像结构预检服务未启用。");
@@ -207,48 +173,24 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     }
 
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
-    public async Task<CdcPreflightResultDto> PreflightAsync(
-        Guid id,
-        CancellationToken cancellationToken = default)
+    public async Task<CdcPreflightResultDto> PreflightAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
-            base.CurrentTenant.Id,
-            SwapMidPermissions.DataIntegration.CdcStreams.Manage);
-
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Manage);
         var stream = await _streamRepository.GetAsync(id, cancellationToken: cancellationToken);
         var source = await _sourceRepository.GetAsync(stream.SourceId, cancellationToken: cancellationToken);
         return await CdcStreamMappingHelpers.BuildPreflightWithMirrorCheckAsync(
-            _captureService,
-            _sqlServerCaptureService,
-            _mySqlCaptureService,
-            _mirrorPreflightService,
-            _sourceRepository,
-            source,
-            stream,
-            cancellationToken,
-            _kafkaCaptureService);
+            _captureService, _sqlServerCaptureService, _mySqlCaptureService, _mirrorPreflightService, _sourceRepository, source, stream, cancellationToken, _kafkaCaptureService);
     }
 
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
     public async Task ActivateAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
-            base.CurrentTenant.Id,
-            SwapMidPermissions.DataIntegration.CdcStreams.Manage);
-
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Manage);
         var stream = await _streamRepository.GetAsync(id, cancellationToken: cancellationToken);
         var source = await _sourceRepository.GetAsync(stream.SourceId, cancellationToken: cancellationToken);
 
         var preflight = await CdcStreamMappingHelpers.BuildPreflightWithMirrorCheckAsync(
-            _captureService,
-            _sqlServerCaptureService,
-            _mySqlCaptureService,
-            _mirrorPreflightService,
-            _sourceRepository,
-            source,
-            stream,
-            cancellationToken,
-            _kafkaCaptureService);
+            _captureService, _sqlServerCaptureService, _mySqlCaptureService, _mirrorPreflightService, _sourceRepository, source, stream, cancellationToken, _kafkaCaptureService);
         if (!preflight.IsReady)
         {
             var reason = string.Join("；", preflight.Diagnostics);
@@ -485,6 +427,22 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         if (!result.DryRun && !result.AlreadyUpToDate && _catalogSyncService != null)
         {
             await _catalogSyncService.TryBestEffortSyncAsync(stream, sink, versionOverride: result.PromotedSnapshotVersion, cancellationToken);
+        }
+
+        return result;
+    }
+
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    public async Task<CdcLakehouseRollbackResultDto> RollbackLakehouseAsync(Guid id, RollbackCdcLakehouseInput input, CancellationToken cancellationToken = default)
+    {
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Manage);
+        var maintenance = _icebergMaintenanceService ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid).WithData("Reason", "Apache Iceberg v2 表维护服务未启用。");
+        var (stream, sink) = await CdcStreamMappingHelpers.LoadExternalSinkContextAsync(
+            id, "仅外部接收端（ObjectStorage）模式的 Apache Iceberg v2 CDC 流支持原子时间旅行回滚。", _streamRepository, _sourceRepository, cancellationToken);
+        var result = await maintenance.RollbackAsync(stream, sink, input, cancellationToken);
+        if (!result.DryRun && !result.AlreadyAtTarget && _catalogSyncService != null)
+        {
+            await _catalogSyncService.TryBestEffortSyncAsync(stream, sink, versionOverride: result.TargetSnapshotVersion, cancellationToken);
         }
 
         return result;

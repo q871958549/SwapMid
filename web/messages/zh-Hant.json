@@ -1651,6 +1651,12 @@
       "icebergPromoteBranchButton": "發佈分支",
       "icebergPromoteSuccessTitle": "WAP 分支已發佈至 main",
       "icebergPromoteFailedTitle": "WAP 分支發佈失敗",
+      "icebergRollbackBackupTagPlaceholder": "可選備份標籤（pre-rollback）",
+      "icebergRollbackTargetHint": "將 main 分支切回至 v{version}",
+      "icebergRollbackDryRunButton": "回滾預演",
+      "icebergRollbackExecuteButton": "回滾 main",
+      "icebergRollbackSuccessTitle": "Iceberg main 分支已回滾",
+      "icebergRollbackFailedTitle": "Iceberg 分支回滾失敗",
       "lineageButtonLabel": "血緣圖譜",
       "lineageDialogTitle": "跨引擎數據血緣與影響分析",
       "lineageDialogDesc": "實時查看資料來源、ETL 管道、CDC 流、開放湖倉表、消息總線與 API 網關之間的依賴鏈路，點擊任意節點評估上下游變更影響面。",
@@ -1669,7 +1675,11 @@
       "lineageImpactResultTitle": "變更影響面",
       "lineageRiskBadge": "風險 {level}",
       "lineageUpstreamCount": "上游依賴 {count}",
-      "lineageDownstreamCount": "下游波及 {count}"
+      "lineageDownstreamCount": "下游波及 {count}",
+      "lineageColumnMappingsTitle": "字段級血緣映射",
+      "lineageExportOpenLineageButton": "匯出 OpenLineage",
+      "lineageExportOpenLineageSuccessTitle": "OpenLineage 2.0 規範已匯出",
+      "lineageExportOpenLineageFailedTitle": "匯出 OpenLineage 失敗"
     }
   },
   "System": {

@@ -183,6 +183,12 @@ public sealed partial class IcebergV2MaintenanceService
                 await IcebergV2CommitWriter.PutVersionHintAsync(
                     _httpClientFactory, _configuration, config, destination, nextMetaSeq, cancellationToken);
                 PlatformMetrics.CdcIcebergMaintenanceTotal.WithLabels("promote", "succeeded").Inc();
+                if (_openLineageEmitter != null)
+                {
+                    await _openLineageEmitter.TryEmitLakehouseLifecycleEventAsync(
+                        "promote", stream, destination, branchSnap.SequenceNumber, branchSnapId, nextMetaSeq, branchName, cancellationToken);
+                }
+
                 var tagNote = auditTagName != null ? $"，并原子绑定审计标签「{auditTagName}」" : string.Empty;
                 return new CdcLakehouseBranchPromoteResultDto
                 {
@@ -206,6 +212,210 @@ public sealed partial class IcebergV2MaintenanceService
         PlatformMetrics.CdcIcebergMaintenanceTotal.WithLabels("promote", "failed").Inc();
         throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.PipelineExecutionFailed)
             .WithData("Reason", "Apache Iceberg v2 分支快进发布元数据并发提交冲突，请重试。");
+    }
+
+    /// <summary>
+    /// Apache Iceberg v2 原子时间旅行回滚（Atomic Time-Travel Rollback）：
+    /// 将 <c>main</c> 分支与 <c>current-snapshot-id</c> 原子切回至指定历史版本号或命名标签/分支；
+    /// 默认 <c>DryRun = true</c>，可选通过 <c>BackupCurrentAsTagName</c> 在切换前锚定当前 <c>main</c> 快照保证 100% 可逆。
+    /// </summary>
+    public async Task<CdcLakehouseRollbackResultDto> RollbackAsync(
+        CdcStreamDefinition stream,
+        DataSource targetSink,
+        RollbackCdcLakehouseInput input,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureIcebergStream(stream, targetSink);
+        var hasVersion = input.TargetVersion.HasValue;
+        var targetRefName = string.IsNullOrWhiteSpace(input.TargetTagName) ? null : input.TargetTagName.Trim();
+        var hasRef = targetRefName != null;
+        if (hasVersion == hasRef)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", "请指定目标快照版本号（targetVersion）或目标命名标签/分支（targetTagName）二者之一。");
+        }
+
+        if (targetRefName != null &&
+            (!TagNamePattern.IsMatch(targetRefName) || string.Equals(targetRefName, "main", StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", "目标标签或分支名必须由字母/数字开头（1-64 字符），且不可为保留分支 main。");
+        }
+
+        string? backupTagName = null;
+        if (!string.IsNullOrWhiteSpace(input.BackupCurrentAsTagName))
+        {
+            backupTagName = input.BackupCurrentAsTagName.Trim();
+            if (!TagNamePattern.IsMatch(backupTagName) || string.Equals(backupTagName, "main", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", "备份标签名必须由字母/数字开头（1-64 字符），且不可为保留分支 main。");
+            }
+        }
+
+        var config = ObjectStorageSinkConfigContract.ParseForWrite(targetSink.Config, requireSecretKey: true);
+        var destination = stream.TargetSinkDestination!.Trim();
+
+        for (var attempt = 0; attempt < MaxOptimisticRetries; attempt++)
+        {
+            var hintSeq = await IcebergV2CommitWriter.TryReadVersionHintAsync(
+                _httpClientFactory, _configuration, config, destination, cancellationToken) ?? 0L;
+            var (latestSeq, latestJson) = await IcebergV2CommitWriter.ProbeLatestMetadataAsync(
+                _httpClientFactory, _configuration, config, destination, hintSeq, cancellationToken);
+
+            if (latestSeq <= 0 || string.IsNullOrWhiteSpace(latestJson))
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", "目标 Apache Iceberg v2 表尚未产生任何快照，无法执行回滚。");
+            }
+
+            var root = JsonNode.Parse(latestJson)?.AsObject()
+                ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.PipelineExecutionFailed)
+                    .WithData("Reason", "无法解析当前 Apache Iceberg v2 表元数据。");
+
+            var snapshots = ExtractSnapshotsWithParent(root);
+            var snapById = snapshots.ToDictionary(s => s.SnapshotId);
+            var refsObj = root["refs"] as JsonObject;
+
+            BranchSnapshotMeta? targetSnap;
+            if (targetRefName != null)
+            {
+                var refObj = refsObj?[targetRefName] as JsonObject;
+                var refSid = refObj?["snapshot-id"]?.GetValue<long>() ?? 0L;
+                if (refObj == null || refSid <= 0 || !snapById.TryGetValue(refSid, out targetSnap))
+                {
+                    throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                        .WithData("Reason", $"目标表中不存在有效的命名标签或分支「{targetRefName}」。");
+                }
+            }
+            else
+            {
+                targetSnap = snapshots.FirstOrDefault(s => s.SequenceNumber == input.TargetVersion!.Value);
+                if (targetSnap == null)
+                {
+                    throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                        .WithData("Reason", $"指定的历史快照版本 v{input.TargetVersion} 不存在或已过期清理。");
+                }
+            }
+
+            var prevMainSnapId = ResolveCurrentMainSnapshotId(root);
+            long? prevMainVersion = prevMainSnapId.HasValue && snapById.TryGetValue(prevMainSnapId.Value, out var prevMainSnap)
+                ? prevMainSnap.SequenceNumber
+                : null;
+            var nowUtc = DateTime.UtcNow;
+            var currentMetaKey = config.BuildIcebergMetadataKey(destination, latestSeq);
+
+            if (prevMainSnapId == targetSnap.SnapshotId)
+            {
+                return new CdcLakehouseRollbackResultDto
+                {
+                    StreamId = stream.Id,
+                    DryRun = input.DryRun,
+                    AlreadyAtTarget = true,
+                    PreviousMainSnapshotId = prevMainSnapId,
+                    PreviousMainVersion = prevMainVersion,
+                    TargetSnapshotId = targetSnap.SnapshotId,
+                    TargetSnapshotVersion = targetSnap.SequenceNumber,
+                    TargetRefName = targetRefName,
+                    BackupTagName = null,
+                    MetadataVersion = latestSeq,
+                    MetadataKey = currentMetaKey,
+                    RolledBackAtUtc = nowUtc,
+                    Message = $"分支 main 当前已处于目标快照 v{targetSnap.SequenceNumber}，无需回滚。",
+                };
+            }
+
+            var effectiveBackupTag = prevMainSnapId is > 0 ? backupTagName : null;
+            if (input.DryRun)
+            {
+                var backupHint = effectiveBackupTag != null ? $"，并先备份原 main 为标签「{effectiveBackupTag}」" : string.Empty;
+                return new CdcLakehouseRollbackResultDto
+                {
+                    StreamId = stream.Id,
+                    DryRun = true,
+                    AlreadyAtTarget = false,
+                    PreviousMainSnapshotId = prevMainSnapId,
+                    PreviousMainVersion = prevMainVersion,
+                    TargetSnapshotId = targetSnap.SnapshotId,
+                    TargetSnapshotVersion = targetSnap.SequenceNumber,
+                    TargetRefName = targetRefName,
+                    BackupTagName = effectiveBackupTag,
+                    MetadataVersion = latestSeq,
+                    MetadataKey = currentMetaKey,
+                    RolledBackAtUtc = nowUtc,
+                    Message = $"Dry-Run 回滚预演通过：main 将从 {(prevMainVersion.HasValue ? $"v{prevMainVersion.Value}" : "未知版本")} 原子回滚至 v{targetSnap.SequenceNumber}{(targetRefName != null ? $"（引用 {targetRefName}）" : string.Empty)}{backupHint}。",
+                };
+            }
+
+            var nowMs = new DateTimeOffset(nowUtc).ToUnixTimeMilliseconds();
+            var nextMetaSeq = latestSeq + 1;
+            var nextMetaKey = config.BuildIcebergMetadataKey(destination, nextMetaSeq);
+
+            AppendMetadataLog(root, config.Bucket, currentMetaKey, nowMs);
+            root["last-updated-ms"] = nowMs;
+            root["current-snapshot-id"] = targetSnap.SnapshotId;
+
+            refsObj ??= new JsonObject();
+            refsObj["main"] = new JsonObject
+            {
+                ["snapshot-id"] = targetSnap.SnapshotId,
+                ["type"] = "branch",
+            };
+            if (effectiveBackupTag != null && prevMainSnapId is > 0)
+            {
+                refsObj[effectiveBackupTag] = new JsonObject
+                {
+                    ["snapshot-id"] = prevMainSnapId.Value,
+                    ["type"] = "tag",
+                };
+            }
+
+            root["refs"] = refsObj;
+
+            var snapLog = root["snapshot-log"] as JsonArray ?? new JsonArray();
+            snapLog.Add(new JsonObject
+            {
+                ["timestamp-ms"] = nowMs,
+                ["snapshot-id"] = targetSnap.SnapshotId,
+            });
+            root["snapshot-log"] = snapLog;
+
+            var updatedJson = root.ToJsonString(IcebergV2CommitWriter.JsonOptions);
+            if (await IcebergV2CommitWriter.PutMetadataIfAbsentAsync(
+                    _httpClientFactory, _configuration, config, nextMetaKey, updatedJson, cancellationToken))
+            {
+                await IcebergV2CommitWriter.PutVersionHintAsync(
+                    _httpClientFactory, _configuration, config, destination, nextMetaSeq, cancellationToken);
+                PlatformMetrics.CdcIcebergMaintenanceTotal.WithLabels("rollback", "succeeded").Inc();
+                if (_openLineageEmitter != null)
+                {
+                    await _openLineageEmitter.TryEmitLakehouseLifecycleEventAsync(
+                        "rollback", stream, destination, targetSnap.SequenceNumber, targetSnap.SnapshotId, nextMetaSeq, targetRefName ?? "main", cancellationToken);
+                }
+
+                var backupNote = effectiveBackupTag != null ? $"，原 main 已锚定至备份标签「{effectiveBackupTag}」" : string.Empty;
+                return new CdcLakehouseRollbackResultDto
+                {
+                    StreamId = stream.Id,
+                    DryRun = false,
+                    AlreadyAtTarget = false,
+                    PreviousMainSnapshotId = prevMainSnapId,
+                    PreviousMainVersion = prevMainVersion,
+                    TargetSnapshotId = targetSnap.SnapshotId,
+                    TargetSnapshotVersion = targetSnap.SequenceNumber,
+                    TargetRefName = targetRefName,
+                    BackupTagName = effectiveBackupTag,
+                    MetadataVersion = nextMetaSeq,
+                    MetadataKey = nextMetaKey,
+                    RolledBackAtUtc = nowUtc,
+                    Message = $"已将分支 main 从 {(prevMainVersion.HasValue ? $"v{prevMainVersion.Value}" : "空分支")} 原子回滚至快照 v{targetSnap.SequenceNumber}（元数据 v{nextMetaSeq}{backupNote}）。",
+                };
+            }
+        }
+
+        PlatformMetrics.CdcIcebergMaintenanceTotal.WithLabels("rollback", "failed").Inc();
+        throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.PipelineExecutionFailed)
+            .WithData("Reason", "Apache Iceberg v2 原子回滚元数据并发提交冲突，请重试。");
     }
 
     private static long? ResolveCurrentMainSnapshotId(JsonObject root)

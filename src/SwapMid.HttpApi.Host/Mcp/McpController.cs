@@ -231,6 +231,8 @@ public class McpController : AbpController
                     _serviceProvider, _authorizationService, User, args, cancellationToken),
                 McpToolCatalog.AnalyzeLineageImpact => await McpLineageImpactHandler.ExecuteAsync(
                     _serviceProvider, User, args),
+                McpToolCatalog.ExportOpenLineageSpec => await McpOpenLineageHandler.ExecuteAsync(
+                    _serviceProvider, User, args),
                 _ => throw new InvalidOperationException("Unhandled tool"),
             };
 

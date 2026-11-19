@@ -208,6 +208,21 @@
           "expr": "sum by (operation, outcome) (increase(swapmid_cdc_iceberg_maintenance_total[15m]))",
           "legendFormat": "iceberg_maint:{{operation}}/{{outcome}}",
           "refId": "F"
+        },
+        {
+          "expr": "max by (stream_name, table_format) (swapmid_cdc_lakehouse_active_bytes)",
+          "legendFormat": "active_bytes:{{stream_name}} ({{table_format}})",
+          "refId": "G"
+        },
+        {
+          "expr": "max by (stream_name, table_format) (swapmid_cdc_lakehouse_active_files)",
+          "legendFormat": "active_files:{{stream_name}} ({{table_format}})",
+          "refId": "H"
+        },
+        {
+          "expr": "max by (stream_name, table_format) (swapmid_cdc_lakehouse_snapshots_count)",
+          "legendFormat": "snapshots:{{stream_name}} ({{table_format}})",
+          "refId": "I"
         }
       ]
     },

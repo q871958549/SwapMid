@@ -504,6 +504,12 @@
     "DataIntegration.cdc.icebergPromoteBranchButton": "Promote",
     "DataIntegration.cdc.icebergPromoteSuccessTitle": "WAP Branch Promoted to main",
     "DataIntegration.cdc.icebergPromoteFailedTitle": "Failed to Promote WAP Branch",
+    "DataIntegration.cdc.icebergRollbackBackupTagPlaceholder": "Optional backup tag (pre-rollback)",
+    "DataIntegration.cdc.icebergRollbackTargetHint": "Switch main branch to v{version}",
+    "DataIntegration.cdc.icebergRollbackDryRunButton": "Dry-Run Rollback",
+    "DataIntegration.cdc.icebergRollbackExecuteButton": "Rollback main",
+    "DataIntegration.cdc.icebergRollbackSuccessTitle": "Iceberg main Branch Rolled Back",
+    "DataIntegration.cdc.icebergRollbackFailedTitle": "Failed to Rollback Iceberg Branch",
     "DataIntegration.cdc.lineageButtonLabel": "Lineage",
     "DataIntegration.cdc.lineageDialogTitle": "Cross-Engine Data Lineage & Impact Explorer",
     "DataIntegration.cdc.lineageDialogDesc": "Inspect live dependencies across DataSources, ETL Pipelines, CDC Streams, Lakehouse Tables, MessageBus, and API Gateway. Click any node to analyze upstream and downstream blast radius.",
@@ -522,7 +528,11 @@
     "DataIntegration.cdc.lineageImpactResultTitle": "Blast Radius",
     "DataIntegration.cdc.lineageRiskBadge": "Risk {level}",
     "DataIntegration.cdc.lineageUpstreamCount": "Upstream {count}",
-    "DataIntegration.cdc.lineageDownstreamCount": "Downstream {count}"
+    "DataIntegration.cdc.lineageDownstreamCount": "Downstream {count}",
+    "DataIntegration.cdc.lineageColumnMappingsTitle": "Column-Level Lineage",
+    "DataIntegration.cdc.lineageExportOpenLineageButton": "Export OpenLineage",
+    "DataIntegration.cdc.lineageExportOpenLineageSuccessTitle": "OpenLineage 2.0 Spec Exported",
+    "DataIntegration.cdc.lineageExportOpenLineageFailedTitle": "Failed to Export OpenLineage"
   },
   "traditionalOverrides": {
     "Account.user.batchRemoveDoneTitle": "批次移除角色完成",

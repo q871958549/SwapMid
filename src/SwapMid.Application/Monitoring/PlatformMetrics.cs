@@ -182,8 +182,28 @@ public static partial class PlatformMetrics
 
     public static readonly Counter CdcIcebergMaintenanceTotal = Metrics.CreateCounter(
         "swapmid_cdc_iceberg_maintenance_total",
-        "Apache Iceberg v2 表维护操作计数（标签 operation=tag|expire, outcome=succeeded|failed）",
+        "Apache Iceberg v2 表维护操作计数（标签 operation=tag|expire|promote|rollback, outcome=succeeded|failed）",
         new CounterConfiguration { LabelNames = ["operation", "outcome"] });
+
+    public static readonly Gauge CdcLakehouseActiveBytes = Metrics.CreateGauge(
+        "swapmid_cdc_lakehouse_active_bytes",
+        "Lakehouse 当前活跃数据分片总字节数（FinOps 存储计量，标签 stream_name/table_format）",
+        new GaugeConfiguration { LabelNames = ["stream_name", "table_format"] });
+
+    public static readonly Gauge CdcLakehouseActiveFiles = Metrics.CreateGauge(
+        "swapmid_cdc_lakehouse_active_files",
+        "Lakehouse 当前活跃数据分片文件数（FinOps 存储计量，标签 stream_name/table_format）",
+        new GaugeConfiguration { LabelNames = ["stream_name", "table_format"] });
+
+    public static readonly Gauge CdcLakehouseSnapshotsCount = Metrics.CreateGauge(
+        "swapmid_cdc_lakehouse_snapshots_count",
+        "Lakehouse 当前元数据保留快照总数（标签 stream_name/table_format）",
+        new GaugeConfiguration { LabelNames = ["stream_name", "table_format"] });
+
+    public static readonly Counter OpenLineageEventsTotal = Metrics.CreateCounter(
+        "swapmid_openlineage_events_total",
+        "CNCF OpenLineage 2.0 外部目录事件推送计数（标签 event_type/outcome）",
+        new CounterConfiguration { LabelNames = ["event_type", "outcome"] });
 
     private static readonly string[] EtlExecutionAdmissionOutcomes =
     [
@@ -256,11 +276,19 @@ public static partial class PlatformMetrics
 
         CdcIcebergEqualityDeletesTotal.Publish();
         PublishSingleLabelSeries(CdcSchemaRegistryFetchesTotal, ["cache_hit", "fetched", "failed"]);
-        foreach (var op in new[] { "tag", "expire" })
+        foreach (var op in new[] { "tag", "expire", "promote", "rollback" })
         {
             foreach (var outcome in new[] { "succeeded", "failed" })
             {
                 CdcIcebergMaintenanceTotal.WithLabels(op, outcome).Publish();
+            }
+        }
+
+        foreach (var ev in new[] { "promote", "rollback" })
+        {
+            foreach (var outcome in new[] { "succeeded", "failed", "skipped" })
+            {
+                OpenLineageEventsTotal.WithLabels(ev, outcome).Publish();
             }
         }
 

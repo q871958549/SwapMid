@@ -34,4 +34,10 @@ public class IntegrationLineageController : SwapMidController
         [FromQuery] string? direction = "both",
         [FromQuery] int maxDepth = 4)
         => _builder.AnalyzeImpactAsync(User, nodeId, query, direction, maxDepth);
+
+    /// <summary>导出 CNCF OpenLineage 2.0（v2-0-2）标准血缘 JSON（含字段级 columnLineage 与 schema facets，兼容 Marquez / DataHub / OpenMetadata）</summary>
+    [Authorize(SwapMidPermissions.DataIntegration.DataSources.Default)]
+    [HttpGet("openlineage")]
+    public Task<OpenLineageExportDto> ExportOpenLineageAsync([FromQuery] string? ns = null)
+        => _builder.BuildOpenLineageExportAsync(User, ns);
 }

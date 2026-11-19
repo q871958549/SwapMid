@@ -1,5 +1,5 @@
 # Multi-stage build for SwapMid.DbMigrator (build context: repository root)
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS restore
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS restore
 WORKDIR /src
 COPY SwapMid.slnx common.props NuGet.Config ./
 COPY src/SwapMid.Domain.Shared/SwapMid.Domain.Shared.csproj src/SwapMid.Domain.Shared/

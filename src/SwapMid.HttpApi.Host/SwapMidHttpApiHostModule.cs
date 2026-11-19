@@ -690,6 +690,7 @@ public class SwapMidHttpApiHostModule : AbpModule
         var env = context.GetEnvironment();
 
         app.UseForwardedHeaders();
+        app.UseMiddleware<TraceContextResponseMiddleware>();
         app.UseMetricServer();
 
         if (env.IsDevelopment())

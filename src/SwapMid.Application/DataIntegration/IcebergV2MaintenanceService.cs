@@ -31,13 +31,14 @@ public sealed partial class IcebergV2MaintenanceService : ITransientDependency
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
+    private readonly OpenLineageEventEmitter? _openLineageEmitter;
 
     public IcebergV2MaintenanceService(
         IHttpClientFactory httpClientFactory,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        OpenLineageEventEmitter? openLineageEmitter = null)
     {
-        _httpClientFactory = httpClientFactory;
-        _configuration = configuration;
+        _httpClientFactory = httpClientFactory; _configuration = configuration; _openLineageEmitter = openLineageEmitter;
     }
 
     public async Task<CdcLakehouseTagResultDto> CreateTagAsync(
@@ -295,6 +296,7 @@ public sealed partial class IcebergV2MaintenanceService : ITransientDependency
                 }
 
                 PlatformMetrics.CdcIcebergMaintenanceTotal.WithLabels("expire", "succeeded").Inc();
+                PlatformMetrics.CdcLakehouseSnapshotsCount.WithLabels(stream.Name, "apache_iceberg").Set(retained.Count);
                 return new CdcLakehouseExpireResultDto
                 {
                     StreamId = stream.Id,

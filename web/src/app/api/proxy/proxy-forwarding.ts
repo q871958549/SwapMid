@@ -74,7 +74,10 @@ const SAFE_RESPONSE_HEADERS = [
   'retry-after',
   'www-authenticate',
   'x-content-type-options',
+  'x-swapmid-trace-id',
 ] as const
+
+const W3C_TRACEPARENT_PATTERN = /^00-(?!0{32})[0-9a-f]{32}-(?!0{16})[0-9a-f]{16}-[0-9a-f]{2}$/i
 
 export interface ProxyBackendPath {
   backendPath: string
@@ -256,6 +259,11 @@ export function selectProxyRequestHeaders(
   }
   const edgeToken = readForwardableEdgeToken(source)
   if (edgeToken) result.set(EDGE_TOKEN_HEADER, edgeToken)
+
+  const traceparent = source.get('traceparent')?.trim()
+  if (traceparent && W3C_TRACEPARENT_PATTERN.test(traceparent)) {
+    result.set('traceparent', traceparent.toLowerCase())
+  }
 
   return result
 }

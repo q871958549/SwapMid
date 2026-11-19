@@ -1651,6 +1651,12 @@
       "icebergPromoteBranchButton": "Promote",
       "icebergPromoteSuccessTitle": "WAP Branch Promoted to main",
       "icebergPromoteFailedTitle": "Failed to Promote WAP Branch",
+      "icebergRollbackBackupTagPlaceholder": "Optional backup tag (pre-rollback)",
+      "icebergRollbackTargetHint": "Switch main branch to v{version}",
+      "icebergRollbackDryRunButton": "Dry-Run Rollback",
+      "icebergRollbackExecuteButton": "Rollback main",
+      "icebergRollbackSuccessTitle": "Iceberg main Branch Rolled Back",
+      "icebergRollbackFailedTitle": "Failed to Rollback Iceberg Branch",
       "lineageButtonLabel": "Lineage",
       "lineageDialogTitle": "Cross-Engine Data Lineage & Impact Explorer",
       "lineageDialogDesc": "Inspect live dependencies across DataSources, ETL Pipelines, CDC Streams, Lakehouse Tables, MessageBus, and API Gateway. Click any node to analyze upstream and downstream blast radius.",
@@ -1669,7 +1675,11 @@
       "lineageImpactResultTitle": "Blast Radius",
       "lineageRiskBadge": "Risk {level}",
       "lineageUpstreamCount": "Upstream {count}",
-      "lineageDownstreamCount": "Downstream {count}"
+      "lineageDownstreamCount": "Downstream {count}",
+      "lineageColumnMappingsTitle": "Column-Level Lineage",
+      "lineageExportOpenLineageButton": "Export OpenLineage",
+      "lineageExportOpenLineageSuccessTitle": "OpenLineage 2.0 Spec Exported",
+      "lineageExportOpenLineageFailedTitle": "Failed to Export OpenLineage"
     }
   },
   "System": {

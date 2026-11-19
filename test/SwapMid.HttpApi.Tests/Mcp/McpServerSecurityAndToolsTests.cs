@@ -118,7 +118,7 @@ public class McpServerSecurityAndToolsTests
                 .EnumerateArray()
                 .Select(e => e.GetProperty("name").GetString())
                 .ToArray();
-            toolNames.ShouldBe([McpToolCatalog.ListDatasources, McpToolCatalog.AnalyzeLineageImpact]);
+            toolNames.ShouldBe([McpToolCatalog.ListDatasources, McpToolCatalog.AnalyzeLineageImpact, McpToolCatalog.ExportOpenLineageSpec]);
         }
 
         // Calling list_datasources MUST NOT leak Config/password
@@ -594,6 +594,7 @@ public class McpServerSecurityAndToolsTests
             var text = doc.RootElement.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString()!;
             text.ShouldContain("\"dryRun\":true");
             text.ShouldContain("orders-kafka-iceberg");
+            text.ShouldContain("activeBytes");
             text.ShouldContain("recommendations");
         }
 
@@ -615,6 +616,27 @@ public class McpServerSecurityAndToolsTests
             var text = doc.RootElement.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString()!;
             text.ShouldContain("\"mode\":\"topology\"");
             text.ShouldContain("nodeCount");
+        }
+
+        // Tool 14: export_openlineage_spec (CNCF OpenLineage 2.0 JSON spec export)
+        var openLineageRes = await gitOpsClient.PostAsJsonAsync("/api/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = 206,
+            method = "tools/call",
+            @params = new
+            {
+                name = McpToolCatalog.ExportOpenLineageSpec,
+                arguments = new { @namespace = "swapmid-mcp-test", summaryOnly = false },
+            },
+        });
+        openLineageRes.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using (var doc = JsonDocument.Parse(await openLineageRes.Content.ReadAsStringAsync()))
+        {
+            var text = doc.RootElement.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString()!;
+            text.ShouldContain("2-0-2");
+            text.ShouldContain("swapmid-mcp-test");
+            text.ShouldContain("https://openlineage.io/spec/2-0-2/OpenLineage.json");
         }
     }
 }

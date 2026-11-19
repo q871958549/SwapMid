@@ -205,4 +205,13 @@ public class CdcStreamController : SwapMidController, ICdcStreamAppService
         [FromBody] PromoteCdcLakehouseBranchInput? input = null,
         CancellationToken cancellationToken = default)
         => _service.PromoteLakehouseBranchAsync(id, input ?? new PromoteCdcLakehouseBranchInput(), cancellationToken);
+
+    /// <summary>将 Apache Iceberg v2 表 main 分支原子回滚至指定历史快照版本或命名标签（默认 DryRun=true，支持备份原 main 标签）</summary>
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    [HttpPost("{id}/rollback-lakehouse")]
+    public Task<CdcLakehouseRollbackResultDto> RollbackLakehouseAsync(
+        Guid id,
+        [FromBody] RollbackCdcLakehouseInput input,
+        CancellationToken cancellationToken = default)
+        => _service.RollbackLakehouseAsync(id, input, cancellationToken);
 }

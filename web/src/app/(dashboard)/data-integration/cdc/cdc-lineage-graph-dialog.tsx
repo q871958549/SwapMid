@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ArrowRight, Loader2, Network, RefreshCw, Search } from 'lucide-react'
+import { ArrowRight, Download, Loader2, Network, RefreshCw, Search } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
@@ -15,6 +15,7 @@ import type {
   IntegrationLineageGraphDto,
   IntegrationLineageImpactDto,
   IntegrationLineageNodeDto,
+  OpenLineageExportDto,
 } from '@/lib/api/types'
 
 function statusTone(status: string | null | undefined): StatusTone {
@@ -72,6 +73,39 @@ export function CdcLineageGraphDialog({
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [impact, setImpact] = useState<IntegrationLineageImpactDto | null>(null)
   const [impactLoading, setImpactLoading] = useState(false)
+  const [exportingOl, setExportingOl] = useState(false)
+
+  const impactedColumnEdges = useMemo(
+    () => (impact?.impactedEdges ?? []).filter(e => (e.columnMappings?.length ?? 0) > 0),
+    [impact],
+  )
+
+  const handleExportOpenLineage = async () => {
+    setExportingOl(true)
+    try {
+      const res = await fetch('/api/proxy/integration-lineage/openlineage')
+      if (!res.ok) {
+        const msg = await readApiErrorMessage(res, t('lineageExportOpenLineageFailedTitle'))
+        toast({ variant: 'destructive', title: t('lineageExportOpenLineageFailedTitle'), description: msg })
+        return
+      }
+      const data = await res.json() as OpenLineageExportDto
+      const blob = new Blob([data.contentJson ?? '{}'], { type: 'application/json;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `swapmid-openlineage-v${data.specVersion ?? '2-0-2'}.json`
+      anchor.click()
+      URL.revokeObjectURL(url)
+      toast({
+        variant: 'success',
+        title: t('lineageExportOpenLineageSuccessTitle'),
+        description: data.summary ?? undefined,
+      })
+    } finally {
+      setExportingOl(false)
+    }
+  }
 
   const impactedIdSet = useMemo(() => {
     const set = new Set<string>()
@@ -127,6 +161,12 @@ export function CdcLineageGraphDialog({
               {graph ? graph.summary : ''}
             </span>
             <div className="flex items-center gap-2">
+              <Button variant="outline" disabled={loading || exportingOl} onClick={() => void handleExportOpenLineage()}>
+                {exportingOl
+                  ? <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                  : <Download className="mr-1.5 size-3.5" />}
+                {t('lineageExportOpenLineageButton')}
+              </Button>
               <Button variant="outline" disabled={loading} onClick={onRefresh}>
                 {loading
                   ? <Loader2 className="mr-1.5 size-3.5 animate-spin" />
@@ -263,6 +303,23 @@ export function CdcLineageGraphDialog({
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {impactedColumnEdges.length > 0 && (
+                    <div className="space-y-1.5 rounded border bg-background px-3 py-2 text-xs">
+                      <div className="font-medium text-muted-foreground">{t('lineageColumnMappingsTitle')}</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {impactedColumnEdges.flatMap((edge, eIdx) =>
+                          (edge.columnMappings ?? []).map((col, cIdx) => (
+                            <StatusBadge key={`${eIdx}-${cIdx}-${col.sourceColumn}-${col.targetColumn}`} tone="info">
+                              {col.sourceColumn === col.targetColumn
+                                ? `${col.targetColumn} (${col.transformType})`
+                                : `${col.sourceColumn} → ${col.targetColumn} (${col.transformType})`}
+                            </StatusBadge>
+                          )),
+                        )}
+                      </div>
                     </div>
                   )}
 

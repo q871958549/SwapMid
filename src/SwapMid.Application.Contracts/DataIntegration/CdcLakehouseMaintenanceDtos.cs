@@ -117,3 +117,40 @@ public class CdcLakehouseBranchPromoteResultDto
     public DateTime PromotedAtUtc { get; set; }
     public string Message { get; set; } = null!;
 }
+
+/// <summary>Apache Iceberg v2 原子时间旅行回滚（Rollback main 至历史版本或命名标签/分支）入参</summary>
+public class RollbackCdcLakehouseInput
+{
+    /// <summary>目标历史快照版本号（与 TargetTagName 二选一）</summary>
+    [Range(1, long.MaxValue)]
+    public long? TargetVersion { get; set; }
+
+    /// <summary>目标命名标签或分支名（如 audit-v1 / release-280，与 TargetVersion 二选一）</summary>
+    [StringLength(64)]
+    public string? TargetTagName { get; set; }
+
+    /// <summary>可选：回滚前先将当前 main 快照原子绑定为备份审计标签（保证 100% 可逆）</summary>
+    [StringLength(64)]
+    public string? BackupCurrentAsTagName { get; set; }
+
+    /// <summary>默认 true（仅执行回滚预演与校验，绝不修改 main 分支或表元数据）</summary>
+    public bool DryRun { get; set; } = true;
+}
+
+/// <summary>Apache Iceberg v2 原子时间旅行回滚结果</summary>
+public class CdcLakehouseRollbackResultDto
+{
+    public Guid StreamId { get; set; }
+    public bool DryRun { get; set; }
+    public bool AlreadyAtTarget { get; set; }
+    public long? PreviousMainSnapshotId { get; set; }
+    public long? PreviousMainVersion { get; set; }
+    public long TargetSnapshotId { get; set; }
+    public long TargetSnapshotVersion { get; set; }
+    public string? TargetRefName { get; set; }
+    public string? BackupTagName { get; set; }
+    public long MetadataVersion { get; set; }
+    public string MetadataKey { get; set; } = null!;
+    public DateTime RolledBackAtUtc { get; set; }
+    public string Message { get; set; } = null!;
+}

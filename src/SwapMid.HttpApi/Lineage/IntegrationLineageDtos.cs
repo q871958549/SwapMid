@@ -15,6 +15,14 @@ public class IntegrationLineageNodeDto
     public Dictionary<string, string> Metadata { get; set; } = new(StringComparer.Ordinal);
 }
 
+/// <summary>字段级血缘映射条目（源列 -> 目标列及语义转换类型）</summary>
+public class IntegrationColumnLineageDto
+{
+    public string SourceColumn { get; set; } = null!;
+    public string TargetColumn { get; set; } = null!;
+    public string TransformType { get; set; } = "identity";
+}
+
 /// <summary>跨引擎数据血缘有向边</summary>
 public class IntegrationLineageEdgeDto
 {
@@ -22,6 +30,7 @@ public class IntegrationLineageEdgeDto
     public string TargetNodeId { get; set; } = null!;
     public string Relation { get; set; } = null!;
     public string? Label { get; set; }
+    public List<IntegrationColumnLineageDto> ColumnMappings { get; set; } = new();
 }
 
 /// <summary>跨引擎数据血缘全量有向无环图（DAG）视图</summary>
@@ -61,5 +70,20 @@ public class IntegrationLineageImpactDto
     public List<IntegrationLineageEdgeDto> ImpactedEdges { get; set; } = new();
     public List<string> Recommendations { get; set; } = new();
     public List<string> Warnings { get; set; } = new();
+    public string Summary { get; set; } = null!;
+}
+
+/// <summary>CNCF OpenLineage 2.0（v2-0-2）标准血缘导出结果（兼容 Marquez / DataHub / OpenMetadata）</summary>
+public class OpenLineageExportDto
+{
+    public string SpecVersion { get; set; } = "2-0-2";
+    public string Producer { get; set; } = null!;
+    public string SchemaUrl { get; set; } = null!;
+    public string Namespace { get; set; } = "swapmid";
+    public DateTime GeneratedAtUtc { get; set; }
+    public int EventCount { get; set; }
+    public int DatasetCount { get; set; }
+    public int ColumnLineageEdgeCount { get; set; }
+    public string ContentJson { get; set; } = null!;
     public string Summary { get; set; } = null!;
 }

@@ -32,6 +32,9 @@ export interface KafkaConfig {
   acks: 'All' | 'Leader'
   compressionType: 'None' | 'Gzip' | 'Snappy' | 'Zstd'
   targetResourceGroup: string
+  schemaRegistryUrl: string
+  schemaRegistryUsername: string
+  schemaRegistryPassword: string
 }
 
 export const DEFAULT_CLICKHOUSE_CONFIG: ClickHouseConfig = {
@@ -68,6 +71,9 @@ export const DEFAULT_KAFKA_CONFIG: KafkaConfig = {
   acks: 'All',
   compressionType: 'Snappy',
   targetResourceGroup: '',
+  schemaRegistryUrl: '',
+  schemaRegistryUsername: '',
+  schemaRegistryPassword: '',
 }
 
 export function defaultPortForClickHouse(useTls: boolean): string {
@@ -265,6 +271,7 @@ function normalizeKafkaBrokers(raw: string): string {
 
 export function buildKafkaConfig(config: KafkaConfig) {
   const saslEnabled = isKafkaSaslProtocol(config.securityProtocol)
+  const srUrl = config.schemaRegistryUrl.trim().replace(/\/+$/, '')
   return JSON.stringify({
     provider: 'kafka',
     bootstrapServers: config.bootstrapServers.trim(),
@@ -280,6 +287,13 @@ export function buildKafkaConfig(config: KafkaConfig) {
     acks: config.acks,
     compressionType: config.compressionType,
     targetResourceGroup: config.targetResourceGroup.trim(),
+    ...(srUrl
+      ? {
+          schemaRegistryUrl: srUrl,
+          ...(config.schemaRegistryUsername.trim() ? { schemaRegistryUsername: config.schemaRegistryUsername.trim() } : {}),
+          ...(config.schemaRegistryPassword.trim() ? { schemaRegistryPassword: config.schemaRegistryPassword } : {}),
+        }
+      : {}),
   }, null, 2)
 }
 
@@ -298,6 +312,9 @@ export function readKafkaConfig(raw: string): KafkaConfig {
     acks: normalizeAcks(parsed.acks),
     compressionType: normalizeCompression(parsed.compressionType),
     targetResourceGroup: String(parsed.targetResourceGroup ?? ''),
+    schemaRegistryUrl: String(parsed.schemaRegistryUrl ?? ''),
+    schemaRegistryUsername: String(parsed.schemaRegistryUsername ?? ''),
+    schemaRegistryPassword: '',
   }
 }
 

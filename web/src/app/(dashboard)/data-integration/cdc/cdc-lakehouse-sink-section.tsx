@@ -12,6 +12,7 @@ import {
   normalizeCatalogType,
   normalizeLakehousePartitionStrategy,
   normalizeLakehouseTableFormat,
+  normalizeLakehouseWriteMode,
 } from './cdc-form-state'
 
 export function CdcLakehouseSinkSection({
@@ -57,21 +58,39 @@ export function CdcLakehouseSinkSection({
       </div>
 
       {crud.form.lakehouseTableFormat === '2' && (
-        <div className="space-y-1.5">
-          <Label>{t('lakehousePartitionStrategyFieldLabel')}</Label>
-          <Select
-            value={crud.form.lakehousePartitionStrategy ?? '0'}
-            onValueChange={v => crud.set({
-              lakehousePartitionStrategy: normalizeLakehousePartitionStrategy(Number(v)),
-            })}
-          >
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="0">{t('lakehousePartitionNone')}</SelectItem>
-              <SelectItem value="1">{t('lakehousePartitionDailyUtc')}</SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground">{t('lakehousePartitionStrategyHint')}</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label>{t('lakehousePartitionStrategyFieldLabel')}</Label>
+            <Select
+              value={crud.form.lakehousePartitionStrategy ?? '0'}
+              onValueChange={v => crud.set({
+                lakehousePartitionStrategy: normalizeLakehousePartitionStrategy(Number(v)),
+              })}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">{t('lakehousePartitionNone')}</SelectItem>
+                <SelectItem value="1">{t('lakehousePartitionDailyUtc')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">{t('lakehousePartitionStrategyHint')}</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t('lakehouseWriteModeFieldLabel')}</Label>
+            <Select
+              value={crud.form.lakehouseWriteMode ?? '0'}
+              onValueChange={v => crud.set({
+                lakehouseWriteMode: normalizeLakehouseWriteMode(Number(v)),
+              })}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">{t('lakehouseWriteModeAppend')}</SelectItem>
+                <SelectItem value="1">{t('lakehouseWriteModeMorUpsert')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">{t('lakehouseWriteModeHint')}</p>
+          </div>
         </div>
       )}
 

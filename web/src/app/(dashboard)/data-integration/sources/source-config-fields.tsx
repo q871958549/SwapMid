@@ -437,6 +437,39 @@ export function KafkaConfigFields({
           </div>
         </div>
       )}
+      <div className="space-y-2 rounded-md border bg-muted/20 p-3">
+        <div className="space-y-1.5">
+          <Label>{t('schemaRegistryUrlFieldLabel')}</Label>
+          <Input
+            value={value.schemaRegistryUrl}
+            onChange={e => onPatch({ schemaRegistryUrl: e.target.value })}
+            placeholder="http://redpanda:8081"
+            className="font-mono"
+          />
+          <p className="text-xs text-muted-foreground">{t('schemaRegistryUrlHint')}</p>
+        </div>
+        {value.schemaRegistryUrl.trim().length > 0 && (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>{t('schemaRegistryUsernameFieldLabel')}</Label>
+              <Input
+                value={value.schemaRegistryUsername}
+                onChange={e => onPatch({ schemaRegistryUsername: e.target.value })}
+                placeholder="sr_reader"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t('schemaRegistryPasswordFieldLabel')}</Label>
+              <Input
+                type="password"
+                value={value.schemaRegistryPassword}
+                onChange={e => onPatch({ schemaRegistryPassword: e.target.value })}
+                placeholder={hasSecret ? t('passwordPlaceholderEdit') : t('optionalPasswordPlaceholder')}
+              />
+            </div>
+          </div>
+        )}
+      </div>
       <TargetResourceGroupField
         value={value.targetResourceGroup}
         onChange={targetResourceGroup => onPatch({ targetResourceGroup })}

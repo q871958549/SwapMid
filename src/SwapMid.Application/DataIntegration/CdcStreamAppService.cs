@@ -125,6 +125,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             normalized.SourceType, normalized.LakehouseCompactMinFiles, normalized.LakehouseTableFormat,
             normalized.CatalogType, normalized.CatalogSinkId, normalized.CatalogNamespace, normalized.CatalogTableName);
         stream.ConfigureLakehousePartitionStrategy(normalized.LakehousePartitionStrategy);
+        stream.ConfigureLakehouseWriteMode(input.LakehouseWriteMode);
         stream.ConfigureDataContract(input.MaxFreshnessLagSeconds, input.MaxAllowedWalLagBytes, input.RequiredColumns);
 
         await _streamRepository.InsertAsync(stream, autoSave: true);
@@ -152,6 +153,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             normalized.SourceType, normalized.LakehouseCompactMinFiles, normalized.LakehouseTableFormat,
             normalized.CatalogType, normalized.CatalogSinkId, normalized.CatalogNamespace, normalized.CatalogTableName);
         stream.ConfigureLakehousePartitionStrategy(normalized.LakehousePartitionStrategy);
+        stream.ConfigureLakehouseWriteMode(input.LakehouseWriteMode);
         stream.ConfigureDataContract(input.MaxFreshnessLagSeconds, input.MaxAllowedWalLagBytes, input.RequiredColumns);
 
         await _streamRepository.UpdateAsync(stream, autoSave: true);

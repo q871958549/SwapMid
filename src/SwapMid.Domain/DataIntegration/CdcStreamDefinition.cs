@@ -79,6 +79,9 @@ public partial class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
     /// <summary>Apache Iceberg v2 隐藏分区策略（None / DailyCommitUtc）。</summary>
     public LakehousePartitionStrategy LakehousePartitionStrategy { get; private set; }
 
+    /// <summary>Apache Iceberg v2 表写入模式（追加变更日志 vs Merge-on-Read Equality Deletes 主键去重）。</summary>
+    public LakehouseWriteMode LakehouseWriteMode { get; private set; }
+
     /// <summary>外部开放元数据目录同步协议（None / UnityCatalogRest / IcebergRest）。</summary>
     public LakehouseCatalogType CatalogType { get; private set; }
 

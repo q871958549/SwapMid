@@ -67,6 +67,7 @@ vi.mock('@/lib/crud/use-crud-form', () => ({
       targetFieldMappings: [],
       lakehouseTableFormat: '0',
       lakehousePartitionStrategy: '0',
+      lakehouseWriteMode: '0',
       lakehouseCompactMinFiles: '',
       catalogType: '0',
       catalogSinkId: '',
@@ -101,9 +102,18 @@ vi.mock('@/components/data-table/data-table-column-header', () => ({
   DataTableColumnHeader: ({ title }: { title: string }) => <span>{title}</span>,
 }))
 vi.mock('@/components/data-table/page-header', () => ({
-  PageHeader: ({ title, primaryAction }: { title: string; primaryAction?: ReactNode }) => (
+  PageHeader: ({
+    title,
+    primaryAction,
+    secondaryActions,
+  }: {
+    title: string
+    primaryAction?: ReactNode
+    secondaryActions?: ReactNode[]
+  }) => (
     <div>
       <h1>{title}</h1>
+      {secondaryActions}
       {primaryAction}
     </div>
   ),
@@ -1282,5 +1292,132 @@ describe('CdcStreamsClient', () => {
     }))
     expect(screen.getByRole('button', { name: '立即捕获' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: '全量快照' })).toBeNull()
+  })
+
+  it('supports Iceberg v2 MergeOnReadUpsert validation, Equality Delete badges, and GitOps bundle export/diff/dry-run dialog', async () => {
+    const validMorForm = {
+      ...defaultCdcForm,
+      name: 'orders-kafka-iceberg-mor',
+      sourceId: 'kafka-1',
+      sourceType: '4' as const,
+      publicationName: 'dbserver1.shop.orders',
+      slotName: 'swapmid_kafka_orders',
+      monitoredTables: 'shop.orders',
+      targetMode: '2' as const,
+      targetSinkId: 's3-1',
+      targetSinkDestination: 'orders/mor',
+      targetSinkKeyColumns: 'order_id',
+      lakehouseTableFormat: '2' as const,
+      lakehouseWriteMode: '1' as const,
+    }
+    expect(isCdcFormValid(validMorForm)).toBe(true)
+    expect(isCdcFormValid({ ...validMorForm, targetSinkKeyColumns: '' })).toBe(false)
+
+    const morBody = toCdcBody(validMorForm)
+    expect(morBody.lakehouseWriteMode).toBe(1)
+    expect(toCdcBody({ ...validMorForm, lakehouseTableFormat: '1' as const }).lakehouseWriteMode).toBe(0)
+
+    const roundTrip = toCdcForm(makeStream({
+      sourceType: 4,
+      targetMode: 2,
+      targetSinkId: 's3-1',
+      targetSinkDestination: 'orders/mor',
+      targetSinkKeyColumns: 'order_id',
+      lakehouseTableFormat: 2,
+      lakehouseWriteMode: 1,
+    }))
+    expect(roundTrip.lakehouseWriteMode).toBe('1')
+
+    mocks.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          destination: 'orders/mor',
+          tableFormat: 2,
+          writeMode: 1,
+          deltaLogDirectory: 'warehouse/orders/mor/metadata',
+          currentVersion: 2,
+          selectedVersion: 2,
+          totalCommitCount: 2,
+          selectedActiveFileCount: 2,
+          selectedEqualityDeleteFileCount: 1,
+          selectedEqualityDeleteRecordCount: 3,
+          selectedTotalBytes: 4096,
+          selectedTotalRecordCount: 4,
+          commits: [
+            { version: 2, timestampUtc: '2026-11-19T12:00:00Z', operation: 'OVERWRITE', addedFileCount: 1, removedFileCount: 0, totalRecordCount: 4, deltaCommitKey: 'warehouse/orders/mor/metadata/v2.metadata.json' },
+          ],
+          activeFiles: [
+            { relativePath: 'part_v2.parquet', objectKey: 'warehouse/orders/mor/part_v2.parquet', sizeBytes: 2048, recordCount: 2, addedAtVersion: 2 },
+          ],
+          timeTravelQuerySql: "SELECT * FROM iceberg_scan('s3://lake/warehouse/orders/mor/metadata/v2.metadata.json');",
+          summary: 'Apache Iceberg v2 MoR · v2',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          schemaVersion: 'swapmid.io/v1',
+          format: 'yaml',
+          resourceCount: 3,
+          warnings: [],
+          content: 'schemaVersion: swapmid.io/v1\nplatformVersion: 2.6.0\n',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          createCount: 1,
+          updateCount: 0,
+          unchangedCount: 2,
+          needsSecretCount: 0,
+          items: [{ kind: 'CdcStream', name: 'orders-kafka-iceberg-mor', action: 'Create', changedFields: [] }],
+          warnings: [],
+          summary: 'Create 1 / Update 0 / Unchanged 2',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          dryRun: true,
+          createdCount: 1,
+          updatedCount: 0,
+          skippedCount: 2,
+          failedCount: 0,
+          items: [{ kind: 'CdcStream', name: 'orders-kafka-iceberg-mor', action: 'Create', changedFields: [] }],
+          warnings: [],
+          summary: 'DryRun: Create 1',
+        }),
+      })
+
+    renderClient(makeStream({
+      sourceType: 4,
+      status: 1,
+      targetMode: 2,
+      targetSinkId: SOURCE_ID,
+      targetSinkType: 5,
+      targetSinkName: 'minio-iceberg',
+      targetSinkDestination: 'orders/mor',
+      targetSinkKeyColumns: 'order_id',
+      lakehouseTableFormat: 2,
+      lakehouseWriteMode: 1,
+    }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Time-Travel' }))
+    expect(await screen.findByText('MoR Upsert')).toBeTruthy()
+    expect(screen.getByText('EqDel: 1 · 3 keys')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'GitOps' }))
+    fireEvent.click(await screen.findByRole('button', { name: '导出清单' }))
+    expect(await screen.findByText('3 项资源')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '对比变更' }))
+    expect(await screen.findByText('Create 1 / Update 0 / Unchanged 2')).toBeTruthy()
+    expect(screen.getByText('orders-kafka-iceberg-mor')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '预演' }))
+    expect(await screen.findByText('DryRun: Create 1')).toBeTruthy()
   })
 })

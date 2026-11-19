@@ -33,7 +33,7 @@ internal readonly record struct IcebergCommitReceipt(
 internal static partial class IcebergV2CommitWriter
 {
     private const int MaxOptimisticRetries = 64;
-    private const string EngineName = "SwapMid-2.5.0";
+    private const string EngineName = "SwapMid-2.6.0";
 
     internal static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -68,6 +68,12 @@ internal static partial class IcebergV2CommitWriter
 
         [JsonPropertyName("partition-day-epoch")]
         public int? PartitionDayEpoch { get; set; }
+
+        [JsonPropertyName("content")]
+        public int Content { get; set; } = IcebergAvroManifestBuilder.ContentData;
+
+        [JsonPropertyName("equality-ids")]
+        public int[]? EqualityIds { get; set; }
     }
 
     internal sealed class IcebergSnapshotManifestDocument
@@ -215,6 +221,7 @@ internal static partial class IcebergV2CommitWriter
             var metadataKey = config.BuildIcebergMetadataKey(destination, nextSeq);
             var manifestListKey = config.BuildIcebergAvroManifestListKey(destination, snapshotId, runId);
             var manifestFileKey = config.BuildIcebergAvroManifestFileKey(destination, nextSeq, runId);
+            var deleteManifestFileKey = config.BuildIcebergAvroDeleteManifestFileKey(destination, nextSeq, runId);
 
             long? parentSnapshotId = !string.IsNullOrWhiteSpace(latestMetadataJson) &&
                                      TryExtractCurrentSnapshotId(latestMetadataJson, out var pSnap)
@@ -231,7 +238,7 @@ internal static partial class IcebergV2CommitWriter
 
             await UploadAvroManifestArtifactsAsync(
                 httpClientFactory, configuration, config,
-                manifestFileKey, manifestListKey, snapshotId, parentSnapshotId, nextSeq, runId,
+                manifestFileKey, deleteManifestFileKey, manifestListKey, snapshotId, parentSnapshotId, nextSeq, runId,
                 avroEntries, partitionSpecId, cancellationToken);
 
             var metadataJson = BuildTableMetadataJson(
@@ -350,7 +357,9 @@ internal static partial class IcebergV2CommitWriter
                     prev.FileFormat,
                     prev.RecordCount,
                     prev.FileSizeInBytes,
-                    prevDay));
+                    prevDay,
+                    prev.Content,
+                    prev.EqualityIds));
                 continue;
             }
 
@@ -366,7 +375,9 @@ internal static partial class IcebergV2CommitWriter
                     prev.FileFormat,
                     prev.RecordCount,
                     prev.FileSizeInBytes,
-                    prevDay));
+                    prevDay,
+                    prev.Content,
+                    prev.EqualityIds));
             }
         }
 
@@ -383,6 +394,8 @@ internal static partial class IcebergV2CommitWriter
                 RecordCount = added.RecordCount,
                 AddedAtSequence = nextSeq,
                 PartitionDayEpoch = addedDay,
+                Content = added.Content,
+                EqualityIds = added.EqualityIds,
             };
             activeMap[added.RelativePath] = entry;
             avroEntries.Add(new IcebergAvroManifestBuilder.ManifestEntryRecord(
@@ -394,7 +407,9 @@ internal static partial class IcebergV2CommitWriter
                 entry.FileFormat,
                 entry.RecordCount,
                 entry.FileSizeInBytes,
-                addedDay));
+                addedDay,
+                entry.Content,
+                entry.EqualityIds));
         }
 
         var activeList = activeMap.Values

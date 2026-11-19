@@ -299,6 +299,16 @@ async function main() {
   const deptOptions = await apiJson('/api/v1/account-users/department-options', { token })
   assert.ok(Array.isArray(deptOptions.items), 'Expected items array from /api/v1/account-users/department-options')
 
+  const exportedBundle = await apiJson('/api/v1/integration-bundles/export?format=yaml', { token })
+  assert.equal(exportedBundle.schemaVersion, 'swapmid.io/v1')
+  assert.ok(exportedBundle.resourceCount >= 3 && exportedBundle.content.includes('schemaVersion: swapmid.io/v1'))
+  const bundleDiff = await apiJson('/api/v1/integration-bundles/diff', {
+    method: 'POST',
+    token,
+    body: { content: exportedBundle.content },
+  })
+  assert.equal(bundleDiff.createCount, 0, 'Exported live bundle diff should have 0 pending creates')
+
   const mcpRes = await fetch(`${API_BASE}/api/mcp`, {
     method: 'POST',
     headers: {
@@ -311,10 +321,10 @@ async function main() {
   if (mcpRes.status !== 404) {
     assert.equal(mcpRes.status, 200, `Expected /api/mcp 200 when enabled, got ${mcpRes.status}`)
     const mcpJson = await mcpRes.json()
-    assert.ok(Array.isArray(mcpJson.result?.tools) && mcpJson.result.tools.length === 10, `Expected 10 RBAC-authorized MCP tools for admin, got ${mcpJson.result?.tools?.length}`)
-    console.log(`  ✓ Verified ${jobs.length} scheduled jobs, ${tables.length} DB tables, /api/v1/auth-providers, and 10 MCP tools`)
+    assert.ok(Array.isArray(mcpJson.result?.tools) && mcpJson.result.tools.length === 11, `Expected 11 RBAC-authorized MCP tools for admin, got ${mcpJson.result?.tools?.length}`)
+    console.log(`  ✓ Verified ${jobs.length} scheduled jobs, ${tables.length} DB tables, GitOps bundle (${exportedBundle.resourceCount} resources), /api/v1/auth-providers, and 11 MCP tools`)
   } else {
-    console.log(`  ✓ Verified ${jobs.length} scheduled jobs, ${tables.length} DB tables, /api/v1/auth-providers, and fail-closed /api/mcp (404)`)
+    console.log(`  ✓ Verified ${jobs.length} scheduled jobs, ${tables.length} DB tables, GitOps bundle (${exportedBundle.resourceCount} resources), /api/v1/auth-providers, and fail-closed /api/mcp (404)`)
   }
 
   step('7/7 Next.js 16 BFF Security Boundary: Verifying build-meta, login SSR, route guard & /api/proxy 401')

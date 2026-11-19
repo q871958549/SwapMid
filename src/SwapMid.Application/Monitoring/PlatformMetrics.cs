@@ -171,6 +171,15 @@ public static partial class PlatformMetrics
         "Kafka Debezium CDC 源当前各分区累计未消费消息滞留条数（标签 stream）",
         new GaugeConfiguration { LabelNames = ["stream"] });
 
+    public static readonly Counter CdcIcebergEqualityDeletesTotal = Metrics.CreateCounter(
+        "swapmid_cdc_iceberg_equality_deletes_total",
+        "Apache Iceberg v2 Merge-on-Read 写入的 Equality Delete 键值条目总数");
+
+    public static readonly Counter CdcSchemaRegistryFetchesTotal = Metrics.CreateCounter(
+        "swapmid_cdc_schema_registry_fetches_total",
+        "Confluent / Redpanda Schema Registry 拉取次数（标签 outcome: cache_hit|fetched|failed）",
+        new CounterConfiguration { LabelNames = ["outcome"] });
+
     private static readonly string[] EtlExecutionAdmissionOutcomes =
     [
         "acquired", "busy", "idempotent_replay", "coordination_failure",
@@ -232,7 +241,7 @@ public static partial class PlatformMetrics
         PublishSingleLabelSeries(CdcContractEvaluationsTotal, ["unconfigured", "healthy", "warning", "breached"]);
         PublishSingleLabelSeries(CdcContractViolationsTotal, ["freshness", "required_columns", "wal_lag", "schema_drift"]);
         PublishSingleLabelSeries(CdcLakehousePreviewsTotal, ["parquet", "jsonl"]);
-        foreach (var op in new[] { "append", "replace" })
+        foreach (var op in new[] { "append", "overwrite", "replace" })
         {
             foreach (var outcome in new[] { "succeeded", "retried", "failed" })
             {
@@ -240,6 +249,8 @@ public static partial class PlatformMetrics
             }
         }
 
+        CdcIcebergEqualityDeletesTotal.Publish();
+        PublishSingleLabelSeries(CdcSchemaRegistryFetchesTotal, ["cache_hit", "fetched", "failed"]);
         PublishSingleLabelSeries(CdcWebhookIngestsTotal, ["accepted", "replayed", "rejected_auth", "rejected_inactive", "rejected_payload", "failed"]);
     }
 

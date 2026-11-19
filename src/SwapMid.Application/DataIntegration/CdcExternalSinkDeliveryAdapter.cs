@@ -85,6 +85,23 @@ internal static class CdcExternalSinkDeliveryAdapter
 
         if (targetSink.Type == DataSourceType.ObjectStorage && writer is ObjectStorageEtlSinkWriter objectStorageWriter)
         {
+            var effectiveColumns = Columns;
+            var effectiveTypes = ClrTypes;
+            var effectiveRows = rows;
+            if (stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg)
+            {
+                effectiveColumns = [.. Columns, "business_key"];
+                effectiveTypes = [.. ClrTypes, typeof(string)];
+                effectiveRows = new List<object?[]>(rows.Count);
+                for (var i = 0; i < rows.Count; i++)
+                {
+                    var expanded = new object?[rows[i].Length + 1];
+                    Array.Copy(rows[i], expanded, rows[i].Length);
+                    expanded[^1] = partitionKeys != null && i < partitionKeys.Length ? partitionKeys[i] : null;
+                    effectiveRows.Add(expanded);
+                }
+            }
+
             return await CdcObjectStorageLakehouseWriter.DeliverWithManifestAsync(
                 stream,
                 targetSink,
@@ -92,9 +109,9 @@ internal static class CdcExternalSinkDeliveryAdapter
                 changes,
                 batchEndLsn,
                 objectStorageWriter,
-                Columns,
-                ClrTypes,
-                rows,
+                effectiveColumns,
+                effectiveTypes,
+                effectiveRows,
                 partitionKeys,
                 cancellationToken,
                 idempotencyKeyOverride);

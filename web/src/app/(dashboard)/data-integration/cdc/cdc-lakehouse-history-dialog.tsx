@@ -98,6 +98,14 @@ export function CdcLakehouseHistoryDialog({
                   {isIceberg && Number(state.history.partitionStrategy ?? state.stream.lakehousePartitionStrategy ?? 0) === 1 && (
                     <StatusBadge tone="info">day(commit_timestamp_utc)</StatusBadge>
                   )}
+                  {isIceberg && Number(state.history.writeMode ?? state.stream.lakehouseWriteMode ?? 0) === 1 && (
+                    <StatusBadge tone="success">MoR Upsert</StatusBadge>
+                  )}
+                  {isIceberg && (state.history.selectedEqualityDeleteFileCount ?? 0) > 0 && (
+                    <StatusBadge tone="warning">
+                      {`EqDel: ${state.history.selectedEqualityDeleteFileCount} · ${state.history.selectedEqualityDeleteRecordCount ?? 0} keys`}
+                    </StatusBadge>
+                  )}
                 </div>
               )}
 

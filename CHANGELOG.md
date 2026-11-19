@@ -4,6 +4,24 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2026-11-19
+
+### Added
+- **Apache Iceberg v2 Merge-on-Read Equality Deletes (`LakehouseWriteMode.MergeOnReadUpsert = 1`)**:
+  - Added `LakehouseWriteMode` (`AppendChangelog = 0`, `MergeOnReadUpsert = 1`), EF Core migration `AddCdcLakehouseWriteMode` (`AppCdcStreams.LakehouseWriteMode`), and `business_key` (`FieldId = 12`, `string`, optional) across Iceberg v2 Parquet schemas (`FieldId 1..12`) and `schema.name-mapping.default`.
+  - Extended `ObjectStorageEtlSinkWriter`, `IcebergAvroManifestBuilder`, `IcebergV2CommitWriter.AvroStorage.cs`, and `CdcObjectStorageLakehouseWriter.MergeOnRead.cs` to collapse intra-batch business keys, emit 1-column equality-delete Parquet files (`eqdel_{runId:N}.parquet`, `content = 2`, `equality_ids = [12]`), dual binary Apache Avro 1.11 OCF manifests (`*-m0.avro` data + `*-d0.avro` deletes, `manifest_file.content = 1`), and atomic `operation = "overwrite"` commits (`swapmid_cdc_iceberg_equality_deletes_total`).
+  - Upgraded `CdcLakehouseDataPreviewService.EqualityDeletes.cs` to apply Iceberg v2 Equality Delete filtering natively in pure-.NET Zero-Infra preview, and upgraded `CdcObjectStorageCompactionService` / `CdcParquetCompactionMergeHelper` to materialize deduplicated live rows during `REPLACE` compaction while garbage-collecting superseded equality-delete files — verified live with official **`duckdb/duckdb:latest` (`v2.0.0`) `iceberg_scan()`** across `v1` (historical), `v2` (`OVERWRITE` MoR), and `v3` (`REPLACE` compacted).
+- **Confluent / Redpanda Schema Registry Wire-Format Binary Avro Decoding for Kafka Debezium CDC**:
+  - Extended `KafkaSinkConfig` (`KafkaSinkConfig.cs` / `KafkaSinkConfigContract.cs`) with optional SSRF-guarded `schemaRegistryUrl`, `schemaRegistryUsername`, and redacted `schemaRegistryPassword`.
+  - Added zero-dependency pure-.NET `AvroBinaryDatumReader` (supporting records, named references, unions, arrays, maps, enums, fixed, decimal, and date logical types) and bounded-cache `ConfluentSchemaRegistryClient` (`0x00` + 4-byte big-endian `schemaId`, `/subjects` preflight probe returning `slotPlugin = "debezium-avro+json"`, `/schemas/ids/{id}` fetch, `swapmid_cdc_schema_registry_fetches_total{outcome}`).
+  - Upgraded `KafkaDebeziumCdcCaptureService` to consume raw `byte[]` Kafka frames and transparently decode both Confluent Binary Avro and JSON Debezium envelopes — verified live against real **Redpanda v24.3.6** built-in Schema Registry.
+- **Declarative GitOps Integration Bundles (`swapmid.io/v1`), `swapmidctl` CLI & MCP Tool 11**:
+  - Added host-layer `SwapMid.HttpApi/GitOps/` (`IntegrationBundleController`, `IntegrationBundleOrchestrator`, zero-dependency `IntegrationBundleYamlCodec`) exposing `GET /api/v1/integration-bundles/export`, `POST /api/v1/integration-bundles/diff`, and `POST /api/v1/integration-bundles/apply` (`DryRun = true` default, zero plaintext secrets exported, new pipelines/CDC streams safely initialized in `Draft`, preserving zero cross-domain coupling in `SwapMid.Application`).
+  - Added zero-dependency Node CLI [scripts/swapmidctl.mjs](scripts/swapmidctl.mjs) (`export` / `diff` / `apply`), MCP Tool 11 `export_integration_bundle` (`McpIntegrationBundleHandler`), and updated [scripts/e2e-smoke.mjs](scripts/e2e-smoke.mjs) to verify all 11 MCP tools and GitOps bundle export/diff.
+  - Upgraded `/data-integration/cdc` (`MoR Upsert` selector/badges, `EqDel` counters in Time-Travel dialog, and one-click `GitOps` Export/Diff/Dry-Run/Apply dialog) and `/data-integration/sources` (Kafka Schema Registry fields) across `zh-Hans`, `zh-Hant`, and `en` (`2,151` trilingual keys, **`202/202` 100.0%** `/api/v1` OpenAPI summary coverage), plus Grafana Panel 10 equality-delete & Schema Registry series.
+- **Container Build Resilience**:
+  - Added optional `APT_MIRROR` build arg and `Acquire::Retries=5` in `src/SwapMid.HttpApi.Host/Dockerfile` and `docker/docker-compose.yml` to support reliable builds behind restricted HTTP proxies without altering default global Ubuntu sources.
+
 ## [2.5.0] - 2026-11-19
 
 ### Added

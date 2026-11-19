@@ -198,6 +198,8 @@ public sealed class CdcObjectStorageCompactionService : ITransientDependency
         var tempOutPath = Path.Combine(Path.GetTempPath(), $"swapmid-compact-{compactRunId:N}.{config.Format}");
         try
         {
+            var totalRows = candidates.Sum(c => c.RowCount);
+            var extraRemovedKeys = new List<string>();
             if (config.Format == "jsonl")
             {
                 await CdcParquetCompactionMergeHelper.MergeJsonLinesAsync(
@@ -205,6 +207,14 @@ public sealed class CdcObjectStorageCompactionService : ITransientDependency
                     (key, ct) => GetObjectBytesAsync(config, key, ct),
                     tempOutPath,
                     cancellationToken);
+            }
+            else if (stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg &&
+                     stream.LakehouseWriteMode == LakehouseWriteMode.MergeOnReadUpsert)
+            {
+                var (materializedRows, supersededDeletes) = await MergeIcebergMorCandidatesAsync(
+                    config, destination, candidates, targetPartitionDay, tempOutPath, cancellationToken);
+                totalRows = materializedRows;
+                extraRemovedKeys.AddRange(supersededDeletes);
             }
             else
             {
@@ -225,7 +235,6 @@ public sealed class CdcObjectStorageCompactionService : ITransientDependency
 
             var endLsn = candidates.LastOrDefault(c => !string.IsNullOrWhiteSpace(c.EndLsn))?.EndLsn ?? latestDoc.CheckpointLsn;
             var startLsn = candidates.FirstOrDefault(c => !string.IsNullOrWhiteSpace(c.EndLsn))?.EndLsn ?? endLsn;
-            var totalRows = candidates.Sum(c => c.RowCount);
             var lsnToken = CdcObjectStorageLakehouseWriter.BuildSafeLsnToken(endLsn ?? "0_0", isInitialSnapshot: false);
             var manifestKey = config.BuildCompactionManifestKey(destination, lsnToken, compactRunId);
 
@@ -312,6 +321,7 @@ public sealed class CdcObjectStorageCompactionService : ITransientDependency
                     RecordCount = totalRows,
                     PartitionDayEpoch = targetPartitionDay,
                 };
+                var removedAll = candidates.Select(c => c.DataObjectKey).Concat(extraRemovedKeys).Distinct(StringComparer.Ordinal).ToList();
                 var receipt = await IcebergV2CommitWriter.CommitReplaceBatchAsync(
                     _httpClientFactory,
                     _configuration,
@@ -320,7 +330,7 @@ public sealed class CdcObjectStorageCompactionService : ITransientDependency
                     stream,
                     latestDoc,
                     compactRunId,
-                    candidates.Select(c => c.DataObjectKey).ToList(),
+                    removedAll,
                     [addedEntry],
                     nowUtc,
                     cancellationToken);
@@ -383,6 +393,54 @@ public sealed class CdcObjectStorageCompactionService : ITransientDependency
                 // Best-effort cleanup of temp file.
             }
         }
+    }
+
+    private async Task<(long MaterializedRows, List<string> SupersededDeleteKeys)> MergeIcebergMorCandidatesAsync(
+        ObjectStorageSinkConfig config,
+        string destination,
+        List<CdcObjectStorageLakehouseWriter.CdcLatestDataFileEntry> candidates,
+        int? targetPartitionDay,
+        string tempOutPath,
+        CancellationToken cancellationToken)
+    {
+        var (_, entries) = await IcebergV2MetadataReader.ReadSnapshotEntriesForPreviewAsync(
+            _httpClientFactory, _configuration, config, destination, requestedVersion: null, cancellationToken);
+        var scopedDeletes = entries
+            .Where(e => e.Content == IcebergAvroManifestBuilder.ContentEqualityDeletes &&
+                        (!targetPartitionDay.HasValue || e.PartitionDayEpoch == targetPartitionDay))
+            .ToList();
+        var dataSeqByKey = entries
+            .Where(e => e.Content == IcebergAvroManifestBuilder.ContentData)
+            .GroupBy(e => e.ObjectKey, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.Max(x => x.AddedAtSequence), StringComparer.Ordinal);
+
+        var deletedKeyMaxSeq = new Dictionary<string, long>(StringComparer.Ordinal);
+        foreach (var del in scopedDeletes)
+        {
+            var bytes = await GetObjectBytesAsync(config, del.ObjectKey, cancellationToken);
+            foreach (var key in await CdcLakehouseDataPreviewService.ReadEqualityDeleteKeysFromParquetAsync(bytes, cancellationToken))
+            {
+                if (!deletedKeyMaxSeq.TryGetValue(key, out var existing) || del.AddedAtSequence > existing)
+                {
+                    deletedKeyMaxSeq[key] = del.AddedAtSequence;
+                }
+            }
+        }
+
+        var rows = await CdcParquetCompactionMergeHelper.MergeParquetFilesWithEqualityDeletesAsync(
+            candidates, dataSeqByKey, deletedKeyMaxSeq,
+            (key, ct) => GetObjectBytesAsync(config, key, ct),
+            tempOutPath, cancellationToken);
+
+        var candidateSet = new HashSet<string>(candidates.Select(c => c.DataObjectKey), StringComparer.Ordinal);
+        var hasUncompactedScopedData = entries.Any(e =>
+            e.Content == IcebergAvroManifestBuilder.ContentData &&
+            (!targetPartitionDay.HasValue || e.PartitionDayEpoch == targetPartitionDay) &&
+            !candidateSet.Contains(e.ObjectKey));
+        var supersededDeletes = hasUncompactedScopedData
+            ? new List<string>()
+            : scopedDeletes.Select(d => d.ObjectKey).ToList();
+        return (rows, supersededDeletes);
     }
 
     private async Task<byte[]> GetObjectBytesAsync(

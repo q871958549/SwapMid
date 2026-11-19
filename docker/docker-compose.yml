@@ -89,6 +89,7 @@ services:
       args:
         RELEASE_SHA: ${RELEASE_SHA:-local}
         OPENIDDICT_PFX_PASS: ${OPENIDDICT_PFX_PASS:-changeit}
+        APT_MIRROR: ${APT_MIRROR:-}
     image: swapmid-api:${IMAGE_TAG:-local}
     restart: unless-stopped
     depends_on:

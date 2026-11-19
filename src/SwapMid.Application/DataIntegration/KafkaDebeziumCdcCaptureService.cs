@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
@@ -16,7 +18,12 @@ namespace SwapMid.DataIntegration;
 
 internal sealed record KafkaPartitionWatermark(int Partition, long LowOffset, long HighOffset);
 
-internal sealed record KafkaConsumedRecord(int Partition, long Offset, string? Value, DateTime TimestampUtc);
+internal sealed record KafkaConsumedRecord(
+    int Partition,
+    long Offset,
+    string? Value,
+    DateTime TimestampUtc,
+    byte[]? RawValue = null);
 
 internal interface IKafkaCdcBrokerSession : IDisposable
 {
@@ -47,6 +54,7 @@ public sealed class KafkaDebeziumCdcCaptureService : ITransientDependency
     private readonly IReadOnlyDictionary<DataSourceType, IEtlSinkWriter> _sinkWriters;
     private readonly IEtlRelationalConnectionFactory _connectionFactory;
     private readonly ILogger<KafkaDebeziumCdcCaptureService> _logger;
+    private readonly IHttpClientFactory? _httpClientFactory;
     private readonly Func<KafkaSinkConfig, string, IKafkaCdcBrokerSession> _sessionFactory;
 
     public KafkaDebeziumCdcCaptureService(
@@ -55,7 +63,8 @@ public sealed class KafkaDebeziumCdcCaptureService : ITransientDependency
         DataPipelineExecutionCoordinator executionCoordinator,
         IEtlRelationalConnectionFactory connectionFactory,
         ILogger<KafkaDebeziumCdcCaptureService> logger,
-        IEnumerable<IEtlSinkWriter>? sinkWriters = null)
+        IEnumerable<IEtlSinkWriter>? sinkWriters = null,
+        IHttpClientFactory? httpClientFactory = null)
         : this(
             configuration,
             integrationEventPublisher,
@@ -63,7 +72,8 @@ public sealed class KafkaDebeziumCdcCaptureService : ITransientDependency
             connectionFactory,
             logger,
             sinkWriters,
-            sessionFactory: null)
+            sessionFactory: null,
+            httpClientFactory)
     {
     }
 
@@ -74,13 +84,15 @@ public sealed class KafkaDebeziumCdcCaptureService : ITransientDependency
         IEtlRelationalConnectionFactory connectionFactory,
         ILogger<KafkaDebeziumCdcCaptureService> logger,
         IEnumerable<IEtlSinkWriter>? sinkWriters,
-        Func<KafkaSinkConfig, string, IKafkaCdcBrokerSession>? sessionFactory)
+        Func<KafkaSinkConfig, string, IKafkaCdcBrokerSession>? sessionFactory,
+        IHttpClientFactory? httpClientFactory = null)
     {
         _configuration = configuration;
         _integrationEventPublisher = integrationEventPublisher;
         _executionCoordinator = executionCoordinator;
         _connectionFactory = connectionFactory;
         _logger = logger;
+        _httpClientFactory = httpClientFactory;
         _sinkWriters = (sinkWriters ?? Array.Empty<IEtlSinkWriter>())
             .GroupBy(x => x.TargetType)
             .ToDictionary(g => g.Key, g => g.First());
@@ -144,24 +156,37 @@ public sealed class KafkaDebeziumCdcCaptureService : ITransientDependency
             PlatformMetrics.CdcKafkaLagMessages.WithLabels(stream.Name).Set(totalLag);
 
             var currentWatermarkLsn = KafkaDebeziumEnvelopeParser.FormatCheckpoints(highMap);
+            var diagnostics = new List<string>
+            {
+                $"已连通 Kafka Topic「{topic}」（{watermarks.Count} 个分区，消费组 {stream.SlotName}）。",
+                $"当前待消费消息滞留：{totalLag} 条（最新水位 {currentWatermarkLsn}）。",
+            };
+            var srReady = true;
+            var pluginTag = "debezium-json";
+            if (!string.IsNullOrWhiteSpace(cfg.SchemaRegistryUrl) && _httpClientFactory != null)
+            {
+                var srProbe = await ConfluentSchemaRegistryClient.ProbeAsync(_httpClientFactory, _configuration, cfg, cancellationToken);
+                srReady = srProbe.Reachable;
+                pluginTag = "debezium-avro+json";
+                diagnostics.Add(srProbe.Message);
+            }
+
             return new CdcPreflightResultDto
             {
-                IsReady = true,
+                IsReady = srReady,
                 WalLevel = "kafka_debezium",
                 PostgreSqlVersion = $"Kafka ({watermarks.Count} partitions)",
                 PublicationExists = true,
                 SlotExists = true,
                 SlotActive = stream.Status == CdcStreamStatus.Active,
-                SlotPlugin = "debezium-json",
+                SlotPlugin = pluginTag,
                 ConfirmedFlushLsn = stream.CheckpointLsn,
                 CurrentWalLsn = currentWatermarkLsn,
                 WalLagBytes = totalLag,
-                Diagnostics =
-                [
-                    $"已连通 Kafka Topic「{topic}」（{watermarks.Count} 个分区，消费组 {stream.SlotName}）。",
-                    $"当前待消费消息滞留：{totalLag} 条（最新水位 {currentWatermarkLsn}）。",
-                ],
-                Summary = $"Kafka Debezium 源已就绪（Topic {topic}，{watermarks.Count} 分区，滞留 {totalLag} 条）。",
+                Diagnostics = diagnostics,
+                Summary = srReady
+                    ? $"Kafka Debezium 源已就绪（Topic {topic}，{watermarks.Count} 分区，滞留 {totalLag} 条）。"
+                    : $"Kafka Topic 可达但 Schema Registry 不可达：{diagnostics[^1]}",
             };
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -258,9 +283,25 @@ public sealed class KafkaDebeziumCdcCaptureService : ITransientDependency
                     nextOffsets[rec.Partition] = candidateNext;
                 }
 
-                if (KafkaDebeziumEnvelopeParser.TryParseMessage(
-                        rec.Value, topic, rec.Partition, rec.Offset, rec.TimestampUtc, out var change) &&
-                    change != null &&
+                PgOutputCapturedChange? change = null;
+                if (ConfluentSchemaRegistryClient.IsConfluentWirePayload(rec.RawValue))
+                {
+                    if (_httpClientFactory == null)
+                    {
+                        throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.PipelineExecutionFailed)
+                            .WithData("Reason", "Schema Registry HTTP 客户端未注册，无法解码 Confluent Avro 二进制消息。");
+                    }
+
+                    change = await ConfluentSchemaRegistryClient.TryDecodeConfluentAvroMessageAsync(
+                        _httpClientFactory, _configuration, cfg, rec.RawValue!, topic, rec.Partition, rec.Offset, rec.TimestampUtc, cancellationToken);
+                }
+                else
+                {
+                    KafkaDebeziumEnvelopeParser.TryParseMessage(
+                        rec.Value, topic, rec.Partition, rec.Offset, rec.TimestampUtc, out change);
+                }
+
+                if (change != null &&
                     (monitored.Count == 0 || CdcProtocolHelpers.ShouldCaptureRelation(change.Schema, change.Table, monitored)))
                 {
                     matched.Add(change);
@@ -399,7 +440,7 @@ public sealed class KafkaDebeziumCdcCaptureService : ITransientDependency
                 return Array.Empty<KafkaConsumedRecord>();
             }
 
-            using var consumer = new ConsumerBuilder<Ignore, string>(_config.ToConsumerConfig(_groupId)).Build();
+            using var consumer = new ConsumerBuilder<Ignore, byte[]>(_config.ToConsumerConfig(_groupId)).Build();
             consumer.Assign(assignments);
 
             var records = new List<KafkaConsumedRecord>(Math.Min(maxRecords, 512));
@@ -412,11 +453,7 @@ public sealed class KafkaDebeziumCdcCaptureService : ITransientDependency
                 var result = consumer.Consume(TimeSpan.FromMilliseconds(250));
                 if (result == null)
                 {
-                    if (++idlePolls >= 6)
-                    {
-                        break;
-                    }
-
+                    if (++idlePolls >= 6) break;
                     continue;
                 }
 
@@ -430,11 +467,16 @@ public sealed class KafkaDebeziumCdcCaptureService : ITransientDependency
                 var tsUtc = result.Message.Timestamp.Type != TimestampType.NotAvailable
                     ? result.Message.Timestamp.UtcDateTime
                     : DateTime.UtcNow;
+                var raw = result.Message.Value;
+                var textVal = raw is { Length: > 0 } && !ConfluentSchemaRegistryClient.IsConfluentWirePayload(raw)
+                    ? Encoding.UTF8.GetString(raw)
+                    : null;
                 records.Add(new KafkaConsumedRecord(
                     result.Partition.Value,
                     result.Offset.Value,
-                    result.Message.Value,
-                    tsUtc));
+                    textVal,
+                    tsUtc,
+                    raw));
 
                 if (targets.TryGetValue(result.Partition.Value, out var targetHigh) &&
                     result.Offset.Value + 1 >= targetHigh)

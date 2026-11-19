@@ -215,6 +215,7 @@ internal static partial class CdcStreamMappingHelpers
             LakehouseCompactMinFiles = stream.LakehouseCompactMinFiles,
             LakehouseTableFormat = stream.LakehouseTableFormat,
             LakehousePartitionStrategy = stream.LakehousePartitionStrategy,
+            LakehouseWriteMode = stream.LakehouseWriteMode,
             CatalogType = stream.CatalogType,
             CatalogSinkId = stream.CatalogSinkId,
             CatalogSinkName = catalogSink?.Name,

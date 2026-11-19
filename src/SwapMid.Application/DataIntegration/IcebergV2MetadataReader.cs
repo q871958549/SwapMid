@@ -96,7 +96,7 @@ internal static class IcebergV2MetadataReader
                 .WithData("Reason", $"请求的 Apache Iceberg Time-Travel 版本 v{selectedSeq} 不存在（已提交范围 v{snapshots[0].Summary.Version}..v{currentSeq}）。");
         }
 
-        var activeFiles = await ReadSnapshotActiveFilesAsync(
+        var allEntries = await IcebergV2CommitWriter.LoadSnapshotActiveFilesAsync(
             httpClientFactory,
             configuration,
             config,
@@ -105,8 +105,30 @@ internal static class IcebergV2MetadataReader
             selectedSnap.ManifestListUri,
             cancellationToken);
 
+        var dataEntries = allEntries
+            .Where(f => f.Content == IcebergAvroManifestBuilder.ContentData)
+            .OrderBy(f => f.AddedAtSequence)
+            .ThenBy(f => f.RelativePath, StringComparer.Ordinal)
+            .ToList();
+        var deleteEntries = allEntries
+            .Where(f => f.Content == IcebergAvroManifestBuilder.ContentEqualityDeletes)
+            .ToList();
+
+        var activeFiles = dataEntries
+            .Select(f => new CdcDeltaActiveFileDto
+            {
+                RelativePath = f.RelativePath,
+                ObjectKey = f.ObjectKey,
+                SizeBytes = f.FileSizeInBytes,
+                RecordCount = f.RecordCount,
+                AddedAtVersion = f.AddedAtSequence,
+            })
+            .ToList();
+
         var totalBytes = activeFiles.Sum(f => f.SizeBytes);
         var totalRecords = activeFiles.Sum(f => f.RecordCount ?? 0);
+        var eqDeleteCount = deleteEntries.Count;
+        var eqDeleteRows = deleteEntries.Sum(f => f.RecordCount);
         var recentCommits = snapshots
             .OrderByDescending(s => s.Summary.Version)
             .Take(boundedMax)
@@ -119,10 +141,15 @@ internal static class IcebergV2MetadataReader
             selectedSeq,
             selectedSnap.SnapshotId,
             stream.LakehousePartitionStrategy,
+            stream.LakehouseWriteMode,
+            eqDeleteCount,
             activeFiles);
 
         var partitionTag = stream.LakehousePartitionStrategy == LakehousePartitionStrategy.DailyCommitUtc
             ? "，分区 day(commit_timestamp_utc)"
+            : string.Empty;
+        var morTag = eqDeleteCount > 0 || stream.LakehouseWriteMode == LakehouseWriteMode.MergeOnReadUpsert
+            ? $"，MoR Upsert（Equality Deletes {eqDeleteCount} 分片 / {eqDeleteRows} 键）"
             : string.Empty;
 
         return new CdcLakehouseHistoryDto
@@ -131,17 +158,20 @@ internal static class IcebergV2MetadataReader
             Destination = destination,
             TableFormat = LakehouseTableFormat.ApacheIceberg,
             PartitionStrategy = stream.LakehousePartitionStrategy,
+            WriteMode = stream.LakehouseWriteMode,
             DeltaLogDirectory = metadataDir,
             CurrentVersion = currentSeq,
             SelectedVersion = selectedSeq,
             TotalCommitCount = snapshots.Count,
             SelectedActiveFileCount = activeFiles.Count,
+            SelectedEqualityDeleteFileCount = eqDeleteCount,
+            SelectedEqualityDeleteRecordCount = eqDeleteRows,
             SelectedTotalBytes = totalBytes,
             SelectedTotalRecordCount = totalRecords,
             Commits = recentCommits,
             ActiveFiles = activeFiles,
             TimeTravelQuerySql = timeTravelSql,
-            Summary = $"Apache Iceberg v2 · v{selectedSeq}（当前最新 v{currentSeq}，Snapshot {selectedSnap.SnapshotId}{partitionTag}，活跃 Parquet 分片 {activeFiles.Count} 个，记录 {totalRecords} 条）。",
+            Summary = $"Apache Iceberg v2 · v{selectedSeq}（当前最新 v{currentSeq}，Snapshot {selectedSnap.SnapshotId}{partitionTag}{morTag}，活跃 Parquet 分片 {activeFiles.Count} 个，记录 {totalRecords} 条）。",
         };
     }
 
@@ -224,36 +254,45 @@ internal static class IcebergV2MetadataReader
         return list.OrderBy(x => x.Summary.Version).ToList();
     }
 
-    private static async Task<List<CdcDeltaActiveFileDto>> ReadSnapshotActiveFilesAsync(
-        IHttpClientFactory httpClientFactory,
-        IConfiguration configuration,
-        ObjectStorageSinkConfig config,
-        string destination,
-        long snapshotId,
-        string? manifestListUri,
-        CancellationToken cancellationToken)
+    internal static async Task<(long? SelectedVersion, List<IcebergV2CommitWriter.IcebergManifestEntry> Entries)>
+        ReadSnapshotEntriesForPreviewAsync(
+            IHttpClientFactory httpClientFactory,
+            IConfiguration configuration,
+            ObjectStorageSinkConfig config,
+            string destination,
+            long? requestedVersion,
+            CancellationToken cancellationToken)
     {
-        var active = await IcebergV2CommitWriter.LoadSnapshotActiveFilesAsync(
-            httpClientFactory,
-            configuration,
-            config,
-            destination,
-            snapshotId,
-            manifestListUri,
-            cancellationToken);
+        var hintSeq = await IcebergV2CommitWriter.TryReadVersionHintAsync(
+            httpClientFactory, configuration, config, destination, cancellationToken);
+        if (hintSeq is not > 0)
+        {
+            return (null, new List<IcebergV2CommitWriter.IcebergManifestEntry>());
+        }
 
-        return active
-            .Select(f => new CdcDeltaActiveFileDto
-            {
-                RelativePath = f.RelativePath,
-                ObjectKey = f.ObjectKey,
-                SizeBytes = f.FileSizeInBytes,
-                RecordCount = f.RecordCount,
-                AddedAtVersion = f.AddedAtSequence,
-            })
-            .OrderBy(f => f.AddedAtVersion)
-            .ThenBy(f => f.RelativePath, StringComparer.Ordinal)
-            .ToList();
+        var metadataJson = await CdcObjectStorageLakehouseWriter.TryGetObjectStorageJsonAsync(
+            httpClientFactory, configuration, config, config.BuildIcebergMetadataKey(destination, hintSeq.Value), cancellationToken);
+        if (string.IsNullOrWhiteSpace(metadataJson))
+        {
+            return (null, new List<IcebergV2CommitWriter.IcebergManifestEntry>());
+        }
+
+        var snapshots = ParseSnapshots(metadataJson, config, destination);
+        if (snapshots.Count == 0)
+        {
+            return (null, new List<IcebergV2CommitWriter.IcebergManifestEntry>());
+        }
+
+        var selectedSeq = requestedVersion ?? snapshots[^1].Summary.Version;
+        var selectedSnap = snapshots.FirstOrDefault(s => s.Summary.Version == selectedSeq);
+        if (selectedSnap == null)
+        {
+            return (selectedSeq, new List<IcebergV2CommitWriter.IcebergManifestEntry>());
+        }
+
+        var entries = await IcebergV2CommitWriter.LoadSnapshotActiveFilesAsync(
+            httpClientFactory, configuration, config, destination, selectedSnap.SnapshotId, selectedSnap.ManifestListUri, cancellationToken);
+        return (selectedSeq, entries);
     }
 
     private static string BuildIcebergTimeTravelSql(
@@ -262,6 +301,8 @@ internal static class IcebergV2MetadataReader
         long selectedSeq,
         long snapshotId,
         LakehousePartitionStrategy partitionStrategy,
+        LakehouseWriteMode writeMode,
+        int equalityDeleteFileCount,
         IReadOnlyList<CdcDeltaActiveFileDto> activeFiles)
     {
         var s3Base = string.IsNullOrEmpty(tableDir)
@@ -278,8 +319,12 @@ internal static class IcebergV2MetadataReader
             ? $"-- DuckDB Iceberg v2 Hidden Partition Pruning (day(commit_timestamp_utc))\n" +
               $"SELECT * FROM iceberg_scan('{metadataUri}') WHERE commit_timestamp_utc >= TIMESTAMPTZ '{todayUtc} 00:00:00+00' LIMIT 100;\n\n"
             : string.Empty;
+        var morComment = writeMode == LakehouseWriteMode.MergeOnReadUpsert || equalityDeleteFileCount > 0
+            ? $"-- Merge-on-Read Equality Deletes active ({equalityDeleteFileCount} delete file(s)); iceberg_scan() automatically deduplicates updates & omits deleted keys.\n"
+            : string.Empty;
 
         return
+            morComment +
             partitionPruneSnippet +
             $"-- DuckDB Apache Iceberg v2 Metadata Scan (v{selectedSeq} / snapshot {snapshotId})\n" +
             $"SELECT * FROM iceberg_scan('{metadataUri}') LIMIT 100;\n\n" +

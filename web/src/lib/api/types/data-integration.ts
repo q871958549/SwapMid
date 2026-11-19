@@ -54,6 +54,12 @@ export type CdcContractEvaluationDto = import('../generated').SwapMidDataIntegra
 export type CdcWebhookDeliveryListDto = import('../generated').SwapMidDataIntegrationCdcWebhookDeliveryListDto
 export type CdcWebhookDeliveryRecordDto = import('../generated').SwapMidDataIntegrationCdcWebhookDeliveryRecordDto
 export type CdcWebhookIngestResultDto = import('../generated').SwapMidDataIntegrationCdcWebhookIngestResultDto
+export type IntegrationBundleExportResultDto = import('../generated').SwapMidControllersGitOpsIntegrationBundleExportResultDto
+export type IntegrationBundleDiffInput = import('../generated').SwapMidControllersGitOpsIntegrationBundleDiffInput
+export type IntegrationBundleDiffItemDto = import('../generated').SwapMidControllersGitOpsIntegrationBundleDiffItemDto
+export type IntegrationBundleDiffResultDto = import('../generated').SwapMidControllersGitOpsIntegrationBundleDiffResultDto
+export type IntegrationBundleApplyInput = import('../generated').SwapMidControllersGitOpsIntegrationBundleApplyInput
+export type IntegrationBundleApplyResultDto = import('../generated').SwapMidControllersGitOpsIntegrationBundleApplyResultDto
 export type CdcStreamDto = Omit<
   Require<
     import('../generated').SwapMidDataIntegrationCdcStreamDto,

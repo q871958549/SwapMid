@@ -6201,6 +6201,30 @@
       "traditionalSourceHash": "f2dcdf7c719b07f85581d412",
       "traditionalHash": "b8dde98ce29d015cc9c1acd9"
     },
+    "DataIntegration.source.schemaRegistryUrlFieldLabel": {
+      "sourceHash": "046766a502e8d7256ea61773",
+      "englishHash": "2c3ecbb5bc36098477005959",
+      "traditionalSourceHash": "1a6f911985e2676b00321d4b",
+      "traditionalHash": "7801163ab08366947b874f44"
+    },
+    "DataIntegration.source.schemaRegistryUrlHint": {
+      "sourceHash": "194db44c42259d26faf51b1e",
+      "englishHash": "6ca03306cc7886e50126eed1",
+      "traditionalSourceHash": "9098fc84f7b46af132d4324e",
+      "traditionalHash": "d119dec8dbb11c84c6e9e3fe"
+    },
+    "DataIntegration.source.schemaRegistryUsernameFieldLabel": {
+      "sourceHash": "8b1f2bc0a16d2a7372ce2b6c",
+      "englishHash": "ecb94787a416e3adb954acd2",
+      "traditionalSourceHash": "7b709bd33e25e12cb4b0e008",
+      "traditionalHash": "754f16ac893261ecdf5f25f3"
+    },
+    "DataIntegration.source.schemaRegistryPasswordFieldLabel": {
+      "sourceHash": "bbfbb84ae5388b3757474e7e",
+      "englishHash": "20da647a4be4ab5b1c156d8f",
+      "traditionalSourceHash": "686eb62d058cc4274a2e81a3",
+      "traditionalHash": "3cd0e58991a9d0ce17213a2c"
+    },
     "DataIntegration.pipeline.loadFailedTitle": {
       "sourceHash": "a2f3a11838ae59947cc0a1fc",
       "englishHash": "58d3854a51bfe87be1fcd092",
@@ -9002,6 +9026,150 @@
       "englishHash": "e38c925a95ad6a2bf270238a",
       "traditionalSourceHash": "434b68d254a7e595714dd0ca",
       "traditionalHash": "0cfa83d8062afc7ebeda311a"
+    },
+    "DataIntegration.cdc.lakehouseWriteModeFieldLabel": {
+      "sourceHash": "48c2bfaaa36deb432bbab797",
+      "englishHash": "299ec1f9b4bd5d4651485351",
+      "traditionalSourceHash": "e3e512a3c39cf6ad857fd163",
+      "traditionalHash": "b47b14d6fbac02c30886fb31"
+    },
+    "DataIntegration.cdc.lakehouseWriteModeAppend": {
+      "sourceHash": "1766876cd0757a489f214574",
+      "englishHash": "903f9caf03794989dcac9858",
+      "traditionalSourceHash": "5dd13ff9a7936344384e8028",
+      "traditionalHash": "3e366922b76f62ca8baabe12"
+    },
+    "DataIntegration.cdc.lakehouseWriteModeMorUpsert": {
+      "sourceHash": "d03e853489c80e229f416041",
+      "englishHash": "9b9e4dd4c2054f0ca245e89b",
+      "traditionalSourceHash": "112b165f88818c58953eee09",
+      "traditionalHash": "c662aa0817a729e215bcb320"
+    },
+    "DataIntegration.cdc.lakehouseWriteModeHint": {
+      "sourceHash": "4048d528e150ca96200b497d",
+      "englishHash": "17e790cf757b41ceb47f2b5b",
+      "traditionalSourceHash": "b7e48072de7b890b87857737",
+      "traditionalHash": "79a94370d6b148e08495de09"
+    },
+    "DataIntegration.cdc.gitOpsButtonLabel": {
+      "sourceHash": "cc267855c048f7ea6c77395b",
+      "englishHash": "4012e2e70e0eab52805488de",
+      "traditionalSourceHash": "8f6d2495e03526bdf995fe1a",
+      "traditionalHash": "4012e2e70e0eab52805488de"
+    },
+    "DataIntegration.cdc.gitOpsDialogTitle": {
+      "sourceHash": "25b06a1c8939cb3229df7a82",
+      "englishHash": "57df87e94cbe3616540f9f2a",
+      "traditionalSourceHash": "334a27d40e391b10524e571e",
+      "traditionalHash": "3c0befec383c1864c216cd1a"
+    },
+    "DataIntegration.cdc.gitOpsDialogDesc": {
+      "sourceHash": "731d49ef77ee40a578b6ba26",
+      "englishHash": "b36852b1060c2366a3c82b4c",
+      "traditionalSourceHash": "b11c8bd7ccc8fa7cd89db41e",
+      "traditionalHash": "e17d3961982992dfb12d1f37"
+    },
+    "DataIntegration.cdc.gitOpsExportButton": {
+      "sourceHash": "36c3ee75c87970b20f12b45a",
+      "englishHash": "3664895579f0a7e68c4aa09c",
+      "traditionalSourceHash": "94c255eba0f7091945868854",
+      "traditionalHash": "cea4545e3f80a48c54a4724b"
+    },
+    "DataIntegration.cdc.gitOpsCopyButton": {
+      "sourceHash": "94375ec7120dc00e33c55764",
+      "englishHash": "e21f935f11d7e966dbbae78d",
+      "traditionalSourceHash": "0076608acb553802afce6306",
+      "traditionalHash": "bb6dad578c8142ad5a005137"
+    },
+    "DataIntegration.cdc.gitOpsCopiedButton": {
+      "sourceHash": "30225c8c3fd3c7eec0845f2f",
+      "englishHash": "8d525e5f158b9afe05f3122a",
+      "traditionalSourceHash": "f9db272a402fc0f80c710c6f",
+      "traditionalHash": "fcce450c45f401a80a36c3b3"
+    },
+    "DataIntegration.cdc.gitOpsDownloadButton": {
+      "sourceHash": "e67e91eb03e5dfc6a0b2350f",
+      "englishHash": "d6eafe82359100423c93c5ce",
+      "traditionalSourceHash": "80e6d3e52bc2c33345d43c8f",
+      "traditionalHash": "d477c75aa6561c9fb7b7fea6"
+    },
+    "DataIntegration.cdc.gitOpsDiffButton": {
+      "sourceHash": "858d08e67b7ec537a295ff49",
+      "englishHash": "7ecf46284588f3fa7e31a578",
+      "traditionalSourceHash": "10eda5790b46ec872c66bbc1",
+      "traditionalHash": "e3b1439ed2334cbe62d7d16a"
+    },
+    "DataIntegration.cdc.gitOpsDryRunButton": {
+      "sourceHash": "1935ad41430c5ba845c013eb",
+      "englishHash": "84738f88a5d6a8eeab8eb7ff",
+      "traditionalSourceHash": "1ad381b7dd3dcbf11076cb08",
+      "traditionalHash": "ef6c2d254b161aa30c1dd8c0"
+    },
+    "DataIntegration.cdc.gitOpsApplyButton": {
+      "sourceHash": "7bc2521f6482809d79d335eb",
+      "englishHash": "31e392d1c0378beca611de66",
+      "traditionalSourceHash": "f6d962b26a10e05826d3fb34",
+      "traditionalHash": "95514e5a7ff6578349fbc7bc"
+    },
+    "DataIntegration.cdc.gitOpsAllowUpdateLabel": {
+      "sourceHash": "2a63641f2810bc67cb8e5219",
+      "englishHash": "b6e1f70c0198f2d96e4dfd61",
+      "traditionalSourceHash": "6ec3e088ed727cb728a50952",
+      "traditionalHash": "aa0e576ef010140b96956b5a"
+    },
+    "DataIntegration.cdc.gitOpsResourceCountBadge": {
+      "sourceHash": "219df8c95982ed99d57bb657",
+      "englishHash": "4d488c186c911d4c386a945e",
+      "traditionalSourceHash": "7470831a3cb61e65c8355279",
+      "traditionalHash": "c51ed78345fcf99e96966ef8"
+    },
+    "DataIntegration.cdc.gitOpsBundlePlaceholder": {
+      "sourceHash": "daa26cd31dce93347580b6c3",
+      "englishHash": "a31b6b4836af845222ac4e4c",
+      "traditionalSourceHash": "251fc29bc3f1ac31a6503bf0",
+      "traditionalHash": "d1393c8524d6d4e1362c33e7"
+    },
+    "DataIntegration.cdc.gitOpsDiffResultTitle": {
+      "sourceHash": "9c960261a33f0a71b0be0d07",
+      "englishHash": "a9c82fb0b8c3c7586178ac3c",
+      "traditionalSourceHash": "8e34a7486bed7be3f128aaa0",
+      "traditionalHash": "645d890afbad4928d6aa1065"
+    },
+    "DataIntegration.cdc.gitOpsDryRunResultTitle": {
+      "sourceHash": "8eeef8057e1defccba5176a4",
+      "englishHash": "20ee484a6fb25bcd57253f79",
+      "traditionalSourceHash": "cd279d984bfa4327104acf21",
+      "traditionalHash": "7f1fa12e8a2c6a4ac60077a8"
+    },
+    "DataIntegration.cdc.gitOpsApplyResultTitle": {
+      "sourceHash": "c7eaa957abaeb6ba24ac0e4d",
+      "englishHash": "70ca437b07e3eb6a68035ef5",
+      "traditionalSourceHash": "ce5fda40d7ba776bc2cccbbe",
+      "traditionalHash": "a0cc1422439cb29eb7921bd4"
+    },
+    "DataIntegration.cdc.gitOpsExportFailed": {
+      "sourceHash": "71c94750335449839eeeb61f",
+      "englishHash": "9a5e4d9513126f648a112642",
+      "traditionalSourceHash": "2aab0bb7e2a3aedd9a769f2d",
+      "traditionalHash": "823792942335bb5083d3d040"
+    },
+    "DataIntegration.cdc.gitOpsDiffFailed": {
+      "sourceHash": "f8c4f6fdd2742f8714e30cae",
+      "englishHash": "c2e565e43f7286399b18ec5f",
+      "traditionalSourceHash": "aa6c99503a1073eb120f8044",
+      "traditionalHash": "fc32b585693d133e9155e3a3"
+    },
+    "DataIntegration.cdc.gitOpsApplyFailed": {
+      "sourceHash": "a0d61abcf78c95cda194a020",
+      "englishHash": "f348eb7cad6cdd627d7610cc",
+      "traditionalSourceHash": "436b32a7a32c62e5120b7ee0",
+      "traditionalHash": "49d359f9d64098b304492a5a"
+    },
+    "DataIntegration.cdc.gitOpsApplyDoneTitle": {
+      "sourceHash": "5c187c7c96db033772d4ec3c",
+      "englishHash": "f569eb49f9b602304519b5e4",
+      "traditionalSourceHash": "a03b6105a55685d741d20594",
+      "traditionalHash": "0335bbec1436a87e2848dc9b"
     },
     "System.common.refresh": {
       "sourceHash": "ed94cd3ab755a61dfa2e13b4",

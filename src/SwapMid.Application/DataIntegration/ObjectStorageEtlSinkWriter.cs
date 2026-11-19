@@ -77,6 +77,51 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
             cancellationToken,
             partitionSegment);
 
+    internal async Task<UploadedObjectResult> WriteAndUploadEqualityDeleteParquetAsync(
+        Guid runId,
+        DataSource target,
+        string destination,
+        IReadOnlyList<string> businessKeys,
+        CancellationToken cancellationToken,
+        string? partitionSegment = null)
+    {
+        var config = ObjectStorageSinkConfigContract.ParseForWrite(target.Config, requireSecretKey: true);
+        var objectKey = config.BuildIcebergEqualityDeleteKey(destination, runId, partitionSegment);
+        if (businessKeys.Count == 0)
+        {
+            return new UploadedObjectResult(objectKey, 0, string.Empty, "parquet", 0);
+        }
+
+        var objectUri = config.BuildObjectUri(objectKey);
+        await DataIntegrationSinkEndpointPolicy.ValidateHttpEndpointAsync(objectUri, _configuration, cancellationToken);
+
+        var tempPath = Path.Combine(Path.GetTempPath(), $"swapmid-eqdel-{runId:N}.parquet");
+        try
+        {
+            var keyField = new DataField<string?>("business_key")
+            {
+                FieldId = IcebergAvroManifestBuilder.BusinessKeyFieldId,
+            };
+            var schema = new ParquetSchema(keyField);
+            await using (var fs = new FileStream(tempPath, FileMode.Create, FileAccess.ReadWrite, FileShare.None, 64 * 1024, useAsync: true))
+            await using (var pqWriter = await ParquetWriter.CreateAsync(schema, fs, cancellationToken: cancellationToken))
+            {
+                using var rg = pqWriter.CreateRowGroup();
+                var values = new string[businessKeys.Count];
+                for (var i = 0; i < businessKeys.Count; i++) values[i] = businessKeys[i];
+                await rg.WriteAsync(keyField, values);
+            }
+
+            var length = new FileInfo(tempPath).Length;
+            var sha256 = await UploadFileAndComputeSha256Async(_httpClientFactory, tempPath, objectUri, config, cancellationToken);
+            return new UploadedObjectResult(objectKey, length, sha256, "parquet", businessKeys.Count);
+        }
+        finally
+        {
+            TryDeleteTempFile(tempPath);
+        }
+    }
+
     private async Task<UploadedObjectResult> WriteAndUploadCoreAsync(
         Guid runId,
         DataSource target,

@@ -215,10 +215,10 @@ public class IcebergAvroManifestTests
         await using (var pqReader = await ParquetReader.CreateAsync(pqStream))
         {
             var fields = pqReader.Schema.DataFields;
-            fields.Length.ShouldBe(11);
+            fields.Length.ShouldBe(12);
             var leafSchemaElements = pqReader.Metadata!.Schema.Skip(1).ToList();
-            leafSchemaElements.Count.ShouldBe(11);
-            for (var i = 0; i < 11; i++)
+            leafSchemaElements.Count.ShouldBe(12);
+            for (var i = 0; i < 12; i++)
             {
                 leafSchemaElements[i].Name.ShouldBe(fields[i].Name);
                 leafSchemaElements[i].FieldId.ShouldBe(i + 1);

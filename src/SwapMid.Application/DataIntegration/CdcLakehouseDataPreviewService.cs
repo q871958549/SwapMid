@@ -23,7 +23,7 @@ namespace SwapMid.DataIntegration;
 /// 零外部计算集群的 Lakehouse（S3/MinIO Parquet &amp; JSONL）实时数据预览服务：
 /// 仅从权威 _delta_log / _swapmid/latest.json 解析合法分片路径，强制执行 SSRF 守卫、单文件 4 MiB 读预算与 50 行上限。
 /// </summary>
-public sealed class CdcLakehouseDataPreviewService : ITransientDependency
+public sealed partial class CdcLakehouseDataPreviewService : ITransientDependency
 {
     internal const int MaxFilesToScan = 3;
     internal const int MaxBytesPerFile = 4 * 1024 * 1024;
@@ -64,6 +64,13 @@ public sealed class CdcLakehouseDataPreviewService : ITransientDependency
             maxRows <= 0 ? CdcStreamConsts.DefaultLakehousePreviewMaxRows : maxRows,
             1,
             CdcStreamConsts.MaxLakehousePreviewMaxRows);
+
+        if (stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg && config.Format == "parquet")
+        {
+            var morPreview = await TryPreviewMergeOnReadIcebergAsync(
+                stream, config, destination, requestedVersion, boundedMaxRows, cancellationToken);
+            if (morPreview != null) return morPreview;
+        }
 
         var (selectedVersion, objectKeys) = await ResolveAuthoritativeObjectKeysAsync(
             stream,
@@ -460,35 +467,4 @@ public sealed class CdcLakehouseDataPreviewService : ITransientDependency
 
         return output;
     }
-
-    private static string FormatScalar<T>(T value)
-        where T : struct
-        => value switch
-        {
-            DateTime dt => dt.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
-            DateTimeOffset dto => dto.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
-            IFormattable fmt => fmt.ToString(null, CultureInfo.InvariantCulture),
-            _ => value.ToString() ?? string.Empty,
-        };
-
-    private static string? FormatJsonElement(JsonElement el)
-        => el.ValueKind switch
-        {
-            JsonValueKind.Null or JsonValueKind.Undefined => null,
-            JsonValueKind.String => TruncateCell(el.GetString()),
-            _ => TruncateCell(el.GetRawText()),
-        };
-
-    private static string? TruncateCell(string? value)
-    {
-        if (value == null || value.Length <= MaxCellChars)
-        {
-            return value;
-        }
-
-        return value[..MaxCellChars] + "…";
-    }
-
-    private enum FetchStatus { Ok, NotFound, TooLarge }
-    private sealed record FetchResult(FetchStatus Status, byte[]? Bytes);
 }

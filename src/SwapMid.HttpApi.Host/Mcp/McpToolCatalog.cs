@@ -21,6 +21,7 @@ public static class McpToolCatalog
     public const string EvaluateCdcDataContracts = "evaluate_cdc_data_contracts";
     public const string DiagnoseWebhookDeliveries = "diagnose_webhook_deliveries";
     public const string InspectLakehouseSnapshots = "inspect_lakehouse_snapshots";
+    public const string ExportIntegrationBundle = "export_integration_bundle";
 
     public static IReadOnlyList<McpToolDescriptor> All { get; } =
     [
@@ -176,6 +177,20 @@ public static class McpToolCatalog
                     streamId = new { type = "string", format = "uuid", description = "Optional Lakehouse CDC stream GUID (defaults to all Lakehouse streams)." },
                     version = new { type = "integer", minimum = 0, description = "Optional historical snapshot version / sequence number for Time-Travel." },
                     maxCommits = new { type = "integer", minimum = 1, maximum = 50, description = "Max commit timeline entries to return (default 10)." },
+                },
+                additionalProperties = false,
+            }),
+        new McpToolDescriptor(
+            Name: ExportIntegrationBundle,
+            RequiredPermission: SwapMidPermissions.DataIntegration.DataPipelines.Default,
+            Description: "Export a secret-free declarative GitOps integration bundle (swapmid.io/v1 YAML or JSON) covering DataSources, Pipelines, CDC Streams, MessageBus Topics/Subscriptions, and API Gateway Groups/Routes.",
+            InputSchema: new
+            {
+                type = "object",
+                properties = new
+                {
+                    format = new { type = "string", @enum = new[] { "yaml", "json" }, description = "Output format: yaml (default) or json." },
+                    summaryOnly = new { type = "boolean", description = "When true, return resource counts without the full YAML/JSON text." },
                 },
                 additionalProperties = false,
             }),

@@ -539,5 +539,41 @@ public class McpServerSecurityAndToolsTests
             text.ShouldContain("\"partitionStrategy\":1");
             text.ShouldContain("iceberg_scan");
         }
+
+        // Tool 11: export_integration_bundle (requires DataPipelines.Default)
+        host.Services.GetRequiredService<IDataSourceAppService>()
+            .GetListAsync(Arg.Any<GetDataSourceListInput>())
+            .Returns(new PagedResultDto<DataSourceDto>(0, []));
+        host.Services.GetRequiredService<IDataPipelineAppService>()
+            .GetListAsync(Arg.Any<GetDataPipelineListInput>())
+            .Returns(new PagedResultDto<DataPipelineDto>(0, []));
+        host.Services.GetRequiredService<ICdcStreamAppService>()
+            .GetListAsync(Arg.Any<GetCdcStreamListInput>())
+            .Returns(new PagedResultDto<CdcStreamDto>(0, []));
+
+        using var gitOpsClient = host.CreateClient(
+            authenticated: true,
+            SwapMidPermissions.DataIntegration.DataSources.Default,
+            SwapMidPermissions.DataIntegration.DataPipelines.Default,
+            SwapMidPermissions.DataIntegration.CdcStreams.Default);
+
+        var bundleRes = await gitOpsClient.PostAsJsonAsync("/api/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = 203,
+            method = "tools/call",
+            @params = new
+            {
+                name = McpToolCatalog.ExportIntegrationBundle,
+                arguments = new { format = "yaml" },
+            },
+        });
+        bundleRes.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using (var doc = JsonDocument.Parse(await bundleRes.Content.ReadAsStringAsync()))
+        {
+            var text = doc.RootElement.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString()!;
+            text.ShouldContain("swapmid.io/v1");
+            text.ShouldContain("schemaVersion: swapmid.io/v1");
+        }
     }
 }

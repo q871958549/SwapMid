@@ -115,6 +115,11 @@ export function CdcTargetCell({ stream }: { stream: CdcStreamDto }) {
               Number(stream.lakehousePartitionStrategy ?? 0) === 1 && (
               <StatusBadge tone="neutral">day(ts)</StatusBadge>
             )}
+            {mode === CDC_TARGET_EXTERNAL_SINK &&
+              Number(stream.lakehouseTableFormat ?? 0) === 2 &&
+              Number(stream.lakehouseWriteMode ?? 0) === 1 && (
+              <StatusBadge tone="success">MoR Upsert</StatusBadge>
+            )}
             {mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.catalogType ?? 0) > 0 && (
               <StatusBadge tone="neutral" title={stream.catalogLastSyncStatus ?? undefined}>
                 {Number(stream.catalogType) === 1

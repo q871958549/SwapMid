@@ -370,7 +370,11 @@ export function CdcFormDialog({
           </div>
           <div className="space-y-1.5">
             <Label>
-              {crud.form.targetMode === '3'
+              {(crud.form.targetMode === '3' ||
+                (crud.form.targetMode === '2' &&
+                  selectedSink?.type === 5 &&
+                  crud.form.lakehouseTableFormat === '2' &&
+                  crud.form.lakehouseWriteMode === '1'))
                 ? t('targetSinkKeyColumnsRequiredFieldLabel')
                 : t('targetSinkKeyColumnsFieldLabel')}
             </Label>

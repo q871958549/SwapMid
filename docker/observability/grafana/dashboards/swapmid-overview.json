@@ -193,6 +193,16 @@
           "expr": "max by (stream) (swapmid_cdc_kafka_lag_messages)",
           "legendFormat": "kafka_lag:{{stream}}",
           "refId": "C"
+        },
+        {
+          "expr": "increase(swapmid_cdc_iceberg_equality_deletes_total[15m])",
+          "legendFormat": "iceberg:equality_deletes",
+          "refId": "D"
+        },
+        {
+          "expr": "sum by (outcome) (increase(swapmid_cdc_schema_registry_fetches_total[15m]))",
+          "legendFormat": "schema_registry:{{outcome}}",
+          "refId": "E"
         }
       ]
     },

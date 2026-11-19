@@ -78,6 +78,7 @@ public partial class CdcStreamDefinition
         if (LakehouseTableFormat != LakehouseTableFormat.ApacheIceberg)
         {
             LakehousePartitionStrategy = LakehousePartitionStrategy.None;
+            LakehouseWriteMode = LakehouseWriteMode.AppendChangelog;
         }
         var normalizedCatalogType = CdcStreamMirrorConfigValidator.NormalizeCatalogType(
             targetMode,
@@ -169,6 +170,25 @@ public partial class CdcStreamDefinition
                                      LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg
             ? strategy
             : LakehousePartitionStrategy.None;
+    }
+
+    public void ConfigureLakehouseWriteMode(LakehouseWriteMode mode)
+    {
+        if (TargetMode != CdcTargetMode.ExternalSink ||
+            LakehouseTableFormat != LakehouseTableFormat.ApacheIceberg)
+        {
+            LakehouseWriteMode = LakehouseWriteMode.AppendChangelog;
+            return;
+        }
+
+        if (mode == LakehouseWriteMode.MergeOnReadUpsert &&
+            string.IsNullOrWhiteSpace(TargetSinkKeyColumns))
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", "启用 Apache Iceberg v2 Merge-on-Read 主键 Upsert 模式必须填写业务主键列（TargetSinkKeyColumns）。");
+        }
+
+        LakehouseWriteMode = mode;
     }
 
     public bool HasDataContractConfigured =>

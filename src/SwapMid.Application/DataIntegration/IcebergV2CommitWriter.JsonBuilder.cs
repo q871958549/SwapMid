@@ -115,21 +115,33 @@ internal static partial class IcebergV2CommitWriter
             }
         }
 
-        var addedRecords = addedFiles.Sum(f => f.RecordCount);
-        var totalRecords = activeFiles.Sum(f => f.RecordCount);
+        var addedDataFiles = addedFiles.Where(f => f.Content == IcebergAvroManifestBuilder.ContentData).ToList();
+        var addedDeleteFiles = addedFiles.Where(f => f.Content == IcebergAvroManifestBuilder.ContentEqualityDeletes).ToList();
+        var activeDataFiles = activeFiles.Where(f => f.Content == IcebergAvroManifestBuilder.ContentData).ToList();
+        var activeDeleteFiles = activeFiles.Where(f => f.Content == IcebergAvroManifestBuilder.ContentEqualityDeletes).ToList();
+
+        var addedRecords = addedDataFiles.Sum(f => f.RecordCount);
+        var totalRecords = activeDataFiles.Sum(f => f.RecordCount);
         var addedBytes = addedFiles.Sum(f => f.FileSizeInBytes);
         var totalBytes = activeFiles.Sum(f => f.FileSizeInBytes);
+        var addedEqDeletes = addedDeleteFiles.Sum(f => f.RecordCount);
+        var totalEqDeletes = activeDeleteFiles.Sum(f => f.RecordCount);
 
         var summaryObj = new JsonObject
         {
             ["operation"] = operation,
-            ["added-data-files"] = addedFiles.Count.ToString(CultureInfo.InvariantCulture),
+            ["added-data-files"] = addedDataFiles.Count.ToString(CultureInfo.InvariantCulture),
             ["deleted-data-files"] = removedRelativePaths.Count.ToString(CultureInfo.InvariantCulture),
             ["added-records"] = addedRecords.ToString(CultureInfo.InvariantCulture),
             ["added-files-size"] = addedBytes.ToString(CultureInfo.InvariantCulture),
-            ["total-data-files"] = activeFiles.Count.ToString(CultureInfo.InvariantCulture),
+            ["total-data-files"] = activeDataFiles.Count.ToString(CultureInfo.InvariantCulture),
             ["total-records"] = totalRecords.ToString(CultureInfo.InvariantCulture),
             ["total-files-size"] = totalBytes.ToString(CultureInfo.InvariantCulture),
+            ["added-delete-files"] = addedDeleteFiles.Count.ToString(CultureInfo.InvariantCulture),
+            ["added-equality-delete-files"] = addedDeleteFiles.Count.ToString(CultureInfo.InvariantCulture),
+            ["added-equality-deletes"] = addedEqDeletes.ToString(CultureInfo.InvariantCulture),
+            ["total-delete-files"] = activeDeleteFiles.Count.ToString(CultureInfo.InvariantCulture),
+            ["total-equality-deletes"] = totalEqDeletes.ToString(CultureInfo.InvariantCulture),
             ["swapmid-run-id"] = runToken,
             ["swapmid-snapshot-mode"] = snapshotMode,
             ["engine-name"] = EngineName,
@@ -186,7 +198,7 @@ internal static partial class IcebergV2CommitWriter
             ["location"] = tableLocation,
             ["last-sequence-number"] = nextSeq,
             ["last-updated-ms"] = timestampMs,
-            ["last-column-id"] = 11,
+            ["last-column-id"] = IcebergAvroManifestBuilder.BusinessKeyFieldId,
             ["current-schema-id"] = 0,
             ["schemas"] = new JsonArray { BuildCdcIcebergSchemaNode() },
             ["default-spec-id"] = isDailyPartitioned ? IcebergAvroManifestBuilder.DailyPartitionSpecId : 0,
@@ -205,6 +217,7 @@ internal static partial class IcebergV2CommitWriter
                 ["swapmid.stream_name"] = stream.Name,
                 ["swapmid.engine"] = EngineName,
                 ["swapmid.partition_strategy"] = isDailyPartitioned ? "day(commit_timestamp_utc)" : "none",
+                ["swapmid.write_mode"] = stream.LakehouseWriteMode == LakehouseWriteMode.MergeOnReadUpsert ? "merge-on-read-upsert" : "append-changelog",
             },
             ["current-snapshot-id"] = snapshotId,
             ["refs"] = new JsonObject
@@ -238,6 +251,7 @@ internal static partial class IcebergV2CommitWriter
             ("changed_columns", "string"),
             ("after_json", "string"),
             ("before_json", "string"),
+            ("business_key", "string"),
         };
         var fields = new JsonArray();
         for (var i = 0; i < cols.Length; i++)

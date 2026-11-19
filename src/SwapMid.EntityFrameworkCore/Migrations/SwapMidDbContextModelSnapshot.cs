@@ -278,6 +278,9 @@ namespace SwapMid.Migrations
                     b.Property<int>("LakehouseTableFormat")
                         .HasColumnType("integer");
 
+                    b.Property<int>("LakehouseWriteMode")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("LastCapturedAt")
                         .HasColumnType("timestamp without time zone");
 

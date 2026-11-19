@@ -1129,7 +1129,11 @@
       "saslMechanismFieldLabel": "SASL mechanism *",
       "saslUsernameFieldLabel": "SASL username *",
       "saslPasswordFieldLabel": "SASL password",
-      "testingConnectionMenuItem": "Testing..."
+      "testingConnectionMenuItem": "Testing...",
+      "schemaRegistryUrlFieldLabel": "Schema Registry URL (Optional)",
+      "schemaRegistryUrlHint": "Connect to Confluent / Redpanda Schema Registry to decode binary Avro Debezium events",
+      "schemaRegistryUsernameFieldLabel": "Schema Registry Username",
+      "schemaRegistryPasswordFieldLabel": "Schema Registry Password"
     },
     "pipeline": {
       "loadFailedTitle": "Failed to load data pipelines",
@@ -1602,7 +1606,31 @@
       "lakehousePartitionStrategyFieldLabel": "Iceberg v2 Hidden Partitioning",
       "lakehousePartitionNone": "Unpartitioned (spec-id = 0)",
       "lakehousePartitionDailyUtc": "Daily UTC Hidden Partition day(commit_timestamp_utc)",
-      "lakehousePartitionStrategyHint": "Buckets Parquet files by UTC commit day and encodes binary Avro partition bounds for native DuckDB, Trino, and Spark partition pruning."
+      "lakehousePartitionStrategyHint": "Buckets Parquet files by UTC commit day and encodes binary Avro partition bounds for native DuckDB, Trino, and Spark partition pruning.",
+      "lakehouseWriteModeFieldLabel": "Iceberg v2 Write Mode",
+      "lakehouseWriteModeAppend": "Append Changelog",
+      "lakehouseWriteModeMorUpsert": "Merge-on-Read Upsert (Equality Deletes)",
+      "lakehouseWriteModeHint": "Merge-on-Read requires key columns and emits Equality Delete files for deduplicated reads",
+      "gitOpsButtonLabel": "GitOps",
+      "gitOpsDialogTitle": "Declarative GitOps Bundle (swapmid.io/v1)",
+      "gitOpsDialogDesc": "Export secret-free YAML/JSON manifests, diff changes across environments, and safely apply",
+      "gitOpsExportButton": "Export",
+      "gitOpsCopyButton": "Copy",
+      "gitOpsCopiedButton": "Copied",
+      "gitOpsDownloadButton": "Download",
+      "gitOpsDiffButton": "Diff",
+      "gitOpsDryRunButton": "Dry-Run",
+      "gitOpsApplyButton": "Apply",
+      "gitOpsAllowUpdateLabel": "Allow updating existing resources",
+      "gitOpsResourceCountBadge": "{count} resources",
+      "gitOpsBundlePlaceholder": "Click Export to load the current environment bundle, or paste a swapmid.io/v1 YAML/JSON manifest to diff or apply...",
+      "gitOpsDiffResultTitle": "Read-Only Diff Plan",
+      "gitOpsDryRunResultTitle": "Dry-Run Plan (No Changes Applied)",
+      "gitOpsApplyResultTitle": "Apply Execution Result",
+      "gitOpsExportFailed": "Export Failed",
+      "gitOpsDiffFailed": "Diff Failed",
+      "gitOpsApplyFailed": "Apply Failed",
+      "gitOpsApplyDoneTitle": "GitOps Bundle Applied"
     }
   },
   "System": {

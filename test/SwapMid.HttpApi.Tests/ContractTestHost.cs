@@ -326,6 +326,7 @@ internal sealed class ContractTestHost : IDisposable
         }
 
         services.AddSingleton<ICdcWebhookIngressService>(_ => Substitute.For<ICdcWebhookIngressService>());
+        services.AddTransient<SwapMid.Controllers.GitOps.IntegrationBundleOrchestrator>();
     }
 
     private static string[] CollectAllPermissionConstants()

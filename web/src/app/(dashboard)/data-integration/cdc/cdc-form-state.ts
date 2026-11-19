@@ -36,6 +36,7 @@ export interface CdcFormState {
   lakehouseCompactMinFiles: string
   lakehouseTableFormat: '0' | '1' | '2'
   lakehousePartitionStrategy: '0' | '1'
+  lakehouseWriteMode: '0' | '1'
   catalogType: '0' | '1' | '2'
   catalogSinkId: string
   catalogNamespace: string
@@ -73,6 +74,7 @@ export const defaultCdcForm: CdcFormState = {
   lakehouseCompactMinFiles: '',
   lakehouseTableFormat: '0',
   lakehousePartitionStrategy: '0',
+  lakehouseWriteMode: '0',
   catalogType: '0',
   catalogSinkId: '',
   catalogNamespace: '',
@@ -115,6 +117,10 @@ export function normalizeLakehouseTableFormat(format: number | undefined): '0' |
 
 export function normalizeLakehousePartitionStrategy(strategy: number | undefined): '0' | '1' {
   return Number(strategy) === 1 ? '1' : '0'
+}
+
+export function normalizeLakehouseWriteMode(mode: number | undefined): '0' | '1' {
+  return Number(mode) === 1 ? '1' : '0'
 }
 
 export function detectCdcSourceTypeFromSource(sourceId: string, sources: CdcSourceOption[]): '0' | '1' | '2' | '3' | '4' {
@@ -189,6 +195,7 @@ export function toCdcForm(item: CdcStreamDto): CdcFormState {
     lakehouseCompactMinFiles: item.lakehouseCompactMinFiles ? String(item.lakehouseCompactMinFiles) : '',
     lakehouseTableFormat: normalizeLakehouseTableFormat(item.lakehouseTableFormat),
     lakehousePartitionStrategy: normalizeLakehousePartitionStrategy(item.lakehousePartitionStrategy),
+    lakehouseWriteMode: normalizeLakehouseWriteMode(item.lakehouseWriteMode),
     catalogType: normalizeCatalogType(item.catalogType),
     catalogSinkId: item.catalogSinkId ?? '',
     catalogNamespace: item.catalogNamespace ?? '',
@@ -216,6 +223,9 @@ export function toCdcBody(form: CdcFormState) {
   const tableFormat = mode === 2 ? Number(normalizeLakehouseTableFormat(Number(form.lakehouseTableFormat))) : 0
   const partitionStrategy = mode === 2 && tableFormat === 2
     ? Number(normalizeLakehousePartitionStrategy(Number(form.lakehousePartitionStrategy)))
+    : 0
+  const writeMode = mode === 2 && tableFormat === 2
+    ? Number(normalizeLakehouseWriteMode(Number(form.lakehouseWriteMode)))
     : 0
   const catalogTypeNum = mode === 2 ? Number(normalizeCatalogType(Number(form.catalogType))) : 0
   const useCatalog = mode === 2 && catalogTypeNum > 0
@@ -255,6 +265,7 @@ export function toCdcBody(form: CdcFormState) {
     lakehouseCompactMinFiles: compactMin !== null && Number.isFinite(compactMin) ? compactMin : null,
     lakehouseTableFormat: tableFormat,
     lakehousePartitionStrategy: partitionStrategy,
+    lakehouseWriteMode: writeMode,
     catalogType: catalogTypeNum,
     catalogSinkId: useCatalog ? (form.catalogSinkId.trim() || null) : null,
     catalogNamespace: useCatalog ? (form.catalogNamespace.trim() || null) : null,
@@ -324,6 +335,9 @@ export function isCdcFormValid(form: CdcFormState): boolean {
       }
     }
     return true
+  }
+  if (form.targetMode === '2' && form.lakehouseTableFormat === '2' && form.lakehouseWriteMode === '1') {
+    if (!form.targetSinkKeyColumns.trim()) return false
   }
   return form.targetSinkId.trim().length > 0 && form.targetSinkDestination.trim().length > 0
 }

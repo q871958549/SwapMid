@@ -1129,7 +1129,11 @@
       "saslMechanismFieldLabel": "SASL 機制 *",
       "saslUsernameFieldLabel": "SASL 用戶名 *",
       "saslPasswordFieldLabel": "SASL 密碼",
-      "testingConnectionMenuItem": "測試中..."
+      "testingConnectionMenuItem": "測試中...",
+      "schemaRegistryUrlFieldLabel": "Schema Registry 地址（可選）",
+      "schemaRegistryUrlHint": "連接 Confluent / Redpanda Schema Registry 以實時解碼二進制 Avro Debezium 事件",
+      "schemaRegistryUsernameFieldLabel": "Schema Registry 用戶名",
+      "schemaRegistryPasswordFieldLabel": "Schema Registry 密碼"
     },
     "pipeline": {
       "loadFailedTitle": "數據管道加載失敗",
@@ -1602,7 +1606,31 @@
       "lakehousePartitionStrategyFieldLabel": "Iceberg v2 隱藏分區策略",
       "lakehousePartitionNone": "未分區（spec-id = 0）",
       "lakehousePartitionDailyUtc": "按日隱藏分區 day(commit_timestamp_utc)",
-      "lakehousePartitionStrategyHint": "啟用按日隱藏分區後，Parquet 分片按 UTC 日期分桶寫入並在二進制 Avro 清單中寫入分區邊界，支持 DuckDB/Trino/Spark 分區裁剪。"
+      "lakehousePartitionStrategyHint": "啟用按日隱藏分區後，Parquet 分片按 UTC 日期分桶寫入並在二進制 Avro 清單中寫入分區邊界，支持 DuckDB/Trino/Spark 分區裁剪。",
+      "lakehouseWriteModeFieldLabel": "Iceberg v2 寫入模式",
+      "lakehouseWriteModeAppend": "追加變更日誌 (Append)",
+      "lakehouseWriteModeMorUpsert": "Merge-on-Read 主鍵 Upsert (Equality Deletes)",
+      "lakehouseWriteModeHint": "Merge-on-Read 需配置主鍵列，每次更新/刪除自動寫入 Equality Delete 文件並在查詢時去重",
+      "gitOpsButtonLabel": "GitOps",
+      "gitOpsDialogTitle": "聲明式 GitOps 集成清單 (swapmid.io/v1)",
+      "gitOpsDialogDesc": "一鍵匯出零明文密鑰 YAML/JSON 清單，跨環境對比變更並安全預演應用",
+      "gitOpsExportButton": "匯出清單",
+      "gitOpsCopyButton": "複製",
+      "gitOpsCopiedButton": "已複製",
+      "gitOpsDownloadButton": "下載",
+      "gitOpsDiffButton": "對比變更",
+      "gitOpsDryRunButton": "預演",
+      "gitOpsApplyButton": "應用",
+      "gitOpsAllowUpdateLabel": "允許更新已有同名資源",
+      "gitOpsResourceCountBadge": "{count} 項資源",
+      "gitOpsBundlePlaceholder": "點擊匯出清單讀取當前環境聲明式配置，或粘貼 swapmid.io/v1 YAML/JSON 文本以對比或應用...",
+      "gitOpsDiffResultTitle": "只讀變更計劃",
+      "gitOpsDryRunResultTitle": "安全預演計劃（未修改平臺狀態）",
+      "gitOpsApplyResultTitle": "應用執行結果",
+      "gitOpsExportFailed": "匯出清單失敗",
+      "gitOpsDiffFailed": "對比清單失敗",
+      "gitOpsApplyFailed": "應用清單失敗",
+      "gitOpsApplyDoneTitle": "GitOps 清單應用完成"
     }
   },
   "System": {

@@ -47,7 +47,12 @@ internal static partial class KafkaSinkConfigContract
             root, sanitized, IsSupportedCompression, ref hasSecret, "compressionType");
         SinkConfigContractHelpers.CopySanitizedString(
             root, sanitized, RelationalDataSourceConfigContract.IsValidTargetResourceGroup, ref hasSecret, "targetResourceGroup");
+        SinkConfigContractHelpers.CopySanitizedString(
+            root, sanitized, IsSafeSchemaRegistryUrl, ref hasSecret, "schemaRegistryUrl");
+        SinkConfigContractHelpers.CopySanitizedString(
+            root, sanitized, SinkConfigContractHelpers.IsSafeIdentityText, ref hasSecret, "schemaRegistryUsername");
         SinkConfigContractHelpers.MarkSecretPresence(root, ref hasSecret, "saslPassword");
+        SinkConfigContractHelpers.MarkSecretPresence(root, ref hasSecret, "schemaRegistryPassword");
 
         return new DataSourceProtectedConfig(sanitized.ToJsonString(), hasSecret);
     }
@@ -76,7 +81,13 @@ internal static partial class KafkaSinkConfigContract
             throw SinkConfigContractHelpers.InvalidConfig("启用 SASL 认证时必须提供 saslPassword。");
         }
 
-        return (submitted with { SaslPassword = effectivePassword }).ToJson(includePassword: true);
+        var sameRegistryScope = string.Equals(existing.SchemaRegistryUrl, submitted.SchemaRegistryUrl, StringComparison.OrdinalIgnoreCase) &&
+                                string.Equals(existing.SchemaRegistryUsername, submitted.SchemaRegistryUsername, StringComparison.Ordinal);
+        var effectiveRegistryPassword = !string.IsNullOrWhiteSpace(submitted.SchemaRegistryPassword)
+            ? submitted.SchemaRegistryPassword
+            : (sameRegistryScope && !string.IsNullOrWhiteSpace(submitted.SchemaRegistryUrl) ? existing.SchemaRegistryPassword : null);
+
+        return (submitted with { SaslPassword = effectivePassword, SchemaRegistryPassword = effectiveRegistryPassword }).ToJson(includePassword: true);
     }
 
     internal static KafkaSinkConfig ParseForWrite(string? configJson, bool requirePasswordIfSasl = false)
@@ -127,6 +138,24 @@ internal static partial class KafkaSinkConfigContract
         var acks = NormalizeAcks(DataSourceConfigJson.ReadOptionalStringStrict(root, "acks"));
         var compression = NormalizeCompression(DataSourceConfigJson.ReadOptionalStringStrict(root, "compressionType"));
         var targetResourceGroup = SinkConfigContractHelpers.ReadOptionalTargetResourceGroup(root);
+        var schemaRegistryUrl = NormalizeOptionalSchemaRegistryUrl(
+            DataSourceConfigJson.ReadOptionalStringStrict(root, "schemaRegistryUrl"));
+        string? schemaRegistryUsername = null;
+        string? schemaRegistryPassword = null;
+        if (!string.IsNullOrWhiteSpace(schemaRegistryUrl))
+        {
+            var rawSrUser = DataSourceConfigJson.ReadOptionalStringStrict(root, "schemaRegistryUsername")?.Trim();
+            if (!string.IsNullOrWhiteSpace(rawSrUser))
+            {
+                if (!SinkConfigContractHelpers.IsSafeIdentityText(rawSrUser))
+                {
+                    throw SinkConfigContractHelpers.InvalidConfig("Kafka schemaRegistryUsername 包含非法字符。");
+                }
+
+                schemaRegistryUsername = rawSrUser;
+                schemaRegistryPassword = DataSourceConfigJson.ReadOptionalStringStrict(root, "schemaRegistryPassword");
+            }
+        }
 
         return new KafkaSinkConfig(
             bootstrapServers,
@@ -138,7 +167,10 @@ internal static partial class KafkaSinkConfigContract
             saslPassword,
             acks,
             compression,
-            targetResourceGroup);
+            targetResourceGroup,
+            schemaRegistryUrl,
+            schemaRegistryUsername,
+            schemaRegistryPassword);
     }
 
     internal static bool IsValidTopicName(string? topic)
@@ -294,154 +326,35 @@ internal static partial class KafkaSinkConfigContract
     private static bool IsSupportedCompression(string value)
         => value.Trim().ToLowerInvariant() is "none" or "gzip" or "snappy" or "zstd";
 
+    private static bool IsSafeSchemaRegistryUrl(string value)
+        => TryNormalizeSchemaRegistryUrl(value, out _);
+
+    private static string? NormalizeOptionalSchemaRegistryUrl(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        return TryNormalizeSchemaRegistryUrl(raw, out var normalized)
+            ? normalized
+            : throw SinkConfigContractHelpers.InvalidConfig("Kafka schemaRegistryUrl 必须是合法的 http/https 地址（不得包含内嵌凭据或查询参数）。");
+    }
+
+    private static bool TryNormalizeSchemaRegistryUrl(string raw, out string normalized)
+    {
+        normalized = string.Empty;
+        var trimmed = raw.Trim();
+        if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) ||
+            !string.IsNullOrEmpty(uri.UserInfo) ||
+            !string.IsNullOrEmpty(uri.Query) ||
+            !string.IsNullOrEmpty(uri.Fragment) ||
+            !SinkConfigContractHelpers.IsSafeHost(uri.Host))
+        {
+            return false;
+        }
+
+        normalized = uri.GetLeftPart(UriPartial.Path).TrimEnd('/');
+        return true;
+    }
+
     [GeneratedRegex(@"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$", RegexOptions.CultureInvariant)]
     private static partial Regex TopicNameRegex();
-}
-
-internal readonly record struct KafkaCredentialScope(
-    string BootstrapServers,
-    string ClientId,
-    SecurityProtocol SecurityProtocol,
-    string? SaslMechanism,
-    string? SaslUsername);
-
-internal readonly record struct KafkaSinkConfig(
-    string BootstrapServers,
-    IReadOnlyList<(string Host, int Port)> Brokers,
-    string ClientId,
-    SecurityProtocol SecurityProtocol,
-    string? SaslMechanism,
-    string? SaslUsername,
-    string? SaslPassword,
-    string Acks,
-    string CompressionType,
-    string TargetResourceGroup)
-{
-    internal bool RequiresSasl => SecurityProtocol is SecurityProtocol.SaslPlaintext or SecurityProtocol.SaslSsl;
-
-    internal KafkaCredentialScope Scope => new(
-        BootstrapServers,
-        ClientId,
-        SecurityProtocol,
-        SaslMechanism,
-        SaslUsername);
-
-    internal ProducerConfig ToProducerConfig()
-    {
-        var config = new ProducerConfig
-        {
-            BootstrapServers = BootstrapServers,
-            ClientId = ClientId,
-            SecurityProtocol = SecurityProtocol,
-            Acks = Acks == "All" ? Confluent.Kafka.Acks.All : Confluent.Kafka.Acks.Leader,
-            EnableIdempotence = Acks == "All",
-            CompressionType = CompressionType switch
-            {
-                "Gzip" => Confluent.Kafka.CompressionType.Gzip,
-                "Zstd" => Confluent.Kafka.CompressionType.Zstd,
-                "None" => Confluent.Kafka.CompressionType.None,
-                _ => Confluent.Kafka.CompressionType.Snappy,
-            },
-            MessageTimeoutMs = 30_000,
-            SocketTimeoutMs = 15_000,
-        };
-
-        if (RequiresSasl)
-        {
-            config.SaslMechanism = SaslMechanism switch
-            {
-                "ScramSha256" => Confluent.Kafka.SaslMechanism.ScramSha256,
-                "ScramSha512" => Confluent.Kafka.SaslMechanism.ScramSha512,
-                _ => Confluent.Kafka.SaslMechanism.Plain,
-            };
-            config.SaslUsername = SaslUsername;
-            config.SaslPassword = SaslPassword;
-        }
-
-        return config;
-    }
-
-    internal AdminClientConfig ToAdminConfig()
-    {
-        var config = new AdminClientConfig
-        {
-            BootstrapServers = BootstrapServers,
-            ClientId = ClientId,
-            SecurityProtocol = SecurityProtocol,
-            SocketTimeoutMs = 8_000,
-        };
-
-        if (RequiresSasl)
-        {
-            config.SaslMechanism = SaslMechanism switch
-            {
-                "ScramSha256" => Confluent.Kafka.SaslMechanism.ScramSha256,
-                "ScramSha512" => Confluent.Kafka.SaslMechanism.ScramSha512,
-                _ => Confluent.Kafka.SaslMechanism.Plain,
-            };
-            config.SaslUsername = SaslUsername;
-            config.SaslPassword = SaslPassword;
-        }
-
-        return config;
-    }
-
-    internal ConsumerConfig ToConsumerConfig(string groupId)
-    {
-        var config = new ConsumerConfig
-        {
-            BootstrapServers = BootstrapServers,
-            ClientId = ClientId,
-            GroupId = string.IsNullOrWhiteSpace(groupId) ? "swapmid-cdc-consumer" : groupId.Trim(),
-            SecurityProtocol = SecurityProtocol,
-            EnableAutoCommit = false,
-            EnableAutoOffsetStore = false,
-            AutoOffsetReset = AutoOffsetReset.Earliest,
-            SocketTimeoutMs = 10_000,
-        };
-
-        if (RequiresSasl)
-        {
-            config.SaslMechanism = SaslMechanism switch
-            {
-                "ScramSha256" => Confluent.Kafka.SaslMechanism.ScramSha256,
-                "ScramSha512" => Confluent.Kafka.SaslMechanism.ScramSha512,
-                _ => Confluent.Kafka.SaslMechanism.Plain,
-            };
-            config.SaslUsername = SaslUsername;
-            config.SaslPassword = SaslPassword;
-        }
-
-        return config;
-    }
-
-    internal string ToJson(bool includePassword)
-    {
-        var json = new JsonObject
-        {
-            ["provider"] = "kafka",
-            ["bootstrapServers"] = BootstrapServers,
-            ["clientId"] = ClientId,
-            ["securityProtocol"] = SecurityProtocol.ToString(),
-            ["acks"] = Acks,
-            ["compressionType"] = CompressionType,
-        };
-        if (RequiresSasl)
-        {
-            json["saslMechanism"] = SaslMechanism;
-            json["saslUsername"] = SaslUsername;
-        }
-
-        if (!string.IsNullOrWhiteSpace(TargetResourceGroup))
-        {
-            json["targetResourceGroup"] = TargetResourceGroup;
-        }
-
-        if (includePassword && RequiresSasl && !string.IsNullOrWhiteSpace(SaslPassword))
-        {
-            json["saslPassword"] = SaslPassword;
-        }
-
-        return json.ToJsonString();
-    }
 }

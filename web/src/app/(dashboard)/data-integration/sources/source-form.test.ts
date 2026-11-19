@@ -376,4 +376,25 @@ describe('ClickHouse / ObjectStorage / Kafka 表单与凭据边界', () => {
     const body = toDataSourceBody(saslForm)
     expect(body.type).toBe(3)
   })
+
+  it('Kafka Schema Registry 配置可序列化并在读取时清空密码防止回传泄漏', () => {
+    const srForm = changeDataSourceType(createDefaultDataSourceForm(), '3')
+    srForm.kafka = {
+      ...srForm.kafka,
+      bootstrapServers: 'redpanda:9092',
+      targetResourceGroup: 'redpanda-cdc',
+      schemaRegistryUrl: 'http://redpanda:8081/',
+      schemaRegistryUsername: 'sr_reader',
+      schemaRegistryPassword: 'sr-top-secret',
+    }
+    const built = JSON.parse(buildKafkaConfig(srForm.kafka)) as Record<string, unknown>
+    expect(built.schemaRegistryUrl).toBe('http://redpanda:8081')
+    expect(built.schemaRegistryUsername).toBe('sr_reader')
+    expect(built.schemaRegistryPassword).toBe('sr-top-secret')
+
+    const parsed = readKafkaConfig(JSON.stringify(built))
+    expect(parsed.schemaRegistryUrl).toBe('http://redpanda:8081')
+    expect(parsed.schemaRegistryUsername).toBe('sr_reader')
+    expect(parsed.schemaRegistryPassword).toBe('')
+  })
 })

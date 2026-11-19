@@ -34,6 +34,7 @@ public class CdcStreamDto : FullAuditedEntityDto<Guid>
     public int? LakehouseCompactMinFiles { get; set; }
     public LakehouseTableFormat LakehouseTableFormat { get; set; }
     public LakehousePartitionStrategy LakehousePartitionStrategy { get; set; }
+    public LakehouseWriteMode LakehouseWriteMode { get; set; }
     public LakehouseCatalogType CatalogType { get; set; }
     public Guid? CatalogSinkId { get; set; }
     public string? CatalogSinkName { get; set; }
@@ -130,6 +131,8 @@ public class CdcStreamCreateUpdateDto
     public LakehouseTableFormat LakehouseTableFormat { get; set; } = LakehouseTableFormat.SwapMidManifest;
 
     public LakehousePartitionStrategy LakehousePartitionStrategy { get; set; } = LakehousePartitionStrategy.None;
+
+    public LakehouseWriteMode LakehouseWriteMode { get; set; } = LakehouseWriteMode.AppendChangelog;
 
     public LakehouseCatalogType CatalogType { get; set; } = LakehouseCatalogType.None;
 
@@ -388,11 +391,14 @@ public class CdcLakehouseHistoryDto
     public string Destination { get; set; } = null!;
     public LakehouseTableFormat TableFormat { get; set; }
     public LakehousePartitionStrategy PartitionStrategy { get; set; }
+    public LakehouseWriteMode WriteMode { get; set; }
     public string? DeltaLogDirectory { get; set; }
     public long? CurrentVersion { get; set; }
     public long? SelectedVersion { get; set; }
     public int TotalCommitCount { get; set; }
     public int SelectedActiveFileCount { get; set; }
+    public int SelectedEqualityDeleteFileCount { get; set; }
+    public long SelectedEqualityDeleteRecordCount { get; set; }
     public long SelectedTotalBytes { get; set; }
     public long SelectedTotalRecordCount { get; set; }
     public List<CdcDeltaCommitSummaryDto> Commits { get; set; } = new();

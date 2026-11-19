@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Parquet;
@@ -156,6 +157,186 @@ internal static class CdcParquetCompactionMergeHelper
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.PipelineExecutionFailed)
                 .WithData("Reason", $"Parquet 合并暂不支持列类型 {field.Name} ({field.ClrType.Name})。");
+        }
+    }
+
+    internal static async Task<long> MergeParquetFilesWithEqualityDeletesAsync(
+        List<CdcObjectStorageLakehouseWriter.CdcLatestDataFileEntry> candidates,
+        IReadOnlyDictionary<string, long> dataSeqByKey,
+        IReadOnlyDictionary<string, long> deletedKeyMaxSeq,
+        Func<string, CancellationToken, Task<byte[]>> fetchBytesAsync,
+        string outputPath,
+        CancellationToken cancellationToken)
+    {
+        if (deletedKeyMaxSeq.Count == 0)
+        {
+            await MergeParquetFilesAsync(candidates, fetchBytesAsync, outputPath, cancellationToken);
+            return candidates.Sum(c => c.RowCount);
+        }
+
+        ParquetSchema? targetSchema = null;
+        DataField[]? dataFields = null;
+        DataField? businessKeyField = null;
+        ParquetWriter? writer = null;
+        long keptTotal = 0;
+
+        await using var outStream = new FileStream(
+            outputPath, FileMode.Create, FileAccess.ReadWrite, FileShare.None, bufferSize: 64 * 1024, useAsync: true);
+        try
+        {
+            foreach (var candidate in candidates)
+            {
+                var dataSeq = dataSeqByKey.TryGetValue(candidate.DataObjectKey, out var seq) ? seq : 0L;
+                var bytes = await fetchBytesAsync(candidate.DataObjectKey, cancellationToken);
+                await using var mem = new MemoryStream(bytes, writable: false);
+                await using var reader = await ParquetReader.CreateAsync(mem, cancellationToken: cancellationToken);
+                if (targetSchema == null)
+                {
+                    targetSchema = reader.Schema;
+                    dataFields = targetSchema.GetDataFields();
+                    var fieldIdByName = new Dictionary<string, int>(StringComparer.Ordinal);
+                    if (reader.Metadata?.Schema != null)
+                    {
+                        foreach (var elem in reader.Metadata.Schema)
+                        {
+                            if (elem.FieldId.HasValue && elem.FieldId.Value > 0 && !string.IsNullOrEmpty(elem.Name))
+                            {
+                                fieldIdByName[elem.Name] = elem.FieldId.Value;
+                            }
+                        }
+                    }
+
+                    foreach (var df in dataFields)
+                    {
+                        if (fieldIdByName.TryGetValue(df.Name, out var fid)) df.FieldId = fid;
+                        if (string.Equals(df.Name, "business_key", StringComparison.OrdinalIgnoreCase)) businessKeyField = df;
+                    }
+
+                    writer = await ParquetWriter.CreateAsync(targetSchema, outStream, cancellationToken: cancellationToken);
+                }
+
+                for (var rg = 0; rg < reader.RowGroupCount; rg++)
+                {
+                    using var rgReader = reader.OpenRowGroupReader(rg);
+                    var rowCount = checked((int)rgReader.RowCount);
+                    if (rowCount == 0) continue;
+
+                    var keepIndices = new List<int>(rowCount);
+                    if (businessKeyField != null && rgReader.ColumnExists(businessKeyField))
+                    {
+                        var keyBuf = new string?[rowCount];
+                        await rgReader.ReadAsync(businessKeyField, keyBuf.AsMemory(), cancellationToken: cancellationToken);
+                        for (var i = 0; i < rowCount; i++)
+                        {
+                            var key = keyBuf[i];
+                            if (!string.IsNullOrEmpty(key) &&
+                                deletedKeyMaxSeq.TryGetValue(key, out var delSeq) &&
+                                delSeq > dataSeq)
+                            {
+                                continue;
+                            }
+
+                            keepIndices.Add(i);
+                        }
+                    }
+                    else
+                    {
+                        for (var i = 0; i < rowCount; i++) keepIndices.Add(i);
+                    }
+
+                    if (keepIndices.Count == 0) continue;
+                    keptTotal += keepIndices.Count;
+                    using var rgWriter = writer!.CreateRowGroup();
+                    foreach (var field in dataFields!)
+                    {
+                        await CopyFilteredColumnAsync(rgReader, rgWriter, field, rowCount, keepIndices, cancellationToken);
+                    }
+                }
+            }
+
+            if (writer != null)
+            {
+                await writer.DisposeAsync();
+                writer = null;
+            }
+        }
+        finally
+        {
+            if (writer != null) await writer.DisposeAsync();
+        }
+
+        return keptTotal;
+    }
+
+    private static async Task CopyFilteredColumnAsync(
+        ParquetRowGroupReader rgReader,
+        ParquetRowGroupWriter rgWriter,
+        DataField field,
+        int rowCount,
+        List<int> keepIndices,
+        CancellationToken cancellationToken)
+    {
+        var clrType = Nullable.GetUnderlyingType(field.ClrType) ?? field.ClrType;
+        if (clrType == typeof(string) || clrType == typeof(ReadOnlyMemory<char>))
+        {
+            var src = new string?[rowCount];
+            if (rgReader.ColumnExists(field)) await rgReader.ReadAsync(field, src.AsMemory(), cancellationToken: cancellationToken);
+            var dst = new string?[keepIndices.Count];
+            for (var i = 0; i < keepIndices.Count; i++) dst[i] = src[keepIndices[i]];
+            await rgWriter.WriteAsync(field, dst);
+            return;
+        }
+
+        if (clrType == typeof(DateTime))
+        {
+            await CopyFilteredStructColumnAsync<DateTime>(rgReader, rgWriter, field, rowCount, keepIndices, cancellationToken);
+            return;
+        }
+
+        if (clrType == typeof(long)) { await CopyFilteredStructColumnAsync<long>(rgReader, rgWriter, field, rowCount, keepIndices, cancellationToken); return; }
+        if (clrType == typeof(int)) { await CopyFilteredStructColumnAsync<int>(rgReader, rgWriter, field, rowCount, keepIndices, cancellationToken); return; }
+        if (clrType == typeof(double)) { await CopyFilteredStructColumnAsync<double>(rgReader, rgWriter, field, rowCount, keepIndices, cancellationToken); return; }
+        if (clrType == typeof(decimal)) { await CopyFilteredStructColumnAsync<decimal>(rgReader, rgWriter, field, rowCount, keepIndices, cancellationToken); return; }
+        if (clrType == typeof(bool)) { await CopyFilteredStructColumnAsync<bool>(rgReader, rgWriter, field, rowCount, keepIndices, cancellationToken); return; }
+        if (clrType == typeof(Guid)) { await CopyFilteredStructColumnAsync<Guid>(rgReader, rgWriter, field, rowCount, keepIndices, cancellationToken); return; }
+        if (clrType == typeof(byte[]) || clrType == typeof(ReadOnlyMemory<byte>))
+        {
+            var src = new byte[]?[rowCount];
+            if (rgReader.ColumnExists(field)) await rgReader.ReadAsync(field, src.AsMemory(), cancellationToken: cancellationToken);
+            var dst = new byte[]?[keepIndices.Count];
+            for (var i = 0; i < keepIndices.Count; i++) dst[i] = src[keepIndices[i]];
+            await rgWriter.WriteAsync(field, dst);
+            return;
+        }
+
+        throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.PipelineExecutionFailed)
+            .WithData("Reason", $"Parquet Merge-on-Read 压缩暂不支持列类型 {field.Name} ({field.ClrType.Name})。");
+    }
+
+    private static async Task CopyFilteredStructColumnAsync<T>(
+        ParquetRowGroupReader rgReader,
+        ParquetRowGroupWriter rgWriter,
+        DataField field,
+        int rowCount,
+        List<int> keepIndices,
+        CancellationToken cancellationToken)
+        where T : struct
+    {
+        if (field.IsNullable)
+        {
+            var src = new T?[rowCount];
+            if (rgReader.ColumnExists(field)) await rgReader.ReadAsync<T>(field, src.AsMemory(), cancellationToken: cancellationToken);
+            var dst = new T?[keepIndices.Count];
+            for (var i = 0; i < keepIndices.Count; i++) dst[i] = src[keepIndices[i]];
+            await rgWriter.WriteAsync<T>(field, (ReadOnlyMemory<T?>)dst, cancellationToken: cancellationToken);
+        }
+        else
+        {
+            var src = new T[rowCount];
+            if (rgReader.ColumnExists(field)) await rgReader.ReadAsync<T>(field, src.AsMemory(), cancellationToken: cancellationToken);
+            var dst = new T[keepIndices.Count];
+            for (var i = 0; i < keepIndices.Count; i++) dst[i] = src[keepIndices[i]];
+            await rgWriter.WriteAsync<T>(field, (ReadOnlyMemory<T>)dst, cancellationToken: cancellationToken);
         }
     }
 

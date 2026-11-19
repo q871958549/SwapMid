@@ -7,7 +7,7 @@ export const API_MODULES: ApiModule[] = [
   {
     "id": "data-integration",
     "title": "数据集成",
-    "description": "多源关系型/REST/文件连接管理、流式 ETL 管道、多源与 Push Webhook CDC、Cron 调度、目标回执对账与执行恢复。",
+    "description": "多源关系型/REST/文件连接管理、流式 ETL 管道、多源与 Push Webhook CDC、声明式 GitOps 清单、Cron 调度、目标回执对账与执行恢复。",
     "baseUrl": "/api/v1",
     "sections": [
       {
@@ -3480,6 +3480,13 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": false
               },
               {
+                "name": "lakehouseWriteMode",
+                "cnName": "",
+                "type": "LakehouseWriteMode",
+                "description": "取值：0=AppendChangelog；1=MergeOnReadUpsert",
+                "nullable": false
+              },
+              {
                 "name": "catalogType",
                 "cnName": "",
                 "type": "LakehouseCatalogType",
@@ -3915,6 +3922,13 @@ export const API_MODULES: ApiModule[] = [
                 "required": false
               },
               {
+                "name": "lakehouseWriteMode",
+                "cnName": "",
+                "type": "LakehouseWriteMode",
+                "description": "取值：0=AppendChangelog；1=MergeOnReadUpsert",
+                "required": false
+              },
+              {
                 "name": "catalogType",
                 "cnName": "",
                 "type": "LakehouseCatalogType",
@@ -4187,6 +4201,13 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "LakehousePartitionStrategy",
                 "description": "取值：0=None；1=DailyCommitUtc",
+                "nullable": false
+              },
+              {
+                "name": "lakehouseWriteMode",
+                "cnName": "",
+                "type": "LakehouseWriteMode",
+                "description": "取值：0=AppendChangelog；1=MergeOnReadUpsert",
                 "nullable": false
               },
               {
@@ -4669,6 +4690,13 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": false
               },
               {
+                "name": "lakehouseWriteMode",
+                "cnName": "",
+                "type": "LakehouseWriteMode",
+                "description": "取值：0=AppendChangelog；1=MergeOnReadUpsert",
+                "nullable": false
+              },
+              {
                 "name": "catalogType",
                 "cnName": "",
                 "type": "LakehouseCatalogType",
@@ -5113,6 +5141,13 @@ export const API_MODULES: ApiModule[] = [
                 "required": false
               },
               {
+                "name": "lakehouseWriteMode",
+                "cnName": "",
+                "type": "LakehouseWriteMode",
+                "description": "取值：0=AppendChangelog；1=MergeOnReadUpsert",
+                "required": false
+              },
+              {
                 "name": "catalogType",
                 "cnName": "",
                 "type": "LakehouseCatalogType",
@@ -5385,6 +5420,13 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "LakehousePartitionStrategy",
                 "description": "取值：0=None；1=DailyCommitUtc",
+                "nullable": false
+              },
+              {
+                "name": "lakehouseWriteMode",
+                "cnName": "",
+                "type": "LakehouseWriteMode",
+                "description": "取值：0=AppendChangelog；1=MergeOnReadUpsert",
                 "nullable": false
               },
               {
@@ -6017,6 +6059,13 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": false
               },
               {
+                "name": "lakehouseWriteMode",
+                "cnName": "",
+                "type": "LakehouseWriteMode",
+                "description": "取值：0=AppendChangelog；1=MergeOnReadUpsert",
+                "nullable": false
+              },
+              {
                 "name": "catalogType",
                 "cnName": "",
                 "type": "LakehouseCatalogType",
@@ -6612,6 +6661,13 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": false
               },
               {
+                "name": "writeMode",
+                "cnName": "",
+                "type": "LakehouseWriteMode",
+                "description": "取值：0=AppendChangelog；1=MergeOnReadUpsert",
+                "nullable": false
+              },
+              {
                 "name": "deltaLogDirectory",
                 "cnName": "",
                 "type": "string",
@@ -6641,6 +6697,20 @@ export const API_MODULES: ApiModule[] = [
               },
               {
                 "name": "selectedActiveFileCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "selectedEqualityDeleteFileCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "selectedEqualityDeleteRecordCount",
                 "cnName": "",
                 "type": "integer",
                 "description": "",
@@ -8172,6 +8242,364 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "string",
                 "description": "",
+                "nullable": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "IntegrationBundle",
+        "title": "声明式 GitOps 集成清单 /integration-bundles/diff",
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/api/v1/integration-bundles/apply",
+            "summary": "受控应用声明式 YAML / JSON 集成清单（默认 Dry-Run，新建管道与 CDC 强制 Draft）",
+            "summaryDocumented": true,
+            "requestBody": [
+              {
+                "name": "content",
+                "cnName": "",
+                "type": "string",
+                "description": "YAML 或 JSON 格式的声明式集成清单原文",
+                "required": true
+              },
+              {
+                "name": "dryRun",
+                "cnName": "",
+                "type": "boolean",
+                "description": "默认 true（仅输出只读 Dry-Run 计划，不修改任何平台状态）",
+                "required": false
+              },
+              {
+                "name": "allowUpdateExisting",
+                "cnName": "",
+                "type": "boolean",
+                "description": "是否允许更新已存在的同名资源（默认 false，仅创建新增资源）",
+                "required": false
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "dryRun",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "createdCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "updatedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "skippedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "failedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "items",
+                "cnName": "",
+                "type": "IntegrationBundleDiffItemDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "items[].kind",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "items[].name",
+                "cnName": "",
+                "type": "string",
+                "description": "名称",
+                "nullable": true
+              },
+              {
+                "name": "items[].action",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "items[].changedFields",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "items[].note",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "warnings",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "summary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/integration-bundles/diff",
+            "summary": "只读对比声明式 YAML / JSON 集成清单与当前平台实时配置差异",
+            "summaryDocumented": true,
+            "requestBody": [
+              {
+                "name": "content",
+                "cnName": "",
+                "type": "string",
+                "description": "YAML 或 JSON 格式的声明式集成清单原文",
+                "required": true
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "createCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "updateCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "unchangedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "needsSecretCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "items",
+                "cnName": "",
+                "type": "IntegrationBundleDiffItemDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "items[].kind",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "items[].name",
+                "cnName": "",
+                "type": "string",
+                "description": "名称",
+                "nullable": true
+              },
+              {
+                "name": "items[].action",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "items[].changedFields",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "items[].note",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "warnings",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "summary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/integration-bundles/export",
+            "summary": "导出当前平台声明式 GitOps 集成清单（YAML / JSON，零明文密钥）",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "format",
+                "cnName": "",
+                "type": "string",
+                "required": false,
+                "description": ""
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "schemaVersion",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "format",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "resourceCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "warnings",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "content",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "bundle",
+                "cnName": "",
+                "type": "IntegrationBundleDocument",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "bundle.schemaVersion",
+                "cnName": "",
+                "type": "string",
+                "description": "清单规范版本（固定 swapmid.io/v1）",
+                "nullable": true
+              },
+              {
+                "name": "bundle.platformVersion",
+                "cnName": "",
+                "type": "string",
+                "description": "导出时的 SwapMid 平台版本",
+                "nullable": true
+              },
+              {
+                "name": "bundle.exportedAtUtc",
+                "cnName": "",
+                "type": "string",
+                "description": "导出时间（UTC ISO-8601 字符串）",
+                "nullable": true
+              },
+              {
+                "name": "bundle.dataSources",
+                "cnName": "",
+                "type": "BundleDataSourceItem[]",
+                "description": "数据源声明列表（已脱敏，不含明文密码/密钥）",
+                "nullable": true
+              },
+              {
+                "name": "bundle.dataPipelines",
+                "cnName": "",
+                "type": "BundleDataPipelineItem[]",
+                "description": "数据管道声明列表（按数据源名称引用）",
+                "nullable": true
+              },
+              {
+                "name": "bundle.cdcStreams",
+                "cnName": "",
+                "type": "BundleCdcStreamItem[]",
+                "description": "CDC 实时流声明列表（按数据源/管道名称引用）",
+                "nullable": true
+              },
+              {
+                "name": "bundle.messageTopics",
+                "cnName": "",
+                "type": "BundleMessageTopicItem[]",
+                "description": "消息主题声明列表",
+                "nullable": true
+              },
+              {
+                "name": "bundle.messageSubscriptions",
+                "cnName": "",
+                "type": "BundleMessageSubscriptionItem[]",
+                "description": "消息订阅声明列表（按主题名称引用，不含明文签名密钥）",
+                "nullable": true
+              },
+              {
+                "name": "bundle.apiGroups",
+                "cnName": "",
+                "type": "BundleApiGroupItem[]",
+                "description": "API 网关分组声明列表",
+                "nullable": true
+              },
+              {
+                "name": "bundle.apiRoutes",
+                "cnName": "",
+                "type": "BundleApiRouteItem[]",
+                "description": "API 网关路由声明列表（按分组名称引用）",
                 "nullable": true
               }
             ]

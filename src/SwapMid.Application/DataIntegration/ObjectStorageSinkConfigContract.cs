@@ -332,6 +332,17 @@ internal readonly record struct ObjectStorageSinkConfig(
     internal string BuildIcebergAvroManifestFileKey(string destination, long sequenceNumber, Guid runId)
         => $"{BuildIcebergMetadataDirectory(destination)}/{runId:N}-s{sequenceNumber}-m0.avro";
 
+    internal string BuildIcebergAvroDeleteManifestFileKey(string destination, long sequenceNumber, Guid runId)
+        => $"{BuildIcebergMetadataDirectory(destination)}/{runId:N}-s{sequenceNumber}-d0.avro";
+
+    internal string BuildIcebergEqualityDeleteKey(string destination, Guid runId, string? partitionSegment = null)
+    {
+        var dir = BuildDestinationDirectory(destination);
+        return string.IsNullOrWhiteSpace(partitionSegment)
+            ? $"{dir}/eqdel_{runId:N}.parquet"
+            : $"{dir}/{partitionSegment.Trim('/')}/eqdel_{runId:N}.parquet";
+    }
+
     internal string ToRelativeTablePath(string destination, string objectKey)
     {
         var basePrefix = BuildDestinationDirectory(destination).TrimEnd('/') + "/";

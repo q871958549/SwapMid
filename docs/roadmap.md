@@ -1,4 +1,4 @@
-# SwapMid Roadmap (`v0.2` → `v2.6+`)
+# SwapMid Roadmap (`v0.2` → `v2.7+`)
 
 SwapMid focuses on being a **correctness-first, single-stack, agent-ready enterprise data exchange and integration control plane** built on **.NET 10 (ABP v10.1)** and **Next.js 16**.
 
@@ -37,7 +37,8 @@ Every milestone adheres to five non-negotiable engineering invariants:
 | **`v2.2.0`** *(Released)* | **Zero-Infra Live Lakehouse Preview, Data Contract SLA Engine & 8-Tool MCP Copilot** | Bounded Zero-Infra Parquet/JSONL live preview (`GET /lakehouse-preview`), declarative Data Contract & Freshness SLA engine (`POST /evaluate-contract` + `SwapMidCdcDataContractBreached`), MCP Tools 7 & 8 (`propose_pipeline_column_mappings`, `evaluate_cdc_data_contracts`), and Node 24-native CI/Release Actions |
 | **`v2.3.0`** *(Released)* | **Native Apache Iceberg v2 Protocol, Serverless Push Webhook CDC & Chaos SLA Benchmarks** | Pure-.NET Apache Iceberg v2 writer/reader (`metadata/v*.metadata.json` + `version-hint.text` + S3 CAS `If-None-Match: *` + `replace` compaction + DuckDB `iceberg_scan()` / Trino SQL + live Parquet preview), fail-closed HMAC-SHA256 `POST /api/v1/cdc-webhooks/{streamId}` Push Webhook CDC source (`CdcSourceType.PushWebhook = 3`), 5-scenario Chaos contract suite + 1,000-row SLA throughput benchmarks (`RPO = 0`), and `197/197` OpenAPI summary coverage |
 | **`v2.4.0`** *(Released)* | **Binary Avro OCF Apache Iceberg v2, Push Webhook Auto-Schema & Dead-Letter Replay Ledger** | Zero-dependency pure-.NET Apache Avro 1.11 OCF binary `manifest-list` (`snap-*.avro`) & `manifest-file` (`*-m0.avro`) + Parquet `FieldId 1..11` / `TIMESTAMP_MICROS` (verified live via official **`duckdb/duckdb:latest` `iceberg_scan()`** across `v1`–`v4`), `AppCdcWebhookDeliveries` dead-letter ledger (`<= 64 KiB` only on authenticated `409`/`500`, zero payload on `401`) + Auto-Schema Inference for `RequiredColumns` SLA & `SchemaDriftPolicy` + `/data-integration/cdc` `推送日志` 1-click `重放` UI, Grafana Panels 10–11 & 3 Iceberg/Webhook Prometheus alert rules, and **`199/199` (100.0%)** OpenAPI summary coverage |
-| **`v2.5.0`** *(Current)* | **Kafka / Redpanda Debezium CDC, Iceberg v2 Daily Hidden Partitioning, 10-Tool MCP Copilot & Terminology Governance** | Native `CdcSourceType.KafkaDebezium = 4` inbound source (`Confluent.Kafka` consumer with monotonic multi-partition checkpoints `kafka:0=N,1=M`, watermark lag preflight & `swapmid_cdc_kafka_lag_messages` / `SwapMidCdcKafkaLagHigh`, wrapped/unwrapped Debezium & CloudEvents envelopes, auto-schema inference & drift policy), Iceberg v2 native **`day(commit_timestamp_utc)` Hidden Partitioning** (`spec-id: 1`, `r102`/`r508` Avro bounds, UTC day-bucketed Parquet files, same-day partition-aware `REPLACE` compaction, and SigV4 Hive-partition path signing fix — verified live with real **Redpanda** + official **DuckDB `iceberg_scan()`** partition pruning), MCP Tools 9–10 (`diagnose_webhook_deliveries`, `inspect_lakehouse_snapshots`), and automated bilingual terminology & anti-mistranslation CI gate (`check-terminology.mjs`) |
+| **`v2.5.0`** *(Released)* | **Kafka / Redpanda Debezium CDC, Iceberg v2 Daily Hidden Partitioning, 10-Tool MCP Copilot & Terminology Governance** | Native `CdcSourceType.KafkaDebezium = 4` inbound source (`Confluent.Kafka` consumer with monotonic multi-partition checkpoints `kafka:0=N,1=M`, watermark lag preflight & `swapmid_cdc_kafka_lag_messages` / `SwapMidCdcKafkaLagHigh`, wrapped/unwrapped Debezium & CloudEvents envelopes, auto-schema inference & drift policy), Iceberg v2 native **`day(commit_timestamp_utc)` Hidden Partitioning** (`spec-id: 1`, `r102`/`r508` Avro bounds, UTC day-bucketed Parquet files, same-day partition-aware `REPLACE` compaction, and SigV4 Hive-partition path signing fix — verified live with real **Redpanda** + official **DuckDB `iceberg_scan()`** partition pruning), MCP Tools 9–10 (`diagnose_webhook_deliveries`, `inspect_lakehouse_snapshots`), and automated bilingual terminology & anti-mistranslation CI gate (`check-terminology.mjs`) |
+| **`v2.6.0`** *(Current)* | **Iceberg v2 Merge-on-Read Equality Deletes, Confluent/Redpanda Schema Registry Avro & Declarative GitOps (`swapmidctl`)** | Pure-.NET Iceberg v2 **`LakehouseWriteMode.MergeOnReadUpsert = 1`** (`business_key` `FieldId=12`, 1-column `eqdel_*.parquet` `content=2` equality deletes, dual binary Avro OCF `*-m0.avro` + `*-d0.avro`, `operation="overwrite"`, Zero-Infra Equality Delete preview & `REPLACE` compaction GC — verified live via official **`duckdb/duckdb:latest` (`v2.0.0`) `iceberg_scan()`**), pure-.NET **Confluent / Redpanda Schema Registry Wire-Format Binary Avro** decoding (`0x00` + 4B `schemaId`, `AvroBinaryDatumReader`, SSRF-guarded `ConfluentSchemaRegistryClient`, verified live against **Redpanda v24.3.6**), secret-free **`swapmid.io/v1` Declarative GitOps Bundles** (`/api/v1/integration-bundles/{export,diff,apply}`, Web UI dialog, zero-dependency `scripts/swapmidctl.mjs` CLI, MCP Tool 11 `export_integration_bundle`), and **`202/202` (100.0%)** OpenAPI summary coverage |
 
 ---
 
@@ -150,11 +151,23 @@ Every milestone adheres to five non-negotiable engineering invariants:
 
 ---
 
-## Next Evolution (`v2.6+` AI-Era Open-Source Competitiveness)
+## `v2.6.0`: Iceberg v2 Merge-on-Read Equality Deletes、Schema Registry Avro 与声明式 GitOps（Completed）
 
-1. **Iceberg v2 Equality / Position Deletes (Merge-on-Read Upsert Views)**:
-   - Emit Iceberg v2 `content=2` equality-delete Avro manifests keyed on `TargetSinkKeyColumns` alongside copy-on-write compaction, enabling zero-duplication CDC upsert reads natively inside DuckDB, Trino, StarRocks, and Snowflake.
-2. **Confluent Schema Registry & Protobuf / Avro Wire-Format Kafka Debezium Decoding**:
-   - Extend `KafkaDebeziumCdcCaptureService` with optional Schema Registry (`magic byte 0x00 + 4-byte schema ID`) decoding for Avro/Protobuf Kafka CDC topics alongside JSON envelopes.
-3. **Declarative YAML/GitOps Integration Bundles & CLI (`swapmidctl`)**:
-   - Export/import validated DataSources, Pipelines, CDC Streams, MessageBus Topics, and API Routes as declarative GitOps manifests with drift diffing and AI-assisted PR pre-flight checks.
+1. **Apache Iceberg v2 Merge-on-Read Equality Deletes（`LakehouseWriteMode.MergeOnReadUpsert = 1`）**：
+   - 新增迁移 `AddCdcLakehouseWriteMode`，将 Iceberg v2 Parquet 列扩展至 `FieldId 1..12`（引入 `business_key` 顶层列），并在 `ObjectStorageEtlSinkWriter`、`IcebergAvroManifestBuilder`、`IcebergV2CommitWriter.AvroStorage.cs` 与 `CdcObjectStorageLakehouseWriter.MergeOnRead.cs` 中实现批内主键折叠、单列 `eqdel_*.parquet`（`content=2`, `equality_ids=[12]`）及双二进制 Avro 1.11 OCF 清单（`*-m0.avro` 数据 + `*-d0.avro` 删除）原子 `overwrite` 提交。
+   - 同步升级零计算集群预览（`CdcLakehouseDataPreviewService.EqualityDeletes.cs`）与 `REPLACE` 压缩器（合并有效行并回收历史 Equality Delete 文件），在隔离 Docker 中经官方 **`duckdb/duckdb:latest` (`v2.0.0`) `iceberg_scan()`** 实机验证 `v1` 历史时间旅行、`v2` Merge-on-Read 精准去重与 `v3` `REPLACE` 物化压缩（`RPO = 0`）。
+2. **Confluent / Redpanda Schema Registry 二进制 Avro 线协议解码（Kafka Debezium CDC）**：
+   - 为 `KafkaSinkConfig` 新增受 `DataIntegrationSinkEndpointPolicy` SSRF 守卫保护的可选 `schemaRegistryUrl` 与脱敏 Basic 凭据；实现零依赖纯 .NET `AvroBinaryDatumReader` 与有界缓存 `ConfluentSchemaRegistryClient`（`0x00` + 4 字节大端 `schemaId`，`/subjects` 预检返回 `debezium-avro+json`，`swapmid_cdc_schema_registry_fetches_total`），实机接入真实 **Redpanda v24.3.6** 内置 Schema Registry 完成实时二进制 Avro 事件解码。
+3. **零明文密钥 `swapmid.io/v1` 声明式 GitOps 集成清单、`swapmidctl` CLI 与 MCP Tool 11**：
+   - 在宿主层 `SwapMid.HttpApi/GitOps/` 实现 `GET /api/v1/integration-bundles/export`、`POST .../diff` 与 `POST .../apply`（默认 `DryRun = true`、零明文密钥导出、新建管道/CDC 流默认落入 `Draft` 且零破坏 `SwapMid.Application` 跨域依赖零耦合基线）；同步交付零依赖 Node CLI [scripts/swapmidctl.mjs](../scripts/swapmidctl.mjs)、MCP Tool 11 `export_integration_bundle` 与 `/data-integration/cdc` **`GitOps`** 一键导出/对比/预演/应用弹窗，OpenAPI 摘要覆盖率达 **`202/202`（100.0%）**。
+
+---
+
+## Next Evolution (`v2.7+` AI-Era Open-Source Competitiveness)
+
+1. **Iceberg v2 Write-Audit-Publish (WAP) Branches / Tags & Automated Snapshot Expiration**:
+   - Support Iceberg v2 named branches/tags (`refs`) for staging-before-publish CDC validation, plus scheduled retention policies (`expireSnapshots`) safely garbage-collecting obsolete Parquet fragments & equality-delete files.
+2. **Confluent Schema Registry Protobuf Wire-Format & Schema Evolution Policies**:
+   - Extend `KafkaDebeziumCdcCaptureService` with wire-format Protobuf (`0x00` + 4-byte `schemaId` + message index array) decoding and automated schema compatibility checks (`BACKWARD` / `FULL`).
+3. **GitOps PR Diff Gate Action & Multi-Environment Secret Injection Templates**:
+   - Ship a reusable GitHub Action wrapping `scripts/swapmidctl.mjs diff` for automated Pull Request integration drift reviews, plus environment-scoped secret reference placeholders (`${ENV_SECRET:...}`) for CI/CD promotion pipelines.

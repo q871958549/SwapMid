@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { GitBranch } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { type ColumnDef, type SortingState } from '@tanstack/react-table'
 import {
@@ -15,6 +16,7 @@ import { DeleteConfirm } from '@/components/data-table/delete-confirm'
 import { FilterBar, type FilterBarChip } from '@/components/data-table/filter-bar'
 import { ListPageShell } from '@/components/data-table/list-page-shell'
 import { PageHeader } from '@/components/data-table/page-header'
+import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { PagedResult } from '@/lib/api-client'
 import type { CdcStreamDto } from '@/lib/api/types'
@@ -27,6 +29,7 @@ import {
   CdcSinkTemplateDialog,
 } from './cdc-dialogs'
 import { CdcFormDialog } from './cdc-form-dialog'
+import { CdcGitOpsBundleDialog } from './cdc-gitops-bundle-dialog'
 import { CdcLakehouseHistoryDialog } from './cdc-lakehouse-history-dialog'
 import { CdcWebhookDeliveriesDialog } from './cdc-webhook-deliveries-dialog'
 import {
@@ -85,6 +88,7 @@ export function CdcStreamsClient({
   const rc = useTranslations('DataIntegration.common')
   const locale = useLocale()
   const [statusFilter, setStatusFilter] = useState(initialStatus)
+  const [gitOpsOpen, setGitOpsOpen] = useState(false)
 
   const list = useCrudResource<CdcStreamDto>({
     endpoint: 'cdc-streams',
@@ -244,6 +248,17 @@ export function CdcStreamsClient({
           <PageHeader
             title={t('pageTitle')}
             description={t('countDescription', { count: list.total })}
+            secondaryActions={[
+              <Button
+                key="gitops"
+                size="sm"
+                variant="outline"
+                onClick={() => setGitOpsOpen(true)}
+              >
+                <GitBranch className="mr-1.5 size-3.5" />
+                {t('gitOpsButtonLabel')}
+              </Button>,
+            ]}
             primaryAction={canCreate
               ? <CreateButton label={t('createButtonLabel')} onClick={crud.openCreate} />
               : undefined}
@@ -333,6 +348,12 @@ export function CdcStreamsClient({
         onRefresh={stream => void actions.handleOpenDeliveries(stream)}
         onReplay={(stream, delivery) => void actions.handleReplayDelivery(stream, delivery)}
         onClose={actions.closeDeliveries}
+      />
+      <CdcGitOpsBundleDialog
+        open={gitOpsOpen}
+        canManage={canManage}
+        onApplied={list.reloadAndRefresh}
+        onClose={() => setGitOpsOpen(false)}
       />
       <DeleteConfirm
         crud={crud}

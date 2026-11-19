@@ -225,6 +225,8 @@ public class McpController : AbpController
                     _serviceProvider, args, cancellationToken),
                 McpToolCatalog.InspectLakehouseSnapshots => await McpLakehouseSnapshotHandler.ExecuteAsync(
                     _serviceProvider, args, cancellationToken),
+                McpToolCatalog.ExportIntegrationBundle => await McpIntegrationBundleHandler.ExecuteAsync(
+                    _serviceProvider, User, args, cancellationToken),
                 _ => throw new InvalidOperationException("Unhandled tool"),
             };
 

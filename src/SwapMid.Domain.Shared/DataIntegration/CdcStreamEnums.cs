@@ -49,6 +49,18 @@ public enum LakehousePartitionStrategy
 }
 
 /// <summary>
+/// Apache Iceberg v2 表写入模式（追加变更日志 vs Merge-on-Read 键值 Upsert / Equality Deletes）。
+/// </summary>
+public enum LakehouseWriteMode
+{
+    /// <summary>追加变更日志（仅写入 DATA 分片，保留全部历史操作事件）。</summary>
+    AppendChangelog = 0,
+
+    /// <summary>Merge-on-Read 主键 Upsert（按业务主键写入 Iceberg v2 Equality Delete 文件 content=2，查询引擎自动去重并过滤已删除行）。</summary>
+    MergeOnReadUpsert = 1,
+}
+
+/// <summary>
 /// Lakehouse 外部开放元数据目录（Open Catalog REST）同步协议类型。
 /// </summary>
 public enum LakehouseCatalogType

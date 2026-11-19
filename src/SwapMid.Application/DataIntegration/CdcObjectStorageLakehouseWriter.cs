@@ -113,9 +113,17 @@ internal static partial class CdcObjectStorageLakehouseWriter
         var endLsnText = idempotencyKeyOverride ?? batchEndLsn?.ToString() ?? changes[^1].Lsn;
         var runId = CdcProtocolHelpers.BuildDeterministicPipelineRunId(stream.Id, endLsnText);
         var config = ObjectStorageSinkConfigContract.ParseForWrite(targetSink.Config, requireSecretKey: true);
-        var isDailyIceberg = stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg &&
-                             stream.LakehousePartitionStrategy == LakehousePartitionStrategy.DailyCommitUtc &&
-                             string.Equals(config.Format, "parquet", StringComparison.OrdinalIgnoreCase);
+        var isIcebergParquet = stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg &&
+                               string.Equals(config.Format, "parquet", StringComparison.OrdinalIgnoreCase);
+        if (isIcebergParquet && stream.LakehouseWriteMode == LakehouseWriteMode.MergeOnReadUpsert)
+        {
+            return await DeliverMergeOnReadIcebergAsync(
+                stream, targetSink, config, destination, changes, batchEndLsn, writer,
+                columns, clrTypes, rows, partitionKeys, runId, endLsnText, idempotencyKeyOverride, cancellationToken);
+        }
+
+        var isDailyIceberg = isIcebergParquet &&
+                             stream.LakehousePartitionStrategy == LakehousePartitionStrategy.DailyCommitUtc;
 
         if (isDailyIceberg)
         {

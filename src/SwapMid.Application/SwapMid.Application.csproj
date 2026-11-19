@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Cronos" Version="0.9.0" />
+    <PackageReference Include="Cronos" Version="0.13.0" />
     <PackageReference Include="Confluent.Kafka" Version="2.16.0" />
     <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="MailKit" Version="4.17.0" /><!-- SMTP 通知渠道（MailKit ≥4.16.0 / MimeKit ≥4.15.1 安全基线） -->

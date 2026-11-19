@@ -69,7 +69,7 @@
     <PackageReference Include="Volo.Abp.BackgroundJobs.Hangfire" Version="10.5.0" />
     <PackageReference Include="Hangfire.PostgreSql" Version="1.21.1" />
     <!-- Cronos 未随 Hangfire.Core 公开传递（新版 ILRepack 内部化避免类型冲突）：cron 校验/预览需显式引用 -->
-    <PackageReference Include="Cronos" Version="0.9.0" />
+    <PackageReference Include="Cronos" Version="0.13.0" />
     <!-- ISettingManager（cron 停用草稿写入）编译期类型来自 .Domain 包（同 SwapMid.Domain.csproj 的引用方式）；
          运行期 DI 注册已经由 Application 层模块依赖链提供，这里只为让 Host 自身编译单元看到该类型 -->
     <PackageReference Include="Volo.Abp.SettingManagement.Domain" Version="10.5.0" />

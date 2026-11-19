@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from 'next-intl'
 import zhHansMessages from '../../../../../messages/zh-Hans.json'
 import type { CdcStreamDto } from '@/lib/api/types'
 import { CdcStreamsClient } from './client'
+import { CdcStatusCell } from './cdc-row-actions'
 import {
   defaultCdcForm,
   detectCdcSourceTypeFromSource,
@@ -71,6 +72,9 @@ vi.mock('@/lib/crud/use-crud-form', () => ({
       catalogNamespace: '',
       catalogTableName: '',
       schemaDriftPolicy: '0',
+      maxFreshnessLagSeconds: '',
+      maxAllowedWalLagMb: '',
+      requiredColumns: '',
     },
     openEdit: mocks.openEdit,
     openCreate: mocks.openCreate,
@@ -877,6 +881,114 @@ describe('CdcStreamsClient', () => {
     fireEvent.click(screen.getByRole('button', { name: '同步目录' }))
     await waitFor(() => {
       expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/sync-catalog`, { method: 'POST' })
+    })
+  })
+
+  it('loads zero-infra Lakehouse preview rows inside Time-Travel dialog and evaluates Data Contract SLA', async () => {
+    mocks.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          destination: 'orders/delta',
+          tableFormat: 1,
+          deltaLogDirectory: 'cdc/orders/delta/_delta_log',
+          currentVersion: 1,
+          selectedVersion: 1,
+          totalCommitCount: 2,
+          selectedActiveFileCount: 1,
+          selectedTotalBytes: 2048,
+          selectedTotalRecordCount: 2,
+          commits: [
+            { version: 1, timestampUtc: '2026-11-19T00:05:00Z', operation: 'STREAMING UPDATE', addedFileCount: 1, removedFileCount: 0, totalRecordCount: 2, deltaCommitKey: 'k1' },
+          ],
+          activeFiles: [
+            { relativePath: 'part_1.parquet', objectKey: 'cdc/orders/delta/part_1.parquet', sizeBytes: 2048, recordCount: 2, addedAtVersion: 1 },
+          ],
+          timeTravelQuerySql: 'SELECT * FROM delta.`s3a://swapmid-lake/cdc/orders/delta` VERSION AS OF 1;',
+          summary: 'Delta Lake v1',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          destination: 'orders/delta',
+          tableFormat: 1,
+          fileFormat: 'parquet',
+          selectedVersion: 1,
+          scannedFileCount: 1,
+          totalActiveFileCount: 1,
+          missingFileCount: 0,
+          rowCount: 1,
+          truncated: false,
+          columns: ['op', 'order_no', 'after_json'],
+          rows: [{ op: 'c', order_no: 'ORD-2026-9999', after_json: '{"amount":880}' }],
+          sourceFiles: ['cdc/orders/delta/part_1.parquet'],
+          summary: '已加载 v1 样本 1 行',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          streamName: 'orders-cdc',
+          status: 1,
+          violated: false,
+          freshnessLagSeconds: 12,
+          maxFreshnessLagSeconds: 300,
+          requiredColumns: ['id', 'order_no'],
+          missingRequiredColumns: [],
+          schemaDriftDetected: false,
+          violations: [],
+          evaluatedAtUtc: '2026-11-19T00:06:00Z',
+          summary: '数据契约 SLA 全部达标',
+        }),
+      })
+
+    const stream = makeStream({
+      sourceType: 2,
+      targetMode: 2,
+      targetSinkId: SOURCE_ID,
+      targetSinkType: 5,
+      targetSinkName: 'minio-delta',
+      targetSinkDestination: 'orders/delta',
+      lakehouseTableFormat: 1,
+      maxFreshnessLagSeconds: 300,
+      requiredColumns: 'id,order_no',
+      contractStatus: 3,
+      contractViolated: true,
+      contractViolationSummary: 'Lag exceeded',
+    })
+
+    const { unmount } = render(
+      <NextIntlClientProvider locale="zh-Hans" messages={zhHansMessages}>
+        <CdcStatusCell stream={stream} />
+      </NextIntlClientProvider>,
+    )
+    expect(screen.getByText('SLA 违约')).toBeTruthy()
+    unmount()
+
+    expect(isCdcFormValid({ ...defaultCdcForm, name: 's1', sourceId: SOURCE_ID, maxFreshnessLagSeconds: '5' })).toBe(false)
+    expect(isCdcFormValid({ ...defaultCdcForm, name: 's1', sourceId: SOURCE_ID, maxFreshnessLagSeconds: '120', maxAllowedWalLagMb: '50', requiredColumns: 'id,order_no' })).toBe(true)
+
+    renderClient(stream)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Time-Travel' }))
+    expect(await screen.findByText('part_1.parquet')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '加载实时数据预览' }))
+    expect(await screen.findByText('ORD-2026-9999')).toBeTruthy()
+    expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/lakehouse-preview?version=1&maxRows=20`)
+
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }))
+    await waitFor(() => {
+      expect(screen.queryByText('ORD-2026-9999')).toBeNull()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '契约校验' }))
+    await waitFor(() => {
+      expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-streams/${STREAM_ID}/evaluate-contract`, { method: 'POST' })
     })
   })
 })

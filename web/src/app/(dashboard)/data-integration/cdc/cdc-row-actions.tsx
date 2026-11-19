@@ -1,6 +1,6 @@
 'use client'
 
-import { Activity, DatabaseBackup, FileCode2, History, Loader2, PauseCircle, Play, Power, RefreshCw, RotateCcw, ShieldCheck, Unplug } from 'lucide-react'
+import { Activity, ClipboardCheck, DatabaseBackup, FileCode2, History, Loader2, PauseCircle, Play, Power, RefreshCw, RotateCcw, ShieldCheck, Unplug } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
@@ -51,6 +51,19 @@ export function CdcStatusCell({ stream }: { stream: CdcStreamDto }) {
         {stream.schemaDriftDetected && (
           <StatusBadge tone="danger" title={stream.schemaDriftSummary ?? undefined}>
             {t('schemaDriftDetectedBadge')}
+          </StatusBadge>
+        )}
+        {Number(stream.contractStatus ?? 0) === 1 && (
+          <StatusBadge tone="success">{t('contractHealthyBadge')}</StatusBadge>
+        )}
+        {Number(stream.contractStatus ?? 0) === 2 && (
+          <StatusBadge tone="warning" title={stream.contractViolationSummary ?? undefined}>
+            {t('contractWarningBadge')}
+          </StatusBadge>
+        )}
+        {Number(stream.contractStatus ?? 0) === 3 && (
+          <StatusBadge tone="danger" title={stream.contractViolationSummary ?? undefined}>
+            {t('contractBreachedBadge')}
           </StatusBadge>
         )}
       </div>
@@ -137,6 +150,7 @@ export function CdcRowActions({
   onSinkTemplate,
   onLakehouseHistory,
   onSyncCatalog,
+  onEvaluateContract,
   onPreflight,
   onLifecycle,
   onCaptureNow,
@@ -152,6 +166,7 @@ export function CdcRowActions({
   onSinkTemplate: (row: CdcStreamDto) => void
   onLakehouseHistory?: (row: CdcStreamDto) => void
   onSyncCatalog?: (row: CdcStreamDto) => void
+  onEvaluateContract?: (row: CdcStreamDto) => void
   onPreflight: (row: CdcStreamDto) => void
   onLifecycle: (row: CdcStreamDto, action: 'activate' | 'pause') => void
   onCaptureNow: (row: CdcStreamDto) => void
@@ -193,6 +208,14 @@ export function CdcRowActions({
             ? <Loader2 className="mr-2 size-3.5 animate-spin" />
             : <RefreshCw className="mr-2 size-3.5" />}
           {t('syncCatalogMenuItem')}
+        </DropdownMenuItem>
+      )}
+      {canManage && onEvaluateContract && (
+        <DropdownMenuItem disabled={busy} onClick={() => onEvaluateContract(row)}>
+          {busyKind === 'evaluate-contract'
+            ? <Loader2 className="mr-2 size-3.5 animate-spin" />
+            : <ClipboardCheck className="mr-2 size-3.5" />}
+          {t('evaluateContractMenuItem')}
         </DropdownMenuItem>
       )}
       {canManage && (

@@ -217,6 +217,10 @@ public class McpController : AbpController
                 McpToolCatalog.DraftDataPipeline => await ExecuteDraftPipelineAsync(args),
                 McpToolCatalog.DiagnoseCdcStreams => await McpCdcDiagnosticsHandler.ExecuteAsync(
                     _serviceProvider, _authorizationService, User, args, cancellationToken),
+                McpToolCatalog.ProposePipelineColumnMappings => await McpPipelineCopilotHandler.ExecuteAsync(
+                    _serviceProvider, args, cancellationToken),
+                McpToolCatalog.EvaluateCdcDataContracts => await McpDataContractHandler.ExecuteAsync(
+                    _serviceProvider, _authorizationService, User, args, cancellationToken),
                 _ => throw new InvalidOperationException("Unhandled tool"),
             };
 

@@ -148,6 +148,24 @@ public partial class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
     /// <summary>最近一次捕获异常摘要。</summary>
     public string? LastErrorMessage { get; private set; }
 
+    /// <summary>可选：数据新鲜度 SLA 上限（秒，10..86400）。</summary>
+    public int? MaxFreshnessLagSeconds { get; private set; }
+
+    /// <summary>可选：WAL / Binlog 滞留字节预算上限（1 MiB .. 100 GiB）。</summary>
+    public long? MaxAllowedWalLagBytes { get; private set; }
+
+    /// <summary>可选：逗号分隔的契约必填业务列名（如 id,order_no,amount）。</summary>
+    public string? RequiredColumns { get; private set; }
+
+    /// <summary>最近一次数据契约 SLA 评估是否处于违约状态。</summary>
+    public bool ContractViolated { get; private set; }
+
+    /// <summary>最近一次数据契约 SLA 违约摘要。</summary>
+    public string? ContractViolationSummary { get; private set; }
+
+    /// <summary>最近一次数据契约 SLA 评估时间（UTC）。</summary>
+    public DateTime? ContractLastEvaluatedAt { get; private set; }
+
     private CdcStreamDefinition() { }
 
     public CdcStreamDefinition(

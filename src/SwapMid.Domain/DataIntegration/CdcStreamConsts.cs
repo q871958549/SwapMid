@@ -43,4 +43,15 @@ public static class CdcStreamConsts
     public const int MaxCatalogLastSyncStatusLength = 512;
     public const int DefaultLakehouseHistoryMaxCommits = 32;
     public const int MaxLakehouseHistoryMaxCommits = 200;
+
+    public const int DefaultLakehousePreviewMaxRows = 25;
+    public const int MaxLakehousePreviewMaxRows = 50;
+
+    public const int MinFreshnessLagSeconds = 10;
+    public const int MaxFreshnessLagSeconds = 86400;
+    public const long MinAllowedWalLagBytes = 1024L * 1024L;
+    public const long MaxAllowedWalLagBytes = 100L * 1024 * 1024 * 1024;
+    public const int MaxRequiredColumnsLength = 512;
+    public const int MaxRequiredColumnsCount = 64;
+    public const int MaxContractViolationSummaryLength = 512;
 }

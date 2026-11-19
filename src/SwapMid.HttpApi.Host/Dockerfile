@@ -16,8 +16,8 @@ COPY . .
 RUN dotnet publish src/SwapMid.HttpApi.Host/SwapMid.HttpApi.Host.csproj -c Release -o /app/publish --no-restore
 ARG OPENIDDICT_PFX_PASS=changeit
 ARG OPENIDDICT_PFX_FILE=docker/openiddict/openiddict.pfx
-ARG OPENIDDICT_PFX_RUNTIME_SECRET=false
-RUN if [ "$OPENIDDICT_PFX_RUNTIME_SECRET" = "true" ]; then \
+ARG OPENIDDICT_PFX_MOUNT_AT_RUNTIME=false
+RUN if [ "$OPENIDDICT_PFX_MOUNT_AT_RUNTIME" = "true" ]; then \
       echo "OpenIddict certificate will be mounted at runtime"; \
     elif [ -f "/src/$OPENIDDICT_PFX_FILE" ]; then \
       cp "/src/$OPENIDDICT_PFX_FILE" /app/publish/openiddict.pfx; \

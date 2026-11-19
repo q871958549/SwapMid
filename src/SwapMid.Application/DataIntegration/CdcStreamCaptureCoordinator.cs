@@ -32,6 +32,7 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
     private readonly ICdcScheduleSynchronizer _scheduleSynchronizer;
     private readonly INotificationService? _notificationService;
     private readonly ExternalLakehouseCatalogSyncService? _catalogSyncService;
+    private readonly CdcDataContractEvaluator? _contractEvaluator;
 
     public CdcStreamCaptureCoordinator(
         ICdcStreamRepository streamRepository,
@@ -46,7 +47,8 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
         SqlServerCdcCaptureService? sqlServerCaptureService = null,
         CdcObjectStorageCompactionService? lakehouseCompactor = null,
         MySqlBinlogCdcCaptureService? mySqlCaptureService = null,
-        ExternalLakehouseCatalogSyncService? catalogSyncService = null)
+        ExternalLakehouseCatalogSyncService? catalogSyncService = null,
+        CdcDataContractEvaluator? contractEvaluator = null)
     {
         _streamRepository = streamRepository;
         _sourceRepository = sourceRepository;
@@ -61,6 +63,7 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
         _scheduleSynchronizer = scheduleSynchronizer ?? NullCdcScheduleSynchronizer.Instance;
         _notificationService = notificationService;
         _catalogSyncService = catalogSyncService;
+        _contractEvaluator = contractEvaluator;
     }
 
     public async Task<CdcCaptureResultDto> CaptureAsync(
@@ -109,22 +112,29 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
 
             var batch = await DispatchCaptureAsync(source, stream, targetSink, cancellationToken);
 
+            CdcStreamDefinition committedStream;
             using (var writeUow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: true))
             {
                 var latest = await _streamRepository.GetAsync(id, cancellationToken: cancellationToken);
                 latest.MarkCaptureSucceeded(batch.NewCheckpointLsn, batch.CapturedEventCount, batch.CapturedAtUtc);
                 await _streamRepository.UpdateAsync(latest, autoSave: true, cancellationToken: cancellationToken);
                 await writeUow.CompleteAsync(cancellationToken);
+                committedStream = latest;
             }
 
             if (targetSink != null && _lakehouseCompactor != null)
             {
-                await _lakehouseCompactor.TryAutoCompactAsync(stream, targetSink, cancellationToken);
+                await _lakehouseCompactor.TryAutoCompactAsync(committedStream, targetSink, cancellationToken);
             }
 
             if (targetSink != null && _catalogSyncService != null && (snapshotResult != null || batch.DeliveredCount > 0))
             {
-                await _catalogSyncService.TryBestEffortSyncAsync(stream, targetSink, versionOverride: null, cancellationToken);
+                await _catalogSyncService.TryBestEffortSyncAsync(committedStream, targetSink, versionOverride: null, cancellationToken);
+            }
+
+            if (_contractEvaluator != null)
+            {
+                await _contractEvaluator.TryEvaluateAfterCaptureAsync(committedStream, walLagBytes: null, cancellationToken);
             }
 
             var totalEvents = (snapshotResult?.SnapshotRowCount ?? 0) + batch.CapturedEventCount;
@@ -199,6 +209,11 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
             if (targetSink != null && _catalogSyncService != null)
             {
                 await _catalogSyncService.TryBestEffortSyncAsync(persisted, targetSink, versionOverride: null, cancellationToken);
+            }
+
+            if (_contractEvaluator != null)
+            {
+                await _contractEvaluator.TryEvaluateAfterCaptureAsync(persisted, walLagBytes: null, cancellationToken);
             }
             return new CdcSnapshotResultDto
             {

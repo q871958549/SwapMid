@@ -26,6 +26,7 @@ import {
   normalizeSourceType,
   normalizeTargetMode,
 } from './cdc-form-state'
+import { CdcContractSection } from './cdc-contract-section'
 import { CdcRelationalMirrorSection } from './cdc-relational-mirror-section'
 
 export function CdcFormDialog({
@@ -435,6 +436,8 @@ export function CdcFormDialog({
       </div>
 
       {crud.form.targetMode === '3' && <CdcRelationalMirrorSection crud={crud} />}
+
+      <CdcContractSection crud={crud} />
 
       <div className="space-y-1.5">
         <Label>{tc('description')}</Label>

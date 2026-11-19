@@ -100,3 +100,21 @@ public enum CdcSnapshotStatus
     Completed = 1,
     Failed = 2,
 }
+
+/// <summary>
+/// CDC 数据契约与新鲜度 SLA 评估状态。
+/// </summary>
+public enum CdcContractStatus
+{
+    /// <summary>未配置数据契约阈值。</summary>
+    Unconfigured = 0,
+
+    /// <summary>所有契约项均达标。</summary>
+    Healthy = 1,
+
+    /// <summary>接近新鲜度/滞留阈值警戒线（>=80%）。</summary>
+    Warning = 2,
+
+    /// <summary>发生数据契约违约（新鲜度超限、必填列缺失、Schema 漂移或 WAL 滞留超额）。</summary>
+    Breached = 3,
+}

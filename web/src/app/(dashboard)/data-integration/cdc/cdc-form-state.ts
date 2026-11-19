@@ -40,6 +40,9 @@ export interface CdcFormState {
   catalogNamespace: string
   catalogTableName: string
   schemaDriftPolicy: '0' | '1' | '2'
+  maxFreshnessLagSeconds: string
+  maxAllowedWalLagMb: string
+  requiredColumns: string
 }
 
 export const DEFAULT_CDC_TOPIC = 'integration.cdc.events'
@@ -73,6 +76,9 @@ export const defaultCdcForm: CdcFormState = {
   catalogNamespace: '',
   catalogTableName: '',
   schemaDriftPolicy: '0',
+  maxFreshnessLagSeconds: '',
+  maxAllowedWalLagMb: '',
+  requiredColumns: '',
 }
 
 export const CATALOG_IDENTIFIER_PATTERN = /^[A-Za-z0-9_.-]+$/
@@ -175,6 +181,11 @@ export function toCdcForm(item: CdcStreamDto): CdcFormState {
     catalogNamespace: item.catalogNamespace ?? '',
     catalogTableName: item.catalogTableName ?? '',
     schemaDriftPolicy: normalizeDriftPolicy(item.schemaDriftPolicy),
+    maxFreshnessLagSeconds: item.maxFreshnessLagSeconds ? String(item.maxFreshnessLagSeconds) : '',
+    maxAllowedWalLagMb: item.maxAllowedWalLagBytes
+      ? String(Math.max(1, Math.round(item.maxAllowedWalLagBytes / (1024 * 1024))))
+      : '',
+    requiredColumns: item.requiredColumns ?? '',
   }
 }
 
@@ -232,6 +243,13 @@ export function toCdcBody(form: CdcFormState) {
     catalogNamespace: useCatalog ? (form.catalogNamespace.trim() || null) : null,
     catalogTableName: useCatalog ? (form.catalogTableName.trim() || null) : null,
     schemaDriftPolicy: Number(form.schemaDriftPolicy) === 1 ? 1 : (Number(form.schemaDriftPolicy) === 2 ? 2 : 0),
+    maxFreshnessLagSeconds: form.maxFreshnessLagSeconds.trim()
+      ? Number.parseInt(form.maxFreshnessLagSeconds.trim(), 10)
+      : null,
+    maxAllowedWalLagBytes: form.maxAllowedWalLagMb.trim()
+      ? Math.round(Number.parseFloat(form.maxAllowedWalLagMb.trim()) * 1024 * 1024)
+      : null,
+    requiredColumns: form.requiredColumns.trim() || null,
   }
 }
 
@@ -254,6 +272,18 @@ export function isCdcFormValid(form: CdcFormState): boolean {
     if (!isValidCatalogIdentifier(form.catalogNamespace) || !isValidCatalogIdentifier(form.catalogTableName)) {
       return false
     }
+  }
+  if (form.maxFreshnessLagSeconds.trim().length > 0) {
+    const freshness = Number.parseInt(form.maxFreshnessLagSeconds.trim(), 10)
+    if (!Number.isFinite(freshness) || freshness < 10 || freshness > 86400) return false
+  }
+  if (form.maxAllowedWalLagMb.trim().length > 0) {
+    const walMb = Number.parseFloat(form.maxAllowedWalLagMb.trim())
+    if (!Number.isFinite(walMb) || walMb < 1 || walMb > 102400) return false
+  }
+  if (form.requiredColumns.trim().length > 0) {
+    const cols = form.requiredColumns.split(',').map(s => s.trim()).filter(Boolean)
+    if (cols.length > 64 || cols.some(c => !COLUMN_IDENTIFIER_PATTERN.test(c))) return false
   }
   if (form.targetMode === '0') {
     return form.targetTopicName.trim().length > 0

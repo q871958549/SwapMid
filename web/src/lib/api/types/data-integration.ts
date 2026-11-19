@@ -46,7 +46,11 @@ export type CdcDropSlotResultDto = import('../generated').SwapMidDataIntegration
 export type CdcSinkColumnTemplateDto = import('../generated').SwapMidDataIntegrationCdcSinkColumnTemplateDto
 export type CdcSinkTemplateDto = import('../generated').SwapMidDataIntegrationCdcSinkTemplateDto
 export type CdcLakehouseHistoryDto = import('../generated').SwapMidDataIntegrationCdcLakehouseHistoryDto
+export type CdcLakehousePreviewDto = import('../generated').SwapMidDataIntegrationCdcLakehousePreviewDto
 export type CdcCatalogSyncResultDto = import('../generated').SwapMidDataIntegrationCdcCatalogSyncResultDto
+export type CdcContractStatus = import('../generated').SwapMidDataIntegrationCdcContractStatus
+export type CdcContractViolationItemDto = import('../generated').SwapMidDataIntegrationCdcContractViolationItemDto
+export type CdcContractEvaluationDto = import('../generated').SwapMidDataIntegrationCdcContractEvaluationDto
 export type CdcStreamDto = Omit<
   Require<
     import('../generated').SwapMidDataIntegrationCdcStreamDto,

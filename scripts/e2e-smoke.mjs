@@ -311,8 +311,8 @@ async function main() {
   if (mcpRes.status !== 404) {
     assert.equal(mcpRes.status, 200, `Expected /api/mcp 200 when enabled, got ${mcpRes.status}`)
     const mcpJson = await mcpRes.json()
-    assert.ok(Array.isArray(mcpJson.result?.tools) && mcpJson.result.tools.length === 6, 'Expected 6 RBAC-authorized MCP tools for admin')
-    console.log(`  ✓ Verified ${jobs.length} scheduled jobs, ${tables.length} DB tables, /api/v1/auth-providers, and 6 MCP tools`)
+    assert.ok(Array.isArray(mcpJson.result?.tools) && mcpJson.result.tools.length === 8, `Expected 8 RBAC-authorized MCP tools for admin, got ${mcpJson.result?.tools?.length}`)
+    console.log(`  ✓ Verified ${jobs.length} scheduled jobs, ${tables.length} DB tables, /api/v1/auth-providers, and 8 MCP tools`)
   } else {
     console.log(`  ✓ Verified ${jobs.length} scheduled jobs, ${tables.length} DB tables, /api/v1/auth-providers, and fail-closed /api/mcp (404)`)
   }

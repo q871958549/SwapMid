@@ -1,13 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, Copy, History, Loader2 } from 'lucide-react'
+import { Check, Copy, History, Loader2, TableProperties } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { ScrollableDialogContent } from '@/components/ui/scrollable-dialog'
 import { StatusBadge } from '@/components/ui/status-badge'
-import type { CdcLakehouseHistoryDto, CdcStreamDto } from '@/lib/api/types'
+import type { CdcLakehouseHistoryDto, CdcLakehousePreviewDto, CdcStreamDto } from '@/lib/api/types'
 
 export interface CdcLakehouseHistoryState {
   stream: CdcStreamDto
@@ -25,12 +25,18 @@ function formatByteSize(bytes: number | null | undefined): string {
 export function CdcLakehouseHistoryDialog({
   state,
   loadingVersion,
+  preview,
+  previewLoading,
   onSelectVersion,
+  onLoadPreview,
   onClose,
 }: {
   state: CdcLakehouseHistoryState | null
   loadingVersion: number | null
+  preview?: CdcLakehousePreviewDto | null
+  previewLoading?: boolean
   onSelectVersion: (stream: CdcStreamDto, version: number) => void
+  onLoadPreview?: (stream: CdcStreamDto, version: number) => void
   onClose: () => void
 }) {
   const t = useTranslations('DataIntegration.cdc')
@@ -150,6 +156,72 @@ export function CdcLakehouseHistoryDialog({
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {onLoadPreview && state.history.selectedVersion !== null && state.history.selectedVersion !== undefined && (
+              <div className="space-y-2 rounded-md border bg-muted/20 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {t('lakehousePreviewSectionTitle', { version: state.history.selectedVersion })}
+                    </span>
+                    {preview && (
+                      <StatusBadge tone={preview.rowCount && preview.rowCount > 0 ? 'success' : 'warning'}>
+                        {`${preview.rowCount ?? 0} rows`}
+                      </StatusBadge>
+                    )}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={previewLoading || loadingVersion !== null}
+                    onClick={() => onLoadPreview(state.stream, state.history.selectedVersion ?? 0)}
+                  >
+                    {previewLoading
+                      ? <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                      : <TableProperties className="mr-1.5 size-3.5" />}
+                    {previewLoading ? t('lakehousePreviewLoading') : t('lakehousePreviewButtonLabel')}
+                  </Button>
+                </div>
+                {preview && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">{preview.summary}</p>
+                    {preview.columns && preview.columns.length > 0 && preview.rows && preview.rows.length > 0 && (
+                      <div className="max-h-60 overflow-auto rounded border bg-background">
+                        <table className="w-full border-collapse text-left font-mono text-[11px]">
+                          <thead className="sticky top-0 bg-muted/80">
+                            <tr className="border-b">
+                              {preview.columns.map(col => (
+                                <th key={col} className="whitespace-nowrap px-2 py-1 font-medium text-muted-foreground">
+                                  {col}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            {preview.rows.map((row, rowIdx) => (
+                              <tr key={rowIdx} className="hover:bg-muted/30">
+                                {preview.columns!.map(col => {
+                                  const cell = row[col]
+                                  return (
+                                    <td
+                                      key={col}
+                                      className="max-w-[240px] truncate whitespace-nowrap px-2 py-1"
+                                      title={cell ?? ''}
+                                    >
+                                      {cell ?? '-'}
+                                    </td>
+                                  )
+                                })}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

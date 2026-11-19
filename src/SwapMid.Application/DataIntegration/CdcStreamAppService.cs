@@ -30,6 +30,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     private readonly CdcObjectStorageCompactionService? _lakehouseCompactor;
     private readonly DeltaLakeHistoryReader? _deltaHistoryReader;
     private readonly ExternalLakehouseCatalogSyncService? _catalogSyncService;
+    private readonly CdcLakehouseDataPreviewService? _lakehousePreviewService;
+    private readonly CdcDataContractEvaluator? _contractEvaluator;
 
     public CdcStreamAppService(
         ICdcStreamRepository streamRepository,
@@ -45,7 +47,9 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         CdcObjectStorageCompactionService? lakehouseCompactor = null,
         MySqlBinlogCdcCaptureService? mySqlCaptureService = null,
         DeltaLakeHistoryReader? deltaHistoryReader = null,
-        ExternalLakehouseCatalogSyncService? catalogSyncService = null)
+        ExternalLakehouseCatalogSyncService? catalogSyncService = null,
+        CdcLakehouseDataPreviewService? lakehousePreviewService = null,
+        CdcDataContractEvaluator? contractEvaluator = null)
     {
         _streamRepository = streamRepository;
         _sourceRepository = sourceRepository;
@@ -61,6 +65,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         _lakehouseCompactor = lakehouseCompactor;
         _deltaHistoryReader = deltaHistoryReader;
         _catalogSyncService = catalogSyncService;
+        _lakehousePreviewService = lakehousePreviewService;
+        _contractEvaluator = contractEvaluator;
     }
 
     public async Task<PagedResultDto<CdcStreamDto>> GetListAsync(GetCdcStreamListInput input)
@@ -105,41 +111,17 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             SwapMidPermissions.DataIntegration.CdcStreams.Create);
 
         var normalized = await CdcStreamMappingHelpers.ValidateAndNormalizeInputAsync(
-            input,
-            excludeId: null,
-            _streamRepository,
-            _sourceRepository,
-            _pipelineRepository);
+            input, excludeId: null, _streamRepository, _sourceRepository, _pipelineRepository);
         var stream = new CdcStreamDefinition(
-            GuidGenerator.Create(),
-            normalized.Name,
-            input.SourceId,
-            normalized.PublicationName,
-            normalized.SlotName,
-            input.TargetMode,
-            normalized.TargetTopicName,
-            normalized.TargetPipelineId,
-            normalized.MonitoredTables,
-            input.AutoCreatePublicationAndSlot,
-            input.PollIntervalSeconds,
-            input.MaxBatchSize,
-            input.Description,
-            normalized.TargetSinkId,
-            normalized.TargetSinkDestination,
-            normalized.TargetSinkKeyColumns,
-            input.InitialSnapshotEnabled,
-            input.TargetDeletePolicy,
-            input.SchemaDriftPolicy,
-            normalized.TargetFieldMappingsJson,
-            normalized.SoftDeleteColumn,
-            normalized.SoftDeleteTimestampColumn,
-            normalized.SourceType,
-            normalized.LakehouseCompactMinFiles,
-            normalized.LakehouseTableFormat,
-            normalized.CatalogType,
-            normalized.CatalogSinkId,
-            normalized.CatalogNamespace,
-            normalized.CatalogTableName);
+            GuidGenerator.Create(), normalized.Name, input.SourceId, normalized.PublicationName, normalized.SlotName,
+            input.TargetMode, normalized.TargetTopicName, normalized.TargetPipelineId, normalized.MonitoredTables,
+            input.AutoCreatePublicationAndSlot, input.PollIntervalSeconds, input.MaxBatchSize, input.Description,
+            normalized.TargetSinkId, normalized.TargetSinkDestination, normalized.TargetSinkKeyColumns,
+            input.InitialSnapshotEnabled, input.TargetDeletePolicy, input.SchemaDriftPolicy,
+            normalized.TargetFieldMappingsJson, normalized.SoftDeleteColumn, normalized.SoftDeleteTimestampColumn,
+            normalized.SourceType, normalized.LakehouseCompactMinFiles, normalized.LakehouseTableFormat,
+            normalized.CatalogType, normalized.CatalogSinkId, normalized.CatalogNamespace, normalized.CatalogTableName);
+        stream.ConfigureDataContract(input.MaxFreshnessLagSeconds, input.MaxAllowedWalLagBytes, input.RequiredColumns);
 
         await _streamRepository.InsertAsync(stream, autoSave: true);
         return await EnrichDtoAsync(stream);
@@ -154,41 +136,18 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
 
         var stream = await _streamRepository.GetAsync(id);
         var normalized = await CdcStreamMappingHelpers.ValidateAndNormalizeInputAsync(
-            input,
-            excludeId: id,
-            _streamRepository,
-            _sourceRepository,
-            _pipelineRepository);
+            input, excludeId: id, _streamRepository, _sourceRepository, _pipelineRepository);
 
         stream.Update(
-            normalized.Name,
-            input.SourceId,
-            normalized.PublicationName,
-            normalized.SlotName,
-            input.TargetMode,
-            normalized.TargetTopicName,
-            normalized.TargetPipelineId,
-            normalized.MonitoredTables,
-            input.AutoCreatePublicationAndSlot,
-            input.PollIntervalSeconds,
-            input.MaxBatchSize,
-            input.Description,
-            normalized.TargetSinkId,
-            normalized.TargetSinkDestination,
-            normalized.TargetSinkKeyColumns,
-            input.InitialSnapshotEnabled,
-            input.TargetDeletePolicy,
-            input.SchemaDriftPolicy,
-            normalized.TargetFieldMappingsJson,
-            normalized.SoftDeleteColumn,
-            normalized.SoftDeleteTimestampColumn,
-            normalized.SourceType,
-            normalized.LakehouseCompactMinFiles,
-            normalized.LakehouseTableFormat,
-            normalized.CatalogType,
-            normalized.CatalogSinkId,
-            normalized.CatalogNamespace,
-            normalized.CatalogTableName);
+            normalized.Name, input.SourceId, normalized.PublicationName, normalized.SlotName,
+            input.TargetMode, normalized.TargetTopicName, normalized.TargetPipelineId, normalized.MonitoredTables,
+            input.AutoCreatePublicationAndSlot, input.PollIntervalSeconds, input.MaxBatchSize, input.Description,
+            normalized.TargetSinkId, normalized.TargetSinkDestination, normalized.TargetSinkKeyColumns,
+            input.InitialSnapshotEnabled, input.TargetDeletePolicy, input.SchemaDriftPolicy,
+            normalized.TargetFieldMappingsJson, normalized.SoftDeleteColumn, normalized.SoftDeleteTimestampColumn,
+            normalized.SourceType, normalized.LakehouseCompactMinFiles, normalized.LakehouseTableFormat,
+            normalized.CatalogType, normalized.CatalogSinkId, normalized.CatalogNamespace, normalized.CatalogTableName);
+        stream.ConfigureDataContract(input.MaxFreshnessLagSeconds, input.MaxAllowedWalLagBytes, input.RequiredColumns);
 
         await _streamRepository.UpdateAsync(stream, autoSave: true);
         await _scheduleSynchronizer.SyncAsync(stream.Id, stream.Status, stream.PollIntervalSeconds);
@@ -469,6 +428,22 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         return await reader.ReadAsync(stream, sink, input.Version, input.MaxCommits, cancellationToken);
     }
 
+    public async Task<CdcLakehousePreviewDto> PreviewLakehouseDataAsync(
+        Guid id,
+        GetCdcLakehousePreviewInput input,
+        CancellationToken cancellationToken = default)
+    {
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
+            base.CurrentTenant.Id,
+            SwapMidPermissions.DataIntegration.CdcStreams.Default);
+
+        var preview = _lakehousePreviewService ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+            .WithData("Reason", "Lakehouse 实时数据预览服务未启用。");
+        var (stream, sink) = await CdcStreamMappingHelpers.LoadExternalSinkContextAsync(
+            id, "仅外部接收端（ObjectStorage）模式的 CDC 流支持 Lakehouse 实时数据预览。", _streamRepository, _sourceRepository, cancellationToken);
+        return await preview.PreviewAsync(stream, sink, input.Version, input.MaxRows, cancellationToken);
+    }
+
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
     public Task<CdcCatalogSyncResultDto> SyncCatalogAsync(
         Guid id,
@@ -481,6 +456,20 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         var syncService = _catalogSyncService ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
             .WithData("Reason", "外部开放目录元数据同步服务未启用。");
         return syncService.SyncAsync(id, cancellationToken);
+    }
+
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    public Task<CdcContractEvaluationDto> EvaluateContractAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(
+            base.CurrentTenant.Id,
+            SwapMidPermissions.DataIntegration.CdcStreams.Manage);
+
+        var evaluator = _contractEvaluator ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+            .WithData("Reason", "CDC 数据契约 SLA 评估服务未启用。");
+        return evaluator.EvaluateAndPersistAsync(id, probeLiveUpstream: true, cancellationToken);
     }
 
     private Task<CdcStreamDto> EnrichDtoAsync(CdcStreamDefinition stream)

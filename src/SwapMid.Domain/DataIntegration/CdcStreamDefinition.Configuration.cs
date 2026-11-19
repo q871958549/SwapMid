@@ -159,6 +159,53 @@ public partial class CdcStreamDefinition
             SoftDeleteTimestampColumn);
     }
 
+    public bool HasDataContractConfigured =>
+        MaxFreshnessLagSeconds.HasValue ||
+        MaxAllowedWalLagBytes.HasValue ||
+        !string.IsNullOrWhiteSpace(RequiredColumns);
+
+    public void ConfigureDataContract(
+        int? maxFreshnessLagSeconds,
+        long? maxAllowedWalLagBytes,
+        string? requiredColumns)
+    {
+        var normalizedFreshness = CdcStreamMirrorConfigValidator.NormalizeMaxFreshnessLagSeconds(maxFreshnessLagSeconds);
+        var normalizedWalBudget = CdcStreamMirrorConfigValidator.NormalizeMaxAllowedWalLagBytes(maxAllowedWalLagBytes);
+        var normalizedRequired = CdcStreamMirrorConfigValidator.NormalizeRequiredColumns(requiredColumns);
+
+        var changed = MaxFreshnessLagSeconds != normalizedFreshness ||
+                      MaxAllowedWalLagBytes != normalizedWalBudget ||
+                      !string.Equals(RequiredColumns, normalizedRequired, StringComparison.OrdinalIgnoreCase);
+
+        MaxFreshnessLagSeconds = normalizedFreshness;
+        MaxAllowedWalLagBytes = normalizedWalBudget;
+        RequiredColumns = normalizedRequired;
+
+        if (!HasDataContractConfigured)
+        {
+            ContractViolated = false;
+            ContractViolationSummary = null;
+            ContractLastEvaluatedAt = null;
+        }
+        else if (changed)
+        {
+            ContractViolated = false;
+            ContractViolationSummary = null;
+        }
+    }
+
+    public void RecordContractEvaluation(
+        bool violated,
+        string? summary,
+        DateTime evaluatedAtUtc)
+    {
+        ContractViolated = violated;
+        ContractViolationSummary = string.IsNullOrWhiteSpace(summary)
+            ? null
+            : Truncate(summary.Trim(), CdcStreamConsts.MaxContractViolationSummaryLength);
+        ContractLastEvaluatedAt = evaluatedAtUtc;
+    }
+
     private static string Truncate(string value, int maxLength)
     {
         if (string.IsNullOrEmpty(value))

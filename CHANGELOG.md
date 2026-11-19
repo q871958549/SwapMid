@@ -4,6 +4,18 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-11-19
+
+### Added
+- **Zero-Infra Instant Lakehouse Data Preview (`GET /api/v1/cdc-streams/{id}/lakehouse-preview`)**: Added `CdcLakehouseDataPreviewService` to fetch and decode Apache Parquet (via `Parquet.Net`) and JSONL fragments directly from S3/MinIO for any Delta Lake Time-Travel version (`?version=v`) or `_swapmid/latest.json` snapshot, enforced by `DataIntegrationSinkEndpointPolicy` SSRF guards, authoritative metadata key resolution, `4 MiB`/file read budgets, and `50`-row caps, rendered inside the `/data-integration/cdc` Time-Travel dialog (`swapmid_cdc_lakehouse_previews_total`).
+- **Data Contract & Freshness SLA Engine**: Added `CdcContractStatus` (`Unconfigured`, `Healthy`, `Warning`, `Breached`), EF Core migration `AddCdcDataContractSla` (`MaxFreshnessLagSeconds`, `MaxAllowedWalLagBytes`, `RequiredColumns`, contract evaluation audit state), `CdcDataContractEvaluator`, `POST /api/v1/cdc-streams/{id}/evaluate-contract`, deduplicated breach/recovery notifications, Prometheus metrics (`swapmid_cdc_contract_evaluations_total`, `swapmid_cdc_contract_violations_total`), alert rule `SwapMidCdcDataContractBreached`, and `/data-integration/cdc` SLA badges & form controls.
+- **AI-Native MCP Copilot Expansion (`POST /api/mcp`, 8 Tools)**: Added RBAC-gated Tool 7 `propose_pipeline_column_mappings` (`McpPipelineCopilotHandler`, deterministic exact & normalized `snake_case`/`camelCase` mapping proposals + candidate `keyColumns`/`watermarkColumn` + Draft-ready `transformConfig`) and Tool 8 `evaluate_cdc_data_contracts` (`McpDataContractHandler`), and updated `scripts/e2e-smoke.mjs` to assert all 8 MCP tools.
+
+### Changed & Fixed
+- **Delta Lake Time-Travel Auto-Compaction Preservation**: Updated `CdcObjectStorageCompactionService.TryAutoCompactAsync` to preserve historical Parquet files when `LakehouseTableFormat == DeltaLake` (`deleteCompactedFiles: false`), ensuring `VERSION AS OF v` historical Time-Travel previews remain readable across automatic `OPTIMIZE` runs, while handling physically deleted/vacuumed fragments gracefully (`MissingFileCount` diagnostic summary).
+- **CI / Release Actions Node 24 & Dockerfile Hygiene**: Upgraded GitHub Actions in `.github/workflows/{ci,release}.yml` to Node 24-native majors (`actions/checkout@v7`, `actions/setup-node@v7`, `actions/setup-dotnet@v6`, `docker/setup-qemu-action@v4`, `docker/setup-buildx-action@v4`) and renamed non-secret boolean build arg `OPENIDDICT_PFX_RUNTIME_SECRET` -> `OPENIDDICT_PFX_MOUNT_AT_RUNTIME` in `src/SwapMid.HttpApi.Host/Dockerfile` to eliminate BuildKit `SecretsUsedInArgOrEnv` warnings.
+- Expanded OpenAPI `/api/v1` summary coverage to **100.0% (196/196 endpoints)**.
+
 ## [2.1.0] - 2026-11-19
 
 ### Added

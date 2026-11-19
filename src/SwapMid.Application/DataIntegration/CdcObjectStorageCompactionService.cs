@@ -139,7 +139,7 @@ public sealed class CdcObjectStorageCompactionService : ITransientDependency
                 stream,
                 targetSink,
                 compactMin,
-                deleteCompactedFiles: true,
+                deleteCompactedFiles: stream.LakehouseTableFormat != LakehouseTableFormat.DeltaLake,
                 cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }

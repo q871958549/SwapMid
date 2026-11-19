@@ -141,6 +141,21 @@ public static partial class PlatformMetrics
         "CDC Lakehouse 外部开放目录（Unity Catalog / Iceberg REST）元数据同步计数（固定低基数标签 catalog_type/outcome）",
         new CounterConfiguration { LabelNames = ["catalog_type", "outcome"] });
 
+    public static readonly Counter CdcContractEvaluationsTotal = Metrics.CreateCounter(
+        "swapmid_cdc_contract_evaluations_total",
+        "CDC 数据契约与新鲜度 SLA 评估结果计数（固定低基数标签 outcome）",
+        new CounterConfiguration { LabelNames = ["outcome"] });
+
+    public static readonly Counter CdcContractViolationsTotal = Metrics.CreateCounter(
+        "swapmid_cdc_contract_violations_total",
+        "CDC 数据契约违约项计数（固定低基数标签 violation_type）",
+        new CounterConfiguration { LabelNames = ["violation_type"] });
+
+    public static readonly Counter CdcLakehousePreviewsTotal = Metrics.CreateCounter(
+        "swapmid_cdc_lakehouse_previews_total",
+        "Lakehouse 零外部计算集群实时数据预览执行计数（固定低基数标签 format）",
+        new CounterConfiguration { LabelNames = ["format"] });
+
     private static readonly string[] EtlExecutionAdmissionOutcomes =
     [
         "acquired", "busy", "idempotent_replay", "coordination_failure",
@@ -198,6 +213,10 @@ public static partial class PlatformMetrics
                 CdcCatalogSyncsTotal.WithLabels(catalogType, outcome).Publish();
             }
         }
+
+        PublishSingleLabelSeries(CdcContractEvaluationsTotal, ["unconfigured", "healthy", "warning", "breached"]);
+        PublishSingleLabelSeries(CdcContractViolationsTotal, ["freshness", "required_columns", "wal_lag", "schema_drift"]);
+        PublishSingleLabelSeries(CdcLakehousePreviewsTotal, ["parquet", "jsonl"]);
     }
 
     internal static void PublishEtlExecutionSeries(

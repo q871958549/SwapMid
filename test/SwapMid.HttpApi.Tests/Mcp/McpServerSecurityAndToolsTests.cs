@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Threading;
 using SwapMid.DataIntegration;
 using SwapMid.Mcp;
 using SwapMid.Permissions;
@@ -292,5 +293,121 @@ public class McpServerSecurityAndToolsTests
         cdcBody.ShouldContain("orders-pg-cdc");
         cdcBody.ShouldContain("0/1E40000");
         cdcBody.ShouldContain("order_id");
+    }
+
+    [Fact]
+    public async Task Mcp_copilot_proposes_deterministic_column_mappings_and_evaluates_cdc_data_contracts()
+    {
+        var sourceId = Guid.NewGuid();
+        var targetId = Guid.NewGuid();
+
+        using var host = new ContractTestHost(
+            extraSettings: new Dictionary<string, string?>
+            {
+                ["Mcp:Enabled"] = "true",
+            });
+
+        var preflightService = host.Services.GetRequiredService<IDataPipelineSchemaPreflightAppService>();
+        preflightService.PreflightSchemaAsync(Arg.Any<PreflightPipelineSchemaInput>(), Arg.Any<CancellationToken>())
+            .Returns(new PipelineSchemaPreflightResultDto
+            {
+                Compatible = true,
+                SourceProvider = "postgresql",
+                TargetProvider = "postgresql",
+                SourceColumns =
+                [
+                    new PreflightColumnDto { Name = "id", DataType = "bigint", IsNullable = false },
+                    new PreflightColumnDto { Name = "order_no", DataType = "varchar", IsNullable = false },
+                    new PreflightColumnDto { Name = "updated_at", DataType = "timestamptz", IsNullable = false },
+                ],
+                TargetColumns =
+                [
+                    new PreflightColumnDto { Name = "id", DataType = "bigint", IsNullable = false },
+                    new PreflightColumnDto { Name = "orderNo", DataType = "varchar", IsNullable = false },
+                    new PreflightColumnDto { Name = "updatedAt", DataType = "timestamptz", IsNullable = false },
+                ],
+            });
+
+        using var copilotClient = host.CreateClient(
+            authenticated: true,
+            SwapMidPermissions.DataIntegration.DataPipelines.Default,
+            SwapMidPermissions.DataIntegration.CdcStreams.Default);
+
+        var proposeRes = await copilotClient.PostAsJsonAsync("/api/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = 101,
+            method = "tools/call",
+            @params = new
+            {
+                name = McpToolCatalog.ProposePipelineColumnMappings,
+                arguments = new
+                {
+                    sourceId = sourceId.ToString(),
+                    targetId = targetId.ToString(),
+                    sourceQuery = "SELECT id, order_no, updated_at FROM orders",
+                    targetTable = "dw.orders_copy",
+                    mode = "upsert",
+                },
+            },
+        });
+        proposeRes.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using (var doc = JsonDocument.Parse(await proposeRes.Content.ReadAsStringAsync()))
+        {
+            var innerText = doc.RootElement.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString()!;
+            innerText.ShouldContain("orderNo");
+            innerText.ShouldContain("normalized");
+            innerText.ShouldContain("updatedAt");
+            innerText.ShouldContain("\"readyForDraft\":true");
+        }
+
+        var cdcService = host.Services.GetRequiredService<ICdcStreamAppService>();
+        cdcService.GetListAsync(Arg.Any<GetCdcStreamListInput>())
+            .Returns(new PagedResultDto<CdcStreamDto>(
+                2,
+                [
+                    new CdcStreamDto
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "orders-sla-breached",
+                        Status = CdcStreamStatus.Active,
+                        MaxFreshnessLagSeconds = 60,
+                        FreshnessLagSeconds = 180,
+                        ContractStatus = CdcContractStatus.Breached,
+                        ContractViolated = true,
+                        ContractViolationSummary = "Freshness exceeded 60s",
+                    },
+                    new CdcStreamDto
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "orders-sla-healthy",
+                        Status = CdcStreamStatus.Active,
+                        MaxFreshnessLagSeconds = 300,
+                        FreshnessLagSeconds = 15,
+                        ContractStatus = CdcContractStatus.Healthy,
+                        ContractViolated = false,
+                    },
+                ]));
+
+        var contractRes = await copilotClient.PostAsJsonAsync("/api/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = 102,
+            method = "tools/call",
+            @params = new
+            {
+                name = McpToolCatalog.EvaluateCdcDataContracts,
+                arguments = new { onlyBreached = true, limit = 10 },
+            },
+        });
+        contractRes.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using (var doc = JsonDocument.Parse(await contractRes.Content.ReadAsStringAsync()))
+        {
+            var innerText = doc.RootElement.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString()!;
+            innerText.ShouldContain("orders-sla-breached");
+            innerText.ShouldNotContain("orders-sla-healthy");
+            innerText.ShouldContain("\"breachedCount\":1");
+            innerText.ShouldContain("\"healthyCount\":1");
+        }
     }
 }

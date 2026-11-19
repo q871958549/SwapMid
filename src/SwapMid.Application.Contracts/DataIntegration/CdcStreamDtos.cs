@@ -57,6 +57,14 @@ public class CdcStreamDto : FullAuditedEntityDto<Guid>
     public long TotalCapturedCount { get; set; }
     public string? LastErrorCode { get; set; }
     public string? LastErrorMessage { get; set; }
+    public int? MaxFreshnessLagSeconds { get; set; }
+    public long? MaxAllowedWalLagBytes { get; set; }
+    public string? RequiredColumns { get; set; }
+    public bool ContractViolated { get; set; }
+    public string? ContractViolationSummary { get; set; }
+    public DateTime? ContractLastEvaluatedAt { get; set; }
+    public long? FreshnessLagSeconds { get; set; }
+    public CdcContractStatus ContractStatus { get; set; }
 }
 
 public class CdcStreamCreateUpdateDto
@@ -133,6 +141,15 @@ public class CdcStreamCreateUpdateDto
     public CdcSchemaDriftPolicy SchemaDriftPolicy { get; set; } = CdcSchemaDriftPolicy.Ignore;
 
     public bool InitialSnapshotEnabled { get; set; }
+
+    [Range(10, 86400)]
+    public int? MaxFreshnessLagSeconds { get; set; }
+
+    [Range(1048576L, 107374182400L)]
+    public long? MaxAllowedWalLagBytes { get; set; }
+
+    [StringLength(512)]
+    public string? RequiredColumns { get; set; }
 }
 
 public class GetCdcStreamListInput : PagedAndSortedResultRequestDto
@@ -390,4 +407,56 @@ public class CdcCatalogSyncResultDto
     public string? LocationUri { get; set; }
     public DateTime SyncedAtUtc { get; set; }
     public string Message { get; set; } = null!;
+}
+
+public class GetCdcLakehousePreviewInput
+{
+    [Range(0, long.MaxValue)]
+    public long? Version { get; set; }
+
+    [Range(1, 50)]
+    public int MaxRows { get; set; } = 25;
+}
+
+public class CdcLakehousePreviewDto
+{
+    public Guid StreamId { get; set; }
+    public string Destination { get; set; } = null!;
+    public LakehouseTableFormat TableFormat { get; set; }
+    public string FileFormat { get; set; } = "parquet";
+    public long? SelectedVersion { get; set; }
+    public int ScannedFileCount { get; set; }
+    public int TotalActiveFileCount { get; set; }
+    public int MissingFileCount { get; set; }
+    public int RowCount { get; set; }
+    public bool Truncated { get; set; }
+    public List<string> Columns { get; set; } = new();
+    public List<Dictionary<string, string?>> Rows { get; set; } = new();
+    public List<string> SourceFiles { get; set; } = new();
+    public string Summary { get; set; } = null!;
+}
+
+public class CdcContractViolationItemDto
+{
+    public string Type { get; set; } = null!;
+    public string Severity { get; set; } = "error";
+    public string Message { get; set; } = null!;
+}
+
+public class CdcContractEvaluationDto
+{
+    public Guid StreamId { get; set; }
+    public string StreamName { get; set; } = null!;
+    public CdcContractStatus Status { get; set; }
+    public bool Violated { get; set; }
+    public long? FreshnessLagSeconds { get; set; }
+    public int? MaxFreshnessLagSeconds { get; set; }
+    public long? WalLagBytes { get; set; }
+    public long? MaxAllowedWalLagBytes { get; set; }
+    public List<string> RequiredColumns { get; set; } = new();
+    public List<string> MissingRequiredColumns { get; set; } = new();
+    public bool SchemaDriftDetected { get; set; }
+    public List<CdcContractViolationItemDto> Violations { get; set; } = new();
+    public DateTime EvaluatedAtUtc { get; set; }
+    public string Summary { get; set; } = null!;
 }

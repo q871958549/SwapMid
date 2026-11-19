@@ -19,6 +19,22 @@ internal static class McpJsonRpcHelpers
             ? e.GetString()
             : null;
 
+    internal static string ReadRequiredString(JsonElement obj, string prop)
+    {
+        var value = ReadOptionalString(obj, prop);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.PipelineExecutionInputInvalid);
+        }
+
+        return value.Trim();
+    }
+
+    internal static bool ReadOptionalBool(JsonElement obj, string prop)
+        => obj.ValueKind == JsonValueKind.Object &&
+           obj.TryGetProperty(prop, out var e) &&
+           e.ValueKind == JsonValueKind.True;
+
     internal static Guid ReadRequiredGuid(JsonElement obj, string prop)
         => Guid.TryParse(ReadOptionalString(obj, prop), out var g)
             ? g

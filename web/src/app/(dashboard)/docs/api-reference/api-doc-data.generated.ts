@@ -3641,6 +3641,62 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "maxFreshnessLagSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "maxAllowedWalLagBytes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "requiredColumns",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "contractViolated",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "contractViolationSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "contractLastEvaluatedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "freshnessLagSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "contractStatus",
+                "cnName": "",
+                "type": "CdcContractStatus",
+                "description": "取值：0=Unconfigured；1=Healthy；2=Warning；3=Breached",
+                "nullable": false
+              },
+              {
                 "name": "creationTime",
                 "cnName": "",
                 "type": "DateTime",
@@ -3883,6 +3939,27 @@ export const API_MODULES: ApiModule[] = [
                 "name": "initialSnapshotEnabled",
                 "cnName": "",
                 "type": "boolean",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "maxFreshnessLagSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "maxAllowedWalLagBytes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "requiredColumns",
+                "cnName": "",
+                "type": "string",
                 "description": "",
                 "required": false
               }
@@ -4258,6 +4335,62 @@ export const API_MODULES: ApiModule[] = [
                 "type": "string",
                 "description": "",
                 "nullable": true
+              },
+              {
+                "name": "maxFreshnessLagSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "maxAllowedWalLagBytes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "requiredColumns",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "contractViolated",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "contractViolationSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "contractLastEvaluatedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "freshnessLagSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "contractStatus",
+                "cnName": "",
+                "type": "CdcContractStatus",
+                "description": "取值：0=Unconfigured；1=Healthy；2=Warning；3=Breached",
+                "nullable": false
               },
               {
                 "name": "creationTime",
@@ -4676,6 +4809,62 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "maxFreshnessLagSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "maxAllowedWalLagBytes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "requiredColumns",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "contractViolated",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "contractViolationSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "contractLastEvaluatedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "freshnessLagSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "contractStatus",
+                "cnName": "",
+                "type": "CdcContractStatus",
+                "description": "取值：0=Unconfigured；1=Healthy；2=Warning；3=Breached",
+                "nullable": false
+              },
+              {
                 "name": "creationTime",
                 "cnName": "",
                 "type": "DateTime",
@@ -4927,6 +5116,27 @@ export const API_MODULES: ApiModule[] = [
                 "name": "initialSnapshotEnabled",
                 "cnName": "",
                 "type": "boolean",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "maxFreshnessLagSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "maxAllowedWalLagBytes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "required": false
+              },
+              {
+                "name": "requiredColumns",
+                "cnName": "",
+                "type": "string",
                 "description": "",
                 "required": false
               }
@@ -5302,6 +5512,62 @@ export const API_MODULES: ApiModule[] = [
                 "type": "string",
                 "description": "",
                 "nullable": true
+              },
+              {
+                "name": "maxFreshnessLagSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "maxAllowedWalLagBytes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "requiredColumns",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "contractViolated",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "contractViolationSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "contractLastEvaluatedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "freshnessLagSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "contractStatus",
+                "cnName": "",
+                "type": "CdcContractStatus",
+                "description": "取值：0=Unconfigured；1=Healthy；2=Warning；3=Breached",
+                "nullable": false
               },
               {
                 "name": "creationTime",
@@ -5870,6 +6136,62 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               },
               {
+                "name": "maxFreshnessLagSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "maxAllowedWalLagBytes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "requiredColumns",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "contractViolated",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "contractViolationSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "contractLastEvaluatedAt",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "freshnessLagSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "contractStatus",
+                "cnName": "",
+                "type": "CdcContractStatus",
+                "description": "取值：0=Unconfigured；1=Healthy；2=Warning；3=Breached",
+                "nullable": false
+              },
+              {
                 "name": "creationTime",
                 "cnName": "",
                 "type": "DateTime",
@@ -6040,6 +6362,142 @@ export const API_MODULES: ApiModule[] = [
               },
               {
                 "name": "message",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/cdc-streams/{id}/evaluate-contract",
+            "summary": "评估 CDC 数据契约与新鲜度 SLA 合规态（新鲜度滞后、必填列、Schema 漂移与 WAL 保留预算）并更新告警状态",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "streamName",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "status",
+                "cnName": "",
+                "type": "CdcContractStatus",
+                "description": "状态；取值：0=Unconfigured；1=Healthy；2=Warning；3=Breached",
+                "nullable": false
+              },
+              {
+                "name": "violated",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "freshnessLagSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "maxFreshnessLagSeconds",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "walLagBytes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "maxAllowedWalLagBytes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "requiredColumns",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "missingRequiredColumns",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "schemaDriftDetected",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "violations",
+                "cnName": "",
+                "type": "CdcContractViolationItemDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "violations[].type",
+                "cnName": "",
+                "type": "string",
+                "description": "类型",
+                "nullable": true
+              },
+              {
+                "name": "violations[].severity",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "violations[].message",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "evaluatedAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "summary",
                 "cnName": "",
                 "type": "string",
                 "description": "",
@@ -6269,6 +6727,135 @@ export const API_MODULES: ApiModule[] = [
                 "name": "timeTravelQuerySql",
                 "cnName": "",
                 "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "summary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/cdc-streams/{id}/lakehouse-preview",
+            "summary": "零计算集群实时预览 Lakehouse（S3/MinIO Parquet 或 JSONL）任意 Time-Travel 版本的样本数据行",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              },
+              {
+                "name": "version",
+                "cnName": "",
+                "type": "integer",
+                "required": false,
+                "description": ""
+              },
+              {
+                "name": "maxRows",
+                "cnName": "",
+                "type": "integer",
+                "required": false,
+                "description": ""
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "destination",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "tableFormat",
+                "cnName": "",
+                "type": "LakehouseTableFormat",
+                "description": "取值：0=SwapMidManifest；1=DeltaLake",
+                "nullable": false
+              },
+              {
+                "name": "fileFormat",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "selectedVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "scannedFileCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "totalActiveFileCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "missingFileCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "rowCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "truncated",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "columns",
+                "cnName": "",
+                "type": "string[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "rows",
+                "cnName": "",
+                "type": "object[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "sourceFiles",
+                "cnName": "",
+                "type": "string[]",
                 "description": "",
                 "nullable": true
               },

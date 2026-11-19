@@ -155,6 +155,14 @@ public class CdcStreamController : SwapMidController, ICdcStreamAppService
         CancellationToken cancellationToken = default)
         => _service.GetLakehouseHistoryAsync(id, input ?? new GetCdcLakehouseHistoryInput(), cancellationToken);
 
+    /// <summary>零计算集群实时预览 Lakehouse（S3/MinIO Parquet 或 JSONL）任意 Time-Travel 版本的样本数据行</summary>
+    [HttpGet("{id}/lakehouse-preview")]
+    public Task<CdcLakehousePreviewDto> PreviewLakehouseDataAsync(
+        Guid id,
+        [FromQuery] GetCdcLakehousePreviewInput? input = null,
+        CancellationToken cancellationToken = default)
+        => _service.PreviewLakehouseDataAsync(id, input ?? new GetCdcLakehousePreviewInput(), cancellationToken);
+
     /// <summary>手动将当前 Lakehouse 最新表位置与列 Schema 注册或同步到外部 Unity Catalog / Iceberg REST 目录</summary>
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
     [HttpPost("{id}/sync-catalog")]
@@ -162,4 +170,12 @@ public class CdcStreamController : SwapMidController, ICdcStreamAppService
         Guid id,
         CancellationToken cancellationToken = default)
         => _service.SyncCatalogAsync(id, cancellationToken);
+
+    /// <summary>评估 CDC 数据契约与新鲜度 SLA 合规态（新鲜度滞后、必填列、Schema 漂移与 WAL 保留预算）并更新告警状态</summary>
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    [HttpPost("{id}/evaluate-contract")]
+    public Task<CdcContractEvaluationDto> EvaluateContractAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+        => _service.EvaluateContractAsync(id, cancellationToken);
 }

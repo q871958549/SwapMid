@@ -225,6 +225,16 @@ namespace SwapMid.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
 
+                    b.Property<DateTime?>("ContractLastEvaluatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<bool>("ContractViolated")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ContractViolationSummary")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("CreationTime");
@@ -287,7 +297,13 @@ namespace SwapMid.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<long?>("MaxAllowedWalLagBytes")
+                        .HasColumnType("bigint");
+
                     b.Property<int>("MaxBatchSize")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MaxFreshnessLagSeconds")
                         .HasColumnType("integer");
 
                     b.Property<string>("MonitoredTables")
@@ -306,6 +322,10 @@ namespace SwapMid.Migrations
                         .IsRequired()
                         .HasMaxLength(63)
                         .HasColumnType("character varying(63)");
+
+                    b.Property<string>("RequiredColumns")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
 
                     b.Property<string>("SchemaBaselineHash")
                         .HasMaxLength(64)

@@ -261,6 +261,82 @@ public static partial class CdcStreamMirrorConfigValidator
         return trimmed;
     }
 
+    public static int? NormalizeMaxFreshnessLagSeconds(int? value)
+    {
+        if (!value.HasValue || value.Value == 0)
+        {
+            return null;
+        }
+
+        if (value.Value < CdcStreamConsts.MinFreshnessLagSeconds ||
+            value.Value > CdcStreamConsts.MaxFreshnessLagSeconds)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData(
+                    "Reason",
+                    $"数据新鲜度 SLA 阈值（MaxFreshnessLagSeconds）须在 {CdcStreamConsts.MinFreshnessLagSeconds}~{CdcStreamConsts.MaxFreshnessLagSeconds} 秒之间。");
+        }
+
+        return value.Value;
+    }
+
+    public static long? NormalizeMaxAllowedWalLagBytes(long? value)
+    {
+        if (!value.HasValue || value.Value == 0)
+        {
+            return null;
+        }
+
+        if (value.Value < CdcStreamConsts.MinAllowedWalLagBytes ||
+            value.Value > CdcStreamConsts.MaxAllowedWalLagBytes)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", "WAL/Binlog 滞留字节预算（MaxAllowedWalLagBytes）须在 1 MiB ~ 100 GiB 之间。");
+        }
+
+        return value.Value;
+    }
+
+    public static string? NormalizeRequiredColumns(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var parts = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length == 0)
+        {
+            return null;
+        }
+
+        if (parts.Length > CdcStreamConsts.MaxRequiredColumnsCount)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", $"契约必填列（RequiredColumns）最多允许声明 {CdcStreamConsts.MaxRequiredColumnsCount} 列。");
+        }
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var normalized = new List<string>(parts.Length);
+        foreach (var part in parts)
+        {
+            var col = NormalizeIdentifier(part, CdcStreamConsts.MaxSoftDeleteColumnLength, nameof(value));
+            if (!string.IsNullOrWhiteSpace(col) && seen.Add(col))
+            {
+                normalized.Add(col);
+            }
+        }
+
+        var joined = string.Join(",", normalized);
+        if (joined.Length > CdcStreamConsts.MaxRequiredColumnsLength)
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", $"契约必填列总长度不可超过 {CdcStreamConsts.MaxRequiredColumnsLength} 字符。");
+        }
+
+        return joined;
+    }
+
     private sealed class CdcFieldMappingRuleInput
     {
         public string? SourceColumn { get; set; }

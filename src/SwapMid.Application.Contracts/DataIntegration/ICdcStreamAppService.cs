@@ -26,5 +26,7 @@ public interface ICdcStreamAppService : IApplicationService
     Task<CdcMirrorSchemaInspectionDto> InspectMirrorSchemaAsync(InspectCdcMirrorSchemaInput input, CancellationToken cancellationToken = default);
     Task<CdcLakehouseCompactionResultDto> CompactLakehouseAsync(Guid id, CompactCdcLakehouseInput input, CancellationToken cancellationToken = default);
     Task<CdcLakehouseHistoryDto> GetLakehouseHistoryAsync(Guid id, GetCdcLakehouseHistoryInput input, CancellationToken cancellationToken = default);
+    Task<CdcLakehousePreviewDto> PreviewLakehouseDataAsync(Guid id, GetCdcLakehousePreviewInput input, CancellationToken cancellationToken = default);
     Task<CdcCatalogSyncResultDto> SyncCatalogAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<CdcContractEvaluationDto> EvaluateContractAsync(Guid id, CancellationToken cancellationToken = default);
 }

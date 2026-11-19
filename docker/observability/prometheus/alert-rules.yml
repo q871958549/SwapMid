@@ -90,3 +90,13 @@ groups:
         annotations:
           summary: "Upstream PostgreSQL CDC schema drift detected"
           description: "At least one monitored CDC source table changed columns or types; affected PauseAndAlert streams were paused automatically pending operator confirmation."
+
+      - alert: SwapMidCdcDataContractBreached
+        expr: increase(swapmid_cdc_contract_evaluations_total{outcome="breached"}[10m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          engine: data-integration-cdc
+        annotations:
+          summary: "CDC stream Data Contract SLA breached"
+          description: "One or more CDC streams breached freshness lag, required columns, schema drift, or WAL retention byte budgets in the last 10 minutes."

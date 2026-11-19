@@ -97,6 +97,13 @@ internal static class McpCdcDiagnosticsHandler
                 stream.LastCapturedCount,
                 stream.TotalCapturedCount,
                 stream.LastErrorCode,
+                stream.MaxFreshnessLagSeconds,
+                stream.MaxAllowedWalLagBytes,
+                stream.RequiredColumns,
+                stream.FreshnessLagSeconds,
+                stream.ContractStatus,
+                stream.ContractViolated,
+                stream.ContractViolationSummary,
                 preflight = preflight == null
                     ? null
                     : new

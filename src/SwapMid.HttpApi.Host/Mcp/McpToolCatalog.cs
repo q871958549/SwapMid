@@ -17,6 +17,8 @@ public static class McpToolCatalog
     public const string DiagnoseDeadLetters = "diagnose_dead_letters";
     public const string DraftDataPipeline = "draft_data_pipeline";
     public const string DiagnoseCdcStreams = "diagnose_cdc_streams";
+    public const string ProposePipelineColumnMappings = "propose_pipeline_column_mappings";
+    public const string EvaluateCdcDataContracts = "evaluate_cdc_data_contracts";
 
     public static IReadOnlyList<McpToolDescriptor> All { get; } =
     [
@@ -108,6 +110,40 @@ public static class McpToolCatalog
                     filter = new { type = "string", description = "Optional CDC stream name/slot substring filter." },
                     limit = new { type = "integer", minimum = 1, maximum = 50, description = "Max CDC streams to inspect (default 20)." },
                     includePreflight = new { type = "boolean", description = "When true (requires CdcStreams.Manage), runs live pre-flight to inspect WAL lag bytes and table REPLICA IDENTITY." },
+                },
+                additionalProperties = false,
+            }),
+        new McpToolDescriptor(
+            Name: ProposePipelineColumnMappings,
+            RequiredPermission: SwapMidPermissions.DataIntegration.DataPipelines.Default,
+            Description: "Run a read-only zero-row schema probe across source SELECT query and target table to deterministically propose columnMappings, candidate keyColumns/watermarkColumn, and a Draft-ready transformConfig JSON.",
+            InputSchema: new
+            {
+                type = "object",
+                required = new[] { "sourceId", "sourceQuery", "targetTable" },
+                properties = new
+                {
+                    sourceId = new { type = "string", format = "uuid", description = "Source DataSource GUID." },
+                    targetId = new { type = "string", format = "uuid", description = "Optional Target DataSource GUID." },
+                    sourceQuery = new { type = "string", description = "Read-only single SELECT query." },
+                    targetTable = new { type = "string", description = "Target table or sink destination identifier." },
+                    mode = new { type = "string", description = "Preferred write mode: append, truncate, or upsert (default upsert)." },
+                },
+                additionalProperties = false,
+            }),
+        new McpToolDescriptor(
+            Name: EvaluateCdcDataContracts,
+            RequiredPermission: SwapMidPermissions.DataIntegration.CdcStreams.Default,
+            Description: "Evaluate Data Contract SLA compliance (freshness lag, required columns, schema drift, WAL retention budget) across CDC streams and return structured remediation guidance.",
+            InputSchema: new
+            {
+                type = "object",
+                properties = new
+                {
+                    filter = new { type = "string", description = "Optional CDC stream name filter." },
+                    limit = new { type = "integer", minimum = 1, maximum = 50, description = "Max CDC streams to evaluate (default 20)." },
+                    onlyBreached = new { type = "boolean", description = "When true, returns only streams currently breaching their Data Contract SLA." },
+                    probeLiveUpstream = new { type = "boolean", description = "When true (requires CdcStreams.Manage), runs live upstream schema and WAL lag contract checks." },
                 },
                 additionalProperties = false,
             }),

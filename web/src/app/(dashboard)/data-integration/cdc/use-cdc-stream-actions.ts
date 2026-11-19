@@ -8,9 +8,11 @@ import type {
   CdcAcceptSchemaResultDto,
   CdcCaptureResultDto,
   CdcCatalogSyncResultDto,
+  CdcContractEvaluationDto,
   CdcDropSlotResultDto,
   CdcLakehouseCompactionResultDto,
   CdcLakehouseHistoryDto,
+  CdcLakehousePreviewDto,
   CdcPreflightResultDto,
   CdcSinkTemplateDto,
   CdcSnapshotResultDto,
@@ -35,6 +37,8 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
   const [sinkTemplateState, setSinkTemplateState] = useState<CdcSinkTemplateState | null>(null)
   const [historyState, setHistoryState] = useState<CdcLakehouseHistoryState | null>(null)
   const [historyLoadingVersion, setHistoryLoadingVersion] = useState<number | null>(null)
+  const [previewState, setPreviewState] = useState<CdcLakehousePreviewDto | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
   const [provisionSubmitting, setProvisionSubmitting] = useState(false)
   const [compactSubmitting, setCompactSubmitting] = useState(false)
 
@@ -276,6 +280,7 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
   }, [reloadAndRefresh, sinkTemplateState, t])
 
   const handleOpenHistory = useCallback(async (row: CdcStreamDto, version?: number) => {
+    setPreviewState(null)
     const qs = version !== undefined ? `?version=${version}&maxCommits=32` : '?maxCommits=32'
     if (version !== undefined) {
       setHistoryLoadingVersion(version)
@@ -304,6 +309,26 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
     )
   }, [runStreamAction, t])
 
+  const handleLoadPreview = useCallback(async (row: CdcStreamDto, version?: number) => {
+    setPreviewLoading(true)
+    try {
+      const qs = version !== undefined ? `?version=${version}&maxRows=20` : '?maxRows=20'
+      const res = await fetch(`/api/proxy/cdc-streams/${row.id}/lakehouse-preview${qs}`)
+      if (!res.ok) {
+        toast({
+          variant: 'destructive',
+          title: t('lakehousePreviewFailedTitle'),
+          description: await readApiErrorMessage(res, t('lakehousePreviewFailedFallback')),
+        })
+        return
+      }
+      const preview = await parseOptionalJsonResponse<CdcLakehousePreviewDto>(res)
+      setPreviewState(preview)
+    } finally {
+      setPreviewLoading(false)
+    }
+  }, [t])
+
   const handleSyncCatalog = useCallback((row: CdcStreamDto) => runStreamAction<CdcCatalogSyncResultDto>(
     row, 'sync-catalog', `/api/proxy/cdc-streams/${row.id}/sync-catalog`, 'POST',
     t('syncCatalogFailedTitle'), t('syncCatalogFailedFallback'),
@@ -316,6 +341,24 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
       await reloadAndRefresh()
     },
   ), [reloadAndRefresh, runStreamAction, t])
+
+  const handleEvaluateContract = useCallback((row: CdcStreamDto) => runStreamAction<CdcContractEvaluationDto>(
+    row, 'evaluate-contract', `/api/proxy/cdc-streams/${row.id}/evaluate-contract`, 'POST',
+    t('evaluateContractFailedTitle'), t('evaluateContractFailedFallback'),
+    async (result) => {
+      toast({
+        variant: result.violated ? 'destructive' : 'success',
+        title: result.violated ? t('contractBreachedToastTitle') : t('contractHealthyToastTitle'),
+        description: result.summary || row.name,
+      })
+      await reloadAndRefresh()
+    },
+  ), [reloadAndRefresh, runStreamAction, t])
+
+  const closeHistory = useCallback(() => {
+    setHistoryState(null)
+    setPreviewState(null)
+  }, [])
 
   return {
     busyActions,
@@ -334,8 +377,10 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
     sinkTemplateState,
     setSinkTemplateState,
     historyState,
-    setHistoryState,
+    closeHistory,
     historyLoadingVersion,
+    previewState,
+    previewLoading,
     provisionSubmitting,
     compactSubmitting,
     handlePreflight,
@@ -347,7 +392,9 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
     submitDropSlot,
     handleSinkTemplate,
     handleOpenHistory,
+    handleLoadPreview,
     handleSyncCatalog,
+    handleEvaluateContract,
     handleSnapshot,
     handleAcceptSchema,
     handleProvisionSink,

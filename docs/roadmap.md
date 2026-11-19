@@ -112,11 +112,22 @@ Every milestone adheres to five non-negotiable engineering invariants:
 
 ---
 
-## Next Evolution (`v2.2+` AI-Era Open-Source Competitiveness)
+## `v2.2.0`: 零计算集群 Lakehouse 数据预览、数据契约 SLA 与 AI MCP Copilot（Completed）
 
-1. **AI-Native Schema & Mapping Copilot + Data Contract SLA Engine**:
-   - Combine SwapMid's controlled MCP Server with deterministic DDL/Type-Family inference to auto-propose `columnMappings`, detect downstream Data Contract regressions, and gate breaking changes before runtime execution.
-2. **Zero-Infra Embedded DuckDB Instant Lakehouse Preview & Query Console**:
-   - Inspect live MinIO/S3 Parquet fragments and `_delta_log` Time-Travel diffs directly from the browser BFF console without deploying external compute clusters.
-3. **Oracle LogMiner & Serverless Push Webhook CDC Sources**:
-   - Extend `ICdcStreamAppService` and `CdcStreamCaptureCoordinator` with `OracleLogMiner` and authenticated serverless CDC webhook ingestion alongside PostgreSQL `pgoutput`, SQL Server Change Tracking, and MySQL / MariaDB `Binlog`.
+1. **Zero-Infra Lakehouse 实时样本数据预览（`GET /api/v1/cdc-streams/{id}/lakehouse-preview`）**：
+   - 基于 `Parquet.Net` 与权威 `_delta_log` / `_swapmid/latest.json` 路径解析，在不部署外部 Spark/Trino/DuckDB 计算集群的前提下，直接在管理台 Time-Travel 弹窗内按任意历史版本 `VERSION AS OF v` 解码展示 Parquet / JSONL 样本数据行（强制 SSRF 守卫、单文件 4 MiB / 最多 3 分片 / 50 行上限与已清理分片优雅降级提示），并同步修正 `DeltaLake` 自动压缩默认保留历史分片语义。
+2. **数据契约与新鲜度 SLA 引擎（`POST /api/v1/cdc-streams/{id}/evaluate-contract`）**：
+   - 新增迁移 `AddCdcDataContractSla`（`MaxFreshnessLagSeconds`、`MaxAllowedWalLagBytes`、`RequiredColumns` 及违约审计字段）与 `CdcDataContractEvaluator`，支持新鲜度延迟（80% 预警 / 超限违约）、必填业务列核验、上游 Schema 漂移与 WAL 字节预算校验，联动去重恢复告警、`swapmid_cdc_contract_evaluations_total` / `swapmid_cdc_contract_violations_total` Prometheus 指标与 `SwapMidCdcDataContractBreached` 告警规则。
+3. **受控 AI MCP Copilot 8 工具扩展与 CI Node 24 零注解收口**：
+   - 在 `POST /api/mcp` 新增工具 7 `propose_pipeline_column_mappings`（基于只读零行预检推导精确/归一化列映射、候选主键/水位线及 Draft 就绪配置）与工具 8 `evaluate_cdc_data_contracts`（SRE 契约态势巡检与修复建议）；升级 CI/Release Actions 至 Node 24 原生主版本并消除 Dockerfile BuildKit 误报注解。
+
+---
+
+## Next Evolution (`v2.3+` AI-Era Open-Source Competitiveness)
+
+1. **Oracle LogMiner & Serverless Authenticated Webhook CDC Sources**:
+   - Extend `ICdcStreamAppService` and `CdcStreamCaptureCoordinator` with `OracleLogMiner` and HMAC-verified serverless push webhook CDC ingestion alongside PostgreSQL `pgoutput`, SQL Server Change Tracking, and MySQL / MariaDB `Binlog`.
+2. **Native Apache Iceberg v2 Metadata & Snapshot Manifest Interop**:
+   - Emit full Iceberg v2 `metadata.json` / manifest lists alongside Delta Lake `_delta_log` so Trino, Snowflake, and StarRocks can read SwapMid Lakehouse tables natively via Iceberg REST Catalogs without translation layers.
+3. **Automated Chaos SLA Latency & RPO Benchmark Reports**:
+   - Publish reproducible per-release throughput, WAL lag P99, and crash-recovery RPO=0 benchmark artifacts directly alongside `ChaosResilienceContractTests`.

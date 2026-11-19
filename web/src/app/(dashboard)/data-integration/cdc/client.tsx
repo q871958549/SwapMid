@@ -192,6 +192,7 @@ export function CdcStreamsClient({
           onSinkTemplate={item => void actions.handleSinkTemplate(item)}
           onLakehouseHistory={item => void actions.handleOpenHistory(item)}
           onSyncCatalog={item => void actions.handleSyncCatalog(item)}
+          onEvaluateContract={item => void actions.handleEvaluateContract(item)}
           onPreflight={item => void actions.handlePreflight(item)}
           onLifecycle={(item, action) => void actions.handleLifecycle(item, action)}
           onCaptureNow={item => void actions.handleCaptureNow(item)}
@@ -294,8 +295,11 @@ export function CdcStreamsClient({
       <CdcLakehouseHistoryDialog
         state={actions.historyState}
         loadingVersion={actions.historyLoadingVersion}
+        preview={actions.previewState}
+        previewLoading={actions.previewLoading}
         onSelectVersion={(stream, version) => void actions.handleOpenHistory(stream, version)}
-        onClose={() => actions.setHistoryState(null)}
+        onLoadPreview={(stream, version) => void actions.handleLoadPreview(stream, version)}
+        onClose={actions.closeHistory}
       />
       <DeleteConfirm
         crud={crud}

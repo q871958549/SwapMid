@@ -1540,7 +1540,25 @@
       "historyActiveFilesTitle": "Active Parquet Files at v{version}",
       "historyQuerySqlTitle": "Point-in-Time Query SQL (Spark / Polars / DuckDB)",
       "lakehouseHistoryFailedTitle": "Time-Travel load failed",
-      "lakehouseHistoryFailedFallback": "Could not load Delta Lake _delta_log history."
+      "lakehouseHistoryFailedFallback": "Could not load Delta Lake _delta_log history.",
+      "lakehousePreviewSectionTitle": "Live Data Preview at v{version} (Zero-Infra)",
+      "lakehousePreviewButtonLabel": "Preview Sample Rows",
+      "lakehousePreviewLoading": "Decoding fragments…",
+      "lakehousePreviewFailedTitle": "Lakehouse preview failed",
+      "lakehousePreviewFailedFallback": "Could not fetch or decode Parquet/JSONL fragments for this version.",
+      "contractSectionTitle": "Data Contract & Freshness SLA (Optional)",
+      "contractSectionHint": "Declare freshness lag ceiling, WAL retention byte budget, and required source columns with automated Prometheus metrics and alerting.",
+      "maxFreshnessLagFieldLabel": "Max Freshness Lag (sec, 10–86400)",
+      "maxWalLagMbFieldLabel": "Max WAL Retention Budget (MiB, optional)",
+      "requiredColumnsFieldLabel": "Required Business Columns (comma-separated)",
+      "contractHealthyBadge": "SLA Healthy",
+      "contractWarningBadge": "SLA Warning",
+      "contractBreachedBadge": "SLA Breached",
+      "evaluateContractMenuItem": "Evaluate Contract",
+      "contractHealthyToastTitle": "Data contract healthy",
+      "contractBreachedToastTitle": "Data contract breached",
+      "evaluateContractFailedTitle": "Contract evaluation failed",
+      "evaluateContractFailedFallback": "Could not evaluate Data Contract SLA status for this CDC stream."
     }
   },
   "System": {

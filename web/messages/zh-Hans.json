@@ -1540,7 +1540,25 @@
       "historyActiveFilesTitle": "v{version} 活跃 Parquet 分片清单",
       "historyQuerySqlTitle": "Time-Travel 查询语句（Spark / Polars / DuckDB）",
       "lakehouseHistoryFailedTitle": "加载 Time-Travel 历史失败",
-      "lakehouseHistoryFailedFallback": "无法读取对象存储 _delta_log 提交历史。"
+      "lakehouseHistoryFailedFallback": "无法读取对象存储 _delta_log 提交历史。",
+      "lakehousePreviewSectionTitle": "v{version} 实时数据预览（零外部计算集群）",
+      "lakehousePreviewButtonLabel": "加载实时数据预览",
+      "lakehousePreviewLoading": "正在解码分片…",
+      "lakehousePreviewFailedTitle": "加载 Lakehouse 数据预览失败",
+      "lakehousePreviewFailedFallback": "无法读取或解码当前版本的 Parquet/JSONL 数据分片。",
+      "contractSectionTitle": "数据契约与新鲜度 SLA（可选）",
+      "contractSectionHint": "声明新鲜度延迟上限、WAL 滞留预算与必填业务列，违约时自动记录 Prometheus 指标与通知告警。",
+      "maxFreshnessLagFieldLabel": "新鲜度 SLA 上限（秒，10–86400）",
+      "maxWalLagMbFieldLabel": "WAL 滞留预算上限（MiB，可选）",
+      "requiredColumnsFieldLabel": "契约必填业务列（英文逗号分隔）",
+      "contractHealthyBadge": "SLA 正常",
+      "contractWarningBadge": "SLA 预警",
+      "contractBreachedBadge": "SLA 违约",
+      "evaluateContractMenuItem": "契约校验",
+      "contractHealthyToastTitle": "数据契约 SLA 达标",
+      "contractBreachedToastTitle": "数据契约 SLA 违约",
+      "evaluateContractFailedTitle": "数据契约校验失败",
+      "evaluateContractFailedFallback": "无法评估当前 CDC 流的数据契约 SLA 状态。"
     }
   },
   "System": {

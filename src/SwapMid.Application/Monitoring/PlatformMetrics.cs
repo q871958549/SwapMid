@@ -182,7 +182,7 @@ public static partial class PlatformMetrics
 
     public static readonly Counter CdcIcebergMaintenanceTotal = Metrics.CreateCounter(
         "swapmid_cdc_iceberg_maintenance_total",
-        "Apache Iceberg v2 表维护操作计数（标签 operation=tag|expire|promote|rollback, outcome=succeeded|failed）",
+        "Apache Iceberg v2 表维护操作计数（标签 operation=tag|expire|promote|rollback|schema_evolve, outcome=succeeded|failed）",
         new CounterConfiguration { LabelNames = ["operation", "outcome"] });
 
     public static readonly Gauge CdcLakehouseActiveBytes = Metrics.CreateGauge(
@@ -276,7 +276,7 @@ public static partial class PlatformMetrics
 
         CdcIcebergEqualityDeletesTotal.Publish();
         PublishSingleLabelSeries(CdcSchemaRegistryFetchesTotal, ["cache_hit", "fetched", "failed"]);
-        foreach (var op in new[] { "tag", "expire", "promote", "rollback" })
+        foreach (var op in new[] { "tag", "expire", "promote", "rollback", "schema_evolve" })
         {
             foreach (var outcome in new[] { "succeeded", "failed" })
             {
@@ -284,7 +284,7 @@ public static partial class PlatformMetrics
             }
         }
 
-        foreach (var ev in new[] { "promote", "rollback" })
+        foreach (var ev in new[] { "promote", "rollback", "schema_evolve" })
         {
             foreach (var outcome in new[] { "succeeded", "failed", "skipped" })
             {

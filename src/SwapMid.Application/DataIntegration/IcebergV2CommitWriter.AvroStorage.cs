@@ -126,8 +126,12 @@ internal static partial class IcebergV2CommitWriter
         Guid runId,
         IReadOnlyList<IcebergAvroManifestBuilder.ManifestEntryRecord> avroEntries,
         int partitionSpecId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? activeSchemaCompactJson = null)
     {
+        var schemaJson = string.IsNullOrWhiteSpace(activeSchemaCompactJson)
+            ? CdcIcebergSchemaCompactJson
+            : activeSchemaCompactJson;
         var dataEntries = avroEntries
             .Where(e => e.Content == IcebergAvroManifestBuilder.ContentData)
             .ToList();
@@ -140,7 +144,7 @@ internal static partial class IcebergV2CommitWriter
         if (dataEntries.Count > 0 || deleteEntries.Count == 0)
         {
             var dataManifestBytes = IcebergAvroManifestBuilder.BuildManifestFileAvro(
-                CdcIcebergSchemaCompactJson,
+                schemaJson,
                 dataEntries,
                 syncSeed: $"mf:{snapshotId}:{runId:N}:{nextSeq}",
                 partitionSpecId: partitionSpecId,
@@ -160,7 +164,7 @@ internal static partial class IcebergV2CommitWriter
         if (deleteEntries.Count > 0)
         {
             var deleteManifestBytes = IcebergAvroManifestBuilder.BuildManifestFileAvro(
-                CdcIcebergSchemaCompactJson,
+                schemaJson,
                 deleteEntries,
                 syncSeed: $"dmf:{snapshotId}:{runId:N}:{nextSeq}",
                 partitionSpecId: partitionSpecId,

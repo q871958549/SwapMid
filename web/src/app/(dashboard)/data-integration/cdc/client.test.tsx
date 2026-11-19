@@ -1808,4 +1808,113 @@ describe('CdcStreamsClient', () => {
     fireEvent.click(screen.getByRole('button', { name: '回滚 main' }))
     expect(await screen.findByText('tag:pre-rb-v2 · v2')).toBeTruthy()
   })
+
+  it('supports Apache Iceberg v2 native Schema Evolution dry-run and apply in Time-Travel dialog', async () => {
+    mocks.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          destination: 'orders/schema',
+          tableFormat: 2,
+          writeMode: 1,
+          deltaLogDirectory: 'warehouse/orders/schema/metadata',
+          currentVersion: 1,
+          selectedVersion: 1,
+          totalCommitCount: 1,
+          selectedActiveFileCount: 1,
+          currentSchemaId: 0,
+          lastColumnId: 12,
+          schemaFields: [
+            { fieldId: 1, name: 'event_id', type: 'string', required: false, isCoreEnvelope: true },
+            { fieldId: 12, name: 'business_key', type: 'string', required: false, isCoreEnvelope: true },
+          ],
+          refs: [{ name: 'main', type: 'branch', snapshotId: 100, version: 1 }],
+          commits: [],
+          activeFiles: [],
+          summary: 'Apache Iceberg v2 · v1',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          dryRun: true,
+          previousSchemaId: 0,
+          newSchemaId: 1,
+          lastColumnId: 13,
+          metadataVersion: 1,
+          metadataKey: 'warehouse/orders/schema/metadata/v1.metadata.json',
+          addedCount: 1,
+          renamedCount: 0,
+          droppedCount: 0,
+          activeFields: [],
+          message: 'Dry-Run Schema Evolution 预演通过：schema-id 将由 0 演进至 1',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          dryRun: false,
+          previousSchemaId: 0,
+          newSchemaId: 1,
+          lastColumnId: 13,
+          metadataVersion: 2,
+          metadataKey: 'warehouse/orders/schema/metadata/v2.metadata.json',
+          addedCount: 1,
+          renamedCount: 0,
+          droppedCount: 0,
+          activeFields: [],
+          message: 'Apache Iceberg v2 表结构已原子演进至 schema-id=1',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          destination: 'orders/schema',
+          tableFormat: 2,
+          writeMode: 1,
+          deltaLogDirectory: 'warehouse/orders/schema/metadata',
+          currentVersion: 1,
+          selectedVersion: 1,
+          totalCommitCount: 1,
+          selectedActiveFileCount: 1,
+          currentSchemaId: 1,
+          lastColumnId: 13,
+          schemaFields: [
+            { fieldId: 1, name: 'event_id', type: 'string', required: false, isCoreEnvelope: true },
+            { fieldId: 12, name: 'business_key', type: 'string', required: false, isCoreEnvelope: true },
+            { fieldId: 13, name: 'order_amount', type: 'double', required: false, isCoreEnvelope: false },
+          ],
+          refs: [{ name: 'main', type: 'branch', snapshotId: 100, version: 1 }],
+          commits: [],
+          activeFiles: [],
+          summary: 'Apache Iceberg v2 · v1',
+        }),
+      })
+
+    renderClient(makeStream({
+      sourceType: 4,
+      status: 1,
+      targetMode: 2,
+      targetSinkId: SOURCE_ID,
+      targetSinkType: 5,
+      targetSinkName: 'minio-iceberg',
+      targetSinkDestination: 'orders/schema',
+      targetSinkKeyColumns: 'order_id',
+      lakehouseTableFormat: 2,
+      lakehouseWriteMode: 1,
+    }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Time-Travel' }))
+    expect(await screen.findByText('schema-id=0')).toBeTruthy()
+    fireEvent.change(screen.getByPlaceholderText('新增业务列名（如 order_amount）'), { target: { value: 'order_amount' } })
+    fireEvent.click(screen.getByRole('button', { name: '演进预演' }))
+    expect(await screen.findByText(/Dry-Run Schema Evolution 预演通过/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '新增列' }))
+    expect(await screen.findByText('#13 order_amount: double')).toBeTruthy()
+    expect(screen.getByText('schema-id=1')).toBeTruthy()
+  })
 })

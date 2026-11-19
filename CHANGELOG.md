@@ -4,6 +4,19 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-11-20
+
+### Added
+- **Apache Iceberg v2 Native Schema Evolution (`schema-id` Evolution, Immutable `FieldId` Mapping & Typed Promoted Columns)**:
+  - Added pure-.NET `IcebergV2SchemaEvolutionService` (`IcebergV2SchemaEvolutionService.cs` + `IcebergV2SchemaEvolutionService.Parsing.cs`), DTOs (`CdcLakehouseSchemaDtos.cs`), and `POST /api/v1/cdc-streams/{id}/evolve-lakehouse-schema` (`[Authorize(CdcStreams.Manage)]`, `DryRun = true` default): supports adding typed first-class Parquet columns (`string`, `long`, `double`, `boolean`, `timestamptz`), zero-rewrite column renames (preserving exact `FieldId` and extending `properties["schema.name-mapping.default"]`), and safe column drops (never reusing retired `FieldId`s while permanently protecting core CDC envelope fields `1..12`), atomically committed via S3 CAS `If-None-Match: *`.
+  - Added `CdcObjectStorageLakehouseWriter.SchemaProjection.cs` and updated `ObjectStorageEtlSinkWriter`, `IcebergV2CommitWriter` (`JsonBuilder.cs` / `AvroStorage.cs`), `IcebergV2MetadataReader`, and `CdcParquetCompactionMergeHelper` so evolved `schemas[]`, `current-schema-id`, `last-column-id`, and `schema.name-mapping.default` survive all subsequent Append / Daily Partitioned / Merge-on-Read / `REPLACE` Compaction commits, auto-extracting typed payload fields into exact `FieldId`-pinned Parquet columns and merging mixed-schema historical + renamed files cleanly — verified live via official **`duckdb/duckdb:latest` (`v2.0.0`) `iceberg_scan()`** across `schema-id` `0 -> 1 -> 2`!
+  - Added `CdcIcebergSchemaSection` inside `/data-integration/cdc` Time-Travel dialog (`cdc-iceberg-schema-section.tsx`) for visual `schema-id`/`FieldId` inspection and Dry-Run / Apply column add, zero-rewrite rename, and drop.
+- **Turnkey OpenTelemetry OTLP + Grafana Tempo 3-Pillar Observability & MCP Tool 15**:
+  - Upgraded `docker/docker-compose.observability.yml` with `grafana/tempo:2.7.2` (`docker/observability/tempo/tempo.yml`), pre-provisioned Grafana Tempo datasource (`docker/observability/grafana/provisioning/datasources/tempo.yml`), automatic `OpenTelemetry__OtlpEndpoint=http://tempo:4317` wiring on `api`, and Grafana Panel 12 (`Lakehouse — Schema Evolution, Rollback & FinOps Storage`).
+  - Added RBAC-gated read-only MCP Tool 15 `inspect_lakehouse_schema` (`McpLakehouseSchemaHandler`), expanded `scripts/e2e-smoke.mjs` to assert 15 MCP tools, and maintained **100.0% (`210/210`)** `/api/v1` OpenAPI summary coverage across 9 domains and `2,212` trilingual i18n keys.
+- **v3.0 Schema-Evolved Lakehouse Throughput SLA Benchmarks**:
+  - Added `IcebergV2SchemaEvolutionTests` including a 1,000-row 16-column typed schema-evolved Iceberg v2 throughput & `RPO = 0` benchmark (`154.9 ms`, **`6,454 rows/s`**, `RPO = 0`) documented in [docs/benchmarks/resilience-and-chaos.md](docs/benchmarks/resilience-and-chaos.md).
+
 ## [2.9.0] - 2026-11-20
 
 ### Added

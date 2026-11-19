@@ -67,15 +67,10 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
         string destination,
         Func<Func<EtlSourceBatch, CancellationToken, Task>, CancellationToken, Task> streamBatchesAsync,
         CancellationToken cancellationToken,
-        string? partitionSegment = null)
+        string? partitionSegment = null,
+        int[]? fieldIds = null)
         => await WriteAndUploadCoreAsync(
-            runId,
-            target,
-            EtlWriteMode.Append,
-            destination,
-            streamBatchesAsync,
-            cancellationToken,
-            partitionSegment);
+            runId, target, EtlWriteMode.Append, destination, streamBatchesAsync, cancellationToken, partitionSegment, fieldIds);
 
     internal async Task<UploadedObjectResult> WriteAndUploadEqualityDeleteParquetAsync(
         Guid runId,
@@ -129,7 +124,8 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
         string destination,
         Func<Func<EtlSourceBatch, CancellationToken, Task>, CancellationToken, Task> streamBatchesAsync,
         CancellationToken cancellationToken,
-        string? partitionSegment = null)
+        string? partitionSegment = null,
+        int[]? fieldIds = null)
     {
         if (mode != EtlWriteMode.Append)
         {
@@ -157,7 +153,7 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
         {
             var totalRows = config.Format == "jsonl"
                 ? await WriteJsonLinesTempFileAsync(tempPath, streamBatchesAsync, cancellationToken)
-                : await WriteParquetTempFileAsync(tempPath, streamBatchesAsync, cancellationToken);
+                : await WriteParquetTempFileAsync(tempPath, streamBatchesAsync, cancellationToken, fieldIds);
 
             var fileLength = File.Exists(tempPath) ? new FileInfo(tempPath).Length : 0;
             if (totalRows == 0 || fileLength == 0)
@@ -182,19 +178,15 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
     internal static async Task<long> WriteParquetTempFileAsync(
         string filePath,
         Func<Func<EtlSourceBatch, CancellationToken, Task>, CancellationToken, Task> streamBatchesAsync,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int[]? fieldIds = null)
     {
         long totalRows = 0;
         ParquetFieldSpec[]? fieldSpecs = null;
         ParquetWriter? parquetWriter = null;
 
         await using var fileStream = new FileStream(
-            filePath,
-            FileMode.Create,
-            FileAccess.ReadWrite,
-            FileShare.None,
-            bufferSize: 64 * 1024,
-            useAsync: true);
+            filePath, FileMode.Create, FileAccess.ReadWrite, FileShare.None, bufferSize: 64 * 1024, useAsync: true);
 
         try
         {
@@ -207,7 +199,7 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
 
                 if (parquetWriter is null)
                 {
-                    fieldSpecs = BuildParquetFields(batch.TargetColumns, batch.TargetClrTypes);
+                    fieldSpecs = BuildParquetFields(batch.TargetColumns, batch.TargetClrTypes, fieldIds);
                     var schema = new ParquetSchema(fieldSpecs.Select(s => s.Field).ToArray());
                     parquetWriter = await ParquetWriter.CreateAsync(
                         schema,
@@ -320,7 +312,7 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
         return payloadHashHex;
     }
 
-    private static ParquetFieldSpec[] BuildParquetFields(string[] columns, Type[] clrTypes)
+    private static ParquetFieldSpec[] BuildParquetFields(string[] columns, Type[] clrTypes, int[]? fieldIds = null)
     {
         var specs = new ParquetFieldSpec[columns.Length];
         for (var i = 0; i < columns.Length; i++)
@@ -343,7 +335,7 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
                 _ when unwrapped == typeof(byte[]) => new(new DataField<byte[]?>(columns[i]), ParquetColumnKind.Binary),
                 _ => new(new DataField<string?>(columns[i]), ParquetColumnKind.String),
             };
-            specs[i].Field.FieldId = i + 1;
+            specs[i].Field.FieldId = fieldIds != null && i < fieldIds.Length && fieldIds[i] > 0 ? fieldIds[i] : i + 1;
         }
 
         return specs;

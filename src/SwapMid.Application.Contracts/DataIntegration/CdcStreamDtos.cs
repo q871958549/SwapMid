@@ -415,6 +415,9 @@ public class CdcLakehouseHistoryDto
     public List<CdcDeltaCommitSummaryDto> Commits { get; set; } = new();
     public List<CdcDeltaActiveFileDto> ActiveFiles { get; set; } = new();
     public List<CdcLakehouseRefDto> Refs { get; set; } = new();
+    public int CurrentSchemaId { get; set; }
+    public int LastColumnId { get; set; }
+    public List<CdcLakehouseSchemaFieldDto> SchemaFields { get; set; } = new();
     public string? TimeTravelQuerySql { get; set; }
     public string Summary { get; set; } = null!;
 }

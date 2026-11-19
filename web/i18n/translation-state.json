@@ -9327,6 +9327,78 @@
       "traditionalSourceHash": "433473e2c46b907067e52af4",
       "traditionalHash": "6176903be75225f0699f9341"
     },
+    "DataIntegration.cdc.icebergSchemaSectionTitle": {
+      "sourceHash": "3158956b1a34746870a61384",
+      "englishHash": "48cd5f165dd5c11343c6f21d",
+      "traditionalSourceHash": "5bc0205c1481fc9afc0d8c04",
+      "traditionalHash": "5ed6099aed97ee2c3fa6b7fc"
+    },
+    "DataIntegration.cdc.icebergSchemaCoreEnvelopeBadge": {
+      "sourceHash": "8d7ee968eb2d4b4c74f2ede8",
+      "englishHash": "b7112b1a18c52a51637aa517",
+      "traditionalSourceHash": "76107764917651d88224d250",
+      "traditionalHash": "c24c5f9771b69f51f02e9df6"
+    },
+    "DataIntegration.cdc.icebergSchemaNoPromotedHint": {
+      "sourceHash": "6366a218da5a6cd309aab4e0",
+      "englishHash": "50b8f99f15a795627ae003af",
+      "traditionalSourceHash": "d7fb4cf5e1f28acc38629238",
+      "traditionalHash": "7b811c3e9d9f8c5600c725c0"
+    },
+    "DataIntegration.cdc.icebergSchemaAddPlaceholder": {
+      "sourceHash": "40968bf3f295a9f2c1c04ea0",
+      "englishHash": "93fe8effb6a2fd99ad6587c6",
+      "traditionalSourceHash": "eed5ecde4e057ac597efa3a3",
+      "traditionalHash": "3ef32c9a21bb40a7aff2afe5"
+    },
+    "DataIntegration.cdc.icebergSchemaDryRunButton": {
+      "sourceHash": "287d697f550d6e4645487cde",
+      "englishHash": "84738f88a5d6a8eeab8eb7ff",
+      "traditionalSourceHash": "827d42fe17e269972ae2cfef",
+      "traditionalHash": "783f14916ed48b273882f999"
+    },
+    "DataIntegration.cdc.icebergSchemaAddButton": {
+      "sourceHash": "7d94b8357eb026ab1cf5e2e3",
+      "englishHash": "c26c65459a782d2065f5a9cd",
+      "traditionalSourceHash": "e39137e43ec21be9e27c62ab",
+      "traditionalHash": "67bf0b6526cdd5687e921b81"
+    },
+    "DataIntegration.cdc.icebergSchemaSelectTargetPlaceholder": {
+      "sourceHash": "81ddcc11a863dfbaf727fe45",
+      "englishHash": "9121a56f155b6bdba3b9e7e6",
+      "traditionalSourceHash": "5dee7a318a1767b20ce173e5",
+      "traditionalHash": "aec77438b6793621b620fdfe"
+    },
+    "DataIntegration.cdc.icebergSchemaRenamePlaceholder": {
+      "sourceHash": "6351f072ecca241268649195",
+      "englishHash": "4eb3da12fdeef5a941159c39",
+      "traditionalSourceHash": "e9579c1d1fc37f51edc7bb75",
+      "traditionalHash": "3aa2c6fa8953a30fb58bd3a2"
+    },
+    "DataIntegration.cdc.icebergSchemaRenameButton": {
+      "sourceHash": "2b8c510afca175919357585a",
+      "englishHash": "3064d79a295cefe4b384b8fe",
+      "traditionalSourceHash": "b673761c17eeb2cc917ea371",
+      "traditionalHash": "0d0cbac2eee541136ec2dbba"
+    },
+    "DataIntegration.cdc.icebergSchemaDropButton": {
+      "sourceHash": "2604c0a10ffa71a7da630f70",
+      "englishHash": "c8af9ae37a48273f981bc82a",
+      "traditionalSourceHash": "f14c191ea46515eccc48dace",
+      "traditionalHash": "97f913f5d754edf6547f9275"
+    },
+    "DataIntegration.cdc.icebergSchemaSuccessTitle": {
+      "sourceHash": "9cd101742c2faf4f964877b5",
+      "englishHash": "53c310c2e5cbea8b9408c321",
+      "traditionalSourceHash": "9abf8b314d5401156d290cf0",
+      "traditionalHash": "e0ec4e92674d06c52b478469"
+    },
+    "DataIntegration.cdc.icebergSchemaFailedTitle": {
+      "sourceHash": "375338133c412e7ff6d41487",
+      "englishHash": "77417ef6e1b2c0190fd30ba9",
+      "traditionalSourceHash": "342775cd8a9272f6c6258281",
+      "traditionalHash": "d624ff387c83d75e7dd00062"
+    },
     "DataIntegration.cdc.lineageButtonLabel": {
       "sourceHash": "9cefbfd3ae06d8874e3e257b",
       "englishHash": "044baaecb29f0ce77d582f32",

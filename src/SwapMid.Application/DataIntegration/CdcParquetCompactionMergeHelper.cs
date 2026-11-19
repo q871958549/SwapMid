@@ -21,64 +21,48 @@ internal static class CdcParquetCompactionMergeHelper
         string outputPath,
         CancellationToken cancellationToken)
     {
-        ParquetSchema? targetSchema = null;
-        DataField[]? dataFields = null;
+        if (candidates.Count == 0) return;
+        var cachedBytes = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        async Task<byte[]> GetBytesAsync(string key)
+        {
+            if (cachedBytes.TryGetValue(key, out var hit)) return hit;
+            var fetched = await fetchBytesAsync(key, cancellationToken);
+            cachedBytes[key] = fetched;
+            return fetched;
+        }
+
+        // Select the newest candidate's schema so evolved promoted columns & renames are preserved across compaction.
+        var (targetSchema, dataFields, _) = await ReadSchemaWithFieldIdsAsync(await GetBytesAsync(candidates[^1].DataObjectKey), cancellationToken);
         ParquetWriter? writer = null;
 
         await using var outStream = new FileStream(
             outputPath, FileMode.Create, FileAccess.ReadWrite, FileShare.None, bufferSize: 64 * 1024, useAsync: true);
         try
         {
+            writer = await ParquetWriter.CreateAsync(targetSchema, outStream, cancellationToken: cancellationToken);
             foreach (var candidate in candidates)
             {
-                var bytes = await fetchBytesAsync(candidate.DataObjectKey, cancellationToken);
+                var bytes = await GetBytesAsync(candidate.DataObjectKey);
                 await using var mem = new MemoryStream(bytes, writable: false);
                 await using var reader = await ParquetReader.CreateAsync(mem, cancellationToken: cancellationToken);
-                if (targetSchema == null)
-                {
-                    targetSchema = reader.Schema;
-                    dataFields = targetSchema.GetDataFields();
-                    var fieldIdByName = new Dictionary<string, int>(StringComparer.Ordinal);
-                    if (reader.Metadata?.Schema != null)
-                    {
-                        foreach (var elem in reader.Metadata.Schema)
-                        {
-                            if (elem.FieldId.HasValue && elem.FieldId.Value > 0 && !string.IsNullOrEmpty(elem.Name))
-                            {
-                                fieldIdByName[elem.Name] = elem.FieldId.Value;
-                            }
-                        }
-                    }
-
-                    foreach (var df in dataFields)
-                    {
-                        if (fieldIdByName.TryGetValue(df.Name, out var fid))
-                        {
-                            df.FieldId = fid;
-                        }
-                    }
-
-                    writer = await ParquetWriter.CreateAsync(targetSchema, outStream, cancellationToken: cancellationToken);
-                }
+                var sourceByFieldId = BuildFieldLookupByFieldId(reader);
 
                 for (var rg = 0; rg < reader.RowGroupCount; rg++)
                 {
                     using var rgReader = reader.OpenRowGroupReader(rg);
                     var rowCount = checked((int)rgReader.RowCount);
                     if (rowCount == 0) continue;
-                    using var rgWriter = writer!.CreateRowGroup();
-                    foreach (var field in dataFields!)
+                    using var rgWriter = writer.CreateRowGroup();
+                    foreach (var field in dataFields)
                     {
-                        await CopyParquetColumnAsync(rgReader, rgWriter, field, rowCount, cancellationToken);
+                        var sourceField = ResolveSourceField(rgReader, field, sourceByFieldId);
+                        await CopyParquetColumnAsync(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
                     }
                 }
             }
 
-            if (writer != null)
-            {
-                await writer.DisposeAsync();
-                writer = null;
-            }
+            await writer.DisposeAsync();
+            writer = null;
         }
         finally
         {
@@ -108,6 +92,7 @@ internal static class CdcParquetCompactionMergeHelper
     private static async Task CopyParquetColumnAsync(
         ParquetRowGroupReader rgReader,
         ParquetRowGroupWriter rgWriter,
+        DataField? sourceField,
         DataField field,
         int rowCount,
         CancellationToken cancellationToken)
@@ -116,9 +101,9 @@ internal static class CdcParquetCompactionMergeHelper
         if (clrType == typeof(string) || clrType == typeof(ReadOnlyMemory<char>))
         {
             var buf = new string?[rowCount];
-            if (rgReader.ColumnExists(field))
+            if (sourceField != null)
             {
-                await rgReader.ReadAsync(field, buf.AsMemory(), cancellationToken: cancellationToken);
+                await rgReader.ReadAsync(sourceField, buf.AsMemory(), cancellationToken: cancellationToken);
             }
             await rgWriter.WriteAsync(field, buf);
             return;
@@ -127,32 +112,32 @@ internal static class CdcParquetCompactionMergeHelper
         if (clrType == typeof(byte[]) || clrType == typeof(ReadOnlyMemory<byte>))
         {
             var buf = new byte[]?[rowCount];
-            if (rgReader.ColumnExists(field))
+            if (sourceField != null)
             {
-                await rgReader.ReadAsync(field, buf.AsMemory(), cancellationToken: cancellationToken);
+                await rgReader.ReadAsync(sourceField, buf.AsMemory(), cancellationToken: cancellationToken);
             }
             await rgWriter.WriteAsync(field, buf);
             return;
         }
 
-        if (clrType == typeof(bool)) await CopyStructColumnAsync<bool>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(byte)) await CopyStructColumnAsync<byte>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(sbyte)) await CopyStructColumnAsync<sbyte>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(short)) await CopyStructColumnAsync<short>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(ushort)) await CopyStructColumnAsync<ushort>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(int)) await CopyStructColumnAsync<int>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(uint)) await CopyStructColumnAsync<uint>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(long)) await CopyStructColumnAsync<long>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(ulong)) await CopyStructColumnAsync<ulong>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(float)) await CopyStructColumnAsync<float>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(double)) await CopyStructColumnAsync<double>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(decimal)) await CopyStructColumnAsync<decimal>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(DateTime)) await CopyStructColumnAsync<DateTime>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(DateTimeOffset)) await CopyStructColumnAsync<DateTimeOffset>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(DateOnly)) await CopyStructColumnAsync<DateOnly>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(TimeOnly)) await CopyStructColumnAsync<TimeOnly>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(TimeSpan)) await CopyStructColumnAsync<TimeSpan>(rgReader, rgWriter, field, rowCount, cancellationToken);
-        else if (clrType == typeof(Guid)) await CopyStructColumnAsync<Guid>(rgReader, rgWriter, field, rowCount, cancellationToken);
+        if (clrType == typeof(bool)) await CopyStructColumnAsync<bool>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(byte)) await CopyStructColumnAsync<byte>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(sbyte)) await CopyStructColumnAsync<sbyte>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(short)) await CopyStructColumnAsync<short>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(ushort)) await CopyStructColumnAsync<ushort>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(int)) await CopyStructColumnAsync<int>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(uint)) await CopyStructColumnAsync<uint>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(long)) await CopyStructColumnAsync<long>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(ulong)) await CopyStructColumnAsync<ulong>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(float)) await CopyStructColumnAsync<float>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(double)) await CopyStructColumnAsync<double>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(decimal)) await CopyStructColumnAsync<decimal>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(DateTime)) await CopyStructColumnAsync<DateTime>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(DateTimeOffset)) await CopyStructColumnAsync<DateTimeOffset>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(DateOnly)) await CopyStructColumnAsync<DateOnly>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(TimeOnly)) await CopyStructColumnAsync<TimeOnly>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(TimeSpan)) await CopyStructColumnAsync<TimeSpan>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
+        else if (clrType == typeof(Guid)) await CopyStructColumnAsync<Guid>(rgReader, rgWriter, sourceField, field, rowCount, cancellationToken);
         else
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.PipelineExecutionFailed)
@@ -174,9 +159,17 @@ internal static class CdcParquetCompactionMergeHelper
             return candidates.Sum(c => c.RowCount);
         }
 
-        ParquetSchema? targetSchema = null;
-        DataField[]? dataFields = null;
-        DataField? businessKeyField = null;
+        if (candidates.Count == 0) return 0;
+        var cachedBytes = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        async Task<byte[]> GetBytesAsync(string key)
+        {
+            if (cachedBytes.TryGetValue(key, out var hit)) return hit;
+            var fetched = await fetchBytesAsync(key, cancellationToken);
+            cachedBytes[key] = fetched;
+            return fetched;
+        }
+
+        var (targetSchema, dataFields, businessKeyField) = await ReadSchemaWithFieldIdsAsync(await GetBytesAsync(candidates[^1].DataObjectKey), cancellationToken);
         ParquetWriter? writer = null;
         long keptTotal = 0;
 
@@ -184,36 +177,14 @@ internal static class CdcParquetCompactionMergeHelper
             outputPath, FileMode.Create, FileAccess.ReadWrite, FileShare.None, bufferSize: 64 * 1024, useAsync: true);
         try
         {
+            writer = await ParquetWriter.CreateAsync(targetSchema, outStream, cancellationToken: cancellationToken);
             foreach (var candidate in candidates)
             {
                 var dataSeq = dataSeqByKey.TryGetValue(candidate.DataObjectKey, out var seq) ? seq : 0L;
-                var bytes = await fetchBytesAsync(candidate.DataObjectKey, cancellationToken);
+                var bytes = await GetBytesAsync(candidate.DataObjectKey);
                 await using var mem = new MemoryStream(bytes, writable: false);
                 await using var reader = await ParquetReader.CreateAsync(mem, cancellationToken: cancellationToken);
-                if (targetSchema == null)
-                {
-                    targetSchema = reader.Schema;
-                    dataFields = targetSchema.GetDataFields();
-                    var fieldIdByName = new Dictionary<string, int>(StringComparer.Ordinal);
-                    if (reader.Metadata?.Schema != null)
-                    {
-                        foreach (var elem in reader.Metadata.Schema)
-                        {
-                            if (elem.FieldId.HasValue && elem.FieldId.Value > 0 && !string.IsNullOrEmpty(elem.Name))
-                            {
-                                fieldIdByName[elem.Name] = elem.FieldId.Value;
-                            }
-                        }
-                    }
-
-                    foreach (var df in dataFields)
-                    {
-                        if (fieldIdByName.TryGetValue(df.Name, out var fid)) df.FieldId = fid;
-                        if (string.Equals(df.Name, "business_key", StringComparison.OrdinalIgnoreCase)) businessKeyField = df;
-                    }
-
-                    writer = await ParquetWriter.CreateAsync(targetSchema, outStream, cancellationToken: cancellationToken);
-                }
+                var sourceByFieldId = BuildFieldLookupByFieldId(reader);
 
                 for (var rg = 0; rg < reader.RowGroupCount; rg++)
                 {
@@ -246,19 +217,17 @@ internal static class CdcParquetCompactionMergeHelper
 
                     if (keepIndices.Count == 0) continue;
                     keptTotal += keepIndices.Count;
-                    using var rgWriter = writer!.CreateRowGroup();
-                    foreach (var field in dataFields!)
+                    using var rgWriter = writer.CreateRowGroup();
+                    foreach (var field in dataFields)
                     {
-                        await CopyFilteredColumnAsync(rgReader, rgWriter, field, rowCount, keepIndices, cancellationToken);
+                        var sourceField = ResolveSourceField(rgReader, field, sourceByFieldId);
+                        await CopyFilteredColumnAsync(rgReader, rgWriter, sourceField, field, rowCount, keepIndices, cancellationToken);
                     }
                 }
             }
 
-            if (writer != null)
-            {
-                await writer.DisposeAsync();
-                writer = null;
-            }
+            await writer.DisposeAsync();
+            writer = null;
         }
         finally
         {
@@ -271,6 +240,7 @@ internal static class CdcParquetCompactionMergeHelper
     private static async Task CopyFilteredColumnAsync(
         ParquetRowGroupReader rgReader,
         ParquetRowGroupWriter rgWriter,
+        DataField? sourceField,
         DataField field,
         int rowCount,
         List<int> keepIndices,
@@ -280,7 +250,7 @@ internal static class CdcParquetCompactionMergeHelper
         if (clrType == typeof(string) || clrType == typeof(ReadOnlyMemory<char>))
         {
             var src = new string?[rowCount];
-            if (rgReader.ColumnExists(field)) await rgReader.ReadAsync(field, src.AsMemory(), cancellationToken: cancellationToken);
+            if (sourceField != null) await rgReader.ReadAsync(sourceField, src.AsMemory(), cancellationToken: cancellationToken);
             var dst = new string?[keepIndices.Count];
             for (var i = 0; i < keepIndices.Count; i++) dst[i] = src[keepIndices[i]];
             await rgWriter.WriteAsync(field, dst);
@@ -289,20 +259,20 @@ internal static class CdcParquetCompactionMergeHelper
 
         if (clrType == typeof(DateTime))
         {
-            await CopyFilteredStructColumnAsync<DateTime>(rgReader, rgWriter, field, rowCount, keepIndices, cancellationToken);
+            await CopyFilteredStructColumnAsync<DateTime>(rgReader, rgWriter, sourceField, field, rowCount, keepIndices, cancellationToken);
             return;
         }
 
-        if (clrType == typeof(long)) { await CopyFilteredStructColumnAsync<long>(rgReader, rgWriter, field, rowCount, keepIndices, cancellationToken); return; }
-        if (clrType == typeof(int)) { await CopyFilteredStructColumnAsync<int>(rgReader, rgWriter, field, rowCount, keepIndices, cancellationToken); return; }
-        if (clrType == typeof(double)) { await CopyFilteredStructColumnAsync<double>(rgReader, rgWriter, field, rowCount, keepIndices, cancellationToken); return; }
-        if (clrType == typeof(decimal)) { await CopyFilteredStructColumnAsync<decimal>(rgReader, rgWriter, field, rowCount, keepIndices, cancellationToken); return; }
-        if (clrType == typeof(bool)) { await CopyFilteredStructColumnAsync<bool>(rgReader, rgWriter, field, rowCount, keepIndices, cancellationToken); return; }
-        if (clrType == typeof(Guid)) { await CopyFilteredStructColumnAsync<Guid>(rgReader, rgWriter, field, rowCount, keepIndices, cancellationToken); return; }
+        if (clrType == typeof(long)) { await CopyFilteredStructColumnAsync<long>(rgReader, rgWriter, sourceField, field, rowCount, keepIndices, cancellationToken); return; }
+        if (clrType == typeof(int)) { await CopyFilteredStructColumnAsync<int>(rgReader, rgWriter, sourceField, field, rowCount, keepIndices, cancellationToken); return; }
+        if (clrType == typeof(double)) { await CopyFilteredStructColumnAsync<double>(rgReader, rgWriter, sourceField, field, rowCount, keepIndices, cancellationToken); return; }
+        if (clrType == typeof(decimal)) { await CopyFilteredStructColumnAsync<decimal>(rgReader, rgWriter, sourceField, field, rowCount, keepIndices, cancellationToken); return; }
+        if (clrType == typeof(bool)) { await CopyFilteredStructColumnAsync<bool>(rgReader, rgWriter, sourceField, field, rowCount, keepIndices, cancellationToken); return; }
+        if (clrType == typeof(Guid)) { await CopyFilteredStructColumnAsync<Guid>(rgReader, rgWriter, sourceField, field, rowCount, keepIndices, cancellationToken); return; }
         if (clrType == typeof(byte[]) || clrType == typeof(ReadOnlyMemory<byte>))
         {
             var src = new byte[]?[rowCount];
-            if (rgReader.ColumnExists(field)) await rgReader.ReadAsync(field, src.AsMemory(), cancellationToken: cancellationToken);
+            if (sourceField != null) await rgReader.ReadAsync(sourceField, src.AsMemory(), cancellationToken: cancellationToken);
             var dst = new byte[]?[keepIndices.Count];
             for (var i = 0; i < keepIndices.Count; i++) dst[i] = src[keepIndices[i]];
             await rgWriter.WriteAsync(field, dst);
@@ -316,6 +286,7 @@ internal static class CdcParquetCompactionMergeHelper
     private static async Task CopyFilteredStructColumnAsync<T>(
         ParquetRowGroupReader rgReader,
         ParquetRowGroupWriter rgWriter,
+        DataField? sourceField,
         DataField field,
         int rowCount,
         List<int> keepIndices,
@@ -325,7 +296,7 @@ internal static class CdcParquetCompactionMergeHelper
         if (field.IsNullable)
         {
             var src = new T?[rowCount];
-            if (rgReader.ColumnExists(field)) await rgReader.ReadAsync<T>(field, src.AsMemory(), cancellationToken: cancellationToken);
+            if (sourceField != null) await rgReader.ReadAsync<T>(sourceField, src.AsMemory(), cancellationToken: cancellationToken);
             var dst = new T?[keepIndices.Count];
             for (var i = 0; i < keepIndices.Count; i++) dst[i] = src[keepIndices[i]];
             await rgWriter.WriteAsync<T>(field, (ReadOnlyMemory<T?>)dst, cancellationToken: cancellationToken);
@@ -333,7 +304,7 @@ internal static class CdcParquetCompactionMergeHelper
         else
         {
             var src = new T[rowCount];
-            if (rgReader.ColumnExists(field)) await rgReader.ReadAsync<T>(field, src.AsMemory(), cancellationToken: cancellationToken);
+            if (sourceField != null) await rgReader.ReadAsync<T>(sourceField, src.AsMemory(), cancellationToken: cancellationToken);
             var dst = new T[keepIndices.Count];
             for (var i = 0; i < keepIndices.Count; i++) dst[i] = src[keepIndices[i]];
             await rgWriter.WriteAsync<T>(field, (ReadOnlyMemory<T>)dst, cancellationToken: cancellationToken);
@@ -343,6 +314,7 @@ internal static class CdcParquetCompactionMergeHelper
     private static async Task CopyStructColumnAsync<T>(
         ParquetRowGroupReader rgReader,
         ParquetRowGroupWriter rgWriter,
+        DataField? sourceField,
         DataField field,
         int rowCount,
         CancellationToken cancellationToken)
@@ -351,20 +323,78 @@ internal static class CdcParquetCompactionMergeHelper
         if (field.IsNullable)
         {
             var buf = new T?[rowCount];
-            if (rgReader.ColumnExists(field))
-            {
-                await rgReader.ReadAsync<T>(field, buf.AsMemory(), cancellationToken: cancellationToken);
-            }
+            if (sourceField != null) await rgReader.ReadAsync<T>(sourceField, buf.AsMemory(), cancellationToken: cancellationToken);
             await rgWriter.WriteAsync<T>(field, (ReadOnlyMemory<T?>)buf, cancellationToken: cancellationToken);
         }
         else
         {
             var buf = new T[rowCount];
-            if (rgReader.ColumnExists(field))
-            {
-                await rgReader.ReadAsync<T>(field, buf.AsMemory(), cancellationToken: cancellationToken);
-            }
+            if (sourceField != null) await rgReader.ReadAsync<T>(sourceField, buf.AsMemory(), cancellationToken: cancellationToken);
             await rgWriter.WriteAsync<T>(field, (ReadOnlyMemory<T>)buf, cancellationToken: cancellationToken);
         }
+    }
+
+    private static async Task<(ParquetSchema Schema, DataField[] Fields, DataField? BusinessKeyField)>
+        ReadSchemaWithFieldIdsAsync(byte[] bytes, CancellationToken cancellationToken)
+    {
+        await using var mem = new MemoryStream(bytes, writable: false);
+        await using var reader = await ParquetReader.CreateAsync(mem, cancellationToken: cancellationToken);
+        var schema = reader.Schema;
+        var dataFields = schema.GetDataFields();
+        var fieldIdByName = new Dictionary<string, int>(StringComparer.Ordinal);
+        if (reader.Metadata?.Schema != null)
+        {
+            foreach (var elem in reader.Metadata.Schema)
+            {
+                if (elem.FieldId.HasValue && elem.FieldId.Value > 0 && !string.IsNullOrEmpty(elem.Name))
+                {
+                    fieldIdByName[elem.Name] = elem.FieldId.Value;
+                }
+            }
+        }
+
+        DataField? bk = null;
+        foreach (var df in dataFields)
+        {
+            if (fieldIdByName.TryGetValue(df.Name, out var fid)) df.FieldId = fid;
+            if (string.Equals(df.Name, "business_key", StringComparison.OrdinalIgnoreCase)) bk = df;
+        }
+
+        return (schema, dataFields, bk);
+    }
+
+    private static Dictionary<int, DataField> BuildFieldLookupByFieldId(ParquetReader reader)
+    {
+        var map = new Dictionary<int, DataField>();
+        var fieldsByName = reader.Schema.GetDataFields().ToDictionary(f => f.Name, StringComparer.Ordinal);
+        if (reader.Metadata?.Schema == null) return map;
+        foreach (var elem in reader.Metadata.Schema)
+        {
+            if (elem.FieldId.HasValue && elem.FieldId.Value > 0 &&
+                !string.IsNullOrEmpty(elem.Name) &&
+                fieldsByName.TryGetValue(elem.Name, out var df))
+            {
+                map[elem.FieldId.Value] = df;
+            }
+        }
+
+        return map;
+    }
+
+    private static DataField? ResolveSourceField(
+        ParquetRowGroupReader rgReader,
+        DataField targetField,
+        Dictionary<int, DataField> sourceByFieldId)
+    {
+        if (rgReader.ColumnExists(targetField)) return targetField;
+        if (targetField.FieldId > 0 &&
+            sourceByFieldId.TryGetValue(targetField.FieldId, out var matched) &&
+            (Nullable.GetUnderlyingType(matched.ClrType) ?? matched.ClrType) == (Nullable.GetUnderlyingType(targetField.ClrType) ?? targetField.ClrType) &&
+            rgReader.ColumnExists(matched))
+        {
+            return matched;
+        }
+
+        return null;
     }
 }

@@ -112,6 +112,10 @@ internal static partial class IcebergV2CommitWriter
         var snapshotLog = new JsonArray();
         var metadataLog = new JsonArray();
         var refs = new JsonObject();
+        JsonArray? preservedSchemas = null;
+        var activeSchemaId = 0;
+        var activeLastColumnId = IcebergAvroManifestBuilder.BusinessKeyFieldId;
+        var activeNameMappingJson = IcebergAvroManifestBuilder.CdcDefaultNameMappingJson;
         long? prevMainSnapshotId = null;
         var isMainBranch = string.Equals(targetBranch, "main", StringComparison.Ordinal);
 
@@ -122,6 +126,31 @@ internal static partial class IcebergV2CommitWriter
                 var prevNode = JsonNode.Parse(previousMetadataJson)?.AsObject();
                 if (prevNode != null)
                 {
+                    if (prevNode["schemas"] is JsonArray prevSchemas && prevSchemas.Count > 0)
+                    {
+                        preservedSchemas = new JsonArray();
+                        foreach (var item in prevSchemas)
+                        {
+                            if (item != null) preservedSchemas.Add(item.DeepClone());
+                        }
+                    }
+
+                    if (prevNode["current-schema-id"] is JsonValue csidVal && csidVal.TryGetValue<int>(out var pSchemaId) && pSchemaId >= 0)
+                    {
+                        activeSchemaId = pSchemaId;
+                    }
+
+                    if (prevNode["last-column-id"] is JsonValue lcidVal && lcidVal.TryGetValue<int>(out var pLastCol) && pLastCol >= IcebergAvroManifestBuilder.BusinessKeyFieldId)
+                    {
+                        activeLastColumnId = pLastCol;
+                    }
+
+                    var prevMapping = prevNode["properties"]?["schema.name-mapping.default"]?.GetValue<string>();
+                    if (!string.IsNullOrWhiteSpace(prevMapping))
+                    {
+                        activeNameMappingJson = prevMapping;
+                    }
+
                     if (prevNode["current-snapshot-id"] is JsonValue csVal &&
                         csVal.TryGetValue<long>(out var pSnap) &&
                         pSnap > 0)
@@ -230,7 +259,7 @@ internal static partial class IcebergV2CommitWriter
             ["snapshot-id"] = snapshotId,
             ["timestamp-ms"] = timestampMs,
             ["manifest-list"] = $"s3://{bucket}/{manifestKey}",
-            ["schema-id"] = 0,
+            ["schema-id"] = activeSchemaId,
             ["summary"] = summaryObj,
         };
         if (parentSnapshotId.HasValue)
@@ -278,9 +307,9 @@ internal static partial class IcebergV2CommitWriter
             ["location"] = tableLocation,
             ["last-sequence-number"] = nextSeq,
             ["last-updated-ms"] = timestampMs,
-            ["last-column-id"] = IcebergAvroManifestBuilder.BusinessKeyFieldId,
-            ["current-schema-id"] = 0,
-            ["schemas"] = new JsonArray { BuildCdcIcebergSchemaNode() },
+            ["last-column-id"] = activeLastColumnId,
+            ["current-schema-id"] = activeSchemaId,
+            ["schemas"] = preservedSchemas ?? new JsonArray { BuildCdcIcebergSchemaNode() },
             ["default-spec-id"] = isDailyPartitioned ? IcebergAvroManifestBuilder.DailyPartitionSpecId : 0,
             ["partition-specs"] = partitionSpecs,
             ["last-partition-id"] = isDailyPartitioned ? IcebergAvroManifestBuilder.DailyPartitionFieldId : 999,
@@ -292,7 +321,7 @@ internal static partial class IcebergV2CommitWriter
             ["properties"] = new JsonObject
             {
                 ["write.format.default"] = "parquet",
-                ["schema.name-mapping.default"] = IcebergAvroManifestBuilder.CdcDefaultNameMappingJson,
+                ["schema.name-mapping.default"] = activeNameMappingJson,
                 ["swapmid.stream_id"] = stream.Id.ToString("D"),
                 ["swapmid.stream_name"] = stream.Name,
                 ["swapmid.engine"] = EngineName,

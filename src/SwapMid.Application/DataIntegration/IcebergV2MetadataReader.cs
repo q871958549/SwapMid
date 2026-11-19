@@ -74,6 +74,7 @@ internal static class IcebergV2MetadataReader
 
         var snapshots = ParseSnapshots(metadataJson, config, destination);
         var refs = ParseRefs(metadataJson, snapshots);
+        var activeSchema = IcebergV2SchemaEvolutionService.ParseActiveSchema(metadataJson);
         if (snapshots.Count == 0)
         {
             return new CdcLakehouseHistoryDto
@@ -189,6 +190,9 @@ internal static class IcebergV2MetadataReader
             Commits = recentCommits,
             ActiveFiles = activeFiles,
             Refs = refs,
+            CurrentSchemaId = activeSchema.CurrentSchemaId,
+            LastColumnId = activeSchema.LastColumnId,
+            SchemaFields = activeSchema.Fields,
             TimeTravelQuerySql = timeTravelSql,
             Summary = $"Apache Iceberg v2 · v{selectedSeq}（当前最新 v{currentSeq}，Snapshot {selectedSnap.SnapshotId}{branchTag}{partitionTag}{morTag}，活跃 Parquet 分片 {activeFiles.Count} 个，记录 {totalRecords} 条）。",
         };

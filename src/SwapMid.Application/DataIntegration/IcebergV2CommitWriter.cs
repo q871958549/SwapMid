@@ -33,7 +33,7 @@ internal readonly record struct IcebergCommitReceipt(
 internal static partial class IcebergV2CommitWriter
 {
     private const int MaxOptimisticRetries = 64;
-    private const string EngineName = "SwapMid-2.9.0";
+    private const string EngineName = "SwapMid-3.0.0";
 
     internal static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -237,10 +237,11 @@ internal static partial class IcebergV2CommitWriter
             var (activeFiles, avroEntries) = BuildNextSnapshotFiles(
                 prevActiveFiles, nextSeq, snapshotId, addedFiles, removedRelativePaths);
 
+            var activeSchemaJson = IcebergV2SchemaEvolutionService.ExtractActiveSchemaCompactJson(latestMetadataJson);
             await UploadAvroManifestArtifactsAsync(
                 httpClientFactory, configuration, config,
                 manifestFileKey, deleteManifestFileKey, manifestListKey, snapshotId, parentSnapshotId, nextSeq, runId,
-                avroEntries, partitionSpecId, cancellationToken);
+                avroEntries, partitionSpecId, cancellationToken, activeSchemaJson);
 
             var metadataJson = BuildTableMetadataJson(
                 stream, tableLocation, config.Bucket,

@@ -233,6 +233,8 @@ public class McpController : AbpController
                     _serviceProvider, User, args),
                 McpToolCatalog.ExportOpenLineageSpec => await McpOpenLineageHandler.ExecuteAsync(
                     _serviceProvider, User, args),
+                McpToolCatalog.InspectLakehouseSchema => await McpLakehouseSchemaHandler.ExecuteAsync(
+                    _serviceProvider, args, cancellationToken),
                 _ => throw new InvalidOperationException("Unhandled tool"),
             };
 

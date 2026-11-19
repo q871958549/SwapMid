@@ -214,4 +214,13 @@ public class CdcStreamController : SwapMidController, ICdcStreamAppService
         [FromBody] RollbackCdcLakehouseInput input,
         CancellationToken cancellationToken = default)
         => _service.RollbackLakehouseAsync(id, input, cancellationToken);
+
+    /// <summary>执行 Apache Iceberg v2 原生 Schema Evolution（按不可变 FieldId 安全增列、免重写重命名与永不复用删列，默认 DryRun=true）</summary>
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    [HttpPost("{id}/evolve-lakehouse-schema")]
+    public Task<CdcLakehouseSchemaEvolutionResultDto> EvolveLakehouseSchemaAsync(
+        Guid id,
+        [FromBody] EvolveCdcLakehouseSchemaInput input,
+        CancellationToken cancellationToken = default)
+        => _service.EvolveLakehouseSchemaAsync(id, input, cancellationToken);
 }

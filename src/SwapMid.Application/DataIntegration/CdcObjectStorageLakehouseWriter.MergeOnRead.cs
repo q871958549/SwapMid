@@ -26,7 +26,8 @@ internal static partial class CdcObjectStorageLakehouseWriter
         Guid runId,
         string endLsnText,
         string? idempotencyKeyOverride,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int[]? fieldIds = null)
     {
         var committedAtUtc = DateTime.UtcNow;
         var isInitialSnapshot = IsInitialSnapshotOverride(idempotencyKeyOverride);
@@ -63,7 +64,8 @@ internal static partial class CdcObjectStorageLakehouseWriter
                         await consumeBatchAsync(
                             new EtlSourceBatch(columns, clrTypes, bucket.LiveRows, 0, bucket.LivePartitionKeys), ct),
                     cancellationToken,
-                    partitionSegment: segment);
+                    partitionSegment: segment,
+                    fieldIds: fieldIds);
                 if (uploaded.RowCount > 0)
                 {
                     var suffix = bucket.PartitionDayEpoch.HasValue ? $"{lsnToken}_d{bucket.PartitionDayEpoch.Value}" : lsnToken;

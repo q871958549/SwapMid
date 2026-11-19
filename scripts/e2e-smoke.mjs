@@ -337,8 +337,8 @@ async function main() {
   if (mcpRes.status !== 404) {
     assert.equal(mcpRes.status, 200, `Expected /api/mcp 200 when enabled, got ${mcpRes.status}`)
     const mcpJson = await mcpRes.json()
-    assert.ok(Array.isArray(mcpJson.result?.tools) && mcpJson.result.tools.length === 14, `Expected 14 RBAC-authorized MCP tools for admin, got ${mcpJson.result?.tools?.length}`)
-    console.log(`  ✓ Verified ${jobs.length} scheduled jobs, ${tables.length} DB tables, GitOps bundle (${exportedBundle.resourceCount} resources), lineage (${lineageGraph.nodeCount} nodes + OpenLineage v2-0-2 + W3C trace), /api/v1/auth-providers, and 14 MCP tools`)
+    assert.ok(Array.isArray(mcpJson.result?.tools) && mcpJson.result.tools.length === 15, `Expected 15 RBAC-authorized MCP tools for admin, got ${mcpJson.result?.tools?.length}`)
+    console.log(`  ✓ Verified ${jobs.length} scheduled jobs, ${tables.length} DB tables, GitOps bundle (${exportedBundle.resourceCount} resources), lineage (${lineageGraph.nodeCount} nodes + OpenLineage v2-0-2 + W3C trace), /api/v1/auth-providers, and 15 MCP tools`)
   } else {
     console.log(`  ✓ Verified ${jobs.length} scheduled jobs, ${tables.length} DB tables, GitOps bundle (${exportedBundle.resourceCount} resources), lineage (${lineageGraph.nodeCount} nodes + OpenLineage v2-0-2 + W3C trace), /api/v1/auth-providers, and fail-closed /api/mcp (404)`)
   }

@@ -25,6 +25,7 @@ public static class McpToolCatalog
     public const string PlanLakehouseMaintenance = "plan_lakehouse_maintenance";
     public const string AnalyzeLineageImpact = "analyze_lineage_impact";
     public const string ExportOpenLineageSpec = "export_openlineage_spec";
+    public const string InspectLakehouseSchema = "inspect_lakehouse_schema";
 
     public static IReadOnlyList<McpToolDescriptor> All { get; } =
     [
@@ -239,6 +240,19 @@ public static class McpToolCatalog
                 {
                     @namespace = new { type = "string", description = "Optional OpenLineage namespace (default swapmid)." },
                     summaryOnly = new { type = "boolean", description = "When true, return counts and metadata without the full OpenLineage JSON payload." },
+                },
+                additionalProperties = false,
+            }),
+        new McpToolDescriptor(
+            Name: InspectLakehouseSchema,
+            RequiredPermission: SwapMidPermissions.DataIntegration.CdcStreams.Default,
+            Description: "Read-only inspection of Apache Iceberg v2 active schema-id, last-column-id, FieldId-pinned envelope and promoted typed columns to plan safe Schema Evolution.",
+            InputSchema: new
+            {
+                type = "object",
+                properties = new
+                {
+                    streamId = new { type = "string", format = "uuid", description = "Optional Apache Iceberg v2 CDC stream GUID (defaults to all Iceberg streams)." },
                 },
                 additionalProperties = false,
             }),

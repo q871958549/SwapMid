@@ -638,5 +638,26 @@ public class McpServerSecurityAndToolsTests
             text.ShouldContain("swapmid-mcp-test");
             text.ShouldContain("https://openlineage.io/spec/2-0-2/OpenLineage.json");
         }
+
+        // Tool 15: inspect_lakehouse_schema (Iceberg v2 schema-id & FieldId inspection)
+        var schemaRes = await client.PostAsJsonAsync("/api/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = 207,
+            method = "tools/call",
+            @params = new
+            {
+                name = McpToolCatalog.InspectLakehouseSchema,
+                arguments = new { streamId = lakehouseStreamId.ToString() },
+            },
+        });
+        schemaRes.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using (var doc = JsonDocument.Parse(await schemaRes.Content.ReadAsStringAsync()))
+        {
+            var text = doc.RootElement.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString()!;
+            text.ShouldContain("orders-kafka-iceberg");
+            text.ShouldContain("currentSchemaId");
+            text.ShouldContain("evolve-lakehouse-schema");
+        }
     }
 }

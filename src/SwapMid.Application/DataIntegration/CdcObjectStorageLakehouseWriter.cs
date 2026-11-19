@@ -115,11 +115,23 @@ internal static partial class CdcObjectStorageLakehouseWriter
         var config = ObjectStorageSinkConfigContract.ParseForWrite(targetSink.Config, requireSecretKey: true);
         var isIcebergParquet = stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg &&
                                string.Equals(config.Format, "parquet", StringComparison.OrdinalIgnoreCase);
+        int[]? icebergFieldIds = null;
+        if (isIcebergParquet)
+        {
+            var projected = await ProjectIcebergPromotedColumnsAsync(
+                writer.HttpClientFactory, writer.Configuration, config, destination, changes,
+                columns, clrTypes, rows, cancellationToken);
+            columns = projected.Columns;
+            clrTypes = projected.ClrTypes;
+            rows = projected.Rows;
+            icebergFieldIds = projected.FieldIds;
+        }
+
         if (isIcebergParquet && stream.LakehouseWriteMode == LakehouseWriteMode.MergeOnReadUpsert)
         {
             return await DeliverMergeOnReadIcebergAsync(
                 stream, targetSink, config, destination, changes, batchEndLsn, writer,
-                columns, clrTypes, rows, partitionKeys, runId, endLsnText, idempotencyKeyOverride, cancellationToken);
+                columns, clrTypes, rows, partitionKeys, runId, endLsnText, idempotencyKeyOverride, cancellationToken, icebergFieldIds);
         }
 
         var isDailyIceberg = isIcebergParquet &&
@@ -129,7 +141,7 @@ internal static partial class CdcObjectStorageLakehouseWriter
         {
             return await DeliverDailyPartitionedIcebergAsync(
                 stream, targetSink, config, destination, changes, batchEndLsn, writer,
-                columns, clrTypes, rows, partitionKeys, runId, endLsnText, idempotencyKeyOverride, cancellationToken);
+                columns, clrTypes, rows, partitionKeys, runId, endLsnText, idempotencyKeyOverride, cancellationToken, icebergFieldIds);
         }
 
         var uploaded = await writer.WriteAndUploadCdcBatchAsync(
@@ -141,7 +153,8 @@ internal static partial class CdcObjectStorageLakehouseWriter
                 var batch = new EtlSourceBatch(columns, clrTypes, rows, batchIndex: 0, partitionKeys: partitionKeys);
                 await consumeBatchAsync(batch, ct);
             },
-            cancellationToken);
+            cancellationToken,
+            fieldIds: icebergFieldIds);
 
         if (uploaded.RowCount == 0)
         {

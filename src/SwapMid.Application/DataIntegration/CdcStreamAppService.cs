@@ -34,6 +34,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     private readonly CdcLakehouseDataPreviewService? _lakehousePreviewService;
     private readonly CdcDataContractEvaluator? _contractEvaluator;
     private readonly IcebergV2MaintenanceService? _icebergMaintenanceService;
+    private readonly IcebergV2SchemaEvolutionService? _icebergSchemaService;
 
     public CdcStreamAppService(
         ICdcStreamRepository streamRepository,
@@ -53,7 +54,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         CdcLakehouseDataPreviewService? lakehousePreviewService = null,
         CdcDataContractEvaluator? contractEvaluator = null,
         KafkaDebeziumCdcCaptureService? kafkaCaptureService = null,
-        IcebergV2MaintenanceService? icebergMaintenanceService = null)
+        IcebergV2MaintenanceService? icebergMaintenanceService = null,
+        IcebergV2SchemaEvolutionService? icebergSchemaService = null)
     {
         _streamRepository = streamRepository;
         _sourceRepository = sourceRepository;
@@ -73,6 +75,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         _lakehousePreviewService = lakehousePreviewService;
         _contractEvaluator = contractEvaluator;
         _icebergMaintenanceService = icebergMaintenanceService;
+        _icebergSchemaService = icebergSchemaService;
     }
 
     public async Task<PagedResultDto<CdcStreamDto>> GetListAsync(GetCdcStreamListInput input)
@@ -443,6 +446,22 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         if (!result.DryRun && !result.AlreadyAtTarget && _catalogSyncService != null)
         {
             await _catalogSyncService.TryBestEffortSyncAsync(stream, sink, versionOverride: result.TargetSnapshotVersion, cancellationToken);
+        }
+
+        return result;
+    }
+
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    public async Task<CdcLakehouseSchemaEvolutionResultDto> EvolveLakehouseSchemaAsync(Guid id, EvolveCdcLakehouseSchemaInput input, CancellationToken cancellationToken = default)
+    {
+        global::SwapMid.DataIntegration.PipelineExecutionAppService.EnsureHostContext(base.CurrentTenant.Id, SwapMidPermissions.DataIntegration.CdcStreams.Manage);
+        var schemaService = _icebergSchemaService ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid).WithData("Reason", "Apache Iceberg v2 Schema Evolution 服务未启用。");
+        var (stream, sink) = await CdcStreamMappingHelpers.LoadExternalSinkContextAsync(
+            id, "仅外部接收端（ObjectStorage）模式的 Apache Iceberg v2 CDC 流支持原生 Schema Evolution。", _streamRepository, _sourceRepository, cancellationToken);
+        var result = await schemaService.EvolveSchemaAsync(stream, sink, input, cancellationToken);
+        if (!result.DryRun && _catalogSyncService != null)
+        {
+            await _catalogSyncService.TryBestEffortSyncAsync(stream, sink, versionOverride: null, cancellationToken);
         }
 
         return result;

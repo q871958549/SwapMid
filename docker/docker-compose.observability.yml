@@ -6,8 +6,21 @@ services:
   api:
     environment:
       Prometheus__BaseUrl: "http://prometheus:9090"
+      OpenTelemetry__OtlpEndpoint: "${OTEL_EXPORTER_OTLP_ENDPOINT:-http://tempo:4317}"
       # Fallback Alertmanager token (if customized, also update alertmanager.yml ?token=...)
       NotificationCenter__AlertWebhookToken: "${ALERT_WEBHOOK_TOKEN:-swapmid-local-alert-token}"
+
+  tempo:
+    image: grafana/tempo:2.7.2
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - ./observability/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - tempo_data:/var/tempo
+    ports:
+      - "${TEMPO_HTTP_PORT:-13200}:3200"
+      - "${TEMPO_OTLP_GRPC_PORT:-14317}:4317"
+      - "${TEMPO_OTLP_HTTP_PORT:-14318}:4318"
 
   prometheus:
     image: prom/prometheus:v3.2.1
@@ -54,8 +67,10 @@ services:
       - "${GRAFANA_PORT:-13300}:3000"
     depends_on:
       - prometheus
+      - tempo
 
 volumes:
   prometheus_data:
   alertmanager_data:
   grafana_data:
+  tempo_data:

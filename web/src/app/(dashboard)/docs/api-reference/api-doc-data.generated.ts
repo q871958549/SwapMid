@@ -6920,6 +6920,221 @@ export const API_MODULES: ApiModule[] = [
           },
           {
             "method": "POST",
+            "path": "/api/v1/cdc-streams/{id}/evolve-lakehouse-schema",
+            "summary": "执行 Apache Iceberg v2 原生 Schema Evolution（按不可变 FieldId 安全增列、免重写重命名与永不复用删列，默认 DryRun=true）",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "id",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": "唯一标识"
+              }
+            ],
+            "requestBody": [
+              {
+                "name": "addColumns",
+                "cnName": "",
+                "type": "AddCdcLakehouseColumnInput[]",
+                "description": "待新增并提升为 Parquet 一等列的类型化业务列列表",
+                "required": false
+              },
+              {
+                "name": "addColumns[].name",
+                "cnName": "",
+                "type": "string",
+                "description": "列名（字母或下划线开头，1-64 字符，匹配上游 payload 字段自动提升）",
+                "required": true
+              },
+              {
+                "name": "addColumns[].type",
+                "cnName": "",
+                "type": "string",
+                "description": "Iceberg 原始类型：string | long | double | boolean | timestamptz",
+                "required": true
+              },
+              {
+                "name": "addColumns[].doc",
+                "cnName": "",
+                "type": "string",
+                "description": "可选列注释说明",
+                "required": false
+              },
+              {
+                "name": "renameColumns",
+                "cnName": "",
+                "type": "RenameCdcLakehouseColumnInput[]",
+                "description": "待重命名的自定义列列表（保留原 FieldId 并自动扩展 schema.name-mapping.default）",
+                "required": false
+              },
+              {
+                "name": "renameColumns[].fromName",
+                "cnName": "",
+                "type": "string",
+                "description": "当前列名（不可为 1..12 核心信封列）",
+                "required": true
+              },
+              {
+                "name": "renameColumns[].toName",
+                "cnName": "",
+                "type": "string",
+                "description": "目标新列名（保留完全一致的 FieldId，历史 Parquet 文件免重写可读）",
+                "required": true
+              },
+              {
+                "name": "dropColumns",
+                "cnName": "",
+                "type": "string[]",
+                "description": "待从活跃 Schema 移除的自定义列名（受保护的 1..12 核心信封列不可删除，已删 FieldId 永不复用）",
+                "required": false
+              },
+              {
+                "name": "dryRun",
+                "cnName": "",
+                "type": "boolean",
+                "description": "默认 true（仅执行演进预演与兼容性校验，绝不修改表元数据）",
+                "required": false
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "dryRun",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "previousSchemaId",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "newSchemaId",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "lastColumnId",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "metadataVersion",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "metadataKey",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "addedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "renamedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "droppedCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "activeFields",
+                "cnName": "",
+                "type": "CdcLakehouseSchemaFieldDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "activeFields[].fieldId",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "activeFields[].name",
+                "cnName": "",
+                "type": "string",
+                "description": "名称",
+                "nullable": true
+              },
+              {
+                "name": "activeFields[].type",
+                "cnName": "",
+                "type": "string",
+                "description": "类型",
+                "nullable": true
+              },
+              {
+                "name": "activeFields[].required",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "activeFields[].isCoreEnvelope",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "activeFields[].doc",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "evolvedAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "message",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
+          },
+          {
+            "method": "POST",
             "path": "/api/v1/cdc-streams/{id}/expire-lakehouse-snapshots",
             "summary": "安全评估或执行 Apache Iceberg v2 快照过期（expireSnapshots）与孤儿对象清理（默认 DryRun=true）",
             "summaryDocumented": true,
@@ -7341,6 +7556,69 @@ export const API_MODULES: ApiModule[] = [
                 "name": "refs[].maxRefAgeMs",
                 "cnName": "",
                 "type": "integer",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "currentSchemaId",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "lastColumnId",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "schemaFields",
+                "cnName": "",
+                "type": "CdcLakehouseSchemaFieldDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "schemaFields[].fieldId",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "schemaFields[].name",
+                "cnName": "",
+                "type": "string",
+                "description": "名称",
+                "nullable": true
+              },
+              {
+                "name": "schemaFields[].type",
+                "cnName": "",
+                "type": "string",
+                "description": "类型",
+                "nullable": true
+              },
+              {
+                "name": "schemaFields[].required",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "schemaFields[].isCoreEnvelope",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "schemaFields[].doc",
+                "cnName": "",
+                "type": "string",
                 "description": "",
                 "nullable": true
               },

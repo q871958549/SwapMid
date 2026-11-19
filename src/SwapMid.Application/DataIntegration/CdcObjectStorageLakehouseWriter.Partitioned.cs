@@ -26,7 +26,8 @@ internal static partial class CdcObjectStorageLakehouseWriter
         Guid runId,
         string endLsnText,
         string? idempotencyKeyOverride,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int[]? fieldIds = null)
     {
         var dayBuckets = new SortedDictionary<int, List<int>>();
         for (var i = 0; i < changes.Count; i++)
@@ -68,7 +69,8 @@ internal static partial class CdcObjectStorageLakehouseWriter
                 async (consumeBatchAsync, ct) =>
                     await consumeBatchAsync(new EtlSourceBatch(columns, clrTypes, partRows, 0, partKeys), ct),
                 cancellationToken,
-                partitionSegment: segment);
+                partitionSegment: segment,
+                fieldIds: fieldIds);
             if (uploaded.RowCount == 0) continue;
 
             totalRows += uploaded.RowCount;

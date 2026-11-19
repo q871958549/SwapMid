@@ -247,6 +247,30 @@
           "expr": "sum by (format) (increase(swapmid_cdc_lakehouse_previews_total[15m]))",
           "legendFormat": "preview:{{format}}",
           "refId": "C"
+        },
+        {
+          "expr": "sum by (event_type, outcome) (increase(swapmid_openlineage_events_total[15m]))",
+          "legendFormat": "openlineage:{{event_type}}/{{outcome}}",
+          "refId": "D"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Lakehouse — Schema Evolution, Rollback & FinOps Storage (bytes)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 40 },
+      "datasource": { "type": "prometheus", "uid": "swapmid-prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (operation, outcome) (increase(swapmid_cdc_iceberg_maintenance_total{operation=~\"schema_evolve|rollback|promote\"}[15m]))",
+          "legendFormat": "lifecycle:{{operation}}/{{outcome}}",
+          "refId": "A"
+        },
+        {
+          "expr": "max by (stream_name, table_format) (swapmid_cdc_lakehouse_active_bytes)",
+          "legendFormat": "finops_bytes:{{stream_name}} ({{table_format}})",
+          "refId": "B"
         }
       ]
     }

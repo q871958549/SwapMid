@@ -66,6 +66,7 @@ vi.mock('@/lib/crud/use-crud-form', () => ({
       softDeleteTimestampColumn: '',
       targetFieldMappings: [],
       lakehouseTableFormat: '0',
+      lakehousePartitionStrategy: '0',
       lakehouseCompactMinFiles: '',
       catalogType: '0',
       catalogSinkId: '',
@@ -1218,5 +1219,68 @@ describe('CdcStreamsClient', () => {
     })
     expect(await screen.findByText('已接入')).toBeTruthy()
     expect(screen.getByText('已重放 1 次')).toBeTruthy()
+  })
+
+  it('supports KafkaDebezium source validation and Apache Iceberg v2 DailyCommitUtc hidden partitioning', () => {
+    expect(detectCdcSourceTypeFromSource('kafka-1', [
+      { id: 'kafka-1', name: 'Redpanda Cluster', type: 3, config: '{"bootstrapServers":"redpanda:9092"}' },
+    ])).toBe('4')
+
+    const validKafkaDailyForm = {
+      ...defaultCdcForm,
+      name: 'orders-kafka-iceberg-daily',
+      sourceId: 'kafka-1',
+      sourceType: '4' as const,
+      publicationName: 'dbserver1.shop.orders',
+      slotName: 'swapmid_kafka_orders',
+      monitoredTables: 'shop.orders',
+      initialSnapshotEnabled: true,
+      targetMode: '2' as const,
+      targetSinkId: 's3-1',
+      targetSinkDestination: 'orders/daily',
+      lakehouseTableFormat: '2' as const,
+      lakehousePartitionStrategy: '1' as const,
+    }
+    expect(isCdcFormValid(validKafkaDailyForm)).toBe(true)
+    expect(isCdcFormValid({ ...validKafkaDailyForm, publicationName: '' })).toBe(false)
+
+    const body = toCdcBody(validKafkaDailyForm)
+    expect(body.sourceType).toBe(4)
+    expect(body.publicationName).toBe('dbserver1.shop.orders')
+    expect(body.initialSnapshotEnabled).toBe(false)
+    expect(body.lakehouseTableFormat).toBe(2)
+    expect(body.lakehousePartitionStrategy).toBe(1)
+
+    const nonIcebergBody = toCdcBody({ ...validKafkaDailyForm, lakehouseTableFormat: '1' as const })
+    expect(nonIcebergBody.lakehousePartitionStrategy).toBe(0)
+
+    const roundTrip = toCdcForm(makeStream({
+      sourceType: 4,
+      publicationName: 'dbserver1.shop.orders',
+      slotName: 'swapmid_kafka_orders',
+      targetMode: 2,
+      targetSinkId: 's3-1',
+      targetSinkDestination: 'orders/daily',
+      lakehouseTableFormat: 2,
+      lakehousePartitionStrategy: 1,
+    }))
+    expect(roundTrip.sourceType).toBe('4')
+    expect(roundTrip.lakehousePartitionStrategy).toBe('1')
+
+    renderClient(makeStream({
+      sourceType: 4,
+      status: 1,
+      publicationName: 'dbserver1.shop.orders',
+      slotName: 'swapmid_kafka_orders',
+      targetMode: 2,
+      targetSinkId: SOURCE_ID,
+      targetSinkType: 5,
+      targetSinkName: 'minio-iceberg',
+      targetSinkDestination: 'orders/daily',
+      lakehouseTableFormat: 2,
+      lakehousePartitionStrategy: 1,
+    }))
+    expect(screen.getByRole('button', { name: '立即捕获' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '全量快照' })).toBeNull()
   })
 })

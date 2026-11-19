@@ -75,6 +75,10 @@ public partial class CdcStreamDefinition
         LakehouseTableFormat = CdcStreamMirrorConfigValidator.NormalizeLakehouseTableFormat(
             targetMode,
             lakehouseTableFormat);
+        if (LakehouseTableFormat != LakehouseTableFormat.ApacheIceberg)
+        {
+            LakehousePartitionStrategy = LakehousePartitionStrategy.None;
+        }
         var normalizedCatalogType = CdcStreamMirrorConfigValidator.NormalizeCatalogType(
             targetMode,
             catalogType);
@@ -157,6 +161,14 @@ public partial class CdcStreamDefinition
             TargetDeletePolicy,
             SoftDeleteColumn,
             SoftDeleteTimestampColumn);
+    }
+
+    public void ConfigureLakehousePartitionStrategy(LakehousePartitionStrategy strategy)
+    {
+        LakehousePartitionStrategy = TargetMode == CdcTargetMode.ExternalSink &&
+                                     LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg
+            ? strategy
+            : LakehousePartitionStrategy.None;
     }
 
     public bool HasDataContractConfigured =>

@@ -127,11 +127,13 @@ export function CdcStreamsClient({
         <div className="space-y-0.5">
           <div>{row.original.sourceName || '-'}</div>
           <div className="font-mono text-[11px] text-muted-foreground">
-            {Number(row.original.sourceType ?? 0) === 3
-              ? 'Push Webhook'
-              : (Number(row.original.sourceType ?? 0) === 2
-                  ? 'MySQL Binlog'
-                  : (Number(row.original.sourceType ?? 0) === 1 ? 'SQL Server CT' : 'PostgreSQL'))}
+            {Number(row.original.sourceType ?? 0) === 4
+              ? 'Kafka Debezium'
+              : (Number(row.original.sourceType ?? 0) === 3
+                  ? 'Push Webhook'
+                  : (Number(row.original.sourceType ?? 0) === 2
+                      ? 'MySQL Binlog'
+                      : (Number(row.original.sourceType ?? 0) === 1 ? 'SQL Server CT' : 'PostgreSQL')))}
           </div>
         </div>
       ),
@@ -149,12 +151,21 @@ export function CdcStreamsClient({
               <div className="text-muted-foreground">HMAC-SHA256</div>
             </div>
           )
-        : (
-            <div className="space-y-0.5 font-mono text-xs">
-              <div>{row.original.slotName}</div>
-              <div className="text-muted-foreground">{row.original.publicationName}</div>
-            </div>
-          ),
+        : (Number(row.original.sourceType ?? 0) === 4
+            ? (
+                <div className="space-y-0.5 font-mono text-xs">
+                  <div className="max-w-[200px] truncate" title={row.original.publicationName}>
+                    {row.original.publicationName}
+                  </div>
+                  <div className="text-muted-foreground">{row.original.slotName}</div>
+                </div>
+              )
+            : (
+                <div className="space-y-0.5 font-mono text-xs">
+                  <div>{row.original.slotName}</div>
+                  <div className="text-muted-foreground">{row.original.publicationName}</div>
+                </div>
+              )),
     },
     {
       id: 'target',

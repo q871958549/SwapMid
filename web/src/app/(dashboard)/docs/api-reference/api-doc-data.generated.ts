@@ -3308,7 +3308,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook；4=KafkaDebezium",
                 "nullable": false
               },
               {
@@ -3470,6 +3470,13 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "LakehouseTableFormat",
                 "description": "取值：0=SwapMidManifest；1=DeltaLake；2=ApacheIceberg",
+                "nullable": false
+              },
+              {
+                "name": "lakehousePartitionStrategy",
+                "cnName": "",
+                "type": "LakehousePartitionStrategy",
+                "description": "取值：0=None；1=DailyCommitUtc",
                 "nullable": false
               },
               {
@@ -3757,7 +3764,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook；4=KafkaDebezium",
                 "required": false
               },
               {
@@ -3901,6 +3908,13 @@ export const API_MODULES: ApiModule[] = [
                 "required": false
               },
               {
+                "name": "lakehousePartitionStrategy",
+                "cnName": "",
+                "type": "LakehousePartitionStrategy",
+                "description": "取值：0=None；1=DailyCommitUtc",
+                "required": false
+              },
+              {
                 "name": "catalogType",
                 "cnName": "",
                 "type": "LakehouseCatalogType",
@@ -4004,7 +4018,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook；4=KafkaDebezium",
                 "nullable": false
               },
               {
@@ -4166,6 +4180,13 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "LakehouseTableFormat",
                 "description": "取值：0=SwapMidManifest；1=DeltaLake；2=ApacheIceberg",
+                "nullable": false
+              },
+              {
+                "name": "lakehousePartitionStrategy",
+                "cnName": "",
+                "type": "LakehousePartitionStrategy",
+                "description": "取值：0=None；1=DailyCommitUtc",
                 "nullable": false
               },
               {
@@ -4476,7 +4497,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook；4=KafkaDebezium",
                 "nullable": false
               },
               {
@@ -4638,6 +4659,13 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "LakehouseTableFormat",
                 "description": "取值：0=SwapMidManifest；1=DeltaLake；2=ApacheIceberg",
+                "nullable": false
+              },
+              {
+                "name": "lakehousePartitionStrategy",
+                "cnName": "",
+                "type": "LakehousePartitionStrategy",
+                "description": "取值：0=None；1=DailyCommitUtc",
                 "nullable": false
               },
               {
@@ -4934,7 +4962,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook；4=KafkaDebezium",
                 "required": false
               },
               {
@@ -5078,6 +5106,13 @@ export const API_MODULES: ApiModule[] = [
                 "required": false
               },
               {
+                "name": "lakehousePartitionStrategy",
+                "cnName": "",
+                "type": "LakehousePartitionStrategy",
+                "description": "取值：0=None；1=DailyCommitUtc",
+                "required": false
+              },
+              {
                 "name": "catalogType",
                 "cnName": "",
                 "type": "LakehouseCatalogType",
@@ -5181,7 +5216,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook；4=KafkaDebezium",
                 "nullable": false
               },
               {
@@ -5343,6 +5378,13 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "LakehouseTableFormat",
                 "description": "取值：0=SwapMidManifest；1=DeltaLake；2=ApacheIceberg",
+                "nullable": false
+              },
+              {
+                "name": "lakehousePartitionStrategy",
+                "cnName": "",
+                "type": "LakehousePartitionStrategy",
+                "description": "取值：0=None；1=DailyCommitUtc",
                 "nullable": false
               },
               {
@@ -5803,7 +5845,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook；4=KafkaDebezium",
                 "nullable": false
               },
               {
@@ -5965,6 +6007,13 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "LakehouseTableFormat",
                 "description": "取值：0=SwapMidManifest；1=DeltaLake；2=ApacheIceberg",
+                "nullable": false
+              },
+              {
+                "name": "lakehousePartitionStrategy",
+                "cnName": "",
+                "type": "LakehousePartitionStrategy",
+                "description": "取值：0=None；1=DailyCommitUtc",
                 "nullable": false
               },
               {
@@ -6553,6 +6602,13 @@ export const API_MODULES: ApiModule[] = [
                 "cnName": "",
                 "type": "LakehouseTableFormat",
                 "description": "取值：0=SwapMidManifest；1=DeltaLake；2=ApacheIceberg",
+                "nullable": false
+              },
+              {
+                "name": "partitionStrategy",
+                "cnName": "",
+                "type": "LakehousePartitionStrategy",
+                "description": "取值：0=None；1=DailyCommitUtc",
                 "nullable": false
               },
               {
@@ -7559,7 +7615,7 @@ export const API_MODULES: ApiModule[] = [
                 "name": "sourceType",
                 "cnName": "",
                 "type": "CdcSourceType",
-                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook",
+                "description": "取值：0=PostgreSqlLogicalReplication；1=SqlServerChangeTracking；2=MySqlBinlog；3=PushWebhook；4=KafkaDebezium",
                 "required": false
               },
               {

@@ -79,7 +79,29 @@ public sealed class CdcObjectStorageCompactionService : ITransientDependency
             config.Format,
             cancellationToken);
 
-        var candidates = latestDoc.RecentFiles.Take(MaxFilesPerCompaction).ToList();
+        var isDailyIceberg = stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg &&
+                             stream.LakehousePartitionStrategy == LakehousePartitionStrategy.DailyCommitUtc &&
+                             string.Equals(config.Format, "parquet", StringComparison.OrdinalIgnoreCase);
+
+        int? targetPartitionDay = null;
+        List<CdcObjectStorageLakehouseWriter.CdcLatestDataFileEntry> candidates;
+        if (isDailyIceberg)
+        {
+            var eligibleGroup = latestDoc.RecentFiles
+                .GroupBy(f => f.PartitionDayEpoch ?? IcebergAvroManifestBuilder.TryExtractUtcDayFromPath(f.DataObjectKey))
+                .Where(g => g.Key.HasValue && g.Count() >= minFiles)
+                .OrderByDescending(g => g.Count())
+                .FirstOrDefault();
+            targetPartitionDay = eligibleGroup?.Key;
+            candidates = eligibleGroup != null
+                ? eligibleGroup.Take(MaxFilesPerCompaction).ToList()
+                : new List<CdcObjectStorageLakehouseWriter.CdcLatestDataFileEntry>();
+        }
+        else
+        {
+            candidates = latestDoc.RecentFiles.Take(MaxFilesPerCompaction).ToList();
+        }
+
         var nowUtc = DateTime.UtcNow;
         if (candidates.Count < minFiles)
         {
@@ -104,6 +126,7 @@ public sealed class CdcObjectStorageCompactionService : ITransientDependency
                 latestKey,
                 latestDoc,
                 candidates,
+                targetPartitionDay,
                 deleteCompactedFiles,
                 nowUtc,
                 cancellationToken);
@@ -158,13 +181,17 @@ public sealed class CdcObjectStorageCompactionService : ITransientDependency
         string latestKey,
         CdcObjectStorageLakehouseWriter.CdcLatestCheckpointDocument latestDoc,
         List<CdcObjectStorageLakehouseWriter.CdcLatestDataFileEntry> candidates,
+        int? targetPartitionDay,
         bool deleteCompactedFiles,
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
         var fingerprint = $"compact:{candidates[0].DataObjectKey}..{candidates[^1].DataObjectKey}:{candidates.Count}";
         var compactRunId = CdcProtocolHelpers.BuildDeterministicPipelineRunId(stream.Id, fingerprint);
-        var outputKey = config.BuildCompactedObjectKey(destination, compactRunId);
+        var partitionSegment = targetPartitionDay.HasValue
+            ? IcebergAvroManifestBuilder.FormatUtcDayPartitionSegment(targetPartitionDay.Value)
+            : null;
+        var outputKey = config.BuildCompactedObjectKey(destination, compactRunId, partitionSegment);
         var outputUri = config.BuildObjectUri(outputKey);
         await DataIntegrationSinkEndpointPolicy.ValidateHttpEndpointAsync(outputUri, _configuration, cancellationToken);
 
@@ -242,6 +269,7 @@ public sealed class CdcObjectStorageCompactionService : ITransientDependency
                 IsInitialSnapshot = candidates.Any(c => c.IsInitialSnapshot),
                 IsCompaction = true,
                 EndLsn = endLsn,
+                PartitionDayEpoch = targetPartitionDay,
                 CommittedAtUtc = nowUtc,
             });
 
@@ -274,7 +302,17 @@ public sealed class CdcObjectStorageCompactionService : ITransientDependency
             else if (stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg &&
                      string.Equals(config.Format, "parquet", StringComparison.OrdinalIgnoreCase))
             {
-                var receipt = await IcebergV2CommitWriter.CommitReplaceCompactionAsync(
+                var addedEntry = new IcebergV2CommitWriter.IcebergManifestEntry
+                {
+                    RelativePath = config.ToRelativeTablePath(destination, outputKey),
+                    ObjectKey = outputKey,
+                    FilePath = $"s3://{config.Bucket}/{outputKey}",
+                    FileFormat = "PARQUET",
+                    FileSizeInBytes = outputByteSize,
+                    RecordCount = totalRows,
+                    PartitionDayEpoch = targetPartitionDay,
+                };
+                var receipt = await IcebergV2CommitWriter.CommitReplaceBatchAsync(
                     _httpClientFactory,
                     _configuration,
                     config,
@@ -283,9 +321,7 @@ public sealed class CdcObjectStorageCompactionService : ITransientDependency
                     latestDoc,
                     compactRunId,
                     candidates.Select(c => c.DataObjectKey).ToList(),
-                    outputKey,
-                    outputByteSize,
-                    totalRows,
+                    [addedEntry],
                     nowUtc,
                     cancellationToken);
                 latestDoc.LatestIcebergSequenceNumber = receipt.SequenceNumber;

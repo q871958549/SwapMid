@@ -24,6 +24,9 @@ internal static partial class CdcStreamMappingHelpers
             case CdcSourceType.PushWebhook:
                 CdcWebhookIngressService.EnsurePushWebhookSource(source);
                 break;
+            case CdcSourceType.KafkaDebezium:
+                KafkaDebeziumCdcCaptureService.EnsureKafkaSource(source);
+                break;
             default:
                 PgOutputCdcCaptureService.EnsurePostgreSqlSource(source);
                 break;
@@ -48,7 +51,7 @@ internal static partial class CdcStreamMappingHelpers
                 ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
                     .WithData("Reason", "MySQL Binlog 捕获引擎未启用。"))
                 .EvaluateSchemaAsync(source, stream, cancellationToken),
-            CdcSourceType.PushWebhook => Task.FromResult(
+            CdcSourceType.PushWebhook or CdcSourceType.KafkaDebezium => Task.FromResult(
                 CdcSchemaDriftEvaluator.Compare(stream.SchemaBaselineJson, Array.Empty<CdcCapturedTableSchema>())),
             _ => pgCaptureService.EvaluateSchemaAsync(source, stream, cancellationToken),
         };
@@ -60,7 +63,8 @@ internal static partial class CdcStreamMappingHelpers
         MySqlBinlogCdcCaptureService? mySqlCaptureService,
         DataSource source,
         CdcStreamDefinition stream,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        KafkaDebeziumCdcCaptureService? kafkaCaptureService = null)
     {
         return stream.SourceType switch
         {
@@ -73,6 +77,10 @@ internal static partial class CdcStreamMappingHelpers
                     .WithData("Reason", "MySQL Binlog 捕获引擎未启用。"))
                 .PreflightAsync(source, stream, cancellationToken),
             CdcSourceType.PushWebhook => CdcWebhookIngressService.BuildPreflight(source, stream),
+            CdcSourceType.KafkaDebezium => await (kafkaCaptureService
+                ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
+                    .WithData("Reason", "Kafka Debezium CDC 捕获引擎未启用。"))
+                .PreflightAsync(source, stream, cancellationToken),
             _ => await pgCaptureService.PreflightAsync(source, stream, cancellationToken),
         };
     }
@@ -103,6 +111,11 @@ internal static partial class CdcStreamMappingHelpers
         if (sourceType == CdcSourceType.PushWebhook)
         {
             return CdcWebhookIngressService.NormalizeWebhookCheckpoint(rawCheckpoint);
+        }
+
+        if (sourceType == CdcSourceType.KafkaDebezium)
+        {
+            return KafkaDebeziumEnvelopeParser.NormalizeCheckpointToken(rawCheckpoint);
         }
 
         return CdcProtocolHelpers.ValidateLsn(rawCheckpoint).ToString();
@@ -201,6 +214,7 @@ internal static partial class CdcStreamMappingHelpers
             SoftDeleteTimestampColumn = stream.SoftDeleteTimestampColumn,
             LakehouseCompactMinFiles = stream.LakehouseCompactMinFiles,
             LakehouseTableFormat = stream.LakehouseTableFormat,
+            LakehousePartitionStrategy = stream.LakehousePartitionStrategy,
             CatalogType = stream.CatalogType,
             CatalogSinkId = stream.CatalogSinkId,
             CatalogSinkName = catalogSink?.Name,

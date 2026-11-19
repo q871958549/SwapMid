@@ -386,6 +386,35 @@ internal readonly record struct KafkaSinkConfig(
         return config;
     }
 
+    internal ConsumerConfig ToConsumerConfig(string groupId)
+    {
+        var config = new ConsumerConfig
+        {
+            BootstrapServers = BootstrapServers,
+            ClientId = ClientId,
+            GroupId = string.IsNullOrWhiteSpace(groupId) ? "swapmid-cdc-consumer" : groupId.Trim(),
+            SecurityProtocol = SecurityProtocol,
+            EnableAutoCommit = false,
+            EnableAutoOffsetStore = false,
+            AutoOffsetReset = AutoOffsetReset.Earliest,
+            SocketTimeoutMs = 10_000,
+        };
+
+        if (RequiresSasl)
+        {
+            config.SaslMechanism = SaslMechanism switch
+            {
+                "ScramSha256" => Confluent.Kafka.SaslMechanism.ScramSha256,
+                "ScramSha512" => Confluent.Kafka.SaslMechanism.ScramSha512,
+                _ => Confluent.Kafka.SaslMechanism.Plain,
+            };
+            config.SaslUsername = SaslUsername;
+            config.SaslPassword = SaslPassword;
+        }
+
+        return config;
+    }
+
     internal string ToJson(bool includePassword)
     {
         var json = new JsonObject

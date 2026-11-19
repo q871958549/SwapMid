@@ -272,6 +272,9 @@ namespace SwapMid.Migrations
                     b.Property<int?>("LakehouseCompactMinFiles")
                         .HasColumnType("integer");
 
+                    b.Property<int>("LakehousePartitionStrategy")
+                        .HasColumnType("integer");
+
                     b.Property<int>("LakehouseTableFormat")
                         .HasColumnType("integer");
 

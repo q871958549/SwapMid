@@ -108,7 +108,7 @@ X-SwapMid-Signature: sha256=5d41402abc4b2a76b9719d911017c592...
     id: 'etl-target-receipt',
     title: '流式 ETL 目标库回执协议（Target Receipt v1）',
     intro:
-      '针对跨库同步中「目标库事务已提交但网络断连导致中间件事态未知」的经典难题，Target Receipt v1 将业务数据写入与提交回执绑定在同一目标库本地事务中，实现零猜测的机器自动核验。',
+      '针对跨库同步中「目标库事务已提交但网络断连导致中台对写入终态未知」的经典难题，Target Receipt v1 将业务数据写入与提交回执绑定在同一目标库本地事务中，实现零猜测的机器自动核验。',
     audience: '数据工程师 / DBA / 运维团队',
     auth: 'Bearer Token（含 SwapMid.DataIntegration.PipelineExecutions.VerifyTargetReceipt 权限）',
     baseUrl: '/api/v1/pipeline-executions',

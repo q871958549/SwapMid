@@ -1,6 +1,6 @@
-# SwapMid Roadmap (`v0.2` → `v2.0+`)
+# SwapMid Roadmap (`v0.2` → `v2.6+`)
 
-SwapMid focuses on being a **correctness-first, single-stack, agent-ready enterprise data swap and integration control plane** built on **.NET 10 (ABP v10.1)** and **Next.js 16**.
+SwapMid focuses on being a **correctness-first, single-stack, agent-ready enterprise data exchange and integration control plane** built on **.NET 10 (ABP v10.1)** and **Next.js 16**.
 
 Every milestone adheres to five non-negotiable engineering invariants:
 1. **Zero Compiler & Lint Warnings** (`TreatWarningsAsErrors=true`, `eslint --max-warnings=0`).
@@ -36,7 +36,8 @@ Every milestone adheres to five non-negotiable engineering invariants:
 | **`v2.1.0`** *(Released)* | **Delta Lake Time-Travel, Unity Catalog & Iceberg REST Interop + Chaos Suite** | `_delta_log` Time-Travel Inspector (`GET /lakehouse-history`), Unity Catalog REST & Apache Iceberg REST metadata sync (`POST /sync-catalog`), `ChaosResilienceContractTests`, and turnkey `docker-compose.lakehouse-demo.yml` (MySQL 8.4 + Chainguard MinIO) |
 | **`v2.2.0`** *(Released)* | **Zero-Infra Live Lakehouse Preview, Data Contract SLA Engine & 8-Tool MCP Copilot** | Bounded Zero-Infra Parquet/JSONL live preview (`GET /lakehouse-preview`), declarative Data Contract & Freshness SLA engine (`POST /evaluate-contract` + `SwapMidCdcDataContractBreached`), MCP Tools 7 & 8 (`propose_pipeline_column_mappings`, `evaluate_cdc_data_contracts`), and Node 24-native CI/Release Actions |
 | **`v2.3.0`** *(Released)* | **Native Apache Iceberg v2 Protocol, Serverless Push Webhook CDC & Chaos SLA Benchmarks** | Pure-.NET Apache Iceberg v2 writer/reader (`metadata/v*.metadata.json` + `version-hint.text` + S3 CAS `If-None-Match: *` + `replace` compaction + DuckDB `iceberg_scan()` / Trino SQL + live Parquet preview), fail-closed HMAC-SHA256 `POST /api/v1/cdc-webhooks/{streamId}` Push Webhook CDC source (`CdcSourceType.PushWebhook = 3`), 5-scenario Chaos contract suite + 1,000-row SLA throughput benchmarks (`RPO = 0`), and `197/197` OpenAPI summary coverage |
-| **`v2.4.0`** *(Current)* | **Binary Avro OCF Apache Iceberg v2, Push Webhook Auto-Schema & Dead-Letter Replay Ledger** | Zero-dependency pure-.NET Apache Avro 1.11 OCF binary `manifest-list` (`snap-*.avro`) & `manifest-file` (`*-m0.avro`) + Parquet `FieldId 1..11` / `TIMESTAMP_MICROS` (verified live via official **`duckdb/duckdb:latest` `iceberg_scan()`** across `v1`–`v4`), `AppCdcWebhookDeliveries` dead-letter ledger (`<= 64 KiB` only on authenticated `409`/`500`, zero payload on `401`) + Auto-Schema Inference for `RequiredColumns` SLA & `SchemaDriftPolicy` + `/data-integration/cdc` `推送日志` 1-click `重放` UI, Grafana Panels 10–11 & 3 Iceberg/Webhook Prometheus alert rules, and **`199/199` (100.0%)** OpenAPI summary coverage |
+| **`v2.4.0`** *(Released)* | **Binary Avro OCF Apache Iceberg v2, Push Webhook Auto-Schema & Dead-Letter Replay Ledger** | Zero-dependency pure-.NET Apache Avro 1.11 OCF binary `manifest-list` (`snap-*.avro`) & `manifest-file` (`*-m0.avro`) + Parquet `FieldId 1..11` / `TIMESTAMP_MICROS` (verified live via official **`duckdb/duckdb:latest` `iceberg_scan()`** across `v1`–`v4`), `AppCdcWebhookDeliveries` dead-letter ledger (`<= 64 KiB` only on authenticated `409`/`500`, zero payload on `401`) + Auto-Schema Inference for `RequiredColumns` SLA & `SchemaDriftPolicy` + `/data-integration/cdc` `推送日志` 1-click `重放` UI, Grafana Panels 10–11 & 3 Iceberg/Webhook Prometheus alert rules, and **`199/199` (100.0%)** OpenAPI summary coverage |
+| **`v2.5.0`** *(Current)* | **Kafka / Redpanda Debezium CDC, Iceberg v2 Daily Hidden Partitioning, 10-Tool MCP Copilot & Terminology Governance** | Native `CdcSourceType.KafkaDebezium = 4` inbound source (`Confluent.Kafka` consumer with monotonic multi-partition checkpoints `kafka:0=N,1=M`, watermark lag preflight & `swapmid_cdc_kafka_lag_messages` / `SwapMidCdcKafkaLagHigh`, wrapped/unwrapped Debezium & CloudEvents envelopes, auto-schema inference & drift policy), Iceberg v2 native **`day(commit_timestamp_utc)` Hidden Partitioning** (`spec-id: 1`, `r102`/`r508` Avro bounds, UTC day-bucketed Parquet files, same-day partition-aware `REPLACE` compaction, and SigV4 Hive-partition path signing fix — verified live with real **Redpanda** + official **DuckDB `iceberg_scan()`** partition pruning), MCP Tools 9–10 (`diagnose_webhook_deliveries`, `inspect_lakehouse_snapshots`), and automated bilingual terminology & anti-mistranslation CI gate (`check-terminology.mjs`) |
 
 ---
 
@@ -138,11 +139,22 @@ Every milestone adheres to five non-negotiable engineering invariants:
 
 ---
 
-## Next Evolution (`v2.5+` AI-Era Open-Source Competitiveness)
+## `v2.5.0`: Kafka / Redpanda Debezium CDC、Iceberg v2 按日隐藏分区、10 工具 MCP 与术语门禁（Completed）
 
-1. **Iceberg v2 Position/Equality Deletes & Partition Evolution (`day(commit_timestamp_utc)`)**:
-   - Extend `IcebergAvroManifestBuilder` with Iceberg v2 partition specs (`day` / `bucket`) and merge-on-read delete manifests alongside copy-on-write compaction, enabling zero-duplication CDC upsert queries natively inside DuckDB, Trino, StarRocks, and Snowflake.
-2. **Apache Kafka & Debezium Envelope Inbound CDC Source (`CdcSourceType.KafkaDebezium`)**:
-   - Consume existing Kafka / Redpanda Debezium JSON/CloudEvents topics directly into SwapMid's governed Lakehouse (Delta Lake / Binary Avro Iceberg v2), Relational Mirror, and Data Contract SLA engine without duplicating database log readers.
-3. **AI-Native Lakehouse Schema & Contract Drift Remediation Copilot (MCP Tools 9+)**:
-   - Extend `/api/mcp` with automated Webhook dead-letter root-cause diagnostics, Iceberg/Delta snapshot diff summaries, and human-approved schema evolution drafts (`accept-schema` / `replay` remediation playbooks).
+1. **Apache Kafka / Redpanda Debezium 信封流 CDC 源（`CdcSourceType.KafkaDebezium = 4`）**：
+   - 新增 `KafkaDebeziumEnvelopeParser` 与 `KafkaDebeziumCdcCaptureService`，绑定 `DataSourceType.Kafka`，以 `PublicationName` 指定源 Topic、`SlotName` 指定 Consumer Group，兼容标准 Debezium Wrapped/Unwrapped JSON、CloudEvents CDC JSON、扁平业务 JSON 及 Tombstone 墓碑事件；实现多分区单调位点 `kafka:0=N,1=M`、分区水位线滞留预检与 Prometheus 指标 `swapmid_cdc_kafka_lag_messages` / `SwapMidCdcKafkaLagHigh`，并无缝接入自动 Schema 推导、`SchemaDriftPolicy`、数据契约 SLA 与全部下游目标（MessageBus / ClickHouse / 关系表镜像 / Delta Lake / 二进制 Avro Iceberg v2）。
+2. **Apache Iceberg v2 原生按日隐藏分区（`LakehousePartitionStrategy.DailyCommitUtc = 1` -> `day(commit_timestamp_utc)`）**：
+   - 扩展 `AddCdcIcebergPartitionStrategy` 迁移与 `IcebergAvroManifestBuilder` / `IcebergV2CommitWriter` / `CdcObjectStorageLakehouseWriter.Partitioned.cs`，输出符合 Iceberg v2 规范的 `partition-specs`（`spec-id: 1`, `transform: "day"`, `source-id: 8`, `field-id: 1000`）、二进制 Avro `r102` 分区元组与 `r508` 小端 `int32` 分区上下界，Parquet 分片按 `data/commit_day=YYYY-MM-DD/` 归档，并升级 `CdcObjectStorageCompactionService` 实现同日分区感知 `REPLACE` 压缩；同步修复 `AwsSigV4Signer` 对 Hive 分区路径 `=` 字符的双重编码缺陷，经真实 Redpanda + MinIO + 官方 **`duckdb/duckdb:latest` `iceberg_scan()`** 实机验证分区裁剪与历史版本时间旅行。
+3. **AI 原生 MCP Copilot 扩展至 10 工具与自动化术语防乱翻译门禁**：
+   - 新增 RBAC 只读诊断工具 Tool 9 `diagnose_webhook_deliveries` 与 Tool 10 `inspect_lakehouse_snapshots`；重构中英文门面文档为规范的 **企业级数据交换与集成中台（Enterprise Data Exchange & Integration Platform）** 定位，并内置 CI 术语与防乱翻译守卫脚本 `web/scripts/check-terminology.mjs` 根治中台/中间件混淆与机翻问题。
+
+---
+
+## Next Evolution (`v2.6+` AI-Era Open-Source Competitiveness)
+
+1. **Iceberg v2 Equality / Position Deletes (Merge-on-Read Upsert Views)**:
+   - Emit Iceberg v2 `content=2` equality-delete Avro manifests keyed on `TargetSinkKeyColumns` alongside copy-on-write compaction, enabling zero-duplication CDC upsert reads natively inside DuckDB, Trino, StarRocks, and Snowflake.
+2. **Confluent Schema Registry & Protobuf / Avro Wire-Format Kafka Debezium Decoding**:
+   - Extend `KafkaDebeziumCdcCaptureService` with optional Schema Registry (`magic byte 0x00 + 4-byte schema ID`) decoding for Avro/Protobuf Kafka CDC topics alongside JSON envelopes.
+3. **Declarative YAML/GitOps Integration Bundles & CLI (`swapmidctl`)**:
+   - Export/import validated DataSources, Pipelines, CDC Streams, MessageBus Topics, and API Routes as declarative GitOps manifests with drift diffing and AI-assisted PR pre-flight checks.

@@ -4,7 +4,7 @@
     "AppName": "SwapMid",
     "Menu:Home": "Home",
     "Welcome": "Welcome",
-    "LongWelcomeMessage": "Welcome to SwapMid — Open-Source Enterprise Integration & Data Swap Middleware.",
+    "LongWelcomeMessage": "Welcome to SwapMid — Open-Source Enterprise Data Exchange & Integration Platform.",
     "Permission:EmployeeSelfService": "Employee Self-Service",
     "Permission:Create": "Create",
     "Permission:Update": "Edit",

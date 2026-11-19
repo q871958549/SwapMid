@@ -166,6 +166,11 @@ public static partial class PlatformMetrics
         "Push Webhook CDC 认证推送接入结果计数（固定低基数标签 outcome）",
         new CounterConfiguration { LabelNames = ["outcome"] });
 
+    public static readonly Gauge CdcKafkaLagMessages = Metrics.CreateGauge(
+        "swapmid_cdc_kafka_lag_messages",
+        "Kafka Debezium CDC 源当前各分区累计未消费消息滞留条数（标签 stream）",
+        new GaugeConfiguration { LabelNames = ["stream"] });
+
     private static readonly string[] EtlExecutionAdmissionOutcomes =
     [
         "acquired", "busy", "idempotent_replay", "coordination_failure",

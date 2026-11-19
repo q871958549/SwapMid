@@ -19,14 +19,13 @@ import {
   detectCdcSourceTypeFromSource,
   getSinkTypeTag,
   isCdcFormValid,
-  normalizeCatalogType,
   normalizeDeletePolicy,
   normalizeDriftPolicy,
-  normalizeLakehouseTableFormat,
   normalizeSourceType,
   normalizeTargetMode,
 } from './cdc-form-state'
 import { CdcContractSection } from './cdc-contract-section'
+import { CdcLakehouseSinkSection } from './cdc-lakehouse-sink-section'
 import { CdcRelationalMirrorSection } from './cdc-relational-mirror-section'
 
 export function CdcFormDialog({
@@ -51,15 +50,20 @@ export function CdcFormDialog({
   const tc = useTranslations('Common')
 
   const isPushWebhook = crud.form.sourceType === '3'
+  const isKafkaDebezium = crud.form.sourceType === '4'
   const dbSourceOptions: ComboboxOption[] = sources.map(s => ({ value: s.id, label: s.name }))
   const relOptions: ComboboxOption[] = (relationalTargets && relationalTargets.length > 0 ? relationalTargets : sources)
     .map(s => ({ value: s.id, label: s.name }))
+  const kafkaSources = sinks.filter(s => s.type === 3)
+  const kafkaSourceOptions: ComboboxOption[] = kafkaSources.map(s => ({ value: s.id, label: s.name }))
   const sinkOptions: ComboboxOption[] = sinks.map(s => ({
     value: s.id,
     label: `${s.name} (${getSinkTypeTag(s.type)})`,
   }))
   const catalogOptions: ComboboxOption[] = catalogSources.map(s => ({ value: s.id, label: s.name }))
-  const sourceOptions: ComboboxOption[] = isPushWebhook ? catalogOptions : dbSourceOptions
+  const sourceOptions: ComboboxOption[] = isPushWebhook
+    ? catalogOptions
+    : (isKafkaDebezium ? kafkaSourceOptions : dbSourceOptions)
   const pipelineOptions: ComboboxOption[] = pipelines.map(p => ({ value: p.id, label: p.name }))
   const topicNames = Array.from(new Set([DEFAULT_CDC_TOPIC, ...topics.map(item => item.name).filter(Boolean)]))
   const topicOptions: ComboboxOption[] = topicNames.map(name => ({ value: name, label: name }))
@@ -87,18 +91,28 @@ export function CdcFormDialog({
           />
         </div>
         <div className="space-y-1.5">
-          <Label>{isPushWebhook ? t('sourceFieldPushWebhookLabel') : t('sourceFieldLabel')}</Label>
+          <Label>
+            {isPushWebhook
+              ? t('sourceFieldPushWebhookLabel')
+              : (isKafkaDebezium ? t('sourceFieldKafkaLabel') : t('sourceFieldLabel'))}
+          </Label>
           <Combobox
             options={sourceOptions}
             value={crud.form.sourceId}
             onChange={v => crud.set(
               isPushWebhook
                 ? { sourceId: v, sourceType: '3', initialSnapshotEnabled: false }
-                : { sourceId: v, sourceType: detectCdcSourceTypeFromSource(v, sources) },
+                : (isKafkaDebezium
+                    ? { sourceId: v, sourceType: '4', initialSnapshotEnabled: false }
+                    : { sourceId: v, sourceType: detectCdcSourceTypeFromSource(v, sources) }),
             )}
-            placeholder={isPushWebhook ? t('sourcePushWebhookPlaceholder') : t('sourcePlaceholder')}
+            placeholder={isPushWebhook
+              ? t('sourcePushWebhookPlaceholder')
+              : (isKafkaDebezium ? t('sourceKafkaPlaceholder') : t('sourcePlaceholder'))}
             searchPlaceholder={t('sourceSearchPlaceholder')}
-            emptyText={isPushWebhook ? t('catalogSinkEmptyText') : t('sourceEmptyText')}
+            emptyText={isPushWebhook
+              ? t('catalogSinkEmptyText')
+              : (isKafkaDebezium ? t('sourceKafkaEmptyText') : t('sourceEmptyText'))}
           />
         </div>
       </div>
@@ -109,12 +123,13 @@ export function CdcFormDialog({
           value={crud.form.sourceType ?? '0'}
           onValueChange={(v) => {
             const next = normalizeSourceType(Number(v))
-            const validList = next === '3' ? catalogSources : sources
+            const validList = next === '3' ? catalogSources : (next === '4' ? kafkaSources : sources)
             const keepSource = validList.some(s => s.id === crud.form.sourceId)
             crud.set({
               sourceType: next,
               sourceId: keepSource ? crud.form.sourceId : '',
-              ...(next === '3' ? { initialSnapshotEnabled: false } : {}),
+              ...(next === '3' || next === '4' ? { initialSnapshotEnabled: false } : {}),
+              ...(next === '4' && crud.form.publicationName === 'swapmid_cdc_pub' ? { publicationName: '', slotName: '' } : {}),
             })
           }}
         >
@@ -124,6 +139,7 @@ export function CdcFormDialog({
             <SelectItem value="1">{t('sourceTypeSqlServerCt')}</SelectItem>
             <SelectItem value="2">{t('sourceTypeMySqlBinlog')}</SelectItem>
             <SelectItem value="3">{t('sourceTypePushWebhook')}</SelectItem>
+            <SelectItem value="4">{t('sourceTypeKafkaDebezium')}</SelectItem>
           </SelectContent>
         </Select>
         {crud.form.sourceType === '1' && (
@@ -134,6 +150,9 @@ export function CdcFormDialog({
         )}
         {isPushWebhook && (
           <p className="text-xs text-muted-foreground">{t('sourceTypePushWebhookHint')}</p>
+        )}
+        {isKafkaDebezium && (
+          <p className="text-xs text-muted-foreground">{t('sourceTypeKafkaDebeziumHint')}</p>
         )}
       </div>
 
@@ -160,6 +179,29 @@ export function CdcFormDialog({
         </div>
       )}
 
+      {isKafkaDebezium && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label>{t('kafkaTopicFieldLabel')}</Label>
+            <Input
+              value={crud.form.publicationName}
+              onChange={e => crud.set({ publicationName: e.target.value })}
+              placeholder="dbserver1.public.orders"
+              className="font-mono"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t('kafkaGroupFieldLabel')}</Label>
+            <Input
+              value={crud.form.slotName}
+              onChange={e => crud.set({ slotName: e.target.value })}
+              placeholder="swapmid_kafka_orders"
+              className="font-mono"
+            />
+          </div>
+        </div>
+      )}
+
       <div className="space-y-1.5">
         <Label>{t('monitoredTablesFieldLabel')}</Label>
         <Input
@@ -168,18 +210,22 @@ export function CdcFormDialog({
           placeholder={
             isPushWebhook
               ? 'webhook.orders'
-              : (crud.form.sourceType === '2'
-                  ? 'appdb.orders'
-                  : (crud.form.sourceType === '1' ? 'dbo.orders' : t('monitoredTablesPlaceholder')))
+              : (isKafkaDebezium
+                  ? 'shop.orders'
+                  : (crud.form.sourceType === '2'
+                      ? 'appdb.orders'
+                      : (crud.form.sourceType === '1' ? 'dbo.orders' : t('monitoredTablesPlaceholder'))))
           }
           className="font-mono"
         />
         <p className="text-xs text-muted-foreground">
           {isPushWebhook
             ? t('monitoredTablesPushWebhookHint')
-            : (crud.form.sourceType === '2'
-                ? t('monitoredTablesMySqlHint')
-                : (crud.form.sourceType === '1' ? t('monitoredTablesSqlServerHint') : t('monitoredTablesHint')))}
+            : (isKafkaDebezium
+                ? t('monitoredTablesKafkaHint')
+                : (crud.form.sourceType === '2'
+                    ? t('monitoredTablesMySqlHint')
+                    : (crud.form.sourceType === '1' ? t('monitoredTablesSqlServerHint') : t('monitoredTablesHint'))))}
         </p>
       </div>
 
@@ -197,7 +243,7 @@ export function CdcFormDialog({
         </div>
       )}
 
-      {!isPushWebhook && (
+      {!isPushWebhook && !isKafkaDebezium && (
         <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/30 px-3 py-2">
           <div className="space-y-0.5">
             <Label htmlFor="cdc-initial-snapshot">{t('initialSnapshotSwitchLabel')}</Label>
@@ -337,92 +383,7 @@ export function CdcFormDialog({
             <p className="text-xs text-muted-foreground">{t('targetSinkKeyColumnsHint')}</p>
           </div>
           {crud.form.targetMode === '2' && selectedSink?.type === 5 && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>{t('lakehouseTableFormatFieldLabel')}</Label>
-                <Select
-                  value={crud.form.lakehouseTableFormat ?? '0'}
-                  onValueChange={v => crud.set({ lakehouseTableFormat: normalizeLakehouseTableFormat(Number(v)) })}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">{t('lakehouseFormatSwapMid')}</SelectItem>
-                    <SelectItem value="1">{t('lakehouseFormatDeltaLake')}</SelectItem>
-                    <SelectItem value="2">{t('lakehouseFormatApacheIceberg')}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">{t('lakehouseTableFormatHint')}</p>
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t('lakehouseCompactMinFilesFieldLabel')}</Label>
-                <Input
-                  type="number"
-                  min={2}
-                  max={100}
-                  value={crud.form.lakehouseCompactMinFiles}
-                  onChange={e => crud.set({ lakehouseCompactMinFiles: e.target.value })}
-                  placeholder="5"
-                  className="font-mono"
-                />
-                <p className="text-xs text-muted-foreground">{t('lakehouseCompactMinFilesHint')}</p>
-              </div>
-            </div>
-          )}
-          {crud.form.targetMode === '2' && selectedSink?.type === 5 && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>{t('catalogTypeFieldLabel')}</Label>
-                  <Select
-                    value={crud.form.catalogType ?? '0'}
-                    onValueChange={v => crud.set({ catalogType: normalizeCatalogType(Number(v)) })}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">{t('catalogTypeNone')}</SelectItem>
-                      <SelectItem value="1">{t('catalogTypeUnity')}</SelectItem>
-                      <SelectItem value="2">{t('catalogTypeIceberg')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">{t('catalogTypeHint')}</p>
-                </div>
-                {crud.form.catalogType !== '0' && (
-                  <div className="space-y-1.5">
-                    <Label>{t('catalogSinkFieldLabel')}</Label>
-                    <Combobox
-                      options={catalogOptions}
-                      value={crud.form.catalogSinkId}
-                      onChange={v => crud.set({ catalogSinkId: v })}
-                      placeholder={t('catalogSinkPlaceholder')}
-                      searchPlaceholder={t('catalogSinkSearchPlaceholder')}
-                      emptyText={t('catalogSinkEmptyText')}
-                    />
-                  </div>
-                )}
-              </div>
-              {crud.form.catalogType !== '0' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label>{t('catalogNamespaceFieldLabel')}</Label>
-                    <Input
-                      value={crud.form.catalogNamespace}
-                      onChange={e => crud.set({ catalogNamespace: e.target.value })}
-                      placeholder={crud.form.catalogType === '1' ? 'analytics.swapmid_cdc' : 'swapmid_cdc'}
-                      className="font-mono"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>{t('catalogTableFieldLabel')}</Label>
-                    <Input
-                      value={crud.form.catalogTableName}
-                      onChange={e => crud.set({ catalogTableName: e.target.value })}
-                      placeholder="orders"
-                      className="font-mono"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
+            <CdcLakehouseSinkSection crud={crud} catalogOptions={catalogOptions} />
           )}
         </div>
       )}

@@ -1,6 +1,6 @@
 # SwapMid Architecture & Design Reference
 
-SwapMid is a clean-architecture enterprise integration & data swap middleware built on **.NET 10 (ABP v10)** and **Next.js 16 (App Router)**. It unifies streaming ETL pipelines, durable event delivery, and governed API gateway forwarding behind a single BFF-hardened admin console.
+SwapMid is a clean-architecture **Enterprise Data Exchange & Integration Platform** built on **.NET 10 (ABP v10.1)** and **Next.js 16 (App Router)**. It unifies heterogeneous real-time CDC, zero-JVM Open Lakehouse commits, streaming ETL pipelines, durable event delivery, and governed API gateway forwarding behind a single BFF-hardened admin console.
 
 ---
 

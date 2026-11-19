@@ -207,7 +207,7 @@
     "missingFieldsHint": "Still need to fill in: {fields}",
     "disabled": "Disabled",
     "loading": "Loading…",
-    "platformTagline": "Enterprise Integration Platform Management Center",
+    "platformTagline": "Enterprise Data Exchange & Integration Platform",
     "platformUpdatingTitle": "The system is currently being updated. Please check back later.",
     "platformUpdatingDescription": "This wasn't completed. The information you entered is still there; you can submit it later.",
     "departmentCell": {
@@ -345,7 +345,7 @@
     "greetingMorning": "Good morning, {name}",
     "greetingAfternoon": "Good afternoon, {name}",
     "greetingEvening": "Good evening, {name}",
-    "subtitle": "SwapMid · Enterprise Integration & Data Swap Middleware",
+    "subtitle": "SwapMid · Enterprise Data Exchange & Integration Platform",
     "ops": {
       "platformStatus": "Platform status",
       "systemHealth": "System health",
@@ -1590,7 +1590,19 @@
       "webhookOutcomeInvalidPayload": "Invalid JSON",
       "webhookOutcomePayloadTooLarge": "Too Large",
       "webhookOutcomeBusy": "Busy",
-      "webhookOutcomeFailed": "Failed"
+      "webhookOutcomeFailed": "Failed",
+      "sourceTypeKafkaDebezium": "Kafka / Redpanda Debezium Envelope",
+      "sourceTypeKafkaDebeziumHint": "Consume existing Kafka / Redpanda Debezium JSON or CloudEvents topics without duplicating database log readers, with multi-partition checkpoints and auto-schema inference.",
+      "sourceFieldKafkaLabel": "Kafka Data Source",
+      "sourceKafkaPlaceholder": "Select Kafka / Redpanda data source",
+      "sourceKafkaEmptyText": "No Kafka data sources found. Create a Kafka connection under Data Sources first.",
+      "kafkaTopicFieldLabel": "Source Kafka Topic (Required)",
+      "kafkaGroupFieldLabel": "Consumer Group ID (Optional)",
+      "monitoredTablesKafkaHint": "Optional: filter by Debezium source.schema.table (leave blank to ingest all records from the topic).",
+      "lakehousePartitionStrategyFieldLabel": "Iceberg v2 Hidden Partitioning",
+      "lakehousePartitionNone": "Unpartitioned (spec-id = 0)",
+      "lakehousePartitionDailyUtc": "Daily UTC Hidden Partition day(commit_timestamp_utc)",
+      "lakehousePartitionStrategyHint": "Buckets Parquet files by UTC commit day and encodes binary Avro partition bounds for native DuckDB, Trino, and Spark partition pruning."
     }
   },
   "System": {

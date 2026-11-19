@@ -29,6 +29,7 @@ internal sealed record NormalizedCdcStreamInput(
     string? SoftDeleteTimestampColumn,
     int? LakehouseCompactMinFiles,
     LakehouseTableFormat LakehouseTableFormat,
+    LakehousePartitionStrategy LakehousePartitionStrategy,
     LakehouseCatalogType CatalogType,
     Guid? CatalogSinkId,
     string? CatalogNamespace,
@@ -65,13 +66,21 @@ internal static partial class CdcStreamMappingHelpers
             CdcSourceType.SqlServerChangeTracking => "dbo",
             CdcSourceType.MySqlBinlog => RelationalDataSourceConnection.Parse(source.Config).Database?.Trim() ?? string.Empty,
             CdcSourceType.PushWebhook => "webhook",
+            CdcSourceType.KafkaDebezium => "kafka",
             _ => "public",
         };
         var parsedTables = CdcProtocolHelpers.ParseMonitoredTables(input.MonitoredTables, defaultSchema: defaultSchema);
-        if (input.SourceType == CdcSourceType.PushWebhook && input.InitialSnapshotEnabled)
+        if (input.SourceType is (CdcSourceType.PushWebhook or CdcSourceType.KafkaDebezium) && input.InitialSnapshotEnabled)
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-                .WithData("Reason", "Push Webhook 推送模式不支持初始全量快照（InitialSnapshotEnabled），请关闭初始快照选项。");
+                .WithData("Reason", "Push Webhook / Kafka Debezium 模式不支持数据库全量基线快照（InitialSnapshotEnabled），请关闭初始快照选项。");
+        }
+
+        if (input.SourceType == CdcSourceType.KafkaDebezium &&
+            !KafkaSinkConfigContract.IsValidTopicName(input.PublicationName?.Trim()))
+        {
+            throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                .WithData("Reason", "Kafka Debezium 模式下必须在源标识（PublicationName）中填写合法的 Kafka Topic 名称（示例：dbserver1.public.orders）。");
         }
 
         if (input.SourceType == CdcSourceType.SqlServerChangeTracking && parsedTables.Count == 0)
@@ -92,6 +101,7 @@ internal static partial class CdcStreamMappingHelpers
             CdcSourceType.SqlServerChangeTracking => BuildIdentifierFallback(input.PublicationName, "sqlserver_ct"),
             CdcSourceType.MySqlBinlog => BuildIdentifierFallback(input.PublicationName, "mysql_binlog"),
             CdcSourceType.PushWebhook => BuildIdentifierFallback(input.PublicationName, "push_webhook"),
+            CdcSourceType.KafkaDebezium => BuildIdentifierFallback(input.PublicationName, "kafka_debezium"),
             _ => CdcProtocolHelpers.ValidateReplicationIdentifier(input.PublicationName, "PublicationName"),
         };
         var slot = input.SourceType switch
@@ -99,6 +109,7 @@ internal static partial class CdcStreamMappingHelpers
             CdcSourceType.SqlServerChangeTracking => BuildIdentifierFallback(input.SlotName, $"ct_{name}"),
             CdcSourceType.MySqlBinlog => BuildIdentifierFallback(input.SlotName, $"binlog_{name}"),
             CdcSourceType.PushWebhook => BuildIdentifierFallback(input.SlotName, $"webhook_{name}"),
+            CdcSourceType.KafkaDebezium => BuildIdentifierFallback(input.SlotName, $"swapmid_kafka_{name}"),
             _ => CdcProtocolHelpers.ValidateReplicationIdentifier(input.SlotName, "SlotName"),
         };
         var normalizedTables = parsedTables.Count > 0
@@ -285,6 +296,18 @@ internal static partial class CdcStreamMappingHelpers
             }
         }
 
+        var lakehousePartitionStrategy = LakehousePartitionStrategy.None;
+        if (input.LakehousePartitionStrategy != LakehousePartitionStrategy.None)
+        {
+            if (lakehouseTableFormat != LakehouseTableFormat.ApacheIceberg)
+            {
+                throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
+                    .WithData("Reason", "隐藏分区策略（day(commit_timestamp_utc)）当前仅支持 Apache Iceberg v2 表格式。");
+            }
+
+            lakehousePartitionStrategy = input.LakehousePartitionStrategy;
+        }
+
         var catalogType = CdcStreamMirrorConfigValidator.NormalizeCatalogType(input.TargetMode, input.CatalogType);
         Guid? catalogSinkId = null;
         string? catalogNamespace = null;
@@ -350,6 +373,7 @@ internal static partial class CdcStreamMappingHelpers
             softDeleteTimestampColumn,
             lakehouseCompactMinFiles,
             lakehouseTableFormat,
+            lakehousePartitionStrategy,
             catalogType,
             catalogSinkId,
             catalogNamespace,
@@ -364,10 +388,11 @@ internal static partial class CdcStreamMappingHelpers
         IRepository<DataSource, Guid> sourceRepository,
         DataSource source,
         CdcStreamDefinition stream,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        KafkaDebeziumCdcCaptureService? kafkaCaptureService = null)
     {
         var preflight = await DispatchPreflightAsync(
-            captureService, sqlServerCaptureService, mySqlCaptureService, source, stream, cancellationToken);
+            captureService, sqlServerCaptureService, mySqlCaptureService, source, stream, cancellationToken, kafkaCaptureService);
         if (stream.TargetMode != CdcTargetMode.RelationalTable ||
             !stream.TargetSinkId.HasValue ||
             mirrorPreflightService == null)

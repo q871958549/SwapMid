@@ -87,7 +87,7 @@ internal static class AwsSigV4Signer
         }
 
         var segments = absolutePath.Split('/');
-        return string.Join('/', segments.Select(AwsUrlEncode));
+        return string.Join('/', segments.Select(s => AwsUrlEncode(Uri.UnescapeDataString(s))));
     }
 
     private static string BuildCanonicalQueryString(string rawQuery)

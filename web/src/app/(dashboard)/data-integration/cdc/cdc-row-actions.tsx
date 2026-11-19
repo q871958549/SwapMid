@@ -110,6 +110,11 @@ export function CdcTargetCell({ stream }: { stream: CdcStreamDto }) {
             {mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.lakehouseTableFormat ?? 0) === 2 && (
               <StatusBadge tone="info">Iceberg v2</StatusBadge>
             )}
+            {mode === CDC_TARGET_EXTERNAL_SINK &&
+              Number(stream.lakehouseTableFormat ?? 0) === 2 &&
+              Number(stream.lakehousePartitionStrategy ?? 0) === 1 && (
+              <StatusBadge tone="neutral">day(ts)</StatusBadge>
+            )}
             {mode === CDC_TARGET_EXTERNAL_SINK && Number(stream.catalogType ?? 0) > 0 && (
               <StatusBadge tone="neutral" title={stream.catalogLastSyncStatus ?? undefined}>
                 {Number(stream.catalogType) === 1
@@ -184,6 +189,7 @@ export function CdcRowActions({
   const busy = !!busyKind
   const isActive = Number(row.status) === CDC_STATUS_ACTIVE
   const isPushWebhook = Number(row.sourceType ?? 0) === 3
+  const isKafkaDebezium = Number(row.sourceType ?? 0) === 4
   const isExternalSink = Number(row.targetMode) === CDC_TARGET_EXTERNAL_SINK
   const hasLakehouseTimeTravel = isExternalSink &&
     (Number(row.lakehouseTableFormat ?? 0) === 1 || Number(row.lakehouseTableFormat ?? 0) === 2) &&
@@ -268,12 +274,14 @@ export function CdcRowActions({
                   : <Play className="mr-2 size-3.5" />}
                 {isActive ? t('captureNowMenuItem') : t('captureRequiresActiveMenuItem')}
               </DropdownMenuItem>
-              <DropdownMenuItem disabled={busy} onClick={() => onSnapshot(row)}>
-                {busyKind === 'snapshot'
-                  ? <Loader2 className="mr-2 size-3.5 animate-spin" />
-                  : <DatabaseBackup className="mr-2 size-3.5" />}
-                {t('snapshotMenuItem')}
-              </DropdownMenuItem>
+              {!isKafkaDebezium && (
+                <DropdownMenuItem disabled={busy} onClick={() => onSnapshot(row)}>
+                  {busyKind === 'snapshot'
+                    ? <Loader2 className="mr-2 size-3.5 animate-spin" />
+                    : <DatabaseBackup className="mr-2 size-3.5" />}
+                  {t('snapshotMenuItem')}
+                </DropdownMenuItem>
+              )}
             </>
           )}
           <DropdownMenuItem disabled={busy} onClick={() => onCheckpointReset(row)}>

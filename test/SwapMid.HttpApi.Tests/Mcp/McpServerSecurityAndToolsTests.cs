@@ -410,4 +410,134 @@ public class McpServerSecurityAndToolsTests
             innerText.ShouldContain("\"healthyCount\":1");
         }
     }
+
+    [Fact]
+    public async Task Mcp_tools_9_and_10_diagnose_webhook_deliveries_and_inspect_lakehouse_snapshots()
+    {
+        var webhookStreamId = Guid.NewGuid();
+        var lakehouseStreamId = Guid.NewGuid();
+
+        using var host = new ContractTestHost(
+            extraSettings: new Dictionary<string, string?>
+            {
+                ["Mcp:Enabled"] = "true",
+            });
+
+        var cdcService = host.Services.GetRequiredService<ICdcStreamAppService>();
+        cdcService.GetAsync(webhookStreamId).Returns(new CdcStreamDto
+        {
+            Id = webhookStreamId,
+            Name = "orders-webhook-dlq",
+            SourceType = CdcSourceType.PushWebhook,
+            Status = CdcStreamStatus.Paused,
+        });
+        cdcService.GetAsync(lakehouseStreamId).Returns(new CdcStreamDto
+        {
+            Id = lakehouseStreamId,
+            Name = "orders-kafka-iceberg",
+            SourceType = CdcSourceType.KafkaDebezium,
+            TargetMode = CdcTargetMode.ExternalSink,
+            TargetSinkType = DataSourceType.ObjectStorage,
+            LakehouseTableFormat = LakehouseTableFormat.ApacheIceberg,
+            LakehousePartitionStrategy = LakehousePartitionStrategy.DailyCommitUtc,
+        });
+        cdcService.GetLakehouseHistoryAsync(lakehouseStreamId, Arg.Any<GetCdcLakehouseHistoryInput>(), Arg.Any<CancellationToken>())
+            .Returns(new CdcLakehouseHistoryDto
+            {
+                StreamId = lakehouseStreamId,
+                Destination = "orders/daily",
+                TableFormat = LakehouseTableFormat.ApacheIceberg,
+                PartitionStrategy = LakehousePartitionStrategy.DailyCommitUtc,
+                DeltaLogDirectory = "warehouse/orders/daily/metadata",
+                CurrentVersion = 3,
+                SelectedVersion = 3,
+                TotalCommitCount = 3,
+                SelectedActiveFileCount = 2,
+                SelectedTotalBytes = 4096,
+                SelectedTotalRecordCount = 10,
+                TimeTravelQuerySql = "SELECT * FROM iceberg_scan('s3://lake/warehouse/orders/daily/metadata/v3.metadata.json');",
+                Summary = "Apache Iceberg v2 · v3",
+            });
+
+        var webhookService = host.Services.GetRequiredService<ICdcWebhookIngressService>();
+        webhookService.GetDeliveriesAsync(webhookStreamId, Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(new CdcWebhookDeliveryListDto
+            {
+                StreamId = webhookStreamId,
+                TotalCount = 2,
+                ReplayableCount = 1,
+                Items =
+                [
+                    new CdcWebhookDeliveryRecordDto
+                    {
+                        Id = Guid.NewGuid(),
+                        StreamId = webhookStreamId,
+                        DeliveryId = "dlq-batch-01",
+                        Outcome = CdcWebhookIngestOutcome.Inactive,
+                        HttpStatusCode = 409,
+                        CanReplay = true,
+                        PayloadSizeBytes = 256,
+                        ReceivedAtUtc = DateTime.UtcNow,
+                    },
+                    new CdcWebhookDeliveryRecordDto
+                    {
+                        Id = Guid.NewGuid(),
+                        StreamId = webhookStreamId,
+                        DeliveryId = "forged-01",
+                        Outcome = CdcWebhookIngestOutcome.Unauthorized,
+                        HttpStatusCode = 401,
+                        CanReplay = false,
+                        PayloadSizeBytes = 128,
+                        ReceivedAtUtc = DateTime.UtcNow,
+                    },
+                ],
+            });
+
+        using var client = host.CreateClient(
+            authenticated: true,
+            SwapMidPermissions.DataIntegration.CdcStreams.Default);
+
+        // Tool 9: diagnose_webhook_deliveries
+        var whRes = await client.PostAsJsonAsync("/api/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = 201,
+            method = "tools/call",
+            @params = new
+            {
+                name = McpToolCatalog.DiagnoseWebhookDeliveries,
+                arguments = new { streamId = webhookStreamId.ToString(), onlyReplayable = true },
+            },
+        });
+        whRes.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using (var doc = JsonDocument.Parse(await whRes.Content.ReadAsStringAsync()))
+        {
+            var text = doc.RootElement.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString()!;
+            text.ShouldContain("\"totalReplayableDeadLetters\":1");
+            text.ShouldContain("\"totalUnauthorizedRejections\":1");
+            text.ShouldContain("dlq-batch-01");
+            text.ShouldNotContain("forged-01");
+        }
+
+        // Tool 10: inspect_lakehouse_snapshots
+        var lhRes = await client.PostAsJsonAsync("/api/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = 202,
+            method = "tools/call",
+            @params = new
+            {
+                name = McpToolCatalog.InspectLakehouseSnapshots,
+                arguments = new { streamId = lakehouseStreamId.ToString(), maxCommits = 5 },
+            },
+        });
+        lhRes.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using (var doc = JsonDocument.Parse(await lhRes.Content.ReadAsStringAsync()))
+        {
+            var text = doc.RootElement.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString()!;
+            text.ShouldContain("orders-kafka-iceberg");
+            text.ShouldContain("\"partitionStrategy\":1");
+            text.ShouldContain("iceberg_scan");
+        }
+    }
 }

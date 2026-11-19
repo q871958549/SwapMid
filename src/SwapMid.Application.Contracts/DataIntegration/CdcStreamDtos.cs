@@ -33,6 +33,7 @@ public class CdcStreamDto : FullAuditedEntityDto<Guid>
     public string? SoftDeleteTimestampColumn { get; set; }
     public int? LakehouseCompactMinFiles { get; set; }
     public LakehouseTableFormat LakehouseTableFormat { get; set; }
+    public LakehousePartitionStrategy LakehousePartitionStrategy { get; set; }
     public LakehouseCatalogType CatalogType { get; set; }
     public Guid? CatalogSinkId { get; set; }
     public string? CatalogSinkName { get; set; }
@@ -127,6 +128,8 @@ public class CdcStreamCreateUpdateDto
     public int? LakehouseCompactMinFiles { get; set; }
 
     public LakehouseTableFormat LakehouseTableFormat { get; set; } = LakehouseTableFormat.SwapMidManifest;
+
+    public LakehousePartitionStrategy LakehousePartitionStrategy { get; set; } = LakehousePartitionStrategy.None;
 
     public LakehouseCatalogType CatalogType { get; set; } = LakehouseCatalogType.None;
 
@@ -384,6 +387,7 @@ public class CdcLakehouseHistoryDto
     public Guid StreamId { get; set; }
     public string Destination { get; set; } = null!;
     public LakehouseTableFormat TableFormat { get; set; }
+    public LakehousePartitionStrategy PartitionStrategy { get; set; }
     public string? DeltaLogDirectory { get; set; }
     public long? CurrentVersion { get; set; }
     public long? SelectedVersion { get; set; }

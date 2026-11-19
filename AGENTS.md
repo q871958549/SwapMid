@@ -1,6 +1,6 @@
 # SwapMid — Engineering & Agent Guidelines
 
-SwapMid is an open-source enterprise integration and data swap middleware built on **.NET 10 + ABP v10.1** (`SwapMid.slnx`) and **Next.js 16 + React 19** (`web/`).
+SwapMid is an open-source **Enterprise Data Exchange & Integration Platform** built on **.NET 10 + ABP v10.1** (`SwapMid.slnx`) and **Next.js 16 + React 19** (`web/`).
 
 ## 1. Architecture Overview
 

@@ -24,6 +24,7 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
     private readonly PgOutputCdcCaptureService _captureService;
     private readonly SqlServerCdcCaptureService? _sqlServerCaptureService;
     private readonly MySqlBinlogCdcCaptureService? _mySqlCaptureService;
+    private readonly KafkaDebeziumCdcCaptureService? _kafkaCaptureService;
     private readonly CdcObjectStorageCompactionService? _lakehouseCompactor;
     private readonly IAbpDistributedLock _distributedLock;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
@@ -48,13 +49,15 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
         CdcObjectStorageCompactionService? lakehouseCompactor = null,
         MySqlBinlogCdcCaptureService? mySqlCaptureService = null,
         ExternalLakehouseCatalogSyncService? catalogSyncService = null,
-        CdcDataContractEvaluator? contractEvaluator = null)
+        CdcDataContractEvaluator? contractEvaluator = null,
+        KafkaDebeziumCdcCaptureService? kafkaCaptureService = null)
     {
         _streamRepository = streamRepository;
         _sourceRepository = sourceRepository;
         _captureService = captureService;
         _sqlServerCaptureService = sqlServerCaptureService;
         _mySqlCaptureService = mySqlCaptureService;
+        _kafkaCaptureService = kafkaCaptureService;
         _lakehouseCompactor = lakehouseCompactor;
         _distributedLock = distributedLock;
         _unitOfWorkManager = unitOfWorkManager;
@@ -214,10 +217,10 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
         }
 
         var (stream, source, targetSink) = await LoadExecutionInputsAsync(id, requireActiveStatus: false, cancellationToken);
-        if (stream.SourceType == CdcSourceType.PushWebhook)
+        if (stream.SourceType is (CdcSourceType.PushWebhook or CdcSourceType.KafkaDebezium))
         {
             throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcStreamConfigInvalid)
-                .WithData("Reason", "Push Webhook 推送模式不支持全量基线快照，请直接向 Webhook 接入端点推送签名事件批次。");
+                .WithData("Reason", "Push Webhook / Kafka Debezium 模式不支持数据库全量基线快照，请直接推送或执行增量捕获。");
         }
 
         try
@@ -444,6 +447,8 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
                 source, stream, targetSink, cancellationToken, OnSchemaAsync),
             CdcSourceType.MySqlBinlog => RequireMySqlEngine().CaptureBatchAsync(
                 source, stream, targetSink, cancellationToken, OnSchemaAsync),
+            CdcSourceType.KafkaDebezium => RequireKafkaEngine().CaptureBatchAsync(
+                source, stream, targetSink, cancellationToken, OnSchemaAsync),
             _ => _captureService.CaptureBatchAsync(
                 source, stream, targetSink, cancellationToken, OnSchemaAsync),
         };
@@ -456,4 +461,8 @@ public sealed class CdcStreamCaptureCoordinator : ITransientDependency
     private MySqlBinlogCdcCaptureService RequireMySqlEngine()
         => _mySqlCaptureService ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
             .WithData("Reason", "MySQL Binlog 捕获引擎未启用。");
+
+    private KafkaDebeziumCdcCaptureService RequireKafkaEngine()
+        => _kafkaCaptureService ?? throw new BusinessException(SwapMidDomainErrorCodes.DataIntegration.CdcReplicationPreconditionFailed)
+            .WithData("Reason", "Kafka Debezium 捕获引擎未启用。");
 }

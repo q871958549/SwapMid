@@ -19,6 +19,8 @@ public static class McpToolCatalog
     public const string DiagnoseCdcStreams = "diagnose_cdc_streams";
     public const string ProposePipelineColumnMappings = "propose_pipeline_column_mappings";
     public const string EvaluateCdcDataContracts = "evaluate_cdc_data_contracts";
+    public const string DiagnoseWebhookDeliveries = "diagnose_webhook_deliveries";
+    public const string InspectLakehouseSnapshots = "inspect_lakehouse_snapshots";
 
     public static IReadOnlyList<McpToolDescriptor> All { get; } =
     [
@@ -144,6 +146,36 @@ public static class McpToolCatalog
                     limit = new { type = "integer", minimum = 1, maximum = 50, description = "Max CDC streams to evaluate (default 20)." },
                     onlyBreached = new { type = "boolean", description = "When true, returns only streams currently breaching their Data Contract SLA." },
                     probeLiveUpstream = new { type = "boolean", description = "When true (requires CdcStreams.Manage), runs live upstream schema and WAL lag contract checks." },
+                },
+                additionalProperties = false,
+            }),
+        new McpToolDescriptor(
+            Name: DiagnoseWebhookDeliveries,
+            RequiredPermission: SwapMidPermissions.DataIntegration.CdcStreams.Default,
+            Description: "Inspect Push Webhook CDC delivery and dead-letter replay ledgers (401 auth rejections, 409/500 replayable dead-letters, schema drift) and return operator remediation guidance.",
+            InputSchema: new
+            {
+                type = "object",
+                properties = new
+                {
+                    streamId = new { type = "string", format = "uuid", description = "Optional Push Webhook CDC stream GUID." },
+                    limit = new { type = "integer", minimum = 1, maximum = 50, description = "Max delivery records per stream (default 20)." },
+                    onlyReplayable = new { type = "boolean", description = "When true, return only dead-letter deliveries eligible for 1-click replay." },
+                },
+                additionalProperties = false,
+            }),
+        new McpToolDescriptor(
+            Name: InspectLakehouseSnapshots,
+            RequiredPermission: SwapMidPermissions.DataIntegration.CdcStreams.Default,
+            Description: "Inspect Apache Delta Lake or Apache Iceberg v2 snapshot history, hidden partition strategy, active Parquet file stats, and ready-to-run DuckDB/Trino/Spark Time-Travel SQL.",
+            InputSchema: new
+            {
+                type = "object",
+                properties = new
+                {
+                    streamId = new { type = "string", format = "uuid", description = "Optional Lakehouse CDC stream GUID (defaults to all Lakehouse streams)." },
+                    version = new { type = "integer", minimum = 0, description = "Optional historical snapshot version / sequence number for Time-Travel." },
+                    maxCommits = new { type = "integer", minimum = 1, maximum = 50, description = "Max commit timeline entries to return (default 10)." },
                 },
                 additionalProperties = false,
             }),

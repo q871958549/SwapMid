@@ -221,6 +221,10 @@ public class McpController : AbpController
                     _serviceProvider, args, cancellationToken),
                 McpToolCatalog.EvaluateCdcDataContracts => await McpDataContractHandler.ExecuteAsync(
                     _serviceProvider, _authorizationService, User, args, cancellationToken),
+                McpToolCatalog.DiagnoseWebhookDeliveries => await McpWebhookDeliveryDiagnosticsHandler.ExecuteAsync(
+                    _serviceProvider, args, cancellationToken),
+                McpToolCatalog.InspectLakehouseSnapshots => await McpLakehouseSnapshotHandler.ExecuteAsync(
+                    _serviceProvider, args, cancellationToken),
                 _ => throw new InvalidOperationException("Unhandled tool"),
             };
 

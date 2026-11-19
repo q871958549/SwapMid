@@ -207,7 +207,7 @@
     "missingFieldsHint": "还需填写：{fields}",
     "disabled": "停用",
     "loading": "加载中…",
-    "platformTagline": "企业级集成平台管理中心",
+    "platformTagline": "企业级数据交换与集成中台",
     "platformUpdatingTitle": "系统更新中，请稍后",
     "platformUpdatingDescription": "这次没有完成。已填写的内容还在，可以稍后再提交。",
     "departmentCell": {
@@ -345,7 +345,7 @@
     "greetingMorning": "上午好，{name}",
     "greetingAfternoon": "下午好，{name}",
     "greetingEvening": "晚上好，{name}",
-    "subtitle": "SwapMid · 企业数据交换与集成中间件",
+    "subtitle": "SwapMid · 企业级数据交换与集成中台",
     "ops": {
       "platformStatus": "平台运行",
       "systemHealth": "系统体检",
@@ -1590,7 +1590,19 @@
       "webhookOutcomeInvalidPayload": "载荷无效",
       "webhookOutcomePayloadTooLarge": "载荷超限",
       "webhookOutcomeBusy": "并发繁忙",
-      "webhookOutcomeFailed": "投递失败"
+      "webhookOutcomeFailed": "投递失败",
+      "sourceTypeKafkaDebezium": "Kafka / Redpanda Debezium 信封流",
+      "sourceTypeKafkaDebeziumHint": "直接消费既有 Kafka / Redpanda Debezium JSON 或 CloudEvents Topic，免重复占用数据库复制槽，支持多分区位点与自动 Schema 推导。",
+      "sourceFieldKafkaLabel": "Kafka 数据源",
+      "sourceKafkaPlaceholder": "选择 Kafka / Redpanda 数据源",
+      "sourceKafkaEmptyText": "暂无可用 Kafka 数据源，请先在数据源管理中创建 Kafka 连接。",
+      "kafkaTopicFieldLabel": "源 Kafka Topic（必填）",
+      "kafkaGroupFieldLabel": "消费组标识（可选）",
+      "monitoredTablesKafkaHint": "可选：按 Debezium source.schema.table 过滤监听表（留空表示接收该 Topic 全部变更事件）。",
+      "lakehousePartitionStrategyFieldLabel": "Iceberg v2 隐藏分区策略",
+      "lakehousePartitionNone": "未分区（spec-id = 0）",
+      "lakehousePartitionDailyUtc": "按日隐藏分区 day(commit_timestamp_utc)",
+      "lakehousePartitionStrategyHint": "启用按日隐藏分区后，Parquet 分片按 UTC 日期分桶写入并在二进制 Avro 清单中写入分区边界，支持 DuckDB/Trino/Spark 分区裁剪。"
     }
   },
   "System": {

@@ -15,7 +15,7 @@ export interface CdcFormState {
   name: string
   description: string
   sourceId: string
-  sourceType: '0' | '1' | '2' | '3'
+  sourceType: '0' | '1' | '2' | '3' | '4'
   publicationName: string
   slotName: string
   monitoredTables: string
@@ -35,6 +35,7 @@ export interface CdcFormState {
   targetFieldMappings: CdcFieldMappingDto[]
   lakehouseCompactMinFiles: string
   lakehouseTableFormat: '0' | '1' | '2'
+  lakehousePartitionStrategy: '0' | '1'
   catalogType: '0' | '1' | '2'
   catalogSinkId: string
   catalogNamespace: string
@@ -71,6 +72,7 @@ export const defaultCdcForm: CdcFormState = {
   targetFieldMappings: [],
   lakehouseCompactMinFiles: '',
   lakehouseTableFormat: '0',
+  lakehousePartitionStrategy: '0',
   catalogType: '0',
   catalogSinkId: '',
   catalogNamespace: '',
@@ -97,10 +99,11 @@ export function normalizeCatalogType(catalogType: number | undefined): '0' | '1'
   return '0'
 }
 
-export function normalizeSourceType(sourceType: number | undefined): '0' | '1' | '2' | '3' {
+export function normalizeSourceType(sourceType: number | undefined): '0' | '1' | '2' | '3' | '4' {
   if (Number(sourceType) === 1) return '1'
   if (Number(sourceType) === 2) return '2'
   if (Number(sourceType) === 3) return '3'
+  if (Number(sourceType) === 4) return '4'
   return '0'
 }
 
@@ -110,9 +113,14 @@ export function normalizeLakehouseTableFormat(format: number | undefined): '0' |
   return '0'
 }
 
-export function detectCdcSourceTypeFromSource(sourceId: string, sources: CdcSourceOption[]): '0' | '1' | '2' | '3' {
+export function normalizeLakehousePartitionStrategy(strategy: number | undefined): '0' | '1' {
+  return Number(strategy) === 1 ? '1' : '0'
+}
+
+export function detectCdcSourceTypeFromSource(sourceId: string, sources: CdcSourceOption[]): '0' | '1' | '2' | '3' | '4' {
   const matched = sources.find(s => s.id === sourceId)
   if (matched?.type === 1) return '3'
+  if (matched?.type === 3) return '4'
   if (!matched?.config) return '0'
   try {
     const parsed = JSON.parse(matched.config) as { provider?: unknown }
@@ -180,6 +188,7 @@ export function toCdcForm(item: CdcStreamDto): CdcFormState {
     targetFieldMappings: mappings,
     lakehouseCompactMinFiles: item.lakehouseCompactMinFiles ? String(item.lakehouseCompactMinFiles) : '',
     lakehouseTableFormat: normalizeLakehouseTableFormat(item.lakehouseTableFormat),
+    lakehousePartitionStrategy: normalizeLakehousePartitionStrategy(item.lakehousePartitionStrategy),
     catalogType: normalizeCatalogType(item.catalogType),
     catalogSinkId: item.catalogSinkId ?? '',
     catalogNamespace: item.catalogNamespace ?? '',
@@ -205,6 +214,9 @@ export function toCdcBody(form: CdcFormState) {
     ? Number.parseInt(form.lakehouseCompactMinFiles.trim(), 10)
     : null
   const tableFormat = mode === 2 ? Number(normalizeLakehouseTableFormat(Number(form.lakehouseTableFormat))) : 0
+  const partitionStrategy = mode === 2 && tableFormat === 2
+    ? Number(normalizeLakehousePartitionStrategy(Number(form.lakehousePartitionStrategy)))
+    : 0
   const catalogTypeNum = mode === 2 ? Number(normalizeCatalogType(Number(form.catalogType))) : 0
   const useCatalog = mode === 2 && catalogTypeNum > 0
   const cleanMappings = mode === 3
@@ -221,11 +233,11 @@ export function toCdcBody(form: CdcFormState) {
     description: form.description.trim() || null,
     sourceId: form.sourceId,
     sourceType,
-    publicationName: sourceType === 0 ? form.publicationName.trim() : (form.publicationName.trim() || null),
+    publicationName: (sourceType === 0 || sourceType === 4) ? form.publicationName.trim() : (form.publicationName.trim() || null),
     slotName: sourceType === 0 ? form.slotName.trim() : (form.slotName.trim() || null),
     monitoredTables: form.monitoredTables.trim() || null,
     autoCreatePublicationAndSlot: sourceType === 0 ? form.autoCreatePublicationAndSlot : false,
-    initialSnapshotEnabled: sourceType === 3 ? false : form.initialSnapshotEnabled,
+    initialSnapshotEnabled: (sourceType === 3 || sourceType === 4) ? false : form.initialSnapshotEnabled,
     pollIntervalSeconds: Number.isFinite(poll) ? poll : 15,
     maxBatchSize: Number.isFinite(batch) ? batch : 500,
     targetMode: mode,
@@ -242,6 +254,7 @@ export function toCdcBody(form: CdcFormState) {
       : null,
     lakehouseCompactMinFiles: compactMin !== null && Number.isFinite(compactMin) ? compactMin : null,
     lakehouseTableFormat: tableFormat,
+    lakehousePartitionStrategy: partitionStrategy,
     catalogType: catalogTypeNum,
     catalogSinkId: useCatalog ? (form.catalogSinkId.trim() || null) : null,
     catalogNamespace: useCatalog ? (form.catalogNamespace.trim() || null) : null,
@@ -261,6 +274,7 @@ export function isCdcFormValid(form: CdcFormState): boolean {
   const requiresMonitoredTables = form.sourceType === '1' || form.sourceType === '2'
   if (!form.name.trim() || !form.sourceId) return false
   if (form.sourceType === '0' && (!form.publicationName.trim() || !form.slotName.trim())) return false
+  if (form.sourceType === '4' && !form.publicationName.trim()) return false
   if (requiresMonitoredTables && !form.monitoredTables.trim()) return false
 
   const poll = Number.parseInt(form.pollIntervalSeconds, 10)

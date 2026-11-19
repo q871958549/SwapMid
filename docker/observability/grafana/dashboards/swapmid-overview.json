@@ -188,6 +188,11 @@
           "expr": "sum by (outcome) (increase(swapmid_cdc_webhook_ingests_total[15m]))",
           "legendFormat": "webhook:{{outcome}}",
           "refId": "B"
+        },
+        {
+          "expr": "max by (stream) (swapmid_cdc_kafka_lag_messages)",
+          "legendFormat": "kafka_lag:{{stream}}",
+          "refId": "C"
         }
       ]
     },

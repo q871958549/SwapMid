@@ -270,18 +270,22 @@ internal readonly record struct ObjectStorageSinkConfig(
         PathStyle,
         AccessKey);
 
-    internal string BuildObjectKey(string destination, Guid runId)
+    internal string BuildObjectKey(string destination, Guid runId, string? partitionSegment = null)
     {
         var baseDir = BuildDestinationDirectory(destination);
         var extension = Format == "jsonl" ? "jsonl" : "parquet";
-        return $"{baseDir}/run_{runId:N}.{extension}";
+        return string.IsNullOrWhiteSpace(partitionSegment)
+            ? $"{baseDir}/run_{runId:N}.{extension}"
+            : $"{baseDir}/{partitionSegment.Trim('/')}/run_{runId:N}.{extension}";
     }
 
-    internal string BuildCompactedObjectKey(string destination, Guid compactRunId)
+    internal string BuildCompactedObjectKey(string destination, Guid compactRunId, string? partitionSegment = null)
     {
         var baseDir = BuildDestinationDirectory(destination);
         var extension = Format == "jsonl" ? "jsonl" : "parquet";
-        return $"{baseDir}/compact_{compactRunId:N}.{extension}";
+        return string.IsNullOrWhiteSpace(partitionSegment)
+            ? $"{baseDir}/compact_{compactRunId:N}.{extension}"
+            : $"{baseDir}/{partitionSegment.Trim('/')}/compact_{compactRunId:N}.{extension}";
     }
 
     internal string BuildDestinationDirectory(string destination)

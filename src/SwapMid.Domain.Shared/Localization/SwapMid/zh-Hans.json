@@ -4,7 +4,7 @@
     "AppName": "SwapMid",
     "Menu:Home": "首页",
     "Welcome": "欢迎",
-    "LongWelcomeMessage": "欢迎使用 SwapMid 企业级集成与数据交换中台。",
+    "LongWelcomeMessage": "欢迎使用 SwapMid 企业级数据交换与集成中台。",
     "Permission:EmployeeSelfService": "人员自助服务",
     "Permission:Create": "新增",
     "Permission:Update": "编辑",

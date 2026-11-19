@@ -265,6 +265,112 @@ public class IcebergAvroManifestTests
         preview.Rows[0]["commit_timestamp_utc"].ShouldNotBeNull().ShouldContain("2026-11-19");
     }
 
+    [Fact]
+    public async Task DailyPartitioned_IcebergV2_Compaction_Should_Merge_Within_Same_Day_Partition_Only()
+    {
+        var objects = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        var handler = new MemoryS3Handler(objects);
+        var factory = Substitute.For<IHttpClientFactory>();
+        factory.CreateClient(Arg.Any<string>()).Returns(_ => new HttpClient(handler, disposeHandler: false));
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["DataIntegration:Sinks:AllowedHosts"] = "198.51.100.20",
+            })
+            .Build();
+
+        var sink = new DataSource(
+            Guid.NewGuid(),
+            "minio-part-compact",
+            DataSourceType.ObjectStorage,
+            """
+            {
+              "provider": "minio",
+              "endpoint": "http://198.51.100.20:9000",
+              "region": "us-east-1",
+              "bucket": "swapmid-lake",
+              "prefix": "warehouse",
+              "format": "parquet",
+              "pathStyle": true,
+              "accessKey": "ak",
+              "secretKey": "sk"
+            }
+            """);
+
+        var stream = new CdcStreamDefinition(
+            Guid.NewGuid(),
+            "orders-daily-compact",
+            Guid.NewGuid(),
+            "push_webhook",
+            "webhook_daily",
+            CdcTargetMode.ExternalSink,
+            targetSinkId: sink.Id,
+            targetSinkDestination: "orders/part_compact",
+            sourceType: CdcSourceType.PushWebhook,
+            lakehouseTableFormat: LakehouseTableFormat.ApacheIceberg);
+        stream.ConfigureLakehousePartitionStrategy(LakehousePartitionStrategy.DailyCommitUtc);
+        stream.Activate();
+
+        var writer = new ObjectStorageEtlSinkWriter(factory, config);
+        var sinkWriters = new Dictionary<DataSourceType, IEtlSinkWriter> { [DataSourceType.ObjectStorage] = writer };
+
+        var d18 = new DateTime(2026, 11, 18, 8, 0, 0, DateTimeKind.Utc);
+        var d19a = new DateTime(2026, 11, 19, 8, 0, 0, DateTimeKind.Utc);
+        var d19b = new DateTime(2026, 11, 19, 9, 0, 0, DateTimeKind.Utc);
+
+        await CdcExternalSinkDeliveryAdapter.DeliverAsync(
+            stream, sink,
+            [
+                new PgOutputCapturedChange("shop", "orders", "insert", "webhook:1", d18, new Dictionary<string, object?> { ["id"] = 1 }, null),
+                new PgOutputCapturedChange("shop", "orders", "insert", "webhook:2", d19a, new Dictionary<string, object?> { ["id"] = 2 }, null),
+            ],
+            null, sinkWriters, CancellationToken.None, 0, "webhook:batch-1");
+
+        await CdcExternalSinkDeliveryAdapter.DeliverAsync(
+            stream, sink,
+            [
+                new PgOutputCapturedChange("shop", "orders", "insert", "webhook:3", d19b, new Dictionary<string, object?> { ["id"] = 3 }, null),
+            ],
+            null, sinkWriters, CancellationToken.None, 2, "webhook:batch-2");
+
+        var compactor = new CdcObjectStorageCompactionService(
+            factory, config, Microsoft.Extensions.Logging.Abstractions.NullLogger<CdcObjectStorageCompactionService>.Instance);
+        var result = await compactor.CompactAsync(stream, sink, minFiles: 2, deleteCompactedFiles: false, CancellationToken.None);
+        result.Compacted.ShouldBeTrue();
+        result.CompactedFileCount.ShouldBe(2);
+        result.ConsolidatedRowCount.ShouldBe(2);
+        result.OutputObjectKey.ShouldNotBeNull().ShouldContain("data/commit_day=2026-11-19/compact_");
+
+        var historyReader = new DeltaLakeHistoryReader(factory, config);
+        var histV3 = await historyReader.ReadAsync(stream, sink, requestedVersion: null);
+        histV3.PartitionStrategy.ShouldBe(LakehousePartitionStrategy.DailyCommitUtc);
+        histV3.CurrentVersion.ShouldBe(3);
+        histV3.SelectedActiveFileCount.ShouldBe(2); // 1 file for 2026-11-18 + 1 compacted file for 2026-11-19
+        histV3.SelectedTotalRecordCount.ShouldBe(3);
+        histV3.ActiveFiles.Any(f => f.RelativePath.Contains("commit_day=2026-11-18", StringComparison.Ordinal)).ShouldBeTrue();
+        histV3.ActiveFiles.Any(f => f.RelativePath.Contains("commit_day=2026-11-19/compact_", StringComparison.Ordinal)).ShouldBeTrue();
+        histV3.TimeTravelQuerySql.ShouldNotBeNull().ShouldContain("WHERE commit_timestamp_utc >=");
+    }
+
+    [Fact]
+    public void AwsSigV4Signer_Should_Not_Double_Encode_Hive_Partition_Equals_Segment()
+    {
+        var fixedTime = new DateTimeOffset(2026, 11, 19, 12, 0, 0, TimeSpan.Zero);
+        var reqRaw = new HttpRequestMessage(
+            HttpMethod.Put,
+            new Uri("http://minio:9000/swapmid-lake/orders/data/commit_day=2026-11-19/run_1.parquet"));
+        var reqEncoded = new HttpRequestMessage(
+            HttpMethod.Put,
+            new Uri("http://minio:9000/swapmid-lake/orders/data/commit_day%3D2026-11-19/run_1.parquet"));
+
+        AwsSigV4Signer.Sign(reqRaw, "us-east-1", "minioadmin", "minioadmin", AwsSigV4Signer.EmptyPayloadSha256Hex, fixedTime);
+        AwsSigV4Signer.Sign(reqEncoded, "us-east-1", "minioadmin", "minioadmin", AwsSigV4Signer.EmptyPayloadSha256Hex, fixedTime);
+
+        var authRaw = reqRaw.Headers.GetValues("Authorization").Single();
+        var authEncoded = reqEncoded.Headers.GetValues("Authorization").Single();
+        authEncoded.ShouldBe(authRaw);
+    }
+
     private sealed class MemoryS3Handler : HttpMessageHandler
     {
         private readonly Dictionary<string, byte[]> _objects;

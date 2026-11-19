@@ -4,6 +4,26 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-11-19
+
+### Added
+- **Apache Kafka / Redpanda Debezium Envelope Inbound CDC Source (`CdcSourceType.KafkaDebezium = 4`)**:
+  - Added `KafkaDebeziumEnvelopeParser` and `KafkaDebeziumCdcCaptureService` (using `Confluent.Kafka` via `KafkaSinkConfigContract.ToConsumerConfig`) binding to `DataSourceType.Kafka`, mapping `PublicationName` to Kafka Topic and `SlotName` to Consumer Group. Supports wrapped & unwrapped Debezium JSON envelopes, CloudEvents CDC JSON, flat business JSON, and tombstone records.
+  - Added monotonic multi-partition checkpoint tracking (`kafka:0=N,1=M`), live broker watermark lag preflight (`walLevel = "kafka_debezium"`, `swapmid_cdc_kafka_lag_messages` Prometheus gauge, `SwapMidCdcKafkaLagHigh` alert rule, Grafana Panel 10 series), automatic schema inference (`SchemaBaselineJson`), `SchemaDriftPolicy`, Data Contract SLA enforcement, and delivery to all SwapMid downstream targets.
+- **Apache Iceberg v2 Native Daily Hidden Partitioning (`LakehousePartitionStrategy.DailyCommitUtc = 1` -> `day(commit_timestamp_utc)`)**:
+  - Added `LakehousePartitionStrategy` (`None = 0`, `DailyCommitUtc = 1`) and EF Core migration `AddCdcIcebergPartitionStrategy` (`AppCdcStreams.LakehousePartitionStrategy`).
+  - Extended `IcebergAvroManifestBuilder`, `IcebergV2CommitWriter`, `IcebergV2MetadataReader`, and `CdcObjectStorageLakehouseWriter.Partitioned.cs` to emit Iceberg v2 `partition-specs` (`spec-id: 1`, `transform: "day"`, `source-id: 8`, `field-id: 1000`), binary Avro `r102` (`commit_timestamp_utc_day`) per data file, binary Avro `r508` little-endian `int32` `lower_bound`/`upper_bound` partition summaries in `manifest-list`, and UTC day-bucketed Parquet paths (`data/commit_day=YYYY-MM-DD/run_*.parquet`).
+  - Upgraded `CdcObjectStorageCompactionService` to perform partition-aware same-day `REPLACE` compaction (merging only fragments within the same UTC day while leaving prior days intact), verified live against real **Redpanda** + **MinIO** + official **`duckdb/duckdb:latest` `iceberg_scan()`** (`WHERE commit_timestamp_utc >= TIMESTAMPTZ` partition pruning and historical `v1` Time-Travel).
+- **AI-Native MCP Copilot Expansion to 10 Tools & Frontend Console Upgrades**:
+  - Added RBAC-gated read-only MCP Tool 9 `diagnose_webhook_deliveries` (`McpWebhookDeliveryDiagnosticsHandler`) and Tool 10 `inspect_lakehouse_snapshots` (`McpLakehouseSnapshotHandler`) on `POST /api/mcp`, and updated `scripts/e2e-smoke.mjs` to verify all 10 tools.
+  - Upgraded `/data-integration/cdc` (extracting `CdcLakehouseSinkSection` to enforce `<= 500` line hygiene) with `Kafka Debezium` source forms/badges and `day(ts)` / `day(commit_timestamp_utc)` partition badges & selectors across `zh-Hans`, `zh-Hant`, and `en` (`2,123` trilingual keys, `199/199` 100.0% `/api/v1` OpenAPI summary coverage).
+- **Flagship Bilingual Front-Door & Automated Terminology / Anti-Mistranslation CI Gate**:
+  - Standardized SwapMid's brand positioning across `README.md`, `README.zh-CN.md`, `AGENTS.md`, `charts/swapmid/Chart.yaml`, `docs/`, and trilingual backend/frontend catalogs as an **Enterprise Data Exchange & Integration Platform (企业级数据交换与集成中台)**, eliminating all "middleware / 中间件" and "data swap" mistranslations.
+  - Added `web/scripts/check-terminology.mjs` and `web/scripts/check-terminology.test.mjs` wired into `pnpm check:i18n` / `pnpm lint` and GitHub Actions CI to permanently prevent terminology drift or Chinglish regressions.
+
+### Fixed
+- **AWS SigV4 Double-Encoding on Hive Partition Paths (`AwsSigV4Signer.EncodeCanonicalUriPath`)**: Unescaped pre-encoded URI path segments (`Uri.UnescapeDataString`) prior to `AwsUrlEncode` so Hive-style partition directories containing `=` (`data/commit_day=YYYY-MM-DD/...`) sign identically against MinIO and AWS S3 without double-encoding `%3D` into `%253D`.
+
 ## [2.4.0] - 2026-11-19
 
 ### Added

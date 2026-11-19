@@ -118,13 +118,19 @@ internal static class IcebergV2MetadataReader
             tableDir,
             selectedSeq,
             selectedSnap.SnapshotId,
+            stream.LakehousePartitionStrategy,
             activeFiles);
+
+        var partitionTag = stream.LakehousePartitionStrategy == LakehousePartitionStrategy.DailyCommitUtc
+            ? "，分区 day(commit_timestamp_utc)"
+            : string.Empty;
 
         return new CdcLakehouseHistoryDto
         {
             StreamId = stream.Id,
             Destination = destination,
             TableFormat = LakehouseTableFormat.ApacheIceberg,
+            PartitionStrategy = stream.LakehousePartitionStrategy,
             DeltaLogDirectory = metadataDir,
             CurrentVersion = currentSeq,
             SelectedVersion = selectedSeq,
@@ -135,7 +141,7 @@ internal static class IcebergV2MetadataReader
             Commits = recentCommits,
             ActiveFiles = activeFiles,
             TimeTravelQuerySql = timeTravelSql,
-            Summary = $"Apache Iceberg v2 · v{selectedSeq}（当前最新 v{currentSeq}，Snapshot {selectedSnap.SnapshotId}，活跃 Parquet 分片 {activeFiles.Count} 个，记录 {totalRecords} 条）。",
+            Summary = $"Apache Iceberg v2 · v{selectedSeq}（当前最新 v{currentSeq}，Snapshot {selectedSnap.SnapshotId}{partitionTag}，活跃 Parquet 分片 {activeFiles.Count} 个，记录 {totalRecords} 条）。",
         };
     }
 
@@ -255,6 +261,7 @@ internal static class IcebergV2MetadataReader
         string tableDir,
         long selectedSeq,
         long snapshotId,
+        LakehousePartitionStrategy partitionStrategy,
         IReadOnlyList<CdcDeltaActiveFileDto> activeFiles)
     {
         var s3Base = string.IsNullOrEmpty(tableDir)
@@ -266,8 +273,14 @@ internal static class IcebergV2MetadataReader
             ? string.Join(",\n  ", activeFiles.Take(8).Select(f => $"'s3://{config.Bucket}/{f.ObjectKey}'"))
             : $"'{s3Base}/*.parquet'";
         var suffix = activeFiles.Count > 8 ? $"\n  -- (+ {activeFiles.Count - 8} more part files at v{selectedSeq})" : string.Empty;
+        var todayUtc = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var partitionPruneSnippet = partitionStrategy == LakehousePartitionStrategy.DailyCommitUtc
+            ? $"-- DuckDB Iceberg v2 Hidden Partition Pruning (day(commit_timestamp_utc))\n" +
+              $"SELECT * FROM iceberg_scan('{metadataUri}') WHERE commit_timestamp_utc >= TIMESTAMPTZ '{todayUtc} 00:00:00+00' LIMIT 100;\n\n"
+            : string.Empty;
 
         return
+            partitionPruneSnippet +
             $"-- DuckDB Apache Iceberg v2 Metadata Scan (v{selectedSeq} / snapshot {snapshotId})\n" +
             $"SELECT * FROM iceberg_scan('{metadataUri}') LIMIT 100;\n\n" +
             $"-- Trino / Apache Spark SQL Time-Travel (Snapshot ID {snapshotId})\n" +

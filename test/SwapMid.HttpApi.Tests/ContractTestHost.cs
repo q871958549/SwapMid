@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using SwapMid.ApiManagement;
 using SwapMid.Controllers.Notification;
+using SwapMid.DataIntegration;
 using SwapMid.HttpApi.Versioning;
 using SwapMid.Notification;
 using SwapMid.Permissions;
@@ -323,6 +324,8 @@ internal sealed class ContractTestHost : IDisposable
                 services.AddSingleton(iface, _ => Substitute.For([iface], []));
             }
         }
+
+        services.AddSingleton<ICdcWebhookIngressService>(_ => Substitute.For<ICdcWebhookIngressService>());
     }
 
     private static string[] CollectAllPermissionConstants()

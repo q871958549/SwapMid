@@ -15,7 +15,9 @@
   "englishTerms": {
     "员工工号": "Employee ID",
     "数据源": "Data Source",
-    "消息总线": "Message Bus"
+    "消息总线": "Message Bus",
+    "企业级数据交换与集成中台": "Enterprise Data Exchange & Integration Platform",
+    "数据交换与集成中台": "Data Exchange & Integration Platform"
   },
   "traditionalTerms": {
     "保存": "儲存",
@@ -23,9 +25,13 @@
     "添加": "新增",
     "导入": "匯入",
     "导出": "匯出",
-    "数据源": "資料來源"
+    "数据源": "資料來源",
+    "数据交换与集成中台": "資料交換與整合中台"
   },
   "englishOverrides": {
+    "Common.platformTagline": "Enterprise Data Exchange & Integration Platform",
+    "Dashboard.subtitle": "SwapMid · Enterprise Data Exchange & Integration Platform",
+    "LongWelcomeMessage": "Welcome to SwapMid — Open-Source Enterprise Data Exchange & Integration Platform.",
     "GlobalSearch.openLabel": "Search menus",
     "Common.deptExpandAll": "Expand all",
     "Common.deptCollapseAll": "Collapse all",

@@ -21,7 +21,7 @@ namespace SwapMid.DataIntegration;
 /// CDC 对象存储（S3/MinIO Parquet &amp; JSONL）Lakehouse Manifest 与检查点索引写入器：
 /// 在数据分片上传成功后幂等写入不可变批次 Manifest（_swapmid/manifests/*.json）与最新水位线索引（_swapmid/latest.json）。
 /// </summary>
-internal static class CdcObjectStorageLakehouseWriter
+internal static partial class CdcObjectStorageLakehouseWriter
 {
     private const int MaxRecentFilesInLatest = 100;
 
@@ -92,6 +92,7 @@ internal static class CdcObjectStorageLakehouseWriter
         public bool IsInitialSnapshot { get; set; }
         public bool? IsCompaction { get; set; }
         public string? EndLsn { get; set; }
+        public int? PartitionDayEpoch { get; set; }
         public DateTime CommittedAtUtc { get; set; }
     }
 
@@ -111,6 +112,17 @@ internal static class CdcObjectStorageLakehouseWriter
     {
         var endLsnText = idempotencyKeyOverride ?? batchEndLsn?.ToString() ?? changes[^1].Lsn;
         var runId = CdcProtocolHelpers.BuildDeterministicPipelineRunId(stream.Id, endLsnText);
+        var config = ObjectStorageSinkConfigContract.ParseForWrite(targetSink.Config, requireSecretKey: true);
+        var isDailyIceberg = stream.LakehouseTableFormat == LakehouseTableFormat.ApacheIceberg &&
+                             stream.LakehousePartitionStrategy == LakehousePartitionStrategy.DailyCommitUtc &&
+                             string.Equals(config.Format, "parquet", StringComparison.OrdinalIgnoreCase);
+
+        if (isDailyIceberg)
+        {
+            return await DeliverDailyPartitionedIcebergAsync(
+                stream, targetSink, config, destination, changes, batchEndLsn, writer,
+                columns, clrTypes, rows, partitionKeys, runId, endLsnText, idempotencyKeyOverride, cancellationToken);
+        }
 
         var uploaded = await writer.WriteAndUploadCdcBatchAsync(
             runId,
@@ -128,10 +140,8 @@ internal static class CdcObjectStorageLakehouseWriter
             return 0;
         }
 
-        var config = ObjectStorageSinkConfigContract.ParseForWrite(targetSink.Config, requireSecretKey: true);
         var committedAtUtc = DateTime.UtcNow;
-        var isInitialSnapshot = !string.IsNullOrWhiteSpace(idempotencyKeyOverride) &&
-            !idempotencyKeyOverride.StartsWith("webhook:", StringComparison.OrdinalIgnoreCase);
+        var isInitialSnapshot = IsInitialSnapshotOverride(idempotencyKeyOverride);
         var lsnToken = BuildSafeLsnToken(batchEndLsn?.ToString() ?? changes[^1].Lsn, isInitialSnapshot);
         var manifestKey = config.BuildBatchManifestKey(destination, lsnToken, runId);
 
@@ -395,4 +405,9 @@ internal static class CdcObjectStorageLakehouseWriter
         var token = (lsn ?? "0_0").Replace('/', '_').Replace(':', '_');
         return isInitialSnapshot ? $"snap_{token}" : token;
     }
+
+    private static bool IsInitialSnapshotOverride(string? idempotencyKeyOverride)
+        => !string.IsNullOrWhiteSpace(idempotencyKeyOverride) &&
+           !idempotencyKeyOverride.StartsWith("webhook:", StringComparison.OrdinalIgnoreCase) &&
+           !idempotencyKeyOverride.StartsWith("kafka:", StringComparison.OrdinalIgnoreCase);
 }

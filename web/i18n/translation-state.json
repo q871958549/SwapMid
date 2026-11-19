@@ -1234,10 +1234,10 @@
       "traditionalHash": "d810059d2b73420dbfc9b03d"
     },
     "Common.platformTagline": {
-      "sourceHash": "c25304932a3a533aa9aa9dd2",
-      "englishHash": "6eeefae5b4b15b863db185cd",
-      "traditionalSourceHash": "9c8a1c3a9f1b9bac013843da",
-      "traditionalHash": "5cc68efc1ad50e0b16b71183"
+      "sourceHash": "bc3b64f46027b8097e8266bd",
+      "englishHash": "87b92f800ed446887c611460",
+      "traditionalSourceHash": "af889088140a54937fabecbb",
+      "traditionalHash": "d5fdf126c30e25a36a3a0ab9"
     },
     "Common.platformUpdatingTitle": {
       "sourceHash": "2484a08bb05435cc3cff7213",
@@ -1966,10 +1966,10 @@
       "traditionalHash": "04c060cd03ff056556001dcc"
     },
     "Dashboard.subtitle": {
-      "sourceHash": "5d79c0184362a0c4d0ece086",
-      "englishHash": "b07b6dc192e14c7b8b3dcb28",
-      "traditionalSourceHash": "e7bbba97271751308f645f8a",
-      "traditionalHash": "9486f299656ea14bbffca8f0"
+      "sourceHash": "cc658fa195f3b659fe8d7f64",
+      "englishHash": "9bc268859ed3c41bc21b26fb",
+      "traditionalSourceHash": "697edd5454436b03debcbf65",
+      "traditionalHash": "7de3e1051f755583c109e5a1"
     },
     "Dashboard.ops.platformStatus": {
       "sourceHash": "dd123d218f627873045a5ed5",
@@ -8930,6 +8930,78 @@
       "englishHash": "031a8f0f659df890dfd53c92",
       "traditionalSourceHash": "b8581ebf8e10aea58cb8cf50",
       "traditionalHash": "28da38aeec40aa29f7c9f0cc"
+    },
+    "DataIntegration.cdc.sourceTypeKafkaDebezium": {
+      "sourceHash": "558959d5d8b19e2748309577",
+      "englishHash": "5ff1cd48e76833c8ab9627b7",
+      "traditionalSourceHash": "92eaa97e0ec96512cb60ad20",
+      "traditionalHash": "68db219079bf12c04ed02cca"
+    },
+    "DataIntegration.cdc.sourceTypeKafkaDebeziumHint": {
+      "sourceHash": "b0e2ee8fa0a44473493a4742",
+      "englishHash": "6d4a0557fe487b54f2046633",
+      "traditionalSourceHash": "3e0b7105acbccadcbdfeb6e1",
+      "traditionalHash": "42993054965f445b733f496a"
+    },
+    "DataIntegration.cdc.sourceFieldKafkaLabel": {
+      "sourceHash": "c2a2a785669ba330d42afb3f",
+      "englishHash": "798477e818a2256f54338b1c",
+      "traditionalSourceHash": "e92f6e04e5bfb0c6e6f383a6",
+      "traditionalHash": "6b18bb0bae6b0181ebaa7b59"
+    },
+    "DataIntegration.cdc.sourceKafkaPlaceholder": {
+      "sourceHash": "6c606295720161abb0f979cf",
+      "englishHash": "c2576359d057c828cbd6a8c0",
+      "traditionalSourceHash": "2d88d5ca31d42d52187d2ee5",
+      "traditionalHash": "66a89885542c5071470f8098"
+    },
+    "DataIntegration.cdc.sourceKafkaEmptyText": {
+      "sourceHash": "16e77e690f3fd0d277ef530c",
+      "englishHash": "d5958ae302ed03ccc9b87cfe",
+      "traditionalSourceHash": "0b239815f1c23b67dac6b024",
+      "traditionalHash": "e46637720e381defc1f7a8b6"
+    },
+    "DataIntegration.cdc.kafkaTopicFieldLabel": {
+      "sourceHash": "613be1d473108059e3954725",
+      "englishHash": "713fa37c0b522f2fe8e34c89",
+      "traditionalSourceHash": "eef38ac89bd194be2812e309",
+      "traditionalHash": "5e61b39832ba95e309a9c23c"
+    },
+    "DataIntegration.cdc.kafkaGroupFieldLabel": {
+      "sourceHash": "13e81bc61f381d8820478d61",
+      "englishHash": "5b7b3b9d9abc8d79432f5de7",
+      "traditionalSourceHash": "2d452e4388d2e3ae0b63c81e",
+      "traditionalHash": "9797ece41d7cf6b032c10fef"
+    },
+    "DataIntegration.cdc.monitoredTablesKafkaHint": {
+      "sourceHash": "4f81833e0a465d9834822791",
+      "englishHash": "f70c84722c55f41fdf5e657d",
+      "traditionalSourceHash": "b26c3c94d08009a79ff2a4fc",
+      "traditionalHash": "f44ed42b79db1d21db1b5c2e"
+    },
+    "DataIntegration.cdc.lakehousePartitionStrategyFieldLabel": {
+      "sourceHash": "56bf185dbd8241397f639088",
+      "englishHash": "26189339e94c38478badcf24",
+      "traditionalSourceHash": "36f318b2f98564947169b0c4",
+      "traditionalHash": "0232204ea3c4a5a12f8c6efe"
+    },
+    "DataIntegration.cdc.lakehousePartitionNone": {
+      "sourceHash": "f917a318d962a1e875b51d8f",
+      "englishHash": "a0a4f95d9ba0be7cba4cf1af",
+      "traditionalSourceHash": "314f0f3ba15c4c6dc333dff4",
+      "traditionalHash": "1027714dc03f41230a557c29"
+    },
+    "DataIntegration.cdc.lakehousePartitionDailyUtc": {
+      "sourceHash": "ac8ea56e2c1587d68d6ca158",
+      "englishHash": "df263a6ac8be8242554f5d3f",
+      "traditionalSourceHash": "ac65de764445fed0b3a1ad93",
+      "traditionalHash": "a45913a7280d2cd7c6d1cd2f"
+    },
+    "DataIntegration.cdc.lakehousePartitionStrategyHint": {
+      "sourceHash": "e17ec690c8b1c5d2d7499978",
+      "englishHash": "e38c925a95ad6a2bf270238a",
+      "traditionalSourceHash": "434b68d254a7e595714dd0ca",
+      "traditionalHash": "0cfa83d8062afc7ebeda311a"
     },
     "System.common.refresh": {
       "sourceHash": "ed94cd3ab755a61dfa2e13b4",

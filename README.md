@@ -1,37 +1,28 @@
 # SwapMid
 
+[![Release](https://img.shields.io/github/v/release/q871958549/SwapMid?color=2563eb)](https://github.com/q871958549/SwapMid/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
-[![ABP](https://img.shields.io/badge/ABP%20Framework-10.0-4E3883)](https://abp.io/)
+[![ABP](https://img.shields.io/badge/ABP%20Framework-10.1-4E3883)](https://abp.io/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6)](https://www.typescriptlang.org/)
 
 English | **[简体中文](README.zh-CN.md)**
 
-**SwapMid** is an open-source, production-grade **Enterprise Integration & Data Swap Middleware** built on **.NET 10 (ABP v10)** and **Next.js 16 (React 19)**. It unifies cross-database streaming ETL pipelines, durable event/webhook delivery, and governed API gateway forwarding behind a security-hardened BFF admin console.
+**SwapMid** is an open-source, production-grade **Enterprise Data Exchange & Integration Platform** (Control Plane) built on **.NET 10 (ABP v10.1)** and **Next.js 16 (React 19)**.
+
+Rather than acting as a low-level broker or single-purpose connector, SwapMid operates as a unified **integration hub** above your databases, event brokers (`Kafka`, `Redpanda`, `RabbitMQ`), object stores (`S3`, `MinIO`), and upstream APIs — unifying **Heterogeneous Real-Time CDC**, **Zero-JVM Open Lakehouse (`Apache Iceberg v2` & `Delta Lake`)**, **Idempotent Streaming ETL**, **Durable Event Bus**, **Governed API Gateway**, and an **AI-Native MCP Control Plane** behind a zero-browser-token BFF console.
 
 ---
 
-## Highlights
+## Why SwapMid?
 
-- **Heterogeneous CDC Engine, Push Webhook Dead-Letter Replay & Binary Avro Iceberg v2 / Delta Lakehouse**
-  - Capture consistent snapshots and row-level changes across **PostgreSQL Logical Replication (`pgoutput`)**, **SQL Server Change Tracking (`CHANGETABLE`)**, **MySQL / MariaDB Row-Based Binlog (`ROW` + `FULL`)**, and serverless HMAC-SHA256 **Push Webhook CDC** (`POST /api/v1/cdc-webhooks/{streamId}`) with **Auto-Schema Inference**, governed **Delivery & Dead-Letter Replay Ledger** (`GET .../deliveries`, `POST .../replay`), `WAL`/`Binlog` lag telemetry, and automatic upstream **Schema Drift** circuit-breaking (`Ignore` / `Warn` / `PauseAndAlert`).
-  - Route CDC streams into the **Message Bus**, **Relational Table Mirrors** (`FieldMappings` + `SoftDelete` tombstones with resurrection clearing), or external **Kafka** / **ClickHouse** (`ReplacingMergeTree` auto-DDL) / **S3 & MinIO Object Storage (`Parquet`/`JSONL`)**.
-  - Emit native **Apache Delta Lake (`_delta_log/{version:D20}.json`)** and pure-.NET, zero-JVM **Apache Iceberg v2 (`metadata/v*.metadata.json` + binary Apache Avro 1.11 OCF `snap-*.avro` manifest-lists & `*-m0.avro` manifest-files + Parquet `FieldId` & `TIMESTAMP_MICROS`, verified natively with DuckDB `iceberg_scan()`)** commits with S3 `If-None-Match: *` optimistic concurrency, automatic or on-demand `OPTIMIZE` / `REPLACE` compaction, interactive **Time-Travel Inspector** with **Zero-Infra Live Parquet/JSONL Data Preview**, declarative **Data Contract & Freshness SLA** guardrails, and non-blocking metadata registration to **Unity Catalog REST** and **Apache Iceberg REST**.
-- **Chaos-Tested Fault Tolerance & Idempotent Streaming ETL**
-  - Multi-source connectors across **PostgreSQL**, **SQL Server**, **MySQL**, **REST APIs**, and **CSV / Excel** files, plus **Kafka**, **ClickHouse**, and **Object Storage** sinks (`DataIntegration:Sinks` SSRF allowlist), interactive **PipelineFieldMapperPanel**, and zero-row **Schema Pre-flight** diagnostics (`POST /api/v1/data-pipelines/preflight-schema`).
-  - Batch streaming execution (`append`, `truncate`, and watermark-guarded dialect-native atomic `upsert`), paired with transactional **Target Receipt v1** (`__swapmid_etl_receipt_v1`) to guarantee idempotent target writes.
-- **Durable Message Bus, CloudEvents 1.0 & Cross-Engine Outbox**
-  - Automatic transactional Outbox bridge (`DataIntegration` -> `MessageBus`) emits idempotent `pipeline.execution.*` events onto `integration.pipeline.events` whenever a pipeline run finishes.
-  - Topic/subscription routing with structured filtering (`subject:<glob>`, `$.jsonPath=value`, `;`-joined `AND`), persistent delivery attempts, exponential backoff retries, and set-based batch dead-letter replay (`POST /api/v1/message-records/batch-replay`).
-  - Built-in **HTTP Webhook** (CNCF **CloudEvents v1.0** `ce-*` headers + `HMAC-SHA256` `X-SwapMid-Signature` + outbound SSRF guard), **RabbitMQ**, and **BotWebhook** (Generic JSON, Slack, Feishu/Lark, DingTalk, WeCom) channels.
-- **Governed API Gateway, Event Ingress & Controlled MCP Server**
-  - Dynamic API groups and route forwarding (`/api/gateway/{**path}`, fail-closed by default via `ApiGateway:Enabled=false`) with DNS-rebinding-safe SSRF protection, per-client route-group ACLs, sliding-window rate limiting (`429` + `Retry-After`), and idempotent partner event ingress (`POST /api/gateway/events/{topicName}`).
-  - Opt-in RBAC-enforced **MCP Server** (`POST /api/mcp`, default `Mcp:Enabled=false`) exposing 8 read-only/diagnostic/draft tools (including `propose_pipeline_column_mappings`, `evaluate_cdc_data_contracts`, `diagnose_cdc_streams`, and `Draft`-only pipeline authoring) with **100% `/api/v1` OpenAPI summary coverage (`199/199`)**.
-- **Zero-Browser-Token BFF Console & Optional External OIDC SSO**
-  - Next.js `16.4.6` BFF stores OAuth2 tokens exclusively in Redis behind `HttpOnly` session cookies (`swapmid_sid`), enforces cloud-persisted table views with zero background 404s, and supports both local credentials and S256 PKCE **External OIDC Federation** (`AuthServer:ExternalOidc`).
-- **Cloud-Native Helm & Turnkey Observability**
-  - Official Kubernetes Helm v3 chart ([`charts/swapmid/`](charts/swapmid/)), runnable integration blueprints ([`examples/`](examples/)), Prometheus + Grafana + Alertmanager closed-loop observability overlay ([`docker/docker-compose.observability.yml`](docker/docker-compose.observability.yml)), and [Operations & Upgrade Runbook](docs/operations-and-upgrade.md).
+| Pillar | What You Get Out of the Box |
+| --- | --- |
+| **Heterogeneous CDC & Zero-JVM Open Lakehouse** | Native capture across **5 CDC sources** — PostgreSQL Logical Replication (`pgoutput`), SQL Server Change Tracking (`CHANGETABLE`), MySQL / MariaDB Row-Based Binlog (`ROW` + `FULL`), Serverless HMAC-SHA256 **Push Webhook CDC** (with Auto-Schema Inference & Dead-Letter Replay Ledger), and **Kafka / Redpanda Debezium Envelope** streams. Writes directly into **Apache Delta Lake** (`_delta_log`) and pure-.NET **Apache Iceberg v2** (binary Apache Avro 1.11 OCF `snap-*.avro` / `*-m0.avro`, Parquet `FieldId 1..11` & `TIMESTAMP_MICROS`, native **`day(commit_timestamp_utc)` Hidden Partitioning**, and partition-aware `REPLACE` compaction) — verified live with official **DuckDB `iceberg_scan()`**. |
+| **Chaos-Tested Idempotent Streaming ETL** | Bounded-memory streaming pipelines across PostgreSQL, SQL Server, MySQL, REST APIs, and CSV/Excel into relational targets, Kafka, ClickHouse, or S3/MinIO Parquet. Includes an interactive visual field mapper, zero-row schema pre-flight diagnostics, dialect-native atomic `upsert`, and transactional **Target Receipt v1** (`__swapmid_etl_receipt_v1`) guaranteeing **`RPO = 0`** across crashes and retries. |
+| **Durable Event Bus & CloudEvents 1.0** | Cross-engine transactional Outbox (`DataIntegration` -> `MessageBus`), structured subscription routing (`subject:<glob>`, `$.jsonPath=value`), exponential retry & set-based batch dead-letter replay, plus CNCF **CloudEvents v1.0** HTTP Webhooks (`HMAC-SHA256` + SSRF guard), RabbitMQ, and Bot Webhooks (Slack / Feishu / DingTalk / WeCom). |
+| **API Gateway, AI-Native MCP & BFF Security** | Fail-closed dynamic API Gateway (`/api/gateway/{**path}` with DNS-rebinding-safe SSRF guard, per-client ACLs, and sliding-window rate limits), RBAC-gated **MCP Server** (`POST /api/mcp`, **10 read-only diagnostic & `Draft`-only copilot tools**, **100.0% `199/199` `/api/v1` OpenAPI summary coverage**), and a Next.js 16 BFF storing OAuth2 tokens strictly in Redis with optional S256 PKCE **External OIDC SSO**. |
 
 ---
 
@@ -39,38 +30,47 @@ English | **[简体中文](README.zh-CN.md)**
 
 ```mermaid
 flowchart LR
-  Browser["Browser Console\n(React 19 / Next.js 16)"] <-->|"HttpOnly Cookie\n+ Identity Fence"| BFF["Next.js BFF (:5175 / :13000)"]
+  Browser["Web Console\n(React 19 / Next.js 16)"] <-->|"HttpOnly Cookie\n+ Identity Generation Fence"| BFF["Next.js 16 BFF\n(:5175 / :13000)"]
   BFF <--> Redis[("Redis 8\nSessions & Leases")]
-  BFF <-->|"Bounded Fetch\n+ Bearer JWT"| Host["SwapMid.HttpApi.Host (:44362 / :18080)"]
-  Host <--> PG[("PostgreSQL 16\nState & Outbox")]
-  Host --> Targets["External DBs / Webhooks / RabbitMQ / Upstreams"]
+  BFF <-->|"Bounded Fetch\n+ Bearer JWT"| Core["SwapMid Control Plane\n(.NET 10 / ABP v10.1 · :18080)"]
+  AI["AI Agents / IDEs"] -.->|"JSON-RPC 2.0 + RBAC\nPOST /api/mcp (10 Tools)"| Core
+  Core <--> PG[("PostgreSQL 16\nMetadata & Outbox")]
+  Sources["PG / SQL Server / MySQL\nKafka-Redpanda / Webhooks"] -->|"CDC & Streaming ETL"| Core
+  Core --> Lake["S3 / MinIO Open Lakehouse\n(Iceberg v2 Avro · Delta Lake)"]
+  Core --> Bus["RabbitMQ / CloudEvents\nClickHouse / Relational Mirrors"]
+  Core --> Upstreams["Governed API Gateway\n(/api/gateway/{**path})"]
 ```
 
-See **[docs/architecture.md](docs/architecture.md)** for sequence diagrams, DDD layering, Target Receipt v1 design, and BFF security invariants.
+- Detailed DDD layering, BFF sequence diagrams, Target Receipt v1 protocol, and security invariants: **[docs/architecture.md](docs/architecture.md)**
+- Fault-injection chaos contracts & 1,000-row Parquet/Iceberg v2 SLA benchmarks (`8,576 rows/s`, `RPO = 0`): **[docs/benchmarks/resilience-and-chaos.md](docs/benchmarks/resilience-and-chaos.md)**
 
 ---
 
 ## Quick Start (Docker Compose)
 
-1. Copy the environment template and review/replace placeholder secrets:
+1. Copy the environment template and replace placeholder secrets before production deployment:
    ```bash
    cd docker
    cp .env.example .env
    ```
-2. Build and launch the full stack (PostgreSQL 16, Redis 8, RabbitMQ 3.13, Seq, automatic DB migrations & demo seed, API Host, and Next.js BFF):
+2. Build and launch the complete stack (PostgreSQL 16, Redis 8, RabbitMQ 3.13, Seq, automatic DB migrations & demo seed, API Host, and Next.js BFF):
    ```bash
    docker compose up -d --build
    ```
-3. Open the services:
+   > Want an instant **MySQL 8.4 (`ROW` Binlog) + MinIO Open Lakehouse** sandbox? Overlay the lakehouse demo file:
+   > ```bash
+   > docker compose -f docker-compose.yml -f docker-compose.lakehouse-demo.yml up -d --build
+   > ```
+3. Access the platform:
    - **Web Console**: `http://localhost:13000`
-     - Default seeded administrator: **`admin`** / **`1q2w3E*`** *(rotate immediately before production exposure)*
-   - **API Host & Readiness**: `http://localhost:18080/health/ready` · Swagger UI: `http://localhost:18080/swagger`
+     - Default seeded administrator: **`admin`** / **`1q2w3E*`** *(rotate immediately before external exposure)*
+   - **API Readiness & Swagger UI**: `http://localhost:18080/health/ready` · `http://localhost:18080/swagger`
    - **RabbitMQ Management**: `http://localhost:25672`
    - **Seq Structured Logs**: `http://localhost:15341`
-4. Try the zero-dependency built-in demos right after signing in (or run `node scripts/e2e-smoke.mjs` from the repo root):
-   - **Data Integration**: Trigger **`demo-orders-pg-to-pg`** to stream 12 seeded orders from `public.etl_demo_source_orders` into `public.etl_demo_target_orders`.
-   - **Message Bus**: Publish a test JSON event to **`integration.pipeline.events`** and inspect live AMQP delivery via **`demo-pipeline-events-rmq`** (`swapmid.demo.events`).
-   - **API Management & Docs**: Inspect the **`Platform Diagnostics`** route (`/gw/demo/health`), provision a **`client_credentials`** app, and browse the live **Database Dictionary**.
+4. Run the built-in zero-dependency demos right after signing in — or execute `node scripts/e2e-smoke.mjs` from the repo root to verify all 7 end-to-end checks automatically:
+   - **Data Integration**: Run **`demo-orders-pg-to-pg`** to stream 12 seeded orders from `public.etl_demo_source_orders` into `public.etl_demo_target_orders` with idempotent `RunId` replay.
+   - **Message Bus**: Publish a JSON event to **`integration.pipeline.events`** and inspect live AMQP delivery via **`demo-pipeline-events-rmq`** (`swapmid.demo.events`).
+   - **API Management & Docs**: Test **`Platform Diagnostics`** (`/gw/demo/health`), issue a `client_credentials` app, and inspect the live **Database Dictionary**.
 
 ---
 
@@ -79,7 +79,7 @@ See **[docs/architecture.md](docs/architecture.md)** for sequence diagrams, DDD 
 ### Prerequisites
 - **.NET SDK 10.0+**
 - **Node.js 24+** & **pnpm 11+** (via `corepack enable`)
-- **PostgreSQL 16+** and **Redis 8+** (or start backing services via `./scripts/dev.ps1 -InfraOnly` / `./scripts/dev.sh --infra-only`)
+- **PostgreSQL 16+** and **Redis 8+** (or start backing infrastructure via `./scripts/dev.ps1 -InfraOnly` / `./scripts/dev.sh --infra-only`)
 
 ### One-Command Dev Startup
 ```bash
@@ -91,23 +91,15 @@ pwsh ./scripts/dev.ps1
 ```
 
 ### Manual Step-by-Step Startup
-
-#### 1. Initialize Database & Demo Seed
 ```bash
+# 1. Apply EF Core migrations & seed demo data
 dotnet run --project src/SwapMid.DbMigrator
-```
 
-#### 2. Start Backend API Host (`https://localhost:44362`)
-```bash
+# 2. Start Backend Control Plane (https://localhost:44362)
 dotnet run --project src/SwapMid.HttpApi.Host
-```
 
-#### 3. Start Frontend BFF Console (`http://localhost:5175`)
-```bash
-cd web
-cp .env.example .env.local
-pnpm install --frozen-lockfile
-pnpm dev
+# 3. Start Frontend BFF Console (http://localhost:5175)
+cd web && cp .env.example .env.local && pnpm install --frozen-lockfile && pnpm dev
 ```
 
 ---
@@ -116,26 +108,26 @@ pnpm dev
 
 | Domain | Key Capabilities | Primary Paths |
 | --- | --- | --- |
-| **Data Integration** | Data sources & sinks (`Kafka`/`ClickHouse`/`S3 Parquet`), visual field mapper, streaming ETL pipelines, heterogeneous CDC (`pgoutput`/`SQL Server CT`/`MySQL Binlog`), Delta Lake Time-Travel (`_delta_log`), Unity Catalog / Iceberg REST sync, Target Receipt v1 | `src/SwapMid.*/DataIntegration` · `web/src/app/(dashboard)/data-integration` |
-| **Message Bus** | Topics, subscriptions, outbox records, delivery attempts, HMAC HTTP webhooks, RabbitMQ, Bot webhooks | `src/SwapMid.*/MessageBus` · `web/src/app/(dashboard)/message-bus` |
-| **API Management** | API groups, gateway routes (`/api/gateway/*`), interactive test console, OpenIddict third-party apps | `src/SwapMid.*/ApiManagement` · `web/src/app/(dashboard)/api-management` |
-| **Scheduling** | Unified Cron job definitions, distributed execution locks, manual trigger & execution logs | `src/SwapMid.*/Scheduling` · `web/src/app/(dashboard)/system/scheduled-jobs` |
+| **Data Integration** | Multi-source connectors & sinks (`Kafka`, `ClickHouse`, `S3/MinIO Parquet`), visual field mapper, streaming ETL + Target Receipt v1, 5-source CDC (`pgoutput`, `SQL Server CT`, `MySQL Binlog`, `Push Webhook` + dead-letter replay, `Kafka/Redpanda Debezium`), Apache Iceberg v2 (binary Avro OCF + `day(ts)` hidden partitioning) & Delta Lake Time-Travel, Zero-Infra live Parquet preview, Data Contract SLA, Unity Catalog / Iceberg REST sync | `src/SwapMid.*/DataIntegration` · `web/src/app/(dashboard)/data-integration` |
+| **Message Bus** | Topics, structured subscription filters, transactional outbox, delivery attempts, batch dead-letter replay, CloudEvents v1.0 HMAC webhooks, RabbitMQ, Bot webhooks | `src/SwapMid.*/MessageBus` · `web/src/app/(dashboard)/message-bus` |
+| **API Management** | API groups, fail-closed dynamic gateway (`/api/gateway/*`), rate limiting & ACLs, interactive test console, OpenIddict `client_credentials` apps, 10-tool MCP Server (`/api/mcp`) | `src/SwapMid.*/ApiManagement` · `src/SwapMid.HttpApi.Host/Mcp` · `web/src/app/(dashboard)/api-management` |
+| **Scheduling** | Unified Hangfire/Cron job definitions, distributed concurrency locks, manual/dry-run triggers & execution logs | `src/SwapMid.*/Scheduling` · `web/src/app/(dashboard)/system/scheduled-jobs` |
 | **Notification** | Multi-channel templates (`Webhook`, `SMTP Email`), incoming Prometheus Alertmanager webhook (`X-SwapMid-Alert-Token`) | `src/SwapMid.*/Notification` · `web/src/app/(dashboard)/system/notification` |
-| **Identity & Admin** | Users, roles, permission tree & diff/export, 5-invariant impersonation guard, enterprises/departments/employees, dictionaries, code rules, audit logs, system health | `src/SwapMid.*/{AccountManagement,EnterpriseManagement,SystemManagement}` |
-| **Developer Docs** | Generated OpenAPI endpoint explorer + live EF Core & external DB schema dictionary | `src/SwapMid.*/DeveloperDocs` · `web/src/app/(dashboard)/docs` |
+| **Identity & Governance** | Users, roles, permission tree & diff/export, 5-invariant impersonation guard, organization directory, two-tier dictionaries, code rules, audit logs, native Prometheus system health | `src/SwapMid.*/{AccountManagement,EnterpriseManagement,SystemManagement}` |
+| **Developer Docs** | Generated OpenAPI reference (`199/199` 100.0% summary coverage) + live EF Core & external database schema dictionary | `src/SwapMid.*/DeveloperDocs` · `web/src/app/(dashboard)/docs` |
 
 ---
 
-## Quality & Security Gates
+## Quality, Terminology & Security Gates
 
-Run the same checks enforced in [CI](.github/workflows/ci.yml):
+Run the exact verification suite enforced in [GitHub Actions CI](.github/workflows/ci.yml):
 
 ```bash
-# Backend build (zero warnings via common.props) & full test suite
+# Backend zero-warning Release build (TreatWarningsAsErrors=true) & full test suite
 dotnet build SwapMid.slnx -c Release --nologo
 dotnet test SwapMid.slnx -c Release --no-build --nologo
 
-# Frontend typecheck, dead-code/cycle check, ESLint + i18n audit, UI ratchet & tests
+# Frontend typecheck, dependency/cycle audit, ESLint + trilingual i18n & terminology guard, UI ratchet & build
 cd web
 npx tsc --noEmit
 pnpm check:deps
@@ -149,12 +141,12 @@ pnpm build
 
 ---
 
-## Roadmap, Contributing & Security
+## Documentation, Cloud-Native Delivery & Community
 
-- Architecture & long-term roadmap (`v0.2.0` -> `v2.2+`): **[docs/roadmap.md](docs/roadmap.md)** · **[CHANGELOG.md](CHANGELOG.md)** · **[Chaos & Resilience Report](docs/benchmarks/resilience-and-chaos.md)**
-- Turnkey MySQL 8.4 Binlog + Delta Lakehouse Docker overlay: [`docker/docker-compose.lakehouse-demo.yml`](docker/docker-compose.lakehouse-demo.yml) (`196/196` `/api/v1` OpenAPI summary coverage)
-- Contribution workflow and coding standards: **[CONTRIBUTING.md](CONTRIBUTING.md)**
-- Vulnerability disclosure policy: **[SECURITY.md](SECURITY.md)**
+- **Roadmap & Changelog**: **[docs/roadmap.md](docs/roadmap.md)** (`v0.1.0` -> `v2.5.0` & beyond) · **[CHANGELOG.md](CHANGELOG.md)**
+- **Chaos & SLA Benchmarks**: **[docs/benchmarks/resilience-and-chaos.md](docs/benchmarks/resilience-and-chaos.md)**
+- **Cloud-Native & Operations**: Kubernetes Helm v3 chart ([`charts/swapmid/`](charts/swapmid/)) · Turnkey Prometheus/Grafana/Alertmanager overlay ([`docker/docker-compose.observability.yml`](docker/docker-compose.observability.yml)) · **[Operations & Upgrade Runbook](docs/operations-and-upgrade.md)** · Runnable integration recipes ([`examples/`](examples/))
+- **Contributing & Security**: **[CONTRIBUTING.md](CONTRIBUTING.md)** · **[SECURITY.md](SECURITY.md)**
 
 ---
 

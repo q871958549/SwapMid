@@ -27,6 +27,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
     private readonly CdcRelationalMirrorPreflightService? _mirrorPreflightService;
     private readonly SqlServerCdcCaptureService? _sqlServerCaptureService;
     private readonly MySqlBinlogCdcCaptureService? _mySqlCaptureService;
+    private readonly KafkaDebeziumCdcCaptureService? _kafkaCaptureService;
     private readonly CdcObjectStorageCompactionService? _lakehouseCompactor;
     private readonly DeltaLakeHistoryReader? _deltaHistoryReader;
     private readonly ExternalLakehouseCatalogSyncService? _catalogSyncService;
@@ -49,7 +50,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         DeltaLakeHistoryReader? deltaHistoryReader = null,
         ExternalLakehouseCatalogSyncService? catalogSyncService = null,
         CdcLakehouseDataPreviewService? lakehousePreviewService = null,
-        CdcDataContractEvaluator? contractEvaluator = null)
+        CdcDataContractEvaluator? contractEvaluator = null,
+        KafkaDebeziumCdcCaptureService? kafkaCaptureService = null)
     {
         _streamRepository = streamRepository;
         _sourceRepository = sourceRepository;
@@ -62,6 +64,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
         _mirrorPreflightService = mirrorPreflightService;
         _sqlServerCaptureService = sqlServerCaptureService;
         _mySqlCaptureService = mySqlCaptureService;
+        _kafkaCaptureService = kafkaCaptureService;
         _lakehouseCompactor = lakehouseCompactor;
         _deltaHistoryReader = deltaHistoryReader;
         _catalogSyncService = catalogSyncService;
@@ -121,6 +124,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             normalized.TargetFieldMappingsJson, normalized.SoftDeleteColumn, normalized.SoftDeleteTimestampColumn,
             normalized.SourceType, normalized.LakehouseCompactMinFiles, normalized.LakehouseTableFormat,
             normalized.CatalogType, normalized.CatalogSinkId, normalized.CatalogNamespace, normalized.CatalogTableName);
+        stream.ConfigureLakehousePartitionStrategy(normalized.LakehousePartitionStrategy);
         stream.ConfigureDataContract(input.MaxFreshnessLagSeconds, input.MaxAllowedWalLagBytes, input.RequiredColumns);
 
         await _streamRepository.InsertAsync(stream, autoSave: true);
@@ -147,6 +151,7 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             normalized.TargetFieldMappingsJson, normalized.SoftDeleteColumn, normalized.SoftDeleteTimestampColumn,
             normalized.SourceType, normalized.LakehouseCompactMinFiles, normalized.LakehouseTableFormat,
             normalized.CatalogType, normalized.CatalogSinkId, normalized.CatalogNamespace, normalized.CatalogTableName);
+        stream.ConfigureLakehousePartitionStrategy(normalized.LakehousePartitionStrategy);
         stream.ConfigureDataContract(input.MaxFreshnessLagSeconds, input.MaxAllowedWalLagBytes, input.RequiredColumns);
 
         await _streamRepository.UpdateAsync(stream, autoSave: true);
@@ -202,7 +207,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             _sourceRepository,
             source,
             stream,
-            cancellationToken);
+            cancellationToken,
+            _kafkaCaptureService);
     }
 
     [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
@@ -223,7 +229,8 @@ public class CdcStreamAppService : SwapMidAppService, ICdcStreamAppService
             _sourceRepository,
             source,
             stream,
-            cancellationToken);
+            cancellationToken,
+            _kafkaCaptureService);
         if (!preflight.IsReady)
         {
             var reason = string.Join("；", preflight.Diagnostics);

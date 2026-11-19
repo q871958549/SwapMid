@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -19,6 +20,75 @@ internal static partial class IcebergV2CommitWriter
     private static readonly string CdcIcebergSchemaCompactJson =
         BuildCdcIcebergSchemaNode().ToJsonString(new JsonSerializerOptions { WriteIndented = false });
 
+    internal static async Task<long?> TryReadVersionHintAsync(
+        IHttpClientFactory httpClientFactory,
+        IConfiguration configuration,
+        ObjectStorageSinkConfig config,
+        string destination,
+        CancellationToken cancellationToken)
+    {
+        var raw = await CdcObjectStorageLakehouseWriter.TryGetObjectStorageJsonAsync(
+            httpClientFactory, configuration, config, config.BuildIcebergVersionHintKey(destination), cancellationToken);
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        return long.TryParse(raw.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) && parsed > 0
+            ? parsed
+            : null;
+    }
+
+    internal static Task<IcebergCommitReceipt> CommitAppendBatchAsync(
+        IHttpClientFactory httpClientFactory,
+        IConfiguration configuration,
+        ObjectStorageSinkConfig config,
+        string destination,
+        CdcStreamDefinition stream,
+        CdcObjectStorageLakehouseWriter.CdcLatestCheckpointDocument latestDoc,
+        Guid runId,
+        IReadOnlyList<IcebergManifestEntry> addedEntries,
+        bool isInitialSnapshot,
+        DateTime committedAtUtc,
+        CancellationToken cancellationToken)
+        => CommitWithOptimisticConcurrencyAsync(
+            httpClientFactory, configuration, config, destination, stream,
+            latestDoc.LatestIcebergSequenceNumber, runId,
+            operation: "append",
+            snapshotMode: isInitialSnapshot ? "SnapshotAppend" : "StreamingAppend",
+            addedFiles: addedEntries,
+            removedRelativePaths: Array.Empty<string>(),
+            committedAtUtc, cancellationToken);
+
+    internal static Task<IcebergCommitReceipt> CommitReplaceBatchAsync(
+        IHttpClientFactory httpClientFactory,
+        IConfiguration configuration,
+        ObjectStorageSinkConfig config,
+        string destination,
+        CdcStreamDefinition stream,
+        CdcObjectStorageLakehouseWriter.CdcLatestCheckpointDocument latestDoc,
+        Guid compactRunId,
+        IReadOnlyList<string> removedObjectKeys,
+        IReadOnlyList<IcebergManifestEntry> addedEntries,
+        DateTime committedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        var addedKeys = new HashSet<string>(addedEntries.Select(e => e.ObjectKey), StringComparer.Ordinal);
+        var removedRelPaths = removedObjectKeys
+            .Where(k => !addedKeys.Contains(k))
+            .Select(k => config.ToRelativeTablePath(destination, k))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        return CommitWithOptimisticConcurrencyAsync(
+            httpClientFactory, configuration, config, destination, stream,
+            latestDoc.LatestIcebergSequenceNumber, compactRunId,
+            operation: "replace",
+            snapshotMode: "CompactionReplace",
+            addedFiles: addedEntries,
+            removedRelativePaths: removedRelPaths,
+            committedAtUtc, cancellationToken);
+    }
+
     internal static async Task UploadAvroManifestArtifactsAsync(
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
@@ -30,12 +100,14 @@ internal static partial class IcebergV2CommitWriter
         long nextSeq,
         Guid runId,
         IReadOnlyList<IcebergAvroManifestBuilder.ManifestEntryRecord> avroEntries,
+        int partitionSpecId,
         CancellationToken cancellationToken)
     {
         var manifestFileBytes = IcebergAvroManifestBuilder.BuildManifestFileAvro(
             CdcIcebergSchemaCompactJson,
             avroEntries,
-            syncSeed: $"mf:{snapshotId}:{runId:N}:{nextSeq}");
+            syncSeed: $"mf:{snapshotId}:{runId:N}:{nextSeq}",
+            partitionSpecId: partitionSpecId);
         await PutBinaryObjectAsync(
             httpClientFactory, configuration, config, manifestFileKey, manifestFileBytes, "application/avro-binary", cancellationToken);
 
@@ -47,10 +119,25 @@ internal static partial class IcebergV2CommitWriter
         var deletedRows = avroEntries.Where(e => e.Status == IcebergAvroManifestBuilder.StatusDeleted).Sum(e => e.RecordCount);
         var minSeq = avroEntries.Count > 0 ? avroEntries.Min(e => e.FileSequenceNumber) : nextSeq;
 
+        int? minDay = null;
+        int? maxDay = null;
+        var containsNull = false;
+        if (partitionSpecId == IcebergAvroManifestBuilder.DailyPartitionSpecId)
+        {
+            var nonDeleted = avroEntries.Where(e => e.Status != IcebergAvroManifestBuilder.StatusDeleted).ToList();
+            var days = nonDeleted.Where(e => e.PartitionDayEpoch.HasValue).Select(e => e.PartitionDayEpoch!.Value).ToList();
+            containsNull = nonDeleted.Any(e => !e.PartitionDayEpoch.HasValue);
+            if (days.Count > 0)
+            {
+                minDay = days.Min();
+                maxDay = days.Max();
+            }
+        }
+
         var listEntry = new IcebergAvroManifestBuilder.ManifestListEntryRecord(
             ManifestPath: $"s3://{config.Bucket}/{manifestFileKey}",
             ManifestLength: manifestFileBytes.Length,
-            PartitionSpecId: 0,
+            PartitionSpecId: partitionSpecId,
             Content: 0,
             SequenceNumber: nextSeq,
             MinSequenceNumber: minSeq,
@@ -60,7 +147,10 @@ internal static partial class IcebergV2CommitWriter
             DeletedFilesCount: deletedCount,
             AddedRowsCount: addedRows,
             ExistingRowsCount: existingRows,
-            DeletedRowsCount: deletedRows);
+            DeletedRowsCount: deletedRows,
+            MinPartitionDayEpoch: minDay,
+            MaxPartitionDayEpoch: maxDay,
+            PartitionContainsNull: containsNull);
 
         var manifestListBytes = IcebergAvroManifestBuilder.BuildManifestListAvro(
             snapshotId,
@@ -117,6 +207,7 @@ internal static partial class IcebergV2CommitWriter
                                 FileSizeInBytes = entry.FileSizeInBytes,
                                 RecordCount = entry.RecordCount,
                                 AddedAtSequence = entry.FileSequenceNumber > 0 ? entry.FileSequenceNumber : entry.SequenceNumber,
+                                PartitionDayEpoch = entry.PartitionDayEpoch ?? IcebergAvroManifestBuilder.TryExtractUtcDayFromPath(relPath),
                             };
                         }
                     }

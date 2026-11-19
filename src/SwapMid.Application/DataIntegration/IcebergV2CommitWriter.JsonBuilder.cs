@@ -156,6 +156,29 @@ internal static partial class IcebergV2CommitWriter
             ["snapshot-id"] = snapshotId,
         });
 
+        var isDailyPartitioned = stream.LakehousePartitionStrategy == LakehousePartitionStrategy.DailyCommitUtc;
+        var partitionSpecs = new JsonArray
+        {
+            new JsonObject { ["spec-id"] = 0, ["fields"] = new JsonArray() },
+        };
+        if (isDailyPartitioned)
+        {
+            partitionSpecs.Add(new JsonObject
+            {
+                ["spec-id"] = IcebergAvroManifestBuilder.DailyPartitionSpecId,
+                ["fields"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "commit_timestamp_utc_day",
+                        ["transform"] = "day",
+                        ["source-id"] = 8,
+                        ["field-id"] = IcebergAvroManifestBuilder.DailyPartitionFieldId,
+                    },
+                },
+            });
+        }
+
         var root = new JsonObject
         {
             ["format-version"] = 2,
@@ -166,12 +189,9 @@ internal static partial class IcebergV2CommitWriter
             ["last-column-id"] = 11,
             ["current-schema-id"] = 0,
             ["schemas"] = new JsonArray { BuildCdcIcebergSchemaNode() },
-            ["default-spec-id"] = 0,
-            ["partition-specs"] = new JsonArray
-            {
-                new JsonObject { ["spec-id"] = 0, ["fields"] = new JsonArray() },
-            },
-            ["last-partition-id"] = 999,
+            ["default-spec-id"] = isDailyPartitioned ? IcebergAvroManifestBuilder.DailyPartitionSpecId : 0,
+            ["partition-specs"] = partitionSpecs,
+            ["last-partition-id"] = isDailyPartitioned ? IcebergAvroManifestBuilder.DailyPartitionFieldId : 999,
             ["default-sort-order-id"] = 0,
             ["sort-orders"] = new JsonArray
             {
@@ -184,6 +204,7 @@ internal static partial class IcebergV2CommitWriter
                 ["swapmid.stream_id"] = stream.Id.ToString("D"),
                 ["swapmid.stream_name"] = stream.Name,
                 ["swapmid.engine"] = EngineName,
+                ["swapmid.partition_strategy"] = isDailyPartitioned ? "day(commit_timestamp_utc)" : "none",
             },
             ["current-snapshot-id"] = snapshotId,
             ["refs"] = new JsonObject

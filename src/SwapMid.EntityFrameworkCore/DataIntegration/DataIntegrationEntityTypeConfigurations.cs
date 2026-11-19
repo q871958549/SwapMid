@@ -198,6 +198,7 @@ public static class DataIntegrationEntityTypeConfigurations
             b.Property(x => x.TargetMode).HasConversion<int>();
             b.Property(x => x.TargetDeletePolicy).HasConversion<int>();
             b.Property(x => x.LakehouseTableFormat).HasConversion<int>();
+            b.Property(x => x.LakehousePartitionStrategy).HasConversion<int>();
             b.Property(x => x.CatalogType).HasConversion<int>();
             b.Property(x => x.SchemaDriftPolicy).HasConversion<int>();
             b.Property(x => x.SnapshotStatus).HasConversion<int>();

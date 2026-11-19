@@ -1,6 +1,6 @@
 {
   "name": "swapmid-web",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "private": true,
   "packageManager": "pnpm@11.5.2",
   "scripts": {
@@ -13,7 +13,7 @@
     "ui:baseline": "node scripts/ui-health.mjs --write-baseline",
     "new:page": "node scripts/new-page.mjs",
     "check:i18n": "pnpm check:i18n:input && pnpm check:i18n:generated",
-    "check:i18n:input": "node --test scripts/i18n-audit-registry.test.mjs scripts/i18n-trusted-pr-input.test.mjs scripts/i18n-static-references.test.mjs scripts/i18n-message-contracts.test.mjs scripts/i18n-generation-core.test.mjs scripts/i18n-english-translator.test.mjs scripts/i18n-safe-files.test.mjs scripts/i18n-pr-input-boundary.test.mjs scripts/scan-hardcoded-cn.test.mjs scripts/check-backend-i18n.test.mjs && node scripts/check-i18n-keys.mjs --validate-audit-input && node scripts/sync-i18n.mjs --validate-input && node scripts/sync-backend-i18n.mjs --validate-input && node scripts/scan-hardcoded-cn.mjs --check && node scripts/check-backend-i18n.mjs --validate-input",
+    "check:i18n:input": "node --test scripts/i18n-audit-registry.test.mjs scripts/i18n-trusted-pr-input.test.mjs scripts/i18n-static-references.test.mjs scripts/i18n-message-contracts.test.mjs scripts/i18n-generation-core.test.mjs scripts/i18n-english-translator.test.mjs scripts/i18n-safe-files.test.mjs scripts/i18n-pr-input-boundary.test.mjs scripts/scan-hardcoded-cn.test.mjs scripts/check-backend-i18n.test.mjs scripts/check-terminology.test.mjs && node scripts/check-i18n-keys.mjs --validate-audit-input && node scripts/sync-i18n.mjs --validate-input && node scripts/sync-backend-i18n.mjs --validate-input && node scripts/scan-hardcoded-cn.mjs --check && node scripts/check-backend-i18n.mjs --validate-input && node scripts/check-terminology.mjs",
     "check:i18n:generated": "node scripts/check-i18n-keys.mjs && node scripts/sync-i18n.mjs --check && node scripts/sync-backend-i18n.mjs --check && node scripts/check-backend-i18n.mjs",
     "i18n:sync": "node scripts/sync-i18n.mjs",
     "i18n:bootstrap": "node scripts/sync-i18n.mjs --bootstrap",

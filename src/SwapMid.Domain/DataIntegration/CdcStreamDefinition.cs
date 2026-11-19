@@ -73,8 +73,11 @@ public partial class CdcStreamDefinition : FullAuditedAggregateRoot<Guid>
     /// <summary>ObjectStorage 接收端 Lakehouse 触发自动压缩合并的分片阈值（null 表示仅手动触发）。</summary>
     public int? LakehouseCompactMinFiles { get; private set; }
 
-    /// <summary>ObjectStorage 接收端 Lakehouse 开放表格式提交协议（SwapMidManifest / DeltaLake）。</summary>
+    /// <summary>ObjectStorage 接收端 Lakehouse 开放表格式提交协议（SwapMidManifest / DeltaLake / ApacheIceberg）。</summary>
     public LakehouseTableFormat LakehouseTableFormat { get; private set; }
+
+    /// <summary>Apache Iceberg v2 隐藏分区策略（None / DailyCommitUtc）。</summary>
+    public LakehousePartitionStrategy LakehousePartitionStrategy { get; private set; }
 
     /// <summary>外部开放元数据目录同步协议（None / UnityCatalogRest / IcebergRest）。</summary>
     public LakehouseCatalogType CatalogType { get; private set; }

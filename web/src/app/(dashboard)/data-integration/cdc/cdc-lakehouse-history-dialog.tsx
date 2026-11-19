@@ -93,8 +93,11 @@ export function CdcLakehouseHistoryDialog({
               </div>
 
               {state.history.deltaLogDirectory && (
-                <div className="font-mono text-xs text-muted-foreground break-all">
-                  {`${isIceberg ? 'Iceberg Metadata' : 'Delta Log'}: ${state.history.deltaLogDirectory}`}
+                <div className="flex flex-wrap items-center gap-2 font-mono text-xs text-muted-foreground break-all">
+                  <span>{`${isIceberg ? 'Iceberg Metadata' : 'Delta Log'}: ${state.history.deltaLogDirectory}`}</span>
+                  {isIceberg && Number(state.history.partitionStrategy ?? state.stream.lakehousePartitionStrategy ?? 0) === 1 && (
+                    <StatusBadge tone="info">day(commit_timestamp_utc)</StatusBadge>
+                  )}
                 </div>
               )}
 

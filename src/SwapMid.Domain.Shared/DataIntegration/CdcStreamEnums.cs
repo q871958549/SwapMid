@@ -16,6 +16,9 @@ public enum CdcSourceType
 
     /// <summary>Push Webhook 认证推送事件流（HMAC-SHA256 签名直推）。</summary>
     PushWebhook = 3,
+
+    /// <summary>Apache Kafka / Redpanda Debezium 信封入站事件流（消费既有 CDC Topic）。</summary>
+    KafkaDebezium = 4,
 }
 
 /// <summary>
@@ -29,8 +32,20 @@ public enum LakehouseTableFormat
     /// <summary>同时提交 Apache Delta Lake 事务日志（_delta_log/*.json）及 OPTIMIZE 合并记录。</summary>
     DeltaLake = 1,
 
-    /// <summary>同时提交 Apache Iceberg v2 表元数据（metadata/v*.metadata.json + 快照清单）与版本指针（version-hint.text）。</summary>
+    /// <summary>同时提交 Apache Iceberg v2 表元数据（metadata/v*.metadata.json + 二进制 Avro 清单）与版本指针（version-hint.text）。</summary>
     ApacheIceberg = 2,
+}
+
+/// <summary>
+/// Apache Iceberg v2 表隐藏分区演进策略（Hidden Partitioning）。
+/// </summary>
+public enum LakehousePartitionStrategy
+{
+    /// <summary>未分区（partition-spec id=0）。</summary>
+    None = 0,
+
+    /// <summary>按提交时间 UTC 自然日隐藏分区（day(commit_timestamp_utc)，spec-id=1，field-id=1000）。</summary>
+    DailyCommitUtc = 1,
 }
 
 /// <summary>

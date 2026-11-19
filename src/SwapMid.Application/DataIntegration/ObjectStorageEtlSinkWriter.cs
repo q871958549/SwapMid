@@ -66,14 +66,16 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
         DataSource target,
         string destination,
         Func<Func<EtlSourceBatch, CancellationToken, Task>, CancellationToken, Task> streamBatchesAsync,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? partitionSegment = null)
         => await WriteAndUploadCoreAsync(
             runId,
             target,
             EtlWriteMode.Append,
             destination,
             streamBatchesAsync,
-            cancellationToken);
+            cancellationToken,
+            partitionSegment);
 
     private async Task<UploadedObjectResult> WriteAndUploadCoreAsync(
         Guid runId,
@@ -81,7 +83,8 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
         EtlWriteMode mode,
         string destination,
         Func<Func<EtlSourceBatch, CancellationToken, Task>, CancellationToken, Task> streamBatchesAsync,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? partitionSegment = null)
     {
         if (mode != EtlWriteMode.Append)
         {
@@ -96,7 +99,7 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
         }
 
         var config = ObjectStorageSinkConfigContract.ParseForWrite(target.Config, requireSecretKey: true);
-        var objectKey = config.BuildObjectKey(destination, runId);
+        var objectKey = config.BuildObjectKey(destination, runId, partitionSegment);
         var objectUri = config.BuildObjectUri(objectKey);
 
         await DataIntegrationSinkEndpointPolicy.ValidateHttpEndpointAsync(

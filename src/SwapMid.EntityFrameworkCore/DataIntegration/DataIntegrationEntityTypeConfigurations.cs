@@ -232,5 +232,24 @@ public static class DataIntegrationEntityTypeConfigurations
                 .OnDelete(DeleteBehavior.SetNull)
                 .IsRequired(false);
         });
+
+        builder.Entity<CdcWebhookDeliveryRecord>(b =>
+        {
+            b.ToTable(
+                SwapMidConsts.DbTablePrefix + "CdcWebhookDeliveries",
+                SwapMidConsts.DbSchema);
+            b.ConfigureByConvention();
+            b.Property(x => x.DeliveryId).IsRequired().HasMaxLength(CdcWebhookDeliveryConsts.MaxDeliveryIdLength);
+            b.Property(x => x.CheckpointLsn).HasMaxLength(CdcWebhookDeliveryConsts.MaxCheckpointLsnLength);
+            b.Property(x => x.ErrorCode).HasMaxLength(CdcWebhookDeliveryConsts.MaxErrorCodeLength);
+            b.Property(x => x.ErrorSummary).HasMaxLength(CdcWebhookDeliveryConsts.MaxErrorSummaryLength);
+            b.Property(x => x.StoredPayloadJson).HasMaxLength(CdcWebhookDeliveryConsts.MaxStoredPayloadLength);
+            b.HasIndex(x => new { x.StreamId, x.ReceivedAtUtc });
+            b.HasOne<CdcStreamDefinition>()
+                .WithMany()
+                .HasForeignKey(x => x.StreamId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
+        });
     }
 }

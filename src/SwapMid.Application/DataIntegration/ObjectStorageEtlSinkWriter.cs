@@ -290,11 +290,12 @@ public sealed class ObjectStorageEtlSinkWriter : IEtlSinkWriter, ITransientDepen
                 _ when unwrapped == typeof(double) => new(new DataField<double?>(columns[i]), ParquetColumnKind.Double),
                 _ when unwrapped == typeof(decimal) => new(new DataField<decimal?>(columns[i]), ParquetColumnKind.Decimal),
                 _ when unwrapped == typeof(DateTime) || unwrapped == typeof(DateTimeOffset) || unwrapped == typeof(DateOnly) =>
-                    new(new DataField<DateTime?>(columns[i]), ParquetColumnKind.DateTime),
+                    new(new DateTimeDataField(columns[i], DateTimeFormat.DateAndTimeMicros, isAdjustedToUTC: true, isNullable: true), ParquetColumnKind.DateTime),
                 _ when unwrapped == typeof(Guid) => new(new DataField<Guid?>(columns[i]), ParquetColumnKind.Guid),
                 _ when unwrapped == typeof(byte[]) => new(new DataField<byte[]?>(columns[i]), ParquetColumnKind.Binary),
                 _ => new(new DataField<string?>(columns[i]), ParquetColumnKind.String),
             };
+            specs[i].Field.FieldId = i + 1;
         }
 
         return specs;

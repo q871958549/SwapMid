@@ -102,6 +102,7 @@ internal static class IcebergV2MetadataReader
             config,
             destination,
             selectedSnap.SnapshotId,
+            selectedSnap.ManifestListUri,
             cancellationToken);
 
         var totalBytes = activeFiles.Sum(f => f.SizeBytes);
@@ -187,8 +188,13 @@ internal static class IcebergV2MetadataReader
                     addedRecords = ReadSummaryLong(summary, "added-records");
                 }
 
+                var manifestListUri = snap.TryGetProperty("manifest-list", out var mlProp) && mlProp.ValueKind == JsonValueKind.String
+                    ? mlProp.GetString()
+                    : null;
+
                 list.Add(new ParsedIcebergSnapshot(
                     sid,
+                    manifestListUri,
                     new CdcDeltaCommitSummaryDto
                     {
                         Version = seq,
@@ -218,47 +224,30 @@ internal static class IcebergV2MetadataReader
         ObjectStorageSinkConfig config,
         string destination,
         long snapshotId,
+        string? manifestListUri,
         CancellationToken cancellationToken)
     {
-        var manifestKey = config.BuildIcebergManifestKey(destination, snapshotId);
-        var manifestJson = await CdcObjectStorageLakehouseWriter.TryGetObjectStorageJsonAsync(
+        var active = await IcebergV2CommitWriter.LoadSnapshotActiveFilesAsync(
             httpClientFactory,
             configuration,
             config,
-            manifestKey,
+            destination,
+            snapshotId,
+            manifestListUri,
             cancellationToken);
-        if (string.IsNullOrWhiteSpace(manifestJson))
-        {
-            return new List<CdcDeltaActiveFileDto>();
-        }
 
-        try
-        {
-            var doc = JsonSerializer.Deserialize<IcebergV2CommitWriter.IcebergSnapshotManifestDocument>(
-                manifestJson,
-                IcebergV2CommitWriter.JsonOptions);
-            if (doc?.ActiveFiles == null)
+        return active
+            .Select(f => new CdcDeltaActiveFileDto
             {
-                return new List<CdcDeltaActiveFileDto>();
-            }
-
-            return doc.ActiveFiles
-                .Select(f => new CdcDeltaActiveFileDto
-                {
-                    RelativePath = f.RelativePath,
-                    ObjectKey = f.ObjectKey,
-                    SizeBytes = f.FileSizeInBytes,
-                    RecordCount = f.RecordCount,
-                    AddedAtVersion = f.AddedAtSequence,
-                })
-                .OrderBy(f => f.AddedAtVersion)
-                .ThenBy(f => f.RelativePath, StringComparer.Ordinal)
-                .ToList();
-        }
-        catch (JsonException)
-        {
-            return new List<CdcDeltaActiveFileDto>();
-        }
+                RelativePath = f.RelativePath,
+                ObjectKey = f.ObjectKey,
+                SizeBytes = f.FileSizeInBytes,
+                RecordCount = f.RecordCount,
+                AddedAtVersion = f.AddedAtSequence,
+            })
+            .OrderBy(f => f.AddedAtVersion)
+            .ThenBy(f => f.RelativePath, StringComparer.Ordinal)
+            .ToList();
     }
 
     private static string BuildIcebergTimeTravelSql(
@@ -313,5 +302,5 @@ internal static class IcebergV2MetadataReader
         return 0L;
     }
 
-    private sealed record ParsedIcebergSnapshot(long SnapshotId, CdcDeltaCommitSummaryDto Summary);
+    private sealed record ParsedIcebergSnapshot(long SnapshotId, string? ManifestListUri, CdcDeltaCommitSummaryDto Summary);
 }

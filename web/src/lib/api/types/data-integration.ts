@@ -51,6 +51,9 @@ export type CdcCatalogSyncResultDto = import('../generated').SwapMidDataIntegrat
 export type CdcContractStatus = import('../generated').SwapMidDataIntegrationCdcContractStatus
 export type CdcContractViolationItemDto = import('../generated').SwapMidDataIntegrationCdcContractViolationItemDto
 export type CdcContractEvaluationDto = import('../generated').SwapMidDataIntegrationCdcContractEvaluationDto
+export type CdcWebhookDeliveryListDto = import('../generated').SwapMidDataIntegrationCdcWebhookDeliveryListDto
+export type CdcWebhookDeliveryRecordDto = import('../generated').SwapMidDataIntegrationCdcWebhookDeliveryRecordDto
+export type CdcWebhookIngestResultDto = import('../generated').SwapMidDataIntegrationCdcWebhookIngestResultDto
 export type CdcStreamDto = Omit<
   Require<
     import('../generated').SwapMidDataIntegrationCdcStreamDto,

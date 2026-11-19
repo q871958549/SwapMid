@@ -4,6 +4,22 @@ All notable changes to **SwapMid** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-11-19
+
+### Added
+- **True Binary Apache Avro 1.11 OCF Manifests for Apache Iceberg v2 & Parquet `FieldId` / `TIMESTAMP_MICROS`**:
+  - Implemented zero-dependency, pure-.NET Apache Avro 1.11 Object Container File codec (`IcebergAvroOcfCodec`) and Iceberg v2 `manifest-list` / `manifest-file` encoder/decoder (`IcebergAvroManifestBuilder`, `IcebergV2CommitWriter.AvroStorage.cs`), emitting binary `metadata/snap-{snapshotId}-1-{runId:N}.avro` (`manifest_file`) and `metadata/{runId:N}-s{seq}-m0.avro` (`manifest_entry`) alongside `schema.name-mapping.default` in `v*.metadata.json`.
+  - Upgraded `ObjectStorageEtlSinkWriter` and `CdcParquetCompactionMergeHelper` to write Parquet Thrift column `FieldId = 1..11` and `INT64 TIMESTAMP(MICROS, isAdjustedToUTC=true)` (`DateTimeFormat.DateAndTimeMicros`), preserving field IDs across `REPLACE` compaction merges.
+  - Upgraded `IcebergV2MetadataReader` to read binary `.avro` manifest chains natively (with automatic JSON fallback for `v2.3.0` legacy tables) and verified live end-to-end interoperability with official **`duckdb/duckdb:latest` `iceberg_scan()`** across both compacted `v3`/`v4` and historical Time-Travel `v1` snapshots.
+- **Push Webhook CDC Auto-Schema Inference & Governed Delivery / Dead-Letter Replay Ledger**:
+  - Added `CdcWebhookDeliveryRecord` entity (`AppCdcWebhookDeliveries`) with EF Core migration `AddCdcWebhookDeliveryLedger` (`Cascade` FK + composite index on `(StreamId, ReceivedAtUtc)`). Security invariant: persists bounded `<= 64 KiB` `StoredPayloadJson` **only** for HMAC-authenticated `Inactive (409)` / `Failed (500)` dead-letters and stores `null` on `401 Unauthorized` (preventing storage amplification) and `200 Accepted` (zero payload bloat).
+  - Added `CdcWebhookSchemaInferenceHelper` to automatically infer and persist `SchemaBaselineJson` from Push Webhook batches (enabling Data Contract `RequiredColumns` SLA enforcement automatically on serverless webhook streams) and enforce `SchemaDriftPolicy` (`Warn` / `PauseAndAlert` with dead-letter retention for 1-click recovery).
+  - Exposed `GET /api/v1/cdc-webhooks/{streamId}/deliveries` (`CdcStreams.Default`) and `POST /api/v1/cdc-webhooks/{streamId}/deliveries/{deliveryId}/replay` (`CdcStreams.Manage`) with Prometheus `outcome="replayed"` telemetry and a new `/data-integration/cdc` **`推送日志` (`Push Log`)** dialog supporting 1-click dead-letter replay (`2,111` trilingual i18n keys, `0` CJK in `en.json`).
+- **Closed-Loop Lakehouse & Push Webhook Observability**:
+  - Added Prometheus alert rules `SwapMidCdcIcebergCommitFailures`, `SwapMidCdcWebhookAuthFailuresSpike`, and `SwapMidCdcWebhookDeliveryFailures` in [docker/observability/prometheus/alert-rules.yml](docker/observability/prometheus/alert-rules.yml).
+  - Added Grafana Overview **Panel 10** (Apache Iceberg v2 Commits & Push Webhook Ingress) and **Panel 11** (Data Contract SLA, Catalog Syncs & Zero-Infra Previews) in [docker/observability/grafana/dashboards/swapmid-overview.json](docker/observability/grafana/dashboards/swapmid-overview.json).
+  - Expanded OpenAPI `/api/v1` summary coverage to **100.0% (199/199 endpoints)** across 9 domains.
+
 ## [2.3.0] - 2026-11-19
 
 ### Added

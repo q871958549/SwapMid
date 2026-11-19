@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using SwapMid.Controllers.Notification;
 using SwapMid.DataIntegration;
+using SwapMid.Permissions;
 using Volo.Abp;
 using Volo.Abp.Auditing;
 using Volo.Abp.Uow;
@@ -97,6 +98,25 @@ public class CdcWebhookIngressController : SwapMidController
             _ => BadRequest(BuildError(outcome.ErrorCode, outcome.ErrorMessage)),
         };
     }
+
+    /// <summary>查询 Push Webhook CDC 流最近的认证推送、拒签与死信待重放台账</summary>
+    [HttpGet("{streamId:guid}/deliveries")]
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Default)]
+    public Task<CdcWebhookDeliveryListDto> GetDeliveriesAsync(
+        Guid streamId,
+        [FromQuery] int maxCount = 30,
+        CancellationToken cancellationToken = default)
+        => _ingressService.GetDeliveriesAsync(streamId, maxCount, cancellationToken);
+
+    /// <summary>重放一条已通过验签但因流未激活或下游故障留存的 Push Webhook 死信批次</summary>
+    [HttpPost("{streamId:guid}/deliveries/{deliveryId:guid}/replay")]
+    [Authorize(SwapMidPermissions.DataIntegration.CdcStreams.Manage)]
+    [UnitOfWork(IsDisabled = true)]
+    public Task<CdcWebhookIngestResultDto> ReplayDeliveryAsync(
+        Guid streamId,
+        Guid deliveryId,
+        CancellationToken cancellationToken = default)
+        => _ingressService.ReplayDeliveryAsync(streamId, deliveryId, cancellationToken);
 
     private static object BuildError(string code, string message)
         => new { error = new { code, message } };

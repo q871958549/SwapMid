@@ -171,6 +171,49 @@
           "refId": "D"
         }
       ]
+    },
+    {
+      "id": 10,
+      "title": "Lakehouse — Apache Iceberg v2 Commits & Push Webhook Ingress (15m)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "datasource": { "type": "prometheus", "uid": "swapmid-prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (operation, outcome) (increase(swapmid_cdc_iceberg_commits_total[15m]))",
+          "legendFormat": "iceberg:{{operation}}/{{outcome}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (outcome) (increase(swapmid_cdc_webhook_ingests_total[15m]))",
+          "legendFormat": "webhook:{{outcome}}",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Governance — Data Contract SLA, Catalog Syncs & Zero-Infra Previews (15m)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "datasource": { "type": "prometheus", "uid": "swapmid-prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (outcome) (increase(swapmid_cdc_contract_evaluations_total[15m]))",
+          "legendFormat": "contract:{{outcome}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (catalog_type, outcome) (increase(swapmid_cdc_catalog_syncs_total[15m]))",
+          "legendFormat": "catalog:{{catalog_type}}/{{outcome}}",
+          "refId": "B"
+        },
+        {
+          "expr": "sum by (format) (increase(swapmid_cdc_lakehouse_previews_total[15m]))",
+          "legendFormat": "preview:{{format}}",
+          "refId": "C"
+        }
+      ]
     }
   ],
   "refresh": "15s",

@@ -35,7 +35,8 @@ Every milestone adheres to five non-negotiable engineering invariants:
 | **`v2.0.1`** *(Released)* | **GitHub Open-Source Readiness, Helm/CI Hardening & `v2.0` Documentation** | Fixed Helm web `/build-meta` health probes + per-pod singleton lease env wiring, fixed `release.yml` `RELEASE_SHA` OCI build-arg & CI Helm secret validation, updated `README.md`/`README.zh-CN.md`/`SECURITY.md`/`operations-and-upgrade.md` for `v2.0`, and added `examples/mysql-binlog-deltalake-cdc/` blueprint |
 | **`v2.1.0`** *(Released)* | **Delta Lake Time-Travel, Unity Catalog & Iceberg REST Interop + Chaos Suite** | `_delta_log` Time-Travel Inspector (`GET /lakehouse-history`), Unity Catalog REST & Apache Iceberg REST metadata sync (`POST /sync-catalog`), `ChaosResilienceContractTests`, and turnkey `docker-compose.lakehouse-demo.yml` (MySQL 8.4 + Chainguard MinIO) |
 | **`v2.2.0`** *(Released)* | **Zero-Infra Live Lakehouse Preview, Data Contract SLA Engine & 8-Tool MCP Copilot** | Bounded Zero-Infra Parquet/JSONL live preview (`GET /lakehouse-preview`), declarative Data Contract & Freshness SLA engine (`POST /evaluate-contract` + `SwapMidCdcDataContractBreached`), MCP Tools 7 & 8 (`propose_pipeline_column_mappings`, `evaluate_cdc_data_contracts`), and Node 24-native CI/Release Actions |
-| **`v2.3.0`** *(Current)* | **Native Apache Iceberg v2 Protocol, Serverless Push Webhook CDC & Chaos SLA Benchmarks** | Pure-.NET Apache Iceberg v2 writer/reader (`metadata/v*.metadata.json` + `snap-*-manifest.json` + `version-hint.text` + S3 CAS `If-None-Match: *` + `replace` compaction + DuckDB `iceberg_scan()` / Trino SQL + live Parquet preview), fail-closed HMAC-SHA256 `POST /api/v1/cdc-webhooks/{streamId}` Push Webhook CDC source (`CdcSourceType.PushWebhook = 3`), 5-scenario Chaos contract suite + 1,000-row SLA throughput benchmarks (`RPO = 0`), and `197/197` OpenAPI summary coverage |
+| **`v2.3.0`** *(Released)* | **Native Apache Iceberg v2 Protocol, Serverless Push Webhook CDC & Chaos SLA Benchmarks** | Pure-.NET Apache Iceberg v2 writer/reader (`metadata/v*.metadata.json` + `version-hint.text` + S3 CAS `If-None-Match: *` + `replace` compaction + DuckDB `iceberg_scan()` / Trino SQL + live Parquet preview), fail-closed HMAC-SHA256 `POST /api/v1/cdc-webhooks/{streamId}` Push Webhook CDC source (`CdcSourceType.PushWebhook = 3`), 5-scenario Chaos contract suite + 1,000-row SLA throughput benchmarks (`RPO = 0`), and `197/197` OpenAPI summary coverage |
+| **`v2.4.0`** *(Current)* | **Binary Avro OCF Apache Iceberg v2, Push Webhook Auto-Schema & Dead-Letter Replay Ledger** | Zero-dependency pure-.NET Apache Avro 1.11 OCF binary `manifest-list` (`snap-*.avro`) & `manifest-file` (`*-m0.avro`) + Parquet `FieldId 1..11` / `TIMESTAMP_MICROS` (verified live via official **`duckdb/duckdb:latest` `iceberg_scan()`** across `v1`–`v4`), `AppCdcWebhookDeliveries` dead-letter ledger (`<= 64 KiB` only on authenticated `409`/`500`, zero payload on `401`) + Auto-Schema Inference for `RequiredColumns` SLA & `SchemaDriftPolicy` + `/data-integration/cdc` `推送日志` 1-click `重放` UI, Grafana Panels 10–11 & 3 Iceberg/Webhook Prometheus alert rules, and **`199/199` (100.0%)** OpenAPI summary coverage |
 
 ---
 
@@ -126,11 +127,22 @@ Every milestone adheres to five non-negotiable engineering invariants:
 
 ---
 
-## Next Evolution (`v2.3+` AI-Era Open-Source Competitiveness)
+## `v2.3.0` – `v2.4.0`: 纯 .NET 二进制 Avro Iceberg v2、无服务器 Push Webhook 死信重放与可观测闭环（Completed）
 
-1. **Oracle LogMiner & Serverless Authenticated Webhook CDC Sources**:
-   - Extend `ICdcStreamAppService` and `CdcStreamCaptureCoordinator` with `OracleLogMiner` and HMAC-verified serverless push webhook CDC ingestion alongside PostgreSQL `pgoutput`, SQL Server Change Tracking, and MySQL / MariaDB `Binlog`.
-2. **Native Apache Iceberg v2 Metadata & Snapshot Manifest Interop**:
-   - Emit full Iceberg v2 `metadata.json` / manifest lists alongside Delta Lake `_delta_log` so Trino, Snowflake, and StarRocks can read SwapMid Lakehouse tables natively via Iceberg REST Catalogs without translation layers.
-3. **Automated Chaos SLA Latency & RPO Benchmark Reports**:
-   - Publish reproducible per-release throughput, WAL lag P99, and crash-recovery RPO=0 benchmark artifacts directly alongside `ChaosResilienceContractTests`.
+1. **纯 .NET 零 JVM 二进制 Apache Avro 1.11 OCF Iceberg v2 互操作（经官方 DuckDB `iceberg_scan()` 实机验证）**：
+   - 新增 `IcebergAvroOcfCodec`、`IcebergAvroManifestBuilder` 与 `IcebergV2CommitWriter.AvroStorage.cs`，以零外部依赖直接生成 Iceberg v2 规范二进制 `manifest-list`（`snap-*.avro`）与 `manifest-file`（`*-m0.avro`），同步写入 `schema.name-mapping.default` 并在 `ObjectStorageEtlSinkWriter` / `CdcParquetCompactionMergeHelper` 中保留 Parquet Thrift `FieldId = 1..11` 与 `TIMESTAMP_MICROS (UTC)`；在隔离 Docker 实测中经官方 `duckdb/duckdb:latest` 容器直连 MinIO `iceberg_scan()` 一次通过 `v1`、`v3`（`REPLACE` 压缩）与 `v4` 查询。
+2. **Push Webhook CDC 自动 Schema 推导与受控死信重放台账**：
+   - 新增迁移 `AddCdcWebhookDeliveryLedger`（`AppCdcWebhookDeliveries`）与 `CdcWebhookSchemaInferenceHelper`：自动从首次推送批次推导 `SchemaBaselineJson` 以驱动 `RequiredColumns` 数据契约与 `SchemaDriftPolicy`（`Warn`/`PauseAndAlert`）；严格落实安全不变式（仅对已通过 HMAC 验签的 `409`/`500` 暂存 `<= 64 KiB` 载荷，`401` 伪造请求绝不落盘），开放 `GET /api/v1/cdc-webhooks/{streamId}/deliveries` 与 `POST .../replay` 接口并在 `/data-integration/cdc` 提供 `推送日志` 一键 `重放` 弹窗。
+3. **Lakehouse & Push Webhook 闭环可观测与 100% 契约治理**：
+   - 新增 3 条 Prometheus 告警规则（`SwapMidCdcIcebergCommitFailures`、`SwapMidCdcWebhookAuthFailuresSpike`、`SwapMidCdcWebhookDeliveryFailures`）与 Grafana 总览面板 Panel 10 / Panel 11，OpenAPI 摘要覆盖率保持 `100.0%`（`199/199` 接口 / `9` 业务域）。
+
+---
+
+## Next Evolution (`v2.5+` AI-Era Open-Source Competitiveness)
+
+1. **Iceberg v2 Position/Equality Deletes & Partition Evolution (`day(commit_timestamp_utc)`)**:
+   - Extend `IcebergAvroManifestBuilder` with Iceberg v2 partition specs (`day` / `bucket`) and merge-on-read delete manifests alongside copy-on-write compaction, enabling zero-duplication CDC upsert queries natively inside DuckDB, Trino, StarRocks, and Snowflake.
+2. **Apache Kafka & Debezium Envelope Inbound CDC Source (`CdcSourceType.KafkaDebezium`)**:
+   - Consume existing Kafka / Redpanda Debezium JSON/CloudEvents topics directly into SwapMid's governed Lakehouse (Delta Lake / Binary Avro Iceberg v2), Relational Mirror, and Data Contract SLA engine without duplicating database log readers.
+3. **AI-Native Lakehouse Schema & Contract Drift Remediation Copilot (MCP Tools 9+)**:
+   - Extend `/api/mcp` with automated Webhook dead-letter root-cause diagnostics, Iceberg/Delta snapshot diff summaries, and human-approved schema evolution drafts (`accept-schema` / `replay` remediation playbooks).

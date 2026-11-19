@@ -1,6 +1,6 @@
 'use client'
 
-import { Activity, ClipboardCheck, DatabaseBackup, FileCode2, History, Loader2, PauseCircle, Play, Power, RefreshCw, RotateCcw, ShieldCheck, Unplug } from 'lucide-react'
+import { Activity, ClipboardCheck, DatabaseBackup, FileCode2, History, Inbox, Loader2, PauseCircle, Play, Power, RefreshCw, RotateCcw, ShieldCheck, Unplug } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
@@ -152,6 +152,7 @@ export function CdcRowActions({
   canDelete,
   onSinkTemplate,
   onLakehouseHistory,
+  onWebhookDeliveries,
   onSyncCatalog,
   onEvaluateContract,
   onPreflight,
@@ -168,6 +169,7 @@ export function CdcRowActions({
   canDelete: boolean
   onSinkTemplate: (row: CdcStreamDto) => void
   onLakehouseHistory?: (row: CdcStreamDto) => void
+  onWebhookDeliveries?: (row: CdcStreamDto) => void
   onSyncCatalog?: (row: CdcStreamDto) => void
   onEvaluateContract?: (row: CdcStreamDto) => void
   onPreflight: (row: CdcStreamDto) => void
@@ -188,10 +190,18 @@ export function CdcRowActions({
     row.targetSinkType === 5
   const hasExternalCatalog = isExternalSink && Number(row.catalogType ?? 0) > 0
 
-  if (!canManage && !isExternalSink) return null
+  if (!canManage && !isExternalSink && !isPushWebhook) return null
 
   return (
     <>
+      {isPushWebhook && onWebhookDeliveries && (
+        <DropdownMenuItem disabled={busy} onClick={() => onWebhookDeliveries(row)}>
+          {busyKind === 'webhook-deliveries'
+            ? <Loader2 className="mr-2 size-3.5 animate-spin" />
+            : <Inbox className="mr-2 size-3.5" />}
+          {t('webhookDeliveriesMenuItem')}
+        </DropdownMenuItem>
+      )}
       {isExternalSink && (
         <DropdownMenuItem disabled={busy} onClick={() => onSinkTemplate(row)}>
           {busyKind === 'sink-template'

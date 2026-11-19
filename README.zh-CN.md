@@ -14,10 +14,10 @@
 
 ## 核心特性
 
-- **异构实时 CDC 引擎、Push Webhook 直推与原生 Delta / Iceberg v2 开放湖仓**
-  - 原生支持 **PostgreSQL 逻辑复制（`pgoutput`）**、**SQL Server Change Tracking（`CHANGETABLE`）**、**MySQL / MariaDB Row-Based Binlog（`ROW` + `FULL`）** 与无服务器 HMAC-SHA256 认证 **Push Webhook CDC**（`POST /api/v1/cdc-webhooks/{streamId}`），集成位点预检、字节级 `WAL`/`Binlog` 滞留监测及上游 DDL **Schema 漂移**自动熔断护栏（`Ignore` / `Warn` / `PauseAndAlert`）。
+- **异构实时 CDC 引擎、Push Webhook 死信重放与二进制 Avro Iceberg v2 / Delta 开放湖仓**
+  - 原生支持 **PostgreSQL 逻辑复制（`pgoutput`）**、**SQL Server Change Tracking（`CHANGETABLE`）**、**MySQL / MariaDB Row-Based Binlog（`ROW` + `FULL`）** 与无服务器 HMAC-SHA256 认证 **Push Webhook CDC**（`POST /api/v1/cdc-webhooks/{streamId}`），内置 **自动 Schema 推导**、受控 **推送与死信重放台账**（`GET .../deliveries`、`POST .../replay`）、字节级 `WAL`/`Binlog` 滞留监测及上游 **Schema 漂移**自动熔断护栏（`Ignore` / `Warn` / `PauseAndAlert`）。
   - 支持将 CDC 变更流实时投递至 **消息总线**、**关系表行级镜像**（显式列重映射 + `SoftDelete` 软删除墓碑与复活清零）或外部分析端 **Kafka** / **ClickHouse**（一键 `ReplacingMergeTree` 建表）/ **S3 & MinIO 对象存储（Parquet / JSONL）**。
-  - 原生支持零 JVM 依赖的 **Apache Delta Lake（`_delta_log/{version:D20}.json`）** 与 **Apache Iceberg v2（`metadata/v*.metadata.json` + `snap-*-manifest.json` + `version-hint.text`）** 原子提交（S3 `If-None-Match: *` 乐观并发锁），联动自动/手动 `OPTIMIZE` / `REPLACE` 小文件压缩合并，提供在线 **Time-Travel 时间旅行版本检视器**（`VERSION AS OF v` / `iceberg_scan()`）与 **零外部计算集群实时 Parquet/JSONL 样本行预览**、声明式 **数据契约与新鲜度 SLA 引擎**，并支持非阻塞同步元数据至 **Unity Catalog REST** 与 **Apache Iceberg REST**。
+  - 原生支持零 JVM 依赖的 **Apache Delta Lake（`_delta_log/{version:D20}.json`）** 与 **Apache Iceberg v2（`metadata/v*.metadata.json` + 二进制 Apache Avro 1.11 OCF `snap-*.avro` Manifest List / `*-m0.avro` Manifest File + Parquet `FieldId` 与微秒级 `TIMESTAMP_MICROS`，经官方 DuckDB `iceberg_scan()` 实机原生读取验证）** 原子提交（S3 `If-None-Match: *` 乐观并发锁），联动自动/手动 `OPTIMIZE` / `REPLACE` 小文件压缩合并，提供在线 **Time-Travel 时间旅行版本检视器**与 **零外部计算集群实时 Parquet/JSONL 样本行预览**、声明式 **数据契约与新鲜度 SLA 引擎**，并支持非阻塞同步元数据至 **Unity Catalog REST** 与 **Apache Iceberg REST**。
 - **混沌工程故障注入验证与生产级幂等执行引擎**
   - 内置 **PostgreSQL**、**SQL Server**、**MySQL**、**REST API** 与 **CSV / Excel** 多源连接器及 **Kafka / ClickHouse / 对象存储** Sink（含严格 `DataIntegration:Sinks` SSRF 守卫），提供交互式 **`PipelineFieldMapperPanel` 字段映射器** 与激活前零行只读 **Schema 兼容性预检**（`POST /api/v1/data-pipelines/preflight-schema`）。
   - 全链路分批流式执行（支持 `append`、`truncate` 与带水位线保护的多方言原子 `upsert`），配合目标库事务级幂等回执表 **`__swapmid_etl_receipt_v1`**，确保跨库重跑零重复写入，关键故障恢复场景均通过混沌契约测试校验（详见 **[混沌与韧性基准报告](docs/benchmarks/resilience-and-chaos.md)**）。
@@ -27,7 +27,7 @@
   - 原生支持 **HTTP Webhook**（CNCF **CloudEvents v1.0** 标准 `ce-*` 头 + `HMAC-SHA256` `X-SwapMid-Signature` 签名 + 出站 SSRF 防护）、**RabbitMQ** 以及通用 **BotWebhook**（Generic JSON / Slack / 飞书 / 钉钉 / 企业微信群机器人格式）。
 - **生产级 API 网关、异步事件接入与受控 MCP Server**
   - 动态 API 分组与网关转发（`/api/gateway/{**path}`，默认 `ApiGateway:Enabled=false` 安全关闭），内置防 DNS 重绑定 SSRF 守卫、客户端路由组 ACL、滑动窗口分钟级限流（`429` + `Retry-After`）及幂等事件接入（`POST /api/gateway/events/{topicName}`）。
-  - 可选开启受平台 RBAC 约束的 **MCP Server**（`POST /api/mcp`，默认 `Mcp:Enabled=false`），提供含 `propose_pipeline_column_mappings`、`evaluate_cdc_data_contracts` 与 `diagnose_cdc_streams` 在内的 **8 个**只读诊断与 `Draft` 草稿生成工具，且全部 **197 个 `/api/v1` 接口 100.0% 具备 OpenAPI 摘要**。
+  - 可选开启受平台 RBAC 约束的 **MCP Server**（`POST /api/mcp`，默认 `Mcp:Enabled=false`），提供含 `propose_pipeline_column_mappings`、`evaluate_cdc_data_contracts` 与 `diagnose_cdc_streams` 在内的 **8 个**只读诊断与 `Draft` 草稿生成工具，且全部 **199 个 `/api/v1` 接口 100.0% 具备 OpenAPI 摘要**。
 - **零浏览器令牌 BFF 架构与可选外部 OIDC 单点登录**
   - Next.js `16.4.6` BFF 将 OAuth2 令牌完全托管于服务端 Redis，支持云端持久化表格偏好与零控制台 404 运行态，同时支持本地账号密码与 S256 PKCE **外部企业 OIDC 身份联邦**（`AuthServer:ExternalOidc`）。
 - **云原生 Helm 交付与开箱即用可观测性闭环**

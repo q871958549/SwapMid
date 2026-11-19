@@ -33,7 +33,7 @@ internal readonly record struct IcebergCommitReceipt(
 internal static partial class IcebergV2CommitWriter
 {
     private const int MaxOptimisticRetries = 64;
-    private const string EngineName = "SwapMid-2.3.0";
+    private const string EngineName = "SwapMid-2.4.0";
 
     internal static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -210,49 +210,36 @@ internal static partial class IcebergV2CommitWriter
             var nextSeq = latestSeq + 1;
             var snapshotId = ComputeDeterministicSnapshotId(stream.Id, runId, nextSeq);
             var metadataKey = config.BuildIcebergMetadataKey(destination, nextSeq);
-            var manifestKey = config.BuildIcebergManifestKey(destination, snapshotId);
+            var manifestListKey = config.BuildIcebergAvroManifestListKey(destination, snapshotId, runId);
+            var manifestFileKey = config.BuildIcebergAvroManifestFileKey(destination, nextSeq, runId);
 
-            var activeFiles = await BuildNextActiveFilesAsync(
-                httpClientFactory, configuration, config, destination,
-                latestMetadataJson, nextSeq, addedFiles, removedRelativePaths, cancellationToken);
+            long? parentSnapshotId = !string.IsNullOrWhiteSpace(latestMetadataJson) &&
+                                     TryExtractCurrentSnapshotId(latestMetadataJson, out var pSnap)
+                ? pSnap
+                : null;
 
-            var manifestDoc = new IcebergSnapshotManifestDocument
-            {
-                SequenceNumber = nextSeq,
-                SnapshotId = snapshotId,
-                Operation = operation,
-                SwapMidRunId = runToken,
-                TimestampMs = tsMs,
-                ActiveFiles = activeFiles,
-                AddedFiles = addedFiles.Select(f => new IcebergManifestEntry
-                {
-                    RelativePath = f.RelativePath,
-                    ObjectKey = f.ObjectKey,
-                    FilePath = f.FilePath,
-                    FileFormat = f.FileFormat,
-                    FileSizeInBytes = f.FileSizeInBytes,
-                    RecordCount = f.RecordCount,
-                    AddedAtSequence = nextSeq,
-                }).ToList(),
-                DeletedFiles = removedRelativePaths.ToList(),
-            };
+            var prevActiveFiles = await LoadPreviousActiveFilesAsync(
+                httpClientFactory, configuration, config, destination, latestMetadataJson, cancellationToken);
+            var (activeFiles, avroEntries) = BuildNextSnapshotFiles(
+                prevActiveFiles, nextSeq, snapshotId, addedFiles, removedRelativePaths);
 
-            await CdcObjectStorageLakehouseWriter.PutJsonObjectAsync(
-                httpClientFactory, configuration, config, manifestKey,
-                JsonSerializer.Serialize(manifestDoc, JsonOptions), cancellationToken);
+            await UploadAvroManifestArtifactsAsync(
+                httpClientFactory, configuration, config,
+                manifestFileKey, manifestListKey, snapshotId, parentSnapshotId, nextSeq, runId,
+                avroEntries, cancellationToken);
 
             var metadataJson = BuildTableMetadataJson(
                 stream, tableLocation, config.Bucket,
                 latestMetadataJson,
                 latestSeq > 0 ? config.BuildIcebergMetadataKey(destination, latestSeq) : null,
-                nextSeq, snapshotId, manifestKey, operation, snapshotMode, runToken, tsMs,
+                nextSeq, snapshotId, manifestListKey, operation, snapshotMode, runToken, tsMs,
                 addedFiles, removedRelativePaths, activeFiles);
 
             if (await PutMetadataIfAbsentAsync(httpClientFactory, configuration, config, metadataKey, metadataJson, cancellationToken))
             {
                 await PutVersionHintAsync(httpClientFactory, configuration, config, destination, nextSeq, cancellationToken);
                 PlatformMetrics.CdcIcebergCommitsTotal.WithLabels(operation, "succeeded").Inc();
-                return new IcebergCommitReceipt(nextSeq, snapshotId, metadataKey, manifestKey);
+                return new IcebergCommitReceipt(nextSeq, snapshotId, metadataKey, manifestListKey);
             }
 
             PlatformMetrics.CdcIcebergCommitsTotal.WithLabels(operation, "retried").Inc();
@@ -330,54 +317,72 @@ internal static partial class IcebergV2CommitWriter
         return (latestSeq, latestJson);
     }
 
-    private static async Task<List<IcebergManifestEntry>> BuildNextActiveFilesAsync(
+    private static async Task<List<IcebergManifestEntry>> LoadPreviousActiveFilesAsync(
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
         ObjectStorageSinkConfig config,
         string destination,
         string? latestMetadataJson,
-        long nextSeq,
-        IReadOnlyList<IcebergManifestEntry> addedFiles,
-        IReadOnlyList<string> removedRelativePaths,
         CancellationToken cancellationToken)
     {
-        var activeMap = new Dictionary<string, IcebergManifestEntry>(StringComparer.Ordinal);
-        if (!string.IsNullOrWhiteSpace(latestMetadataJson) &&
-            TryExtractCurrentSnapshotId(latestMetadataJson, out var currentSnapId))
+        if (string.IsNullOrWhiteSpace(latestMetadataJson) ||
+            !TryExtractCurrentSnapshotId(latestMetadataJson, out var currentSnapId))
         {
-            var prevManifestJson = await CdcObjectStorageLakehouseWriter.TryGetObjectStorageJsonAsync(
-                httpClientFactory, configuration, config, config.BuildIcebergManifestKey(destination, currentSnapId), cancellationToken);
-            if (!string.IsNullOrWhiteSpace(prevManifestJson))
-            {
-                try
-                {
-                    var prev = JsonSerializer.Deserialize<IcebergSnapshotManifestDocument>(prevManifestJson, JsonOptions);
-                    if (prev?.ActiveFiles != null)
-                    {
-                        foreach (var f in prev.ActiveFiles)
-                        {
-                            if (!string.IsNullOrWhiteSpace(f.RelativePath))
-                            {
-                                activeMap[f.RelativePath] = f;
-                            }
-                        }
-                    }
-                }
-                catch (JsonException)
-                {
-                    // Fallback cleanly if legacy manifest cannot be parsed.
-                }
-            }
+            return new List<IcebergManifestEntry>();
         }
 
-        foreach (var removed in removedRelativePaths)
+        TryExtractSnapshotManifestListUri(latestMetadataJson, currentSnapId, out var manifestListUri);
+        return await LoadSnapshotActiveFilesAsync(
+            httpClientFactory, configuration, config, destination, currentSnapId, manifestListUri, cancellationToken);
+    }
+
+    private static (List<IcebergManifestEntry> ActiveFiles, List<IcebergAvroManifestBuilder.ManifestEntryRecord> AvroEntries)
+        BuildNextSnapshotFiles(
+            IReadOnlyList<IcebergManifestEntry> previousActiveFiles,
+            long nextSeq,
+            long snapshotId,
+            IReadOnlyList<IcebergManifestEntry> addedFiles,
+            IReadOnlyList<string> removedRelativePaths)
+    {
+        var removedSet = new HashSet<string>(removedRelativePaths, StringComparer.Ordinal);
+        var addedSet = new HashSet<string>(addedFiles.Select(f => f.RelativePath), StringComparer.Ordinal);
+        var activeMap = new Dictionary<string, IcebergManifestEntry>(StringComparer.Ordinal);
+        var avroEntries = new List<IcebergAvroManifestBuilder.ManifestEntryRecord>(previousActiveFiles.Count + addedFiles.Count);
+
+        foreach (var prev in previousActiveFiles)
         {
-            activeMap.Remove(removed);
+            if (removedSet.Contains(prev.RelativePath))
+            {
+                avroEntries.Add(new IcebergAvroManifestBuilder.ManifestEntryRecord(
+                    IcebergAvroManifestBuilder.StatusDeleted,
+                    snapshotId,
+                    nextSeq,
+                    prev.AddedAtSequence > 0 ? prev.AddedAtSequence : nextSeq,
+                    prev.FilePath,
+                    prev.FileFormat,
+                    prev.RecordCount,
+                    prev.FileSizeInBytes));
+                continue;
+            }
+
+            if (!addedSet.Contains(prev.RelativePath))
+            {
+                activeMap[prev.RelativePath] = prev;
+                avroEntries.Add(new IcebergAvroManifestBuilder.ManifestEntryRecord(
+                    IcebergAvroManifestBuilder.StatusExisting,
+                    snapshotId,
+                    prev.AddedAtSequence > 0 ? prev.AddedAtSequence : nextSeq,
+                    prev.AddedAtSequence > 0 ? prev.AddedAtSequence : nextSeq,
+                    prev.FilePath,
+                    prev.FileFormat,
+                    prev.RecordCount,
+                    prev.FileSizeInBytes));
+            }
         }
 
         foreach (var added in addedFiles)
         {
-            activeMap[added.RelativePath] = new IcebergManifestEntry
+            var entry = new IcebergManifestEntry
             {
                 RelativePath = added.RelativePath,
                 ObjectKey = added.ObjectKey,
@@ -387,12 +392,23 @@ internal static partial class IcebergV2CommitWriter
                 RecordCount = added.RecordCount,
                 AddedAtSequence = nextSeq,
             };
+            activeMap[added.RelativePath] = entry;
+            avroEntries.Add(new IcebergAvroManifestBuilder.ManifestEntryRecord(
+                IcebergAvroManifestBuilder.StatusAdded,
+                snapshotId,
+                nextSeq,
+                nextSeq,
+                entry.FilePath,
+                entry.FileFormat,
+                entry.RecordCount,
+                entry.FileSizeInBytes));
         }
 
-        return activeMap.Values
+        var activeList = activeMap.Values
             .OrderBy(f => f.AddedAtSequence)
             .ThenBy(f => f.RelativePath, StringComparer.Ordinal)
             .ToList();
+        return (activeList, avroEntries);
     }
 
     internal static long ComputeDeterministicSnapshotId(Guid streamId, Guid runId, long sequenceNumber)

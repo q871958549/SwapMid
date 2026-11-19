@@ -124,7 +124,7 @@ public sealed class ChaosResilienceContractTests : SwapMidEntityFrameworkCoreTes
     [Fact]
     public async Task Scenario_2_DeltaLake_Cas_412_Race_And_Same_RunId_Replay_Should_Converge_Idempotently()
     {
-        var store = new Dictionary<string, string>(StringComparer.Ordinal);
+        var store = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         var stream = new CdcStreamDefinition(
             Guid.NewGuid(),
             "chaos-delta-cas",
@@ -139,8 +139,8 @@ public sealed class ChaosResilienceContractTests : SwapMidEntityFrameworkCoreTes
 
         var run0 = Guid.NewGuid();
         store["/lake/cdc/orders/chaos/_delta_log/00000000000000000000.json"] =
-            DeltaLakeCommitWriter.BuildAppendNdjson(
-                0, stream, run0, $"part_{run0:N}.parquet", 512, 1730000000000L, "{\"numRecords\":5}", isInitialSnapshot: true);
+            Encoding.UTF8.GetBytes(DeltaLakeCommitWriter.BuildAppendNdjson(
+                0, stream, run0, $"part_{run0:N}.parquet", 512, 1730000000000L, "{\"numRecords\":5}", isInitialSnapshot: true));
 
         var s3Handler = new ChaosS3AndCatalogHandler(store, forceConflictOnVersion1Once: true);
         var factory = Substitute.For<IHttpClientFactory>();
@@ -225,9 +225,9 @@ public sealed class ChaosResilienceContractTests : SwapMidEntityFrameworkCoreTes
             await _cdcStreamRepository.UpdateAsync(entity, autoSave: true);
         });
 
-        var store = new Dictionary<string, string>
+        var store = new Dictionary<string, byte[]>
         {
-            ["/lake/cdc/orders/outage/_swapmid/latest.json"] = "{\"latestDeltaVersion\":3}",
+            ["/lake/cdc/orders/outage/_swapmid/latest.json"] = Encoding.UTF8.GetBytes("{\"latestDeltaVersion\":3}"),
         };
         var handler = new ChaosS3AndCatalogHandler(store, forceConflictOnVersion1Once: false)
         {
@@ -281,7 +281,7 @@ public sealed class ChaosResilienceContractTests : SwapMidEntityFrameworkCoreTes
     [Fact]
     public async Task Scenario_4_IcebergV2_Cas_412_Race_And_Same_RunId_Replay_Should_Converge_Idempotently()
     {
-        var store = new Dictionary<string, string>(StringComparer.Ordinal);
+        var store = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         var stream = new CdcStreamDefinition(
             Guid.NewGuid(),
             "chaos-iceberg-cas",
@@ -319,6 +319,7 @@ public sealed class ChaosResilienceContractTests : SwapMidEntityFrameworkCoreTes
             factory, config, s3Cfg, "orders/iceberg_chaos", stream, latestDoc,
             Guid.NewGuid(), "cdc/orders/iceberg_chaos/run_1.parquet", 512, 5, false, DateTime.UtcNow, CancellationToken.None);
         r1.SequenceNumber.ShouldBe(1);
+        store.Keys.Any(k => k.EndsWith(".avro", StringComparison.Ordinal)).ShouldBeTrue();
 
         var runA = Guid.NewGuid();
         var committed = await IcebergV2CommitWriter.CommitAppendAsync(
@@ -337,7 +338,7 @@ public sealed class ChaosResilienceContractTests : SwapMidEntityFrameworkCoreTes
     }
 
     [Fact]
-    public async Task Scenario_5_PushWebhook_Forged_Hmac_Should_Reject_And_Valid_Signed_Push_Should_Commit_IcebergV2()
+    public async Task Scenario_5_PushWebhook_Forged_Hmac_DeadLetter_Replay_And_Avro_IcebergV2_AutoSchema_Should_Converge()
     {
         const string secret = "whsec_chaos_scenario_5_secret_key_99";
         var webhookSrc = await _dataSourceAppService.CreateAsync(new DataSourceCreateUpdateDto
@@ -363,13 +364,13 @@ public sealed class ChaosResilienceContractTests : SwapMidEntityFrameworkCoreTes
             TargetSinkDestination = "events/webhook_iceberg",
             LakehouseTableFormat = LakehouseTableFormat.ApacheIceberg,
             MaxFreshnessLagSeconds = 120,
+            RequiredColumns = "id,total",
         });
 
         var preflight = await _cdcAppService.PreflightAsync(created.Id);
         preflight.IsReady.ShouldBeTrue();
-        await _cdcAppService.ActivateAsync(created.Id);
 
-        var store = new Dictionary<string, string>(StringComparer.Ordinal);
+        var store = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         var handler = new ChaosS3AndCatalogHandler(store, forceConflictOnVersion1Once: false);
         var factory = Substitute.For<IHttpClientFactory>();
         factory.CreateClient(Arg.Any<string>()).Returns(_ => new HttpClient(handler, disposeHandler: false));
@@ -382,6 +383,8 @@ public sealed class ChaosResilienceContractTests : SwapMidEntityFrameworkCoreTes
 
         var objectWriter = new ObjectStorageEtlSinkWriter(factory, config);
         var distributedLock = GetRequiredService<Volo.Abp.DistributedLocking.IAbpDistributedLock>();
+        var deliveryRepo = GetRequiredService<IRepository<CdcWebhookDeliveryRecord, Guid>>();
+        var currentTenant = GetRequiredService<Volo.Abp.MultiTenancy.ICurrentTenant>();
         var ingress = new CdcWebhookIngressService(
             _cdcStreamRepository,
             _dataSourceRepository,
@@ -392,43 +395,80 @@ public sealed class ChaosResilienceContractTests : SwapMidEntityFrameworkCoreTes
             _unitOfWorkManager,
             _failurePolicy,
             NullLogger<CdcWebhookIngressService>.Instance,
-            sinkWriters: [objectWriter]);
+            sinkWriters: [objectWriter],
+            deliveryRepository: deliveryRepo,
+            currentTenant: currentTenant);
 
         var payload = Encoding.UTF8.GetBytes(
             """[{"schema":"app","table":"orders","op":"insert","data":{"id":501,"total":88.5}},{"schema":"app","table":"orders","op":"update","data":{"id":501,"total":99.0}}]""");
 
-        // 1. Forged signature -> fail-closed 401 with zero S3 writes
-        var forged = await ingress.IngestAsync(created.Id, payload, "sha256=" + new string('a', 64), "chaos-del-1");
+        // 1. Forged signature -> fail-closed 401 with zero S3 writes & ZERO stored payload in ledger
+        var forged = await ingress.IngestAsync(created.Id, payload, "sha256=" + new string('a', 64), "chaos-del-forged");
         forged.Outcome.ShouldBe(CdcWebhookIngestOutcome.Unauthorized);
         store.Count.ShouldBe(0);
 
-        // 2. Valid HMAC-SHA256 -> commits Parquet + Iceberg v2 v1.metadata.json + version-hint.text + webhook:2 checkpoint
+        // 2. Valid HMAC while stream is still Draft -> 409 Inactive with bounded dead-letter retained for replay
         var validSig = CdcWebhookIngressService.ComputeSignature(secret, payload);
-        var accepted = await ingress.IngestAsync(created.Id, payload, validSig, "chaos-del-1");
-        accepted.Outcome.ShouldBe(CdcWebhookIngestOutcome.Accepted);
-        accepted.Result.ShouldNotBeNull();
-        accepted.Result.AcceptedEventCount.ShouldBe(2);
-        accepted.Result.DeliveredCount.ShouldBe(2);
-        accepted.Result.CheckpointLsn.ShouldBe("webhook:2");
+        var deadLetter = await ingress.IngestAsync(created.Id, payload, validSig, "chaos-del-replay");
+        deadLetter.Outcome.ShouldBe(CdcWebhookIngestOutcome.Inactive);
+        store.Count.ShouldBe(0);
+
+        var ledgerBefore = await ingress.GetDeliveriesAsync(created.Id, 20);
+        ledgerBefore.TotalCount.ShouldBe(2);
+        ledgerBefore.ReplayableCount.ShouldBe(1);
+        var forgedRec = ledgerBefore.Items.Single(x => x.DeliveryId == "chaos-del-forged");
+        forgedRec.Outcome.ShouldBe(CdcWebhookIngestOutcome.Unauthorized);
+        forgedRec.CanReplay.ShouldBeFalse();
+        var rawForgedEntity = await WithUnitOfWorkAsync(() => deliveryRepo.GetAsync(forgedRec.Id));
+        rawForgedEntity.StoredPayloadJson.ShouldBeNull();
+
+        var deadLetterRec = ledgerBefore.Items.Single(x => x.DeliveryId == "chaos-del-replay");
+        deadLetterRec.Outcome.ShouldBe(CdcWebhookIngestOutcome.Inactive);
+        deadLetterRec.CanReplay.ShouldBeTrue();
+
+        // 3. Activate stream & 1-click Replay dead-letter -> commits Parquet + binary Avro Iceberg v2 + auto-infers schema
+        await _cdcAppService.ActivateAsync(created.Id);
+        var replayed = await ingress.ReplayDeliveryAsync(created.Id, deadLetterRec.Id);
+        replayed.AcceptedEventCount.ShouldBe(2);
+        replayed.DeliveredCount.ShouldBe(2);
+        replayed.CheckpointLsn.ShouldBe("webhook:2");
 
         store.ContainsKey("/lake/cdc/events/webhook_iceberg/metadata/version-hint.text").ShouldBeTrue();
-        store["/lake/cdc/events/webhook_iceberg/metadata/version-hint.text"].ShouldBe("1");
+        Encoding.UTF8.GetString(store["/lake/cdc/events/webhook_iceberg/metadata/version-hint.text"]).ShouldBe("1");
         store.ContainsKey("/lake/cdc/events/webhook_iceberg/metadata/v1.metadata.json").ShouldBeTrue();
+        var avroKeys = store.Keys.Where(k => k.EndsWith(".avro", StringComparison.Ordinal)).ToList();
+        avroKeys.Count.ShouldBe(2); // manifest-list.avro + manifest-file.avro
+        foreach (var ak in avroKeys)
+        {
+            store[ak].Take(4).ShouldBe(new byte[] { (byte)'O', (byte)'b', (byte)'j', 1 });
+        }
 
+        // 4. Auto-inferred schema satisfies RequiredColumns="id,total" -> ContractStatus.Healthy, and replay clears dead-letter payload
         var refreshed = await _cdcAppService.GetAsync(created.Id);
         refreshed.CheckpointLsn.ShouldBe("webhook:2");
         refreshed.TotalCapturedCount.ShouldBe(2);
         refreshed.ContractStatus.ShouldBe(CdcContractStatus.Healthy);
+        var persistedStream = await WithUnitOfWorkAsync(() => _cdcStreamRepository.GetAsync(created.Id));
+        persistedStream.SchemaBaselineJson.ShouldNotBeNullOrWhiteSpace();
+        persistedStream.SchemaBaselineJson.ShouldContain("id");
+        persistedStream.SchemaBaselineJson.ShouldContain("total");
+
+        var ledgerAfter = await ingress.GetDeliveriesAsync(created.Id, 20);
+        ledgerAfter.ReplayableCount.ShouldBe(0);
+        var replayedRec = ledgerAfter.Items.Single(x => x.Id == deadLetterRec.Id);
+        replayedRec.Outcome.ShouldBe(CdcWebhookIngestOutcome.Accepted);
+        replayedRec.ReplayCount.ShouldBe(1);
+        replayedRec.CanReplay.ShouldBeFalse();
     }
 
     private sealed class ChaosS3AndCatalogHandler : HttpMessageHandler
     {
-        private readonly Dictionary<string, string> _objects;
+        private readonly Dictionary<string, byte[]> _objects;
         private bool _injectConflictOnce;
         public bool CatalogOutage503 { get; set; }
         public bool ForceConflictOnIcebergV2Once { get; set; }
 
-        public ChaosS3AndCatalogHandler(Dictionary<string, string> objects, bool forceConflictOnVersion1Once)
+        public ChaosS3AndCatalogHandler(Dictionary<string, byte[]> objects, bool forceConflictOnVersion1Once)
         {
             _objects = objects;
             _injectConflictOnce = forceConflictOnVersion1Once;
@@ -455,8 +495,8 @@ public sealed class ChaosResilienceContractTests : SwapMidEntityFrameworkCoreTes
 
             if (request.Method == HttpMethod.Get)
             {
-                return _objects.TryGetValue(path, out var body)
-                    ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body, Encoding.UTF8, "application/json") }
+                return _objects.TryGetValue(path, out var bytes)
+                    ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) }
                     : new HttpResponseMessage(HttpStatusCode.NotFound);
             }
 
@@ -468,14 +508,14 @@ public sealed class ChaosResilienceContractTests : SwapMidEntityFrameworkCoreTes
                 if (_injectConflictOnce && path.EndsWith("00000000000000000001.json", StringComparison.Ordinal))
                 {
                     _injectConflictOnce = false;
-                    _objects[path] = "{\"commitInfo\":{\"txnId\":\"competing-writer\"}}\n";
+                    _objects[path] = Encoding.UTF8.GetBytes("{\"commitInfo\":{\"txnId\":\"competing-writer\"}}\n");
                     return new HttpResponseMessage(HttpStatusCode.PreconditionFailed);
                 }
 
                 if (ForceConflictOnIcebergV2Once && path.EndsWith("/metadata/v2.metadata.json", StringComparison.Ordinal))
                 {
                     ForceConflictOnIcebergV2Once = false;
-                    _objects[path] = """{"format-version":2,"last-sequence-number":2,"current-snapshot-id":99902,"snapshots":[{"sequence-number":2,"snapshot-id":99902,"timestamp-ms":1763510000000,"summary":{"operation":"append","swapmid-run-id":"competing-writer"}}],"snapshot-log":[],"metadata-log":[]}""";
+                    _objects[path] = Encoding.UTF8.GetBytes("""{"format-version":2,"last-sequence-number":2,"current-snapshot-id":99902,"snapshots":[{"sequence-number":2,"snapshot-id":99902,"timestamp-ms":1763510000000,"summary":{"operation":"append","swapmid-run-id":"competing-writer"}}],"snapshot-log":[],"metadata-log":[]}""");
                     return new HttpResponseMessage(HttpStatusCode.PreconditionFailed);
                 }
 
@@ -484,7 +524,7 @@ public sealed class ChaosResilienceContractTests : SwapMidEntityFrameworkCoreTes
                     return new HttpResponseMessage(HttpStatusCode.PreconditionFailed);
                 }
 
-                _objects[path] = await request.Content!.ReadAsStringAsync(cancellationToken);
+                _objects[path] = await request.Content!.ReadAsByteArrayAsync(cancellationToken);
                 return new HttpResponseMessage(HttpStatusCode.OK);
             }
 

@@ -1099,4 +1099,124 @@ describe('CdcStreamsClient', () => {
     fireEvent.click(screen.getByRole('button', { name: '加载实时数据预览' }))
     expect(await screen.findByText('{"order_no":"IC-2026-01"}')).toBeTruthy()
   })
+
+  it('opens Push Webhook delivery ledger dialog and replays an inactive dead-letter batch', async () => {
+    const DELIVERY_ID = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'
+    mocks.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          totalCount: 2,
+          replayableCount: 1,
+          items: [
+            {
+              id: DELIVERY_ID,
+              streamId: STREAM_ID,
+              deliveryId: 'batch-deadletter-01',
+              outcome: 3,
+              httpStatusCode: 409,
+              acceptedEventCount: 0,
+              deliveredCount: 0,
+              checkpointLsn: null,
+              errorCode: 'SwapMid:ETL:035',
+              errorSummary: 'Stream inactive',
+              payloadSizeBytes: 512,
+              canReplay: true,
+              receivedAtUtc: '2026-11-19T06:00:00Z',
+              replayedAtUtc: null,
+              replayCount: 0,
+            },
+            {
+              id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+              streamId: STREAM_ID,
+              deliveryId: 'batch-forged-01',
+              outcome: 2,
+              httpStatusCode: 401,
+              acceptedEventCount: 0,
+              deliveredCount: 0,
+              checkpointLsn: null,
+              errorCode: 'SwapMid:ETL:032',
+              errorSummary: 'Invalid HMAC signature',
+              payloadSizeBytes: 256,
+              canReplay: false,
+              receivedAtUtc: '2026-11-19T05:59:00Z',
+              replayedAtUtc: null,
+              replayCount: 0,
+            },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          deliveryId: 'batch-deadletter-01',
+          acceptedEventCount: 2,
+          deliveredCount: 2,
+          checkpointLsn: 'webhook:2',
+          receivedAtUtc: '2026-11-19T06:01:00Z',
+          message: 'Replayed',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          streamId: STREAM_ID,
+          totalCount: 2,
+          replayableCount: 0,
+          items: [
+            {
+              id: DELIVERY_ID,
+              streamId: STREAM_ID,
+              deliveryId: 'batch-deadletter-01',
+              outcome: 0,
+              httpStatusCode: 200,
+              acceptedEventCount: 2,
+              deliveredCount: 2,
+              checkpointLsn: 'webhook:2',
+              errorCode: null,
+              errorSummary: null,
+              payloadSizeBytes: 512,
+              canReplay: false,
+              receivedAtUtc: '2026-11-19T06:00:00Z',
+              replayedAtUtc: '2026-11-19T06:01:00Z',
+              replayCount: 1,
+            },
+          ],
+        }),
+      })
+
+    renderClient(makeStream({
+      sourceType: 3,
+      status: 1,
+      targetMode: 2,
+      targetSinkId: SOURCE_ID,
+      targetSinkType: 5,
+      targetSinkName: 'minio-iceberg',
+      targetSinkDestination: 'orders/iceberg',
+      lakehouseTableFormat: 2,
+    }))
+
+    fireEvent.click(screen.getByRole('button', { name: '推送日志' }))
+    expect(await screen.findByText('batch-deadletter-01')).toBeTruthy()
+    expect(screen.getByText('流未激活')).toBeTruthy()
+    expect(screen.getByText('验签失败')).toBeTruthy()
+    expect(mocks.fetch).toHaveBeenCalledWith(`/api/proxy/cdc-webhooks/${STREAM_ID}/deliveries?maxCount=30`)
+
+    fireEvent.click(screen.getByRole('button', { name: '重放' }))
+    await waitFor(() => {
+      expect(mocks.fetch).toHaveBeenCalledWith(
+        `/api/proxy/cdc-webhooks/${STREAM_ID}/deliveries/${DELIVERY_ID}/replay`,
+        { method: 'POST' },
+      )
+      expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({
+        variant: 'success',
+        title: '死信重放成功',
+      }))
+      expect(mocks.reloadAndRefresh).toHaveBeenCalledOnce()
+    })
+    expect(await screen.findByText('已接入')).toBeTruthy()
+    expect(screen.getByText('已重放 1 次')).toBeTruthy()
+  })
 })

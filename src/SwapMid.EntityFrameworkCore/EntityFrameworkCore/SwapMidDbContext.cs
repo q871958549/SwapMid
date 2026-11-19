@@ -46,6 +46,7 @@ public class SwapMidDbContext :
     public DbSet<DataPipeline> DataPipelines { get; set; } = null!;
     public DbSet<PipelineExecution> PipelineExecutions { get; set; } = null!;
     public DbSet<CdcStreamDefinition> CdcStreams { get; set; } = null!;
+    public DbSet<CdcWebhookDeliveryRecord> CdcWebhookDeliveries { get; set; } = null!;
 
     public DbSet<MessageTopic> MessageTopics { get; set; } = null!;
     public DbSet<MessageSubscription> MessageSubscriptions { get; set; } = null!;

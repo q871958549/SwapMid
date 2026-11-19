@@ -101,14 +101,92 @@ public class CdcWebhookIngressServiceTests
         res.Result.CheckpointLsn.ShouldBe("webhook:2");
         stream.CheckpointLsn.ShouldBe("webhook:2");
         stream.TotalCapturedCount.ShouldBe(2);
+        stream.SchemaBaselineJson.ShouldNotBeNullOrWhiteSpace();
+        stream.SchemaBaselineJson.ShouldContain("id");
+        stream.SchemaBaselineJson.ShouldContain("amount");
         await publisher.Received(2).PublishIfTopicActiveAsync(Arg.Any<IntegrationEventEnvelope>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task IngestAsync_Should_Infer_Schema_For_RequiredColumns_And_Pause_With_DeadLetter_On_Drift()
+    {
+        var ledger = new List<CdcWebhookDeliveryRecord>();
+        var (service, publisher, stream, _) = BuildHarness(
+            activateStream: true,
+            monitoredTables: "shop.orders",
+            driftPolicy: CdcSchemaDriftPolicy.PauseAndAlert,
+            ledgerStore: ledger);
+        stream.ConfigureDataContract(maxFreshnessLagSeconds: 120, maxAllowedWalLagBytes: null, requiredColumns: "id,amount");
+
+        var batch1 = Encoding.UTF8.GetBytes(
+            """[{"schema":"shop","table":"orders","op":"insert","data":{"id":1,"amount":55.5}}]""");
+        var res1 = await service.IngestAsync(
+            stream.Id, batch1, CdcWebhookIngressService.ComputeSignature(ValidSecret, batch1), "del-schema-1");
+
+        res1.Outcome.ShouldBe(CdcWebhookIngestOutcome.Accepted);
+        stream.SchemaBaselineJson.ShouldNotBeNullOrWhiteSpace();
+        CdcDataContractEvaluator.EvaluateSnapshot(stream, DateTime.UtcNow).Status.ShouldBe(CdcContractStatus.Healthy);
+
+        // Batch 2 drops 'amount' and adds 'currency' -> triggers SchemaDriftPolicy.PauseAndAlert & saves dead-letter!
+        var batch2 = Encoding.UTF8.GetBytes(
+            """[{"schema":"shop","table":"orders","op":"insert","data":{"id":2,"currency":"CNY"}}]""");
+        var res2 = await service.IngestAsync(
+            stream.Id, batch2, CdcWebhookIngressService.ComputeSignature(ValidSecret, batch2), "del-schema-drift");
+
+        res2.Outcome.ShouldBe(CdcWebhookIngestOutcome.Inactive);
+        stream.Status.ShouldBe(CdcStreamStatus.Paused);
+        stream.SchemaDriftSummary.ShouldNotBeNullOrWhiteSpace();
+        await publisher.Received(1).PublishIfTopicActiveAsync(Arg.Any<IntegrationEventEnvelope>(), Arg.Any<CancellationToken>());
+
+        var driftLedger = ledger.Single(x => x.DeliveryId == "del-schema-drift");
+        driftLedger.Outcome.ShouldBe((int)CdcWebhookIngestOutcome.Inactive);
+        driftLedger.CanReplay.ShouldBeTrue();
+        driftLedger.StoredPayloadJson.ShouldNotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task ReplayDeliveryAsync_Should_Replay_Inactive_DeadLetter_And_Forbid_Unauthorized_Replay()
+    {
+        var ledger = new List<CdcWebhookDeliveryRecord>();
+        var (service, publisher, stream, _) = BuildHarness(activateStream: false, ledgerStore: ledger);
+        var body = Encoding.UTF8.GetBytes("""{"schema":"shop","table":"orders","op":"insert","data":{"id":77,"total":12.5}}""");
+
+        // 401 -> ledger row has NO stored payload
+        var forged = await service.IngestAsync(stream.Id, body, "sha256=" + new string('f', 64), "del-forged");
+        forged.Outcome.ShouldBe(CdcWebhookIngestOutcome.Unauthorized);
+        var forgedRecord = ledger.Single(x => x.DeliveryId == "del-forged");
+        forgedRecord.StoredPayloadJson.ShouldBeNull();
+        forgedRecord.CanReplay.ShouldBeFalse();
+
+        // 409 -> ledger row stores bounded payload & is replayable
+        var sig = CdcWebhookIngressService.ComputeSignature(ValidSecret, body);
+        var inactive = await service.IngestAsync(stream.Id, body, sig, "del-paused");
+        inactive.Outcome.ShouldBe(CdcWebhookIngestOutcome.Inactive);
+        var deadLetter = ledger.Single(x => x.DeliveryId == "del-paused");
+        deadLetter.CanReplay.ShouldBeTrue();
+
+        // Activate stream & replay dead-letter -> Accepted & payload cleared
+        stream.Activate();
+        var replayed = await service.ReplayDeliveryAsync(stream.Id, deadLetter.Id);
+        replayed.AcceptedEventCount.ShouldBe(1);
+        replayed.DeliveredCount.ShouldBe(1);
+        replayed.CheckpointLsn.ShouldBe("webhook:1");
+        deadLetter.Outcome.ShouldBe((int)CdcWebhookIngestOutcome.Accepted);
+        deadLetter.ReplayCount.ShouldBe(1);
+        deadLetter.CanReplay.ShouldBeFalse();
+        deadLetter.StoredPayloadJson.ShouldBeNull();
+        await publisher.Received(1).PublishIfTopicActiveAsync(Arg.Any<IntegrationEventEnvelope>(), Arg.Any<CancellationToken>());
     }
 
     private static (
         CdcWebhookIngressService Service,
         IIntegrationEventPublisher Publisher,
         CdcStreamDefinition Stream,
-        DataSource Source) BuildHarness(bool activateStream, string? monitoredTables = null)
+        DataSource Source) BuildHarness(
+        bool activateStream,
+        string? monitoredTables = null,
+        CdcSchemaDriftPolicy driftPolicy = CdcSchemaDriftPolicy.Ignore,
+        List<CdcWebhookDeliveryRecord>? ledgerStore = null)
     {
         var source = new DataSource(
             Guid.NewGuid(),
@@ -125,6 +203,7 @@ public class CdcWebhookIngressServiceTests
             CdcTargetMode.MessageBusTopic,
             targetTopicName: "cdc.events",
             monitoredTables: monitoredTables,
+            schemaDriftPolicy: driftPolicy,
             sourceType: CdcSourceType.PushWebhook);
         if (activateStream)
         {
@@ -153,6 +232,23 @@ public class CdcWebhookIngressServiceTests
         distributedLock.TryAcquireAsync(Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(lockHandle);
 
+        IRepository<CdcWebhookDeliveryRecord, Guid>? deliveryRepo = null;
+        if (ledgerStore != null)
+        {
+            deliveryRepo = Substitute.For<IRepository<CdcWebhookDeliveryRecord, Guid>>();
+            deliveryRepo.InsertAsync(Arg.Any<CdcWebhookDeliveryRecord>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+                .Returns(ci =>
+                {
+                    var rec = ci.Arg<CdcWebhookDeliveryRecord>();
+                    ledgerStore.Add(rec);
+                    return rec;
+                });
+            deliveryRepo.FindAsync(Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+                .Returns(ci => ledgerStore.FirstOrDefault(x => x.Id == ci.Arg<Guid>()));
+            deliveryRepo.UpdateAsync(Arg.Any<CdcWebhookDeliveryRecord>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+                .Returns(ci => ci.Arg<CdcWebhookDeliveryRecord>());
+        }
+
         var connFactory = Substitute.For<IEtlRelationalConnectionFactory>();
         var failurePolicy = new PipelineExecutionFailurePolicy(
             Substitute.For<Volo.Abp.Tracing.ICorrelationIdProvider>(),
@@ -166,7 +262,8 @@ public class CdcWebhookIngressServiceTests
             distributedLock,
             uowManager,
             failurePolicy,
-            NullLogger<CdcWebhookIngressService>.Instance);
+            NullLogger<CdcWebhookIngressService>.Instance,
+            deliveryRepository: deliveryRepo);
 
         return (service, publisher, stream, source);
     }

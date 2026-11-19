@@ -100,3 +100,33 @@ groups:
         annotations:
           summary: "CDC stream Data Contract SLA breached"
           description: "One or more CDC streams breached freshness lag, required columns, schema drift, or WAL retention byte budgets in the last 10 minutes."
+
+      - alert: SwapMidCdcIcebergCommitFailures
+        expr: increase(swapmid_cdc_iceberg_commits_total{outcome="failed"}[15m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          engine: data-integration-cdc
+        annotations:
+          summary: "Apache Iceberg v2 metadata commit failures detected"
+          description: "One or more Iceberg v2 optimistic CAS commits failed after exhausting retries in the last 15 minutes; inspect S3/MinIO availability and concurrent writers."
+
+      - alert: SwapMidCdcWebhookAuthFailuresSpike
+        expr: increase(swapmid_cdc_webhook_ingests_total{outcome="rejected_auth"}[10m]) >= 10
+        for: 1m
+        labels:
+          severity: warning
+          engine: data-integration-cdc
+        annotations:
+          summary: "Push Webhook CDC HMAC authentication rejection spike"
+          description: "10 or more Push Webhook CDC requests failed HMAC-SHA256 verification within 10 minutes; check upstream signing secret configuration or unauthorized callers."
+
+      - alert: SwapMidCdcWebhookDeliveryFailures
+        expr: increase(swapmid_cdc_webhook_ingests_total{outcome="failed"}[15m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          engine: data-integration-cdc
+        annotations:
+          summary: "Push Webhook CDC downstream delivery failures"
+          description: "One or more authenticated Push Webhook CDC batches failed downstream delivery in the last 15 minutes; inspect webhook delivery ledger and replay failed batches."

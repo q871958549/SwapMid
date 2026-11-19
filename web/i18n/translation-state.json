@@ -8787,6 +8787,150 @@
       "traditionalSourceHash": "3fb678f9cf94779226d09d20",
       "traditionalHash": "23e896d8b1f72ccad1174d89"
     },
+    "DataIntegration.cdc.webhookDeliveriesMenuItem": {
+      "sourceHash": "814d54fdb019c1c626da8687",
+      "englishHash": "7287ab0863328abd9cf8d2be",
+      "traditionalSourceHash": "688bae8145b1afbccf8de474",
+      "traditionalHash": "4a89b1875014884a44fdd51b"
+    },
+    "DataIntegration.cdc.webhookDeliveriesDialogTitle": {
+      "sourceHash": "38a7b7e81a79b91c912158b1",
+      "englishHash": "140fee42174a26e6209914ba",
+      "traditionalSourceHash": "7719901dbfd19a80f521a774",
+      "traditionalHash": "74773101d72443948b23e9bd"
+    },
+    "DataIntegration.cdc.webhookDeliveriesDialogDesc": {
+      "sourceHash": "a8f3070391d4b205fc7b482c",
+      "englishHash": "6d80a1ee7292a708a8f15c86",
+      "traditionalSourceHash": "61f9c48f6f5167693f7fc9cc",
+      "traditionalHash": "8a7ea6c47cda28a688af625c"
+    },
+    "DataIntegration.cdc.webhookDeliveriesTotalLabel": {
+      "sourceHash": "9b5837b63fcc86a501796282",
+      "englishHash": "fd15321b058444e73a4ece51",
+      "traditionalSourceHash": "5207247b54d08a0310fcaa76",
+      "traditionalHash": "f59b06e43a4f7573611ee04b"
+    },
+    "DataIntegration.cdc.webhookDeliveriesReplayableLabel": {
+      "sourceHash": "ebbfbcd16152217bcd0a4bf1",
+      "englishHash": "07c5a9ddf963250c08028285",
+      "traditionalSourceHash": "8cb6134ff1e24da11e1ad828",
+      "traditionalHash": "3826f2998714187a97ec8b02"
+    },
+    "DataIntegration.cdc.webhookDeliveriesEndpointLabel": {
+      "sourceHash": "028c4c15ad8ae3bec6806819",
+      "englishHash": "b5ac7b1c048abf21a87706bb",
+      "traditionalSourceHash": "314eda24f256f986c5d59722",
+      "traditionalHash": "90a528e2673fc9a14a5cbb40"
+    },
+    "DataIntegration.cdc.webhookDeliveriesEmpty": {
+      "sourceHash": "995c77f040c071d1de49b4f4",
+      "englishHash": "aecc780709491510438552ef",
+      "traditionalSourceHash": "53013c73bad6d40dd3fac525",
+      "traditionalHash": "fd9675f91d437f95cbc8641a"
+    },
+    "DataIntegration.cdc.webhookDeliveriesRefreshButton": {
+      "sourceHash": "3b1010e842710b316c306ab3",
+      "englishHash": "0e91610117029a62a478b7fa",
+      "traditionalSourceHash": "1d93007476a093cf1d632102",
+      "traditionalHash": "aee88743413144a2ec6c48e3"
+    },
+    "DataIntegration.cdc.webhookDeliveriesReplayButton": {
+      "sourceHash": "1a2f55250f2649aa5a316024",
+      "englishHash": "c8dae6371b33b8d67fdbd138",
+      "traditionalSourceHash": "e1586b06f8767d772fff24c0",
+      "traditionalHash": "adb59c497b526f91c0f7c3fb"
+    },
+    "DataIntegration.cdc.webhookDeliveriesReplayingButton": {
+      "sourceHash": "f1d07055234a1ce37ca4f2b6",
+      "englishHash": "49f495561abd0c2e2e888cc5",
+      "traditionalSourceHash": "627e1b1cf400fbdc62d9152b",
+      "traditionalHash": "7aa4504a1b7aa3082c96dbdd"
+    },
+    "DataIntegration.cdc.webhookDeliveriesReplayedCount": {
+      "sourceHash": "91975387bd272d7b111acca3",
+      "englishHash": "1eb3021304ab891991142de2",
+      "traditionalSourceHash": "ba63d18e760b657b89a78445",
+      "traditionalHash": "a2d7f5d3fab3933af534afdc"
+    },
+    "DataIntegration.cdc.webhookDeliveriesLoadFailedTitle": {
+      "sourceHash": "7cf7a86ae536a985cfa6ba23",
+      "englishHash": "b975fdb8978f93df0686012b",
+      "traditionalSourceHash": "30b6ebcfc501f29d28fc13f2",
+      "traditionalHash": "f37d26cf1571e481e2c293af"
+    },
+    "DataIntegration.cdc.webhookDeliveriesLoadFailedFallback": {
+      "sourceHash": "19616ba1959973ee32a694dd",
+      "englishHash": "85619ef25204494f1b3e7baf",
+      "traditionalSourceHash": "c9651b5426e2e9862003ee4a",
+      "traditionalHash": "8ea93ce02743c581f5cc84c0"
+    },
+    "DataIntegration.cdc.webhookReplaySuccessTitle": {
+      "sourceHash": "ce1b243279562b35f8cc6a6c",
+      "englishHash": "267e2f226b4f60f0c1b829ec",
+      "traditionalSourceHash": "47866eedc58abae388b2147a",
+      "traditionalHash": "ecb444435522e82a3aca0106"
+    },
+    "DataIntegration.cdc.webhookReplaySuccessDesc": {
+      "sourceHash": "5e5aa48584a48afca274c16b",
+      "englishHash": "169c40f2d0039165fcb35a07",
+      "traditionalSourceHash": "52767e670cde32f1bd540a2c",
+      "traditionalHash": "ac9052526e5cda881b27cbd0"
+    },
+    "DataIntegration.cdc.webhookReplayFailedTitle": {
+      "sourceHash": "85de52f58393e337e9837ac3",
+      "englishHash": "0676bb36f8963aa2eb8c33d5",
+      "traditionalSourceHash": "ce0027514029113439e2563e",
+      "traditionalHash": "601f106eb1562d665a0f3b6c"
+    },
+    "DataIntegration.cdc.webhookReplayFailedFallback": {
+      "sourceHash": "fb39942853f941bec4a8ee30",
+      "englishHash": "1b8bf21ece770fbbe8fd7b4c",
+      "traditionalSourceHash": "86e95f01d2011b8e376dbe06",
+      "traditionalHash": "5af83a284b2e4237b27742fb"
+    },
+    "DataIntegration.cdc.webhookOutcomeAccepted": {
+      "sourceHash": "6668f575cb5544d2a1626b9c",
+      "englishHash": "a00fb0c50741f81bb51d35b4",
+      "traditionalSourceHash": "fa3abf7e28625124cccf71b0",
+      "traditionalHash": "fa1876770899f29b15b7cf40"
+    },
+    "DataIntegration.cdc.webhookOutcomeUnauthorized": {
+      "sourceHash": "a57020710c8af9707faec7da",
+      "englishHash": "a98c4c709f34178465630764",
+      "traditionalSourceHash": "3b83ba1cffc934e0698c2ce2",
+      "traditionalHash": "fcead60632ed4f84cdb26fb5"
+    },
+    "DataIntegration.cdc.webhookOutcomeInactive": {
+      "sourceHash": "722f360d23ad2c17e6e70dd2",
+      "englishHash": "ac7c949f1211b7814bdd28a6",
+      "traditionalSourceHash": "d11c5c43ad8467ef1c31a13a",
+      "traditionalHash": "f8fb72d8fecab1f57db57069"
+    },
+    "DataIntegration.cdc.webhookOutcomeInvalidPayload": {
+      "sourceHash": "1d409905ff1d1baa7bf6e6d1",
+      "englishHash": "f60c824125e6408ed711d898",
+      "traditionalSourceHash": "6462d17ad10bb675ccecb9b8",
+      "traditionalHash": "4e25f64670a496ac58339aa5"
+    },
+    "DataIntegration.cdc.webhookOutcomePayloadTooLarge": {
+      "sourceHash": "f59e8c8ce4203c5d2106c47a",
+      "englishHash": "ea85cd8cfd52b95e40cbc5c8",
+      "traditionalSourceHash": "46f77e76676049fcf954145e",
+      "traditionalHash": "9f2061934fee46e64b555651"
+    },
+    "DataIntegration.cdc.webhookOutcomeBusy": {
+      "sourceHash": "b91f9cbb2552122962aacacf",
+      "englishHash": "2b9cf77b67940911033d20da",
+      "traditionalSourceHash": "4e34f65d5a04a6ac5b67f1c1",
+      "traditionalHash": "cb4b18ae16cdd62b7c946e8f"
+    },
+    "DataIntegration.cdc.webhookOutcomeFailed": {
+      "sourceHash": "664fd9e4de4e151af33a31e4",
+      "englishHash": "031a8f0f659df890dfd53c92",
+      "traditionalSourceHash": "b8581ebf8e10aea58cb8cf50",
+      "traditionalHash": "28da38aeec40aa29f7c9f0cc"
+    },
     "System.common.refresh": {
       "sourceHash": "ed94cd3ab755a61dfa2e13b4",
       "englishHash": "0e91610117029a62a478b7fa",

@@ -7889,6 +7889,236 @@ export const API_MODULES: ApiModule[] = [
                 "nullable": true
               }
             ]
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/cdc-webhooks/{streamId}/deliveries",
+            "summary": "查询 Push Webhook CDC 流最近的认证推送、拒签与死信待重放台账",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": ""
+              },
+              {
+                "name": "maxCount",
+                "cnName": "",
+                "type": "integer",
+                "required": false,
+                "description": ""
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "totalCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "replayableCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "items",
+                "cnName": "",
+                "type": "CdcWebhookDeliveryRecordDto[]",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "items[].id",
+                "cnName": "",
+                "type": "Guid",
+                "description": "唯一标识",
+                "nullable": false
+              },
+              {
+                "name": "items[].streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "items[].deliveryId",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "items[].outcome",
+                "cnName": "",
+                "type": "CdcWebhookIngestOutcome",
+                "description": "取值：Push Webhook CDC 认证推送接入结果码。",
+                "nullable": false
+              },
+              {
+                "name": "items[].httpStatusCode",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "items[].acceptedEventCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "items[].deliveredCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "items[].checkpointLsn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "items[].errorCode",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "items[].errorSummary",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "items[].payloadSizeBytes",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "items[].canReplay",
+                "cnName": "",
+                "type": "boolean",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "items[].receivedAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "items[].replayedAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "items[].replayCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              }
+            ]
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/cdc-webhooks/{streamId}/deliveries/{deliveryId}/replay",
+            "summary": "重放一条已通过验签但因流未激活或下游故障留存的 Push Webhook 死信批次",
+            "summaryDocumented": true,
+            "queryParams": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": ""
+              },
+              {
+                "name": "deliveryId",
+                "cnName": "",
+                "type": "Guid",
+                "required": true,
+                "description": ""
+              }
+            ],
+            "responseFields": [
+              {
+                "name": "streamId",
+                "cnName": "",
+                "type": "Guid",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "deliveryId",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "acceptedEventCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "deliveredCount",
+                "cnName": "",
+                "type": "integer",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "checkpointLsn",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              },
+              {
+                "name": "receivedAtUtc",
+                "cnName": "",
+                "type": "DateTime",
+                "description": "",
+                "nullable": false
+              },
+              {
+                "name": "message",
+                "cnName": "",
+                "type": "string",
+                "description": "",
+                "nullable": true
+              }
+            ]
           }
         ]
       }

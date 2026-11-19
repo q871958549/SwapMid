@@ -37,6 +37,26 @@ internal static class CdcParquetCompactionMergeHelper
                 {
                     targetSchema = reader.Schema;
                     dataFields = targetSchema.GetDataFields();
+                    var fieldIdByName = new Dictionary<string, int>(StringComparer.Ordinal);
+                    if (reader.Metadata?.Schema != null)
+                    {
+                        foreach (var elem in reader.Metadata.Schema)
+                        {
+                            if (elem.FieldId.HasValue && elem.FieldId.Value > 0 && !string.IsNullOrEmpty(elem.Name))
+                            {
+                                fieldIdByName[elem.Name] = elem.FieldId.Value;
+                            }
+                        }
+                    }
+
+                    foreach (var df in dataFields)
+                    {
+                        if (fieldIdByName.TryGetValue(df.Name, out var fid))
+                        {
+                            df.FieldId = fid;
+                        }
+                    }
+
                     writer = await ParquetWriter.CreateAsync(targetSchema, outStream, cancellationToken: cancellationToken);
                 }
 

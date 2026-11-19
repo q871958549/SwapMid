@@ -17,9 +17,13 @@ import type {
   CdcSinkTemplateDto,
   CdcSnapshotResultDto,
   CdcStreamDto,
+  CdcWebhookDeliveryListDto,
+  CdcWebhookDeliveryRecordDto,
+  CdcWebhookIngestResultDto,
 } from '@/lib/api/types'
 import type { CdcPreflightState, CdcSinkTemplateState } from './cdc-dialogs'
 import type { CdcLakehouseHistoryState } from './cdc-lakehouse-history-dialog'
+import type { CdcWebhookDeliveriesState } from './cdc-webhook-deliveries-dialog'
 
 export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
   const t = useTranslations('DataIntegration.cdc')
@@ -39,6 +43,9 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
   const [historyLoadingVersion, setHistoryLoadingVersion] = useState<number | null>(null)
   const [previewState, setPreviewState] = useState<CdcLakehousePreviewDto | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
+  const [deliveriesState, setDeliveriesState] = useState<CdcWebhookDeliveriesState | null>(null)
+  const [deliveriesLoading, setDeliveriesLoading] = useState(false)
+  const [replayingDeliveryId, setReplayingDeliveryId] = useState<string | null>(null)
   const [provisionSubmitting, setProvisionSubmitting] = useState(false)
   const [compactSubmitting, setCompactSubmitting] = useState(false)
 
@@ -360,6 +367,73 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
     setPreviewState(null)
   }, [])
 
+  const fetchWebhookDeliveries = useCallback(async (row: CdcStreamDto) => {
+    setDeliveriesLoading(true)
+    try {
+      const res = await fetch(`/api/proxy/cdc-webhooks/${row.id}/deliveries?maxCount=30`)
+      if (!res.ok) {
+        toast({
+          variant: 'destructive',
+          title: t('webhookDeliveriesLoadFailedTitle'),
+          description: await readApiErrorMessage(res, t('webhookDeliveriesLoadFailedFallback')),
+        })
+        return
+      }
+      const deliveries = await parseOptionalJsonResponse<CdcWebhookDeliveryListDto>(res)
+      setDeliveriesState({ stream: row, deliveries })
+    } finally {
+      setDeliveriesLoading(false)
+    }
+  }, [t])
+
+  const handleOpenDeliveries = useCallback(async (row: CdcStreamDto) => {
+    if (deliveriesState?.stream.id === row.id) {
+      await fetchWebhookDeliveries(row)
+      return
+    }
+    await runStreamAction<CdcWebhookDeliveryListDto>(
+      row, 'webhook-deliveries', `/api/proxy/cdc-webhooks/${row.id}/deliveries?maxCount=30`, 'GET',
+      t('webhookDeliveriesLoadFailedTitle'), t('webhookDeliveriesLoadFailedFallback'),
+      deliveries => setDeliveriesState({ stream: row, deliveries }),
+    )
+  }, [deliveriesState?.stream.id, fetchWebhookDeliveries, runStreamAction, t])
+
+  const handleReplayDelivery = useCallback(async (row: CdcStreamDto, delivery: CdcWebhookDeliveryRecordDto) => {
+    if (!delivery.id) return
+    setReplayingDeliveryId(delivery.id)
+    try {
+      const res = await fetch(`/api/proxy/cdc-webhooks/${row.id}/deliveries/${delivery.id}/replay`, {
+        method: 'POST',
+      })
+      if (!res.ok) {
+        toast({
+          variant: 'destructive',
+          title: t('webhookReplayFailedTitle'),
+          description: await readApiErrorMessage(res, t('webhookReplayFailedFallback')),
+        })
+        return
+      }
+      const result = await parseOptionalJsonResponse<CdcWebhookIngestResultDto>(res)
+      toast({
+        variant: 'success',
+        title: t('webhookReplaySuccessTitle'),
+        description: t('webhookReplaySuccessDesc', {
+          accepted: result.acceptedEventCount ?? 0,
+          delivered: result.deliveredCount ?? 0,
+          lsn: result.checkpointLsn || '-',
+        }),
+      })
+      await fetchWebhookDeliveries(row)
+      await reloadAndRefresh()
+    } finally {
+      setReplayingDeliveryId(null)
+    }
+  }, [fetchWebhookDeliveries, reloadAndRefresh, t])
+
+  const closeDeliveries = useCallback(() => {
+    setDeliveriesState(null)
+  }, [])
+
   return {
     busyActions,
     preflightState,
@@ -381,6 +455,10 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
     historyLoadingVersion,
     previewState,
     previewLoading,
+    deliveriesState,
+    deliveriesLoading,
+    replayingDeliveryId,
+    closeDeliveries,
     provisionSubmitting,
     compactSubmitting,
     handlePreflight,
@@ -393,6 +471,8 @@ export function useCdcStreamActions(reloadAndRefresh: () => Promise<void>) {
     handleSinkTemplate,
     handleOpenHistory,
     handleLoadPreview,
+    handleOpenDeliveries,
+    handleReplayDelivery,
     handleSyncCatalog,
     handleEvaluateContract,
     handleSnapshot,

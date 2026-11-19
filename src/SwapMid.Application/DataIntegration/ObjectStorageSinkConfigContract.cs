@@ -322,6 +322,12 @@ internal readonly record struct ObjectStorageSinkConfig(
     internal string BuildIcebergManifestKey(string destination, long snapshotId)
         => $"{BuildIcebergMetadataDirectory(destination)}/snap-{snapshotId}-manifest.json";
 
+    internal string BuildIcebergAvroManifestListKey(string destination, long snapshotId, Guid runId)
+        => $"{BuildIcebergMetadataDirectory(destination)}/snap-{snapshotId}-1-{runId:N}.avro";
+
+    internal string BuildIcebergAvroManifestFileKey(string destination, long sequenceNumber, Guid runId)
+        => $"{BuildIcebergMetadataDirectory(destination)}/{runId:N}-s{sequenceNumber}-m0.avro";
+
     internal string ToRelativeTablePath(string destination, string objectKey)
     {
         var basePrefix = BuildDestinationDirectory(destination).TrimEnd('/') + "/";

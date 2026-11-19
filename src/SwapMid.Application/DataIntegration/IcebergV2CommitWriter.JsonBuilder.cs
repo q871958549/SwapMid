@@ -9,6 +9,37 @@ namespace SwapMid.DataIntegration;
 
 internal static partial class IcebergV2CommitWriter
 {
+    internal static bool TryExtractSnapshotManifestListUri(string metadataJson, long snapshotId, out string? manifestListUri)
+    {
+        manifestListUri = null;
+        try
+        {
+            using var doc = JsonDocument.Parse(metadataJson);
+            if (!doc.RootElement.TryGetProperty("snapshots", out var snaps) || snaps.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            foreach (var snap in snaps.EnumerateArray())
+            {
+                if (snap.TryGetProperty("snapshot-id", out var sid) &&
+                    sid.TryGetInt64(out var val) &&
+                    val == snapshotId &&
+                    snap.TryGetProperty("manifest-list", out var ml) &&
+                    ml.ValueKind == JsonValueKind.String)
+                {
+                    manifestListUri = ml.GetString();
+                    return !string.IsNullOrWhiteSpace(manifestListUri);
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+
+        return false;
+    }
     internal static string BuildTableMetadataJson(
         CdcStreamDefinition stream,
         string tableLocation,
@@ -149,6 +180,7 @@ internal static partial class IcebergV2CommitWriter
             ["properties"] = new JsonObject
             {
                 ["write.format.default"] = "parquet",
+                ["schema.name-mapping.default"] = IcebergAvroManifestBuilder.CdcDefaultNameMappingJson,
                 ["swapmid.stream_id"] = stream.Id.ToString("D"),
                 ["swapmid.stream_name"] = stream.Name,
                 ["swapmid.engine"] = EngineName,
@@ -252,11 +284,14 @@ internal static partial class IcebergV2CommitWriter
                     snap.TryGetProperty("snapshot-id", out var sidProp) &&
                     sidProp.TryGetInt64(out var sid))
                 {
+                    var mlKey = snap.TryGetProperty("manifest-list", out var mlProp) && mlProp.ValueKind == JsonValueKind.String
+                        ? IcebergAvroManifestBuilder.StripS3BucketPrefix(mlProp.GetString()!, config.Bucket)
+                        : config.BuildIcebergManifestKey(destination, sid);
                     receipt = new IcebergCommitReceipt(
                         seq,
                         sid,
                         config.BuildIcebergMetadataKey(destination, seq),
-                        config.BuildIcebergManifestKey(destination, sid));
+                        mlKey);
                     return true;
                 }
             }

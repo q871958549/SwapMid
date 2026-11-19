@@ -28,6 +28,7 @@ import {
 } from './cdc-dialogs'
 import { CdcFormDialog } from './cdc-form-dialog'
 import { CdcLakehouseHistoryDialog } from './cdc-lakehouse-history-dialog'
+import { CdcWebhookDeliveriesDialog } from './cdc-webhook-deliveries-dialog'
 import {
   type CdcFormState,
   type CdcPipelineOption,
@@ -202,6 +203,7 @@ export function CdcStreamsClient({
           canDelete={canDelete}
           onSinkTemplate={item => void actions.handleSinkTemplate(item)}
           onLakehouseHistory={item => void actions.handleOpenHistory(item)}
+          onWebhookDeliveries={item => void actions.handleOpenDeliveries(item)}
           onSyncCatalog={item => void actions.handleSyncCatalog(item)}
           onEvaluateContract={item => void actions.handleEvaluateContract(item)}
           onPreflight={item => void actions.handlePreflight(item)}
@@ -311,6 +313,15 @@ export function CdcStreamsClient({
         onSelectVersion={(stream, version) => void actions.handleOpenHistory(stream, version)}
         onLoadPreview={(stream, version) => void actions.handleLoadPreview(stream, version)}
         onClose={actions.closeHistory}
+      />
+      <CdcWebhookDeliveriesDialog
+        state={actions.deliveriesState}
+        loading={actions.deliveriesLoading}
+        replayingId={actions.replayingDeliveryId}
+        canManage={canManage}
+        onRefresh={stream => void actions.handleOpenDeliveries(stream)}
+        onReplay={(stream, delivery) => void actions.handleReplayDelivery(stream, delivery)}
+        onClose={actions.closeDeliveries}
       />
       <DeleteConfirm
         crud={crud}

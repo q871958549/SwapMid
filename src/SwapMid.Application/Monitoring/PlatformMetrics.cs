@@ -235,7 +235,7 @@ public static partial class PlatformMetrics
             }
         }
 
-        PublishSingleLabelSeries(CdcWebhookIngestsTotal, ["accepted", "rejected_auth", "rejected_inactive", "rejected_payload", "failed"]);
+        PublishSingleLabelSeries(CdcWebhookIngestsTotal, ["accepted", "replayed", "rejected_auth", "rejected_inactive", "rejected_payload", "failed"]);
     }
 
     internal static void PublishEtlExecutionSeries(

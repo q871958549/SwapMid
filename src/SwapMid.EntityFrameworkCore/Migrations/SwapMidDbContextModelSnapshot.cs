@@ -428,6 +428,66 @@ namespace SwapMid.Migrations
                     b.ToTable("AppCdcStreams", (string)null);
                 });
 
+            modelBuilder.Entity("SwapMid.DataIntegration.CdcWebhookDeliveryRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AcceptedEventCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CheckpointLsn")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("DeliveredCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("DeliveryId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ErrorSummary")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<int>("HttpStatusCode")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PayloadSizeBytes")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ReceivedAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("ReplayCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ReplayedAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("StoredPayloadJson")
+                        .HasMaxLength(65536)
+                        .HasColumnType("character varying(65536)");
+
+                    b.Property<Guid>("StreamId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StreamId", "ReceivedAtUtc");
+
+                    b.ToTable("AppCdcWebhookDeliveries", (string)null);
+                });
+
             modelBuilder.Entity("SwapMid.DataIntegration.DataPipeline", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3777,6 +3837,15 @@ namespace SwapMid.Migrations
                         .WithMany()
                         .HasForeignKey("TargetSinkId")
                         .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("SwapMid.DataIntegration.CdcWebhookDeliveryRecord", b =>
+                {
+                    b.HasOne("SwapMid.DataIntegration.CdcStreamDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("StreamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("SwapMid.DataIntegration.DataPipeline", b =>
